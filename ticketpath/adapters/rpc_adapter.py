@@ -69,5 +69,5 @@ class RpcAdapter:
             "programId": None,
             "cluster": self.cluster,
             "reason": DISABLED if not self.enabled else NOT_DEPLOYED,
-            "designDoc": "docs/ON-CHAIN-FOR-LAPTOP.md",
+            "designDoc": "docs/ON-CHAIN-DESIGN.md",
         }

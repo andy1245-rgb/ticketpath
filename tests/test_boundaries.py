@@ -25,10 +25,13 @@ ALLOWED_ROOTS = {
     "argparse",
     "datetime",
     "hashlib",
+    "html",   # the console escapes its own output; no template engine
     "http",
     "json",
+    "math",   # the closed-form estimators; no numpy exists on this machine
     "os",
     "pathlib",
+    "re",     # the banned-phrase scan
     "secrets",
     "sys",
     "threading",
@@ -157,6 +160,24 @@ class TestPricingSeam(unittest.TestCase):
         self.assertTrue(estimate["available"])
         self.assertEqual(estimate["expectedResaleLamports"], 1_000)
         self.assertEqual(estimate["modelVersion"], "test-0")
+
+    def test_a_sale_probability_from_a_model_is_forced_to_null(self) -> None:
+        adapter = PricingModelAdapter()
+        adapter.register(
+            lambda request: {
+                "modelVersion": "test-0",
+                "asOf": request["asOf"],
+                "expectedResaleLamports": 1_000,
+                "saleProbability": 0.5,
+                "recommendedPrimaryLamports": 900,
+                "horizonHours": 24,
+                "basis": "test",
+            },
+            "test-0",
+        )
+        estimate = adapter.estimate({"asOf": "2026-11-07T12:00:00.000Z"})
+        self.assertIsNone(estimate["saleProbability"])
+        self.assertEqual(estimate["saleProbabilityReason"], "not_identified")
 
     def test_a_model_that_returns_the_wrong_shape_is_refused(self) -> None:
         adapter = PricingModelAdapter()

@@ -10,13 +10,16 @@ from __future__ import annotations
 from typing import Iterable, Sequence
 
 # The six buckets are frozen by API_CONTRACT.md: lower bound inclusive, upper
-# bound exclusive, toBps None means open-ended.
+# bound exclusive, toBps None means open-ended. The range labels carry U+2013
+# EN DASH between the bounds, exactly as the contract's table prints them and
+# as the frontend's own fixtures write them; they are escaped here so a hyphen
+# cannot creep back in unnoticed.
 MARKUP_BUCKETS: tuple[tuple[str, int, int | None], ...] = (
     ("At or below face", -10_000, 1),
-    ("0-25%", 1, 2_500),
-    ("25-50%", 2_500, 5_000),
-    ("50-100%", 5_000, 10_000),
-    ("100-200%", 10_000, 20_000),
+    ("0\u201325%", 1, 2_500),
+    ("25\u201350%", 2_500, 5_000),
+    ("50\u2013100%", 5_000, 10_000),
+    ("100\u2013200%", 10_000, 20_000),
     ("Over 200%", 20_000, None),
 )
 

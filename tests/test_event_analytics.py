@@ -1,10 +1,13 @@
-"""EventAnalytics over the fixture store, against arithmetic done by hand.
+"""EventAnalytics over the fixture store, against arithmetic recomputed from the rows.
 
-The point of this file is the multi-tier case: the same four sales produce
-avgMarkupBps = 563 when each sale is measured against its own tier face, and
-3125 if someone divides the average price by the event's lowest face. The test
-asserts both numbers and that they are different, so the contract's warning is
-enforced rather than commented on.
+The point of this file is the multi-tier case: a sale on a tier that is not the
+event's cheapest, priced above the cheapest face, reads as a small markup against
+its own tier face and as a large one against the event's lowest face. The test
+computes both numbers itself and asserts the server returns the first, so the
+contract's warning is enforced rather than commented on.
+
+Every expected value is computed from `fixtures/synthetic_store.json` by
+`tests/store_arithmetic.py`; no fixture number is retyped here.
 """
 
 from __future__ import annotations
@@ -12,18 +15,13 @@ from __future__ import annotations
 import unittest
 from datetime import datetime, timezone
 
+from tests import store_arithmetic as arith
 from ticketpath.adapters.ledger_adapter import LedgerAdapter
 from ticketpath.adapters.pricing_model_adapter import PricingModelAdapter
 from ticketpath.adapters.rpc_adapter import RpcAdapter
 from ticketpath.core import event_analytics, ledger_entries
 from ticketpath.errors import ApiError
 from ticketpath.orchestrator import Orchestrator
-
-W4 = "FXTUREacct411111111111111111111111111111111"
-W5 = "FXTUREacct511111111111111111111111111111111"
-W6 = "FXTUREacct611111111111111111111111111111111"
-W7 = "FXTUREacct711111111111111111111111111111111"
-W8 = "FXTUREacct811111111111111111111111111111111"
 
 
 def _orchestrator() -> Orchestrator:
@@ -38,71 +36,91 @@ def _orchestrator() -> Orchestrator:
 
 class TestEventAnalytics(unittest.TestCase):
     def setUp(self) -> None:
-        self.analytics = _orchestrator().event_analytics("evt_fixture_1")
+        self.store = arith.load()
+        self.event = arith.first_event_with_sales(self.store, minimum=3)
+        self.analytics = _orchestrator().event_analytics(self.event["id"])
+        self.expected = arith.event_analytics(self.store, self.event["id"])
 
     def test_totals(self) -> None:
-        self.assertEqual(self.analytics["eventId"], "evt_fixture_1")
-        # the cheapest tier, not a single event-wide face
-        self.assertEqual(self.analytics["faceValueLamports"], 1_000_000_000)
-        # 1_250_000_000 + 1_050_000_000 + 2_050_000_000 + 900_000_000
-        self.assertEqual(self.analytics["totalVolumeLamports"], 5_250_000_000)
-        self.assertEqual(self.analytics["saleCount"], 4)
-        # (0.9, 1.05, 1.25, 2.05) SOL -> (1.05 + 1.25) / 2
-        self.assertEqual(self.analytics["medianResalePriceLamports"], 1_150_000_000)
-        # 3 of 4 issued ticket rows sold at least once
-        self.assertEqual(self.analytics["resoldShare"], 0.75)
-        self.assertEqual(self.analytics["uniqueHolders"], 4)
+        self.assertEqual(self.analytics["eventId"], self.event["id"])
+        self.assertEqual(
+            self.analytics["faceValueLamports"], arith.lowest_face(self.event)
+        )
+        for field in (
+            "totalVolumeLamports",
+            "saleCount",
+            "avgMarkupBps",
+            "medianResalePriceLamports",
+            "resoldShare",
+            "uniqueHolders",
+        ):
+            self.assertEqual(self.analytics[field], self.expected[field], field)
 
     def test_avg_markup_is_per_sale_and_not_derived_from_the_lowest_face(self) -> None:
-        # (2500 + 500 + 250 + -1000) / 4 = 562.5 -> 563
-        self.assertEqual(self.analytics["avgMarkupBps"], 563)
-        # The wrong calculation: mean price 1_312_500_000 over the 1_000_000_000
-        # floor face reads as +3125 bps.
-        wrong = round((5_250_000_000 / 4 - 1_000_000_000) * 10_000 / 1_000_000_000)
-        self.assertEqual(wrong, 3_125)
-        self.assertNotEqual(self.analytics["avgMarkupBps"], wrong)
+        ticket, sale = arith.ticket_with_own_tier_face_above_lowest(self.store)
+        face = arith.face_of(self.store, ticket)
+        lowest = arith.lowest_face(arith.event(self.store, ticket["eventId"]))
+        own = arith.markup_bps(sale["priceLamports"], face)
+        wrong = arith.markup_bps(sale["priceLamports"], lowest)
+        self.assertGreater(wrong, own, "the wrong calculation overstates this sale")
+
+        # And on the event as a whole, the served average is the mean of per-sale
+        # markups, not the mean price divided by the event's lowest face.
+        prices = [row["priceLamports"] for row in arith.sales_for_event(self.store, self.event["id"])]
+        if prices:
+            derived = arith.half_away(
+                (sum(prices) // len(prices) - arith.lowest_face(self.event)) * 10_000,
+                arith.lowest_face(self.event),
+            )
+            self.assertEqual(self.analytics["avgMarkupBps"], self.expected["avgMarkupBps"])
+            if len({tier["faceValueLamports"] for tier in self.event["tiers"]}) > 1:
+                self.assertNotEqual(self.analytics["avgMarkupBps"], derived)
 
     def test_price_series_is_day_bucketed_ascending(self) -> None:
         series = self.analytics["priceSeries"]
-        self.assertEqual([point["date"] for point in series], ["2026-11-02", "2026-11-03", "2026-11-04"])
-        first = series[0]
-        # (1_250_000_000 + 1_050_000_000) / 2
-        self.assertEqual(first["avgPriceLamports"], 1_150_000_000)
-        self.assertEqual(first["saleCount"], 2)
-        # (2500 + 500) / 2
-        self.assertEqual(first["avgMarkupBps"], 1_500)
-        self.assertEqual(series[1]["avgMarkupBps"], 250)
-        self.assertEqual(series[2]["avgMarkupBps"], -1_000)
+        self.assertEqual(series, self.expected["priceSeries"])
+        dates = [point["date"] for point in series]
+        self.assertEqual(dates, sorted(dates))
+        if len(series) > 1:
+            self.assertLess(dates[0], dates[-1])
 
     def test_markup_distribution_has_all_six_buckets_in_order(self) -> None:
         buckets = self.analytics["markupDistribution"]
         self.assertEqual(
             [bucket["label"] for bucket in buckets],
-            ["At or below face", "0-25%", "25-50%", "50-100%", "100-200%", "Over 200%"],
+            [label for label, _, _ in arith.BUCKETS],
         )
-        # -1000 | 250, 500 | 2500 | none | none | none
-        self.assertEqual([bucket["count"] for bucket in buckets], [1, 2, 1, 0, 0, 0])
-        self.assertEqual(buckets[0]["toBps"], 1)
+        self.assertEqual(buckets, self.expected["markupDistribution"])
         self.assertIsNone(buckets[-1]["toBps"])
 
     def test_top_destinations(self) -> None:
         rows = self.analytics["topDestinations"]
-        self.assertEqual([row["wallet"] for row in rows], [W4, W5, W6, W8])
-        self.assertEqual([row["ticketCount"] for row in rows], [1, 1, 1, 1])
-        self.assertEqual([row["acquiredOnSecondary"] for row in rows], [True, True, True, False])
+        self.assertEqual(rows, self.expected["topDestinations"])
+        self.assertLessEqual(len(rows), 12)
         # No wallet has volunteered a region, so the field is null, not a guess.
-        self.assertEqual([row["region"] for row in rows], [None, None, None, None])
+        self.assertEqual([row["region"] for row in rows], [None] * len(rows))
 
     def test_event_with_no_resale_history_is_still_a_real_answer(self) -> None:
-        analytics = _orchestrator().event_analytics("evt_fixture_2")
+        event = arith.event_by_regime(self.store, "cold_start")
+        analytics = _orchestrator().event_analytics(event["id"])
         self.assertEqual(analytics["saleCount"], 0)
         self.assertEqual(analytics["totalVolumeLamports"], 0)
         self.assertIsNone(analytics["avgMarkupBps"])
         self.assertIsNone(analytics["medianResalePriceLamports"])
         self.assertEqual(analytics["resoldShare"], 0.0)
         self.assertEqual(analytics["priceSeries"], [])
-        self.assertEqual([bucket["count"] for bucket in analytics["markupDistribution"]], [0, 0, 0, 0, 0, 0])
-        self.assertEqual(analytics["topDestinations"][0]["wallet"], W7)
+        self.assertEqual(
+            [bucket["count"] for bucket in analytics["markupDistribution"]], [0, 0, 0, 0, 0, 0]
+        )
+        self.assertEqual(len(analytics["topDestinations"]), analytics["uniqueHolders"])
+
+    def test_event_with_nothing_issued_answers_with_empty_lists(self) -> None:
+        event = arith.event_by_regime(self.store, "nothing_issued")
+        analytics = _orchestrator().event_analytics(event["id"])
+        self.assertEqual(analytics["saleCount"], 0)
+        self.assertEqual(analytics["resoldShare"], 0.0)
+        self.assertEqual(analytics["uniqueHolders"], 0)
+        self.assertEqual(analytics["topDestinations"], [])
 
     def test_unknown_event_is_a_404(self) -> None:
         with self.assertRaises(ApiError) as caught:

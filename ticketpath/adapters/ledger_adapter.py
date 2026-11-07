@@ -14,6 +14,7 @@ change cannot quietly turn into a wrong number three layers up.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -243,6 +244,24 @@ class LedgerAdapter:
         """Raw ledger rows for one ticket, chronological."""
         return list(self._entries_by_ticket.get(ticket_id, []))
 
+    def raw_ledger(self) -> list[dict]:
+        """Every ledger row, unshaped and uncut. The feature module applies the cut.
+
+        Unshaped on purpose: `EventAnalytics` and `ResaleStats` are whole-history
+        aggregates with no stated as-of, so the engine reads rows and computes its own
+        counts at its own cut (03-b section 4 T2).
+        """
+        return [dict(row) for row in self._ledger]
+
+    def raw_sales_for_event(self, event_id: str) -> list[dict]:
+        """Priced rows for one event, still raw. Used to prove the engine reads rows."""
+        ticket_ids = {row["id"] for row in self._tickets if row["eventId"] == event_id}
+        return [
+            dict(row)
+            for row in self._ledger
+            if row["ticketId"] in ticket_ids and row["kind"] == "sale" and row["priceLamports"] is not None
+        ]
+
     def raw_entries_for_event(self, event_id: str) -> list[dict]:
         """Raw ledger rows for every ticket of an event, chronological."""
         ticket_ids = {row["id"] for row in self._tickets if row["eventId"] == event_id}
@@ -266,6 +285,17 @@ class LedgerAdapter:
 
     def wallet_regions(self) -> dict[str, str]:
         return dict(self._regions)
+
+    def build_hash(self) -> str:
+        """SHA-256 of the store file, so a screenshot names the exact store it came from.
+
+        For the empty store there is no file to hash and the digest of the empty string
+        is returned, which is a fact rather than a placeholder.
+        """
+        target = Path(self.origin) if self.mode == "fixture" else None
+        if target is not None and target.exists():
+            return hashlib.sha256(target.read_bytes()).hexdigest()
+        return hashlib.sha256(b"").hexdigest()
 
     @property
     def label(self) -> str:

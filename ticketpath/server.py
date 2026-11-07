@@ -19,13 +19,14 @@ import sys
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Callable
-from urllib.parse import parse_qs, unquote, urlsplit
+from urllib.parse import parse_qs, unquote, urlencode, urlsplit
 
 from ticketpath import __version__
 from ticketpath.adapters.ledger_adapter import LedgerAdapter, StoreError
 from ticketpath.adapters.pricing_model_adapter import PricingModelAdapter
 from ticketpath.adapters.rpc_adapter import RpcAdapter
 from ticketpath.api import analytics, events, health, tickets, wallets
+from ticketpath.console import page as console_page
 from ticketpath.errors import ApiError
 from ticketpath.orchestrator import Orchestrator
 
@@ -38,6 +39,79 @@ MAX_BODY_BYTES = 64 * 1024
 CONTRACT_ENDPOINT_COUNT = 9  # API_CONTRACT.md lists nine routes; /health is ours
 
 Handler = Callable[[Orchestrator, dict, dict, dict | None], tuple[int, dict]]
+
+# The console is served outside ROUTES on purpose: `/` is not a contract endpoint, and
+# counting it in `routesImplemented` would change /health's contract block, which the
+# conformance test pins at ten.
+CONSOLE_PATHS = ("/", "/index.html")
+
+
+def console_index(o: Orchestrator, query: dict, base: str = "") -> tuple[int, str]:
+    """GET / -- the one HTML route. Every control is a query parameter.
+
+    Total by construction: every way this can fail ends in an HTTP status and a rendered
+    page. A pricing exception used to leave the handler thread with no response at all --
+    `curl` reported `HTTP 000`, "Empty reply from server" -- because only `ApiError` was
+    caught here and the call sat outside the handler's own try. A page with a labelled
+    reason is a worse-looking page and a far better answer than no answer.
+    """
+    try:
+        payload = o.price_guidance(
+            event_id=query.get("event"),
+            tier_id=query.get("tier"),
+            as_of=query.get("asOf"),
+            cap_bps=query.get("capBps"),
+            fee_lamports=query.get("feeLamports"),
+            tau=query.get("tau"),
+            show_sim=query.get("sim") == "1",
+            mode=query.get("mode"),
+        )
+    except ApiError as exc:
+        return exc.status, console_page.render_error(
+            status=exc.status, message=exc.message, code=exc.code or "error"
+        )
+    except Exception:  # noqa: BLE001 - a console must answer
+        traceback.print_exc(file=sys.stderr)
+        return 500, _console_failure_page()
+    payload["canonicalUrl"] = canonical_url(payload, base)
+    try:
+        return 200, console_page.render(payload)
+    except Exception:  # noqa: BLE001 - and so must the renderer
+        traceback.print_exc(file=sys.stderr)
+        return 500, _console_failure_page()
+
+
+def _console_failure_page() -> str:
+    """The last resort: a page that names the failure instead of closing the connection."""
+    return console_page.render_error(
+        status=500,
+        message=(
+            "The console could not compute this page. The failure is a defect in the console "
+            "and is not hidden behind a blank page; the traceback is in the server log."
+        ),
+        code="console_error",
+    )
+
+
+def canonical_url(payload: dict, base: str = "") -> str:
+    """The URL that reproduces this state. Percent-encoded with the stdlib, never by hand."""
+    params = {
+        "event": payload["event"]["id"],
+        "tier": payload["selection"]["tierId"],
+        "asOf": payload["asOf"],
+        "capBps": payload["selection"]["capBpsCandidate"]["value"],
+        "feeLamports": payload["selection"]["feeLamports"]["value"],
+        "tau": payload["selection"]["tau"]["value"],
+    }
+    # The decision instant is part of the state, so it is part of the URL. The default is
+    # left out and every other mode is written down.
+    mode = payload.get("selection", {}).get("mode") or (payload.get("decisionMode") or {}).get("mode")
+    if mode and mode != "counterfactual":
+        params["mode"] = mode
+    if payload.get("sim"):
+        params["sim"] = 1
+    kept = {key: value for key, value in params.items() if value is not None}
+    return f"{base}/?{urlencode(kept)}"
 
 # (method, template segments, handler). A segment starting with ":" binds a path value.
 ROUTES: tuple[tuple[str, tuple[str, ...], Handler], ...] = (
@@ -106,6 +180,11 @@ class TicketpathHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802 - http.server's naming
         self._handle("GET")
 
+    def do_HEAD(self) -> None:  # noqa: N802
+        # A server-rendered page answers HEAD like GET, headers and all, with no body. It
+        # used to be 501 with Python's default error page: a different page to curl -I.
+        self._handle("HEAD")
+
     def do_POST(self) -> None:  # noqa: N802
         self._handle("POST")
 
@@ -116,8 +195,29 @@ class TicketpathHandler(BaseHTTPRequestHandler):
 
     def _handle(self, method: str) -> None:
         split = urlsplit(self.path)
+        head_only = method == "HEAD"
+        read_method = "GET" if head_only else method
         try:
-            handler, extra = match(method, split.path)
+            if split.path == "/favicon.ico":
+                self._send(204, None, head_only=head_only)
+                return
+            if split.path in CONSOLE_PATHS:
+                if read_method != "GET":
+                    # A console page has one verb. 405, not 404: the route exists, and the
+                    # answer is the same rendered page an error state gets.
+                    message = f"{method} is not allowed here; allowed: GET, HEAD"
+                    self._send_text(
+                        405,
+                        console_page.render_error(status=405, message=message, code="method_not_allowed"),
+                        head_only=head_only,
+                    )
+                    return
+                query = {key: values[0] for key, values in parse_qs(split.query, keep_blank_values=True).items()}
+                host, port = self.server.server_address[:2]
+                status, html = console_index(self.orchestrator, query, base=f"http://{host}:{port}")
+                self._send_text(status, html, head_only=head_only)
+                return
+            handler, extra = match(read_method, split.path)
             if handler is None:
                 if extra:
                     raise ApiError(
@@ -129,14 +229,14 @@ class TicketpathHandler(BaseHTTPRequestHandler):
             query = {key: values[0] for key, values in parse_qs(split.query, keep_blank_values=True).items()}
             body = self._read_json_body() if method == "POST" else None
             status, payload = handler(self.orchestrator, extra, query, body)
-            self._send(status, payload)
+            self._send(status, payload, head_only=head_only)
         except ApiError as exc:
-            self._send(exc.status, exc.payload())
+            self._send(exc.status, exc.payload(), head_only=head_only)
         except (BrokenPipeError, ConnectionResetError):
             return
         except Exception:  # noqa: BLE001 - a server must not die on one request
             traceback.print_exc(file=sys.stderr)
-            self._send(500, {"message": "internal server error", "status": 500, "code": "internal"})
+            self._send(500, {"message": "internal server error", "status": 500, "code": "internal"}, head_only=head_only)
 
     def _read_json_body(self) -> dict | None:
         length_header = self.headers.get("content-length")
@@ -161,23 +261,51 @@ class TicketpathHandler(BaseHTTPRequestHandler):
             raise ApiError(400, "request body must be a JSON object", "body_invalid")
         return parsed
 
-    def _send(self, status: int, payload: dict | None) -> None:
+    def _send_text(self, status: int, html: str, head_only: bool = False) -> None:
+        """One HTML response. Same headers, one content type, no serialiser."""
+        body = html.encode("utf-8")
+        self.send_response(status)
+        self.send_header("content-type", "text/html; charset=utf-8")
+        self.send_header("content-length", str(len(body)))
+        self.send_header("cache-control", "no-store")
+        self.send_header("x-ticketpath-version", __version__)
+        self.end_headers()
+        if body and not head_only:
+            self.wfile.write(body)
+
+    def _send(self, status: int, payload: dict | None, head_only: bool = False) -> None:
         body = b"" if payload is None else json.dumps(payload, ensure_ascii=False, indent=None).encode("utf-8")
         self.send_response(status)
         self.send_header("content-type", "application/json; charset=utf-8")
         self.send_header("content-length", str(len(body)))
         self.send_header("access-control-allow-origin", self.allow_origin)
-        self.send_header("access-control-allow-methods", "GET, POST, OPTIONS")
+        self.send_header("access-control-allow-methods", "GET, HEAD, POST, OPTIONS")
         self.send_header("access-control-allow-headers", "content-type")
         self.send_header("access-control-max-age", "600")
         self.send_header("cache-control", "no-store")
         self.send_header("x-ticketpath-version", __version__)
         self.end_headers()
-        if body:
+        if body and not head_only:
             self.wfile.write(body)
 
     def log_message(self, format: str, *args) -> None:  # noqa: A002 - base signature
         sys.stderr.write(f"{self.address_string()} {format % args}\n")
+
+
+# What the thing behind the pricing seam is, in the words /health must use. One copy, so the
+# server and the test that pins the health block cannot drift apart. It is not a model: it is
+# a rule-based bounded estimator over the recorded resale trail, and `fitted: False` is how a
+# reader of /health alone learns that no calibration stands behind the number.
+ENGINE_DESCRIPTION = {
+    "kind": "rule-based-bounded-estimator",
+    "fitted": False,
+    "note": (
+        "The engine seam is populated by a rule-based bounded estimator with no fitted "
+        "model behind it. The number is bounded arithmetic over the recorded resale "
+        "trail, computed by ticketpath.core; nothing was trained, calibrated or "
+        "validated against real ticket data."
+    ),
+}
 
 
 def build_orchestrator() -> Orchestrator:
@@ -185,12 +313,17 @@ def build_orchestrator() -> Orchestrator:
     cluster = os.environ.get("TICKETPATH_CLUSTER", DEFAULT_CLUSTER).strip()
     if cluster not in CLUSTERS:
         raise StoreError(f"TICKETPATH_CLUSTER must be one of {CLUSTERS}, got {cluster!r}")
-    return Orchestrator(
+    pricing_model = PricingModelAdapter()
+    engine = Orchestrator(
         ledger=LedgerAdapter.from_env(),
         rpc=RpcAdapter.from_env(cluster),
-        pricing_model=PricingModelAdapter(),
+        pricing_model=pricing_model,
         cluster=cluster,
     )
+    # The engine exists, so the seam says so: /health reporting "no model registered"
+    # while the console prices would be the health block lying about the product.
+    pricing_model.register(engine.engine_model, "engine-2026-11-07", **ENGINE_DESCRIPTION)
+    return engine
 
 
 def resolve_port(explicit: int | None = None) -> int:

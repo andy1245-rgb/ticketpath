@@ -257,3 +257,159 @@ Server restarted on 8788 (job `jmw6deauo2ez7`); 8787 untouched. Left as found: t
 wrapper-not-value mistake in `_refusal_fields`' `cap_would_refuse` branch, which no payload
 in this build reaches, and the registry's `{n} sales` wording, which reads `1 sales` at
 `?event=evt_syn_01&asOf=2026-10-01T00:00:00Z`; both are outside this pass's brief.
+
+## 2026-11-07T12:45Z — the independent review's fix list (sections 3, 4, 6), worked in order
+
+**Scope:** `ticketpath/` and `tests/` only, plus two read-only check scripts under `tools/`.
+No commit, no push, no change to `../ticketing-frontend`, no touch to 8787 or the fleet's
+trees, no new dependency (stdlib only). The server on 8788 was restarted (`jmw6eaabld0g6`)
+and every URL below was fetched from it. Suite: **352 tests, OK** — 309 before, 43 new in
+`tests/test_console_fixes.py`. `python3 tools/console-check.py` re-checks all sixteen URLs
+and the label claims against the live page and prints `FAILURES: 0`;
+`python3 tools/console-check-stores.py` does the same for the three malformed stores.
+
+### 1. The console is total (review C1, C5, C8)
+
+- **`console_index` moved inside the handler's try** (`server.py:167` was outside the
+  `try` at 170) **and catches `Exception`**, so a pricing failure ends in a status and a
+  page. Only `ApiError` was caught before; anything else left the thread with no response.
+  - before: `curl` → `HTTP 000`, "Empty reply from server"
+  - after: `500`, `text/html`, `[REFUSED] 500 console_error: The console could not compute
+    this page…`, traceback on stderr only
+  - held by `TestTheConsoleIsTotal.test_a_pricing_exception_renders_a_labelled_page_not_an_empty_reply`
+    and `…test_the_handler_catches_the_console_too`
+- **Three loader-valid stores now refuse with a typed reason** instead of raising:
+  a zero-priced sale (`price_features.FeatureError("sale_not_priced")`, was `math.log(0/face)`),
+  a sale after the event started (`sale_after_event_start`, was `ValueError`), an event with
+  no tiers (`event_has_no_tier`, was `IndexError` at `orchestrator.py:316`). All three render
+  the error page with status 422 and the code on it.
+  - before: HTTP 000 for each; after: 422 + a page + the code
+  - held by `…test_a_zero_priced_sale_refuses_with_a_typed_reason`,
+    `…test_a_sale_after_the_event_started_refuses_with_a_typed_reason`,
+    `…test_an_event_with_no_tier_refuses_with_a_typed_reason`,
+    `…test_a_malformed_store_still_answers_over_a_socket`
+- **The tierless event no longer takes the default page out**: `default_selection` skips an
+  event with no tiers when another event has one
+  (`…test_the_tierless_event_does_not_break_the_default_page`).
+
+### 2. The two renderer fixes on the judge path (review C2, C3) — kept, now pinned
+
+Both were already in the working tree; each has its own regression test so a revert fails:
+
+- `capViolations["of"]` goes through `value_of`, so it prints a count.
+  before: `9 of {'value': 9, 'badge': 'FIXTURE', …} recorded sales` ·
+  after: `9 of 9 recorded sales` — `…test_the_cap_violation_sentence_prints_counts_not_wrappers`
+- `insufficient_marks` renders with its count, badged.
+  before: `[REFUSED] insufficient_marks: {n} sales is too few…` ·
+  after: `[REFUSED] insufficient_marks: [FIXTURE] 0 sales is too few to fit a path, so no
+  path is quoted.` — `…test_the_insufficient_marks_refusal_fills_and_badges_its_count`
+- The same sentence promised "the flat line below", and no path is drawn anywhere in the
+  console (I did not add one). The sentence was changed, not the test:
+  after: `…sales is too few to fit a path, so no path is quoted.`
+  — `…test_the_insufficient_marks_sentence_promises_nothing_that_is_not_drawn`
+
+### 3. Every label true (review 3.2–3.9)
+
+Each is a sentence change, not a number change. No computed value moved.
+
+| defect | before | after | test |
+|---|---|---|---|
+| A1 said "on this event", printed the tier's count (strip 14, A1 6 on `evt_syn_01`) | "On this event the ledger records **6** sales." | "In this tier the ledger records 6 sales. The sale rate above is this tier's own: its sales over its ticket-days at risk." | `TestA1CountsTheTierAndSaysSo` (3) |
+| strip and market disagreed about resales (12 vs 9 on the default page) | strip `12 resales on this event` · market `sales 9` with no scope | strip `[FIXTURE] 12 resales on this event` · market `in this tier [FIXTURE] 9 sales of [FIXTURE] 12 on this event` | `…test_the_strip_and_the_market_block_agree_on_the_event_count` |
+| A13 said the cold band was "the spread across 5 other events" | "…so the band is the spread across 5 other events and has not been checked against what those events sold for." | "…so the band is the declared literature prior on the log price-to-face ratio, widened by the declared τ on each side. It is not a spread measured across other events, and it has not been checked against a single sale here." | `TestA13NamesTheBandItUses` (2) |
+| A17 said "completed" but counted started events, and two blocks printed two numbers (5 and One on one screen) | cold block `5 events have completed`, refusal panel `One event has completed` | both print the same completed count: `2 events have completed in the observation window and 5 have any resale activity` twice at `asOf=2026-11-21T23:30Z` | `TestA17CountsCompletedEventsOnce` (2) |
+| A2/A16 talked about a ceiling on an uncapped event | "the resale cap gives a ceiling" + "at the ceiling 0 — At the cap" on `evt_syn_04` | "…This event has no resale cap, so no ceiling enters the bound." and the market line says "This event has no resale cap, so there is no ceiling to count against." `P_CAP_FORWARD` is no longer printed there either | `TestACapIsOnlyMentionedWhereOneExists` (2) |
+| zero-sale rate presented as a fixture measurement with a basis that contradicted it | `[FIXTURE]` rate 7.6 · basis "0 sales over 131.4 ticket-days at risk" · "On this event the ledger records 0 sales. The sale rate is 7.6 …" | `[DECLARED] 7.6 per 1,000 ticket-days` · basis "0 sales over 131.4 ticket-days at risk; posterior mean of the declared Gamma(1, 1) prior on the transaction rate" · "In this tier the ledger records no sale. The rate above is not measured from the record: it is the posterior mean of the declared Gamma(1, 1) prior over the ticket-days at risk, so it falls as that exposure grows and it is not zero." | `TestTheZeroSaleRateIsNotAMeasuredRate` (2) |
+| `no_fee_model` printed when a fee was set | `[REFUSED] no_fee_model: No fee model is configured.` with `feeLamports=50000000` | the refusal is emitted only when no fee is set; with a fee the net line renders: `[EXACT] Net to the seller per ticket: 1.33 SOL after the declared fee of 0.05 SOL.` | `TestTheFeeControlIsHonest` (3) |
+| "under the deployed program" contradicted the banner (review 3.8) | "…above this cap; under the deployed program those transfers would have failed…" | "…above this cap; had this cap been enforced, those transfers would have failed…" (registry and page, one wording) | `?capBps=0` in `tools/console-check.py` |
+
+### 4. The decision instant, decided and implemented (review 2.8, D1; fix-list item 4)
+
+Two modes, both reachable from the control and the URL, and neither silent:
+
+- **COUNTERFACTUAL is the default** for every event, completed or not:
+  `[UNVALIDATED] Decision mode: COUNTERFACTUAL. This page recomputes the value from this
+  event's own completed record: this is not a price you could have set; it is what the record
+  implies in hindsight.` — with `Event … · status on_sale · starts 2026-11-21T23:00:00.000Z ·
+  ends … · decision instant 2026-11-07T12:00:00.000Z` immediately beneath it, in a dark
+  banner with an 8px red rule.
+  before: `[UNVALIDATED] Recommended primary price: at least 1.38 SOL per ticket, General
+  tier.` and no statement anywhere of which record produced it or when.
+- **BEFORE-ON-SALE** (`?mode=before_on_sale`) withholds this event's own ledger and ticket
+  rows (`price_features.build(use_own_rows=False)`, `cross_section(own_record_excluded=…)`):
+  only other events' completed resale records and this event's metadata enter. On this
+  fixture the value block is then the pooled prior over the four other events with resale
+  (`A13_POOLED` names the count and the centre), the primary price refuses
+  (`no_resale_record`, because a pooled prior is not a record), and the market block says
+  `No ticket had been issued at this instant`. With nothing to pool the whole value block
+  refuses: `[REFUSED] No other event on this platform has a resale record, so there is
+  nothing to pool for a before-on-sale value and we will not state one.`
+  - held by `TestTheDecisionInstantIsExplicit` (7 tests: default label, completed event,
+    unmissable placement, before-on-sale reachable and own record excluded, no-pool refusal,
+    canonical URL and control, `mode_invalid` is a 400 and not a silent default)
+
+### 5. The [EXACT] line is exact at its displayed precision (review 2.10, M10)
+
+- before: `[EXACT] ceiling 1.12 SOL = face 0.90 SOL plus a cap of 25% — integer arithmetic on the
+  tier face.` (0.90 × 1.25 = 1.125, so the equality was false as printed)
+- after: `[EXACT] ceiling 1,125,000,000 lamports = face 900,000,000 lamports × (10,000 + 2500) /
+  10,000 — integer arithmetic on the tier face, not an estimate. That is exactly 1.125 SOL.`
+- Floors and ceilings print through `units.sol_exact`, which trims zeros from the exact decimal
+  instead of rounding to two places, so the `at least` headline reads `at least 1.125 SOL`.
+- held by `TestTheExactLineIsExact.test_the_ceiling_is_printed_in_lamports_with_its_own_multiplication`
+  and `…test_every_binding_event_prints_an_equality_that_holds`, which parses the printed
+  numbers back and re-does the multiplication.
+
+### 6. The ticket count is cut-aware (review 3.9, C4)
+
+- `price_features.build` counts issue rows at the cut for the strip, for `issuedCount` and for
+  `sellThrough` (which feeds `netRevenue.perTier`); the store's own field stays available as
+  `storeTickets` and is named in the basis.
+- before: `?event=evt_syn_02&asOf=2026-09-01T00:00:00Z` → `[FIXTURE] 12 tickets` while the same
+  page said `No ticket had been issued at this instant`
+- after: `[FIXTURE] 0 tickets`, with the basis `tickets with an issue row at or before the cut;
+  12 ticket rows exist in the store`
+- held by `TestTheTicketCountIsCutAware` (3), one of which recounts the issue rows by hand.
+
+### 7. Fee arithmetic (review C7)
+
+- integer arithmetic: `gross = (recommended * (10000 - bps) + 5000) // 10000`, then subtract the
+  per-ticket fee in lamports; no float anywhere on the net path
+- `MAX_FEE_LAMPORTS = 10**15`; past it the page is a 400 `fee_invalid` instead of a 21-digit net
+- a negative net is a state, not a price with a minus in front of it:
+  `[REFUSED] The declared fee of 5 SOL per ticket is larger than the recommended price of 1.38
+  SOL, so a sale at that price would leave the seller short by 3.62 SOL per ticket. A negative
+  net is not a price, so the line is refused rather than printed as one.`
+- held by `TestTheFeeArithmetic` (4).
+
+### 8. Headers and methods (review C6)
+
+- `HEAD /` mirrors `GET /`: 200, `text/html`, the same `content-length`, no body (was 501 with
+  Python's default error page and the interpreter version in `Server`)
+- `POST /` is 405 with the rendered error page (was 404); an unknown path is still 404
+- held by `TestMethodsAndHeaders` (3).
+
+### Verified surfaces
+
+`python3 -m unittest discover -s tests -t .` → **352 tests, OK**. Live on
+`http://127.0.0.1:8788`: cold start, default page, `evt_syn_04` (uncapped), `evt_syn_07`,
+`capBps=0`, cut before the first issue, `evt_syn_06` (completed), `mode=before_on_sale`,
+a fee, a fee above the price, `sim=1`, `mode=nonsense` (400), `capBps=nope` (400),
+`evt_nope` (404), `HEAD /` (200), `POST /` (405) — all sixteen answer, all render a page,
+and every label check passes. Three malformed stores over a socket: 422 with
+`sale_not_priced`, `sale_after_event_start`, `event_has_no_tier`, each a rendered page.
+
+### What I did not fix, and why
+
+- **Review 3.11, badge placement inside prose.** A19's "8 of 9 (88.9%)" and the counts in the
+  A1 sentence still sit in a paragraph whose badge is the block's, not the number's. It is
+  outside the ranked fix list and it is not a false label (the same counts are printed with
+  `[FIXTURE]` in the market block on the same screen). Fixing it means turning every
+  count-bearing sentence into marker-substituted spans, which changes the page's badge model
+  that `tests/test_console_page.py` enforces; that is a page rewrite, not this pass.
+- **Review 5.2, the candidate cap is not passed to `primary_optimum`.** Also outside the
+  ranked list, and it changes the recommendation on `capBps=0` — a product decision, not a
+  label fix. Left as found and named here.
+- **Review C8, the store validator vs the core.** The console now refuses the three rows
+  cleanly, but `LedgerAdapter._validate` still accepts them; making the loader reject them
+  would take the server down at load instead of on the page, so it needs its own pass.

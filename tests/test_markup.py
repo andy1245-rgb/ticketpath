@@ -58,16 +58,23 @@ class TestBuckets(unittest.TestCase):
     def test_bounds_are_inclusive_lower_exclusive_upper(self) -> None:
         self.assertEqual(markup.bucket_of(-10_000), "At or below face")
         self.assertEqual(markup.bucket_of(0), "At or below face")
-        self.assertEqual(markup.bucket_of(1), "0-25%")
-        self.assertEqual(markup.bucket_of(2_499), "0-25%")
-        self.assertEqual(markup.bucket_of(2_500), "25-50%")
+        self.assertEqual(markup.bucket_of(1), "0\u201325%")
+        self.assertEqual(markup.bucket_of(2_499), "0\u201325%")
+        self.assertEqual(markup.bucket_of(2_500), "25\u201350%")
         self.assertEqual(markup.bucket_of(20_000), "Over 200%")
 
     def test_all_six_buckets_in_order_even_when_empty(self) -> None:
         buckets = markup.markup_distribution([])
         self.assertEqual(
             [bucket["label"] for bucket in buckets],
-            ["At or below face", "0-25%", "25-50%", "50-100%", "100-200%", "Over 200%"],
+            [
+                "At or below face",
+                "0\u201325%",
+                "25\u201350%",
+                "50\u2013100%",
+                "100\u2013200%",
+                "Over 200%",
+            ],
         )
         self.assertEqual([bucket["count"] for bucket in buckets], [0, 0, 0, 0, 0, 0])
         self.assertEqual(buckets[0]["fromBps"], -10_000)
