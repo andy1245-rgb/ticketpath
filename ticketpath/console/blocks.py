@@ -11,6 +11,7 @@ import re
 from typing import Mapping
 
 from ticketpath.core import labels
+from ticketpath.core.timeutil import TimestampError, parse
 from ticketpath.console.units import (
     bps_text,
     esc,
@@ -102,25 +103,66 @@ def decision_mode(payload: Mapping) -> list[str]:
     Two modes and no third. The counterfactual carries the required sentence verbatim, and
     both modes carry the event's status and dates, so a hindsight recomputation can never be
     read as a price that was set.
+
+    The status is the store's *current* field and cannot follow the instant, so where the two
+    disagree the line says so instead of printing the field as the cut's, and the mode whose
+    premise is "before the first issue" says when the instant is too late for that premise
+    (N8, 10-final-review).
     """
     mode = payload.get("decisionMode") or {}
     sentence = labels.render(mode.get("labelId") or "P_MODE_COUNTERFACTUAL")
     badge = "[UNVALIDATED]" if mode.get("mode") == "counterfactual" else "[DECLARED]"
-    return [
+    out = [
         f'<p class="mode">{badge} <strong>{esc(sentence)}</strong></p>',
         f'<p class="mode-detail">{esc(_mode_event_line(payload, mode))}</p>',
     ]
+    late_premise = mode.get("usesOwnRecord") is False and _ended_before(
+        mode.get("eventStatus"),
+        _ends_at(payload, mode),
+        mode.get("asOf") or payload["asOf"],
+    )
+    if late_premise:
+        out.append(f'<p class="mode-detail">{esc(labels.render("P_MODE_BEFORE_LATE"))}</p>')
+    return out
+
+
+def _ends_at(payload: Mapping, mode: Mapping) -> str | None:
+    return mode.get("eventEndsAt") or payload["event"].get("endsAt")
+
+
+def _ended_before(status: str | None, ends_at: str | None, as_of: str | None) -> bool:
+    """True when the record's status says the event is ahead and the dates say it is over.
+
+    Only what the dates decide is claimed: an instant after a recorded end means the event
+    had ended. A store with no `endsAt`, or a status that is about supply rather than time
+    (`sold_out`), is not a contradiction and prints the plain line.
+    """
+    if not ends_at or not as_of or status not in ("draft", "on_sale"):
+        return False
+    try:
+        return parse(as_of) > parse(ends_at)
+    except TimestampError:
+        return False
 
 
 def _mode_event_line(payload: Mapping, mode: Mapping) -> str:
     event = payload["event"]
+    status = mode.get("eventStatus") or event.get("status") or "unknown"
+    starts_at = mode.get("eventStartsAt") or event["startsAt"]
+    ends_at = _ends_at(payload, mode)
+    as_of = mode.get("asOf") or payload["asOf"]
+    label_id = (
+        "P_MODE_EVENT_ENDED"
+        if _ended_before(status, ends_at, as_of)
+        else "P_MODE_EVENT"
+    )
     return labels.render(
-        "P_MODE_EVENT",
+        label_id,
         name=event["name"],
-        status=mode.get("eventStatus") or event.get("status") or "unknown",
-        startsAt=mode.get("eventStartsAt") or event["startsAt"],
-        endsAt=mode.get("eventEndsAt") or "not recorded",
-        asOf=mode.get("asOf") or payload["asOf"],
+        status=status,
+        startsAt=starts_at,
+        endsAt=ends_at or "not recorded",
+        asOf=as_of,
     )
 
 
@@ -240,11 +282,13 @@ def _net_line(payload: Mapping, tier: Mapping) -> str:
 
 
 def _cap_refusal_headline(payload: Mapping, tier: Mapping) -> str:
-    """The decision line when the page's own cap forbids the price the record supports.
+    """The decision line when the page's own cap sits below the price the record supports.
 
     No number replaces it. The ceiling is printed because it is the cap's own arithmetic and
-    a reader can check it; the recommendation is not, because the cap forbids it, and a
-    ceiling dressed as a primary price is the thing `A10` forbids the engine to say.
+    a reader can check it; the recommendation is not, because a ceiling dressed as a primary
+    price is the thing `A10` forbids the engine to say, and because the resales this record
+    prices from would be illegal under a cap this tight. The cap is a rule about resale, not
+    a limit on what the organizer may charge (11-cap-capture-check §10.1).
     """
     return f'<p class="headline">[REFUSED] {_cap_refusal(payload, tier)}</p>'
 
@@ -398,6 +442,34 @@ def _trim(value) -> str:
     return text[:-2] if text.endswith(".0") else text
 
 
+def _tier_sales_scope(market: Mapping, payload: Mapping) -> str:
+    """`in this tier N sales of M on this event`, and the tier's own excluded count.
+
+    Both zeros on the before-on-sale page are the mode's, not the record's: the sale rows are
+    in the store and the decision mode does not read them. The strip says so at event scope
+    (`12 recorded on this event are excluded by the mode`); the block is the tier's sentence,
+    so it carries the tier's count, from the same scan of the same rows. Without it the two
+    figures were about one event and one tier and neither said which (11-final, item 5).
+
+    The count prints only when it is non-zero: a tier with no rows of its own has no excluded
+    rows either, and `0 recorded sales in this tier are excluded` would be a clause about
+    nothing.
+    """
+    scope = (
+        f'in this tier {num(market["sales"])} {plural(value_of(market["sales"]), "sale")} of '
+        f'{num(market["eventSales"])} on this event'
+    )
+    mode = payload.get("decisionMode") or {}
+    if mode.get("usesOwnRecord") is not False:
+        return scope
+    count = mode.get("excludedTierResales")
+    if not count or not value_of(count):
+        return scope
+    label_id = "P_MARKET_EXCLUDED_TIER_ONE" if value_of(count) == 1 else "P_MARKET_EXCLUDED_TIER"
+    clause = _sentence(label_id, {} if label_id == "P_MARKET_EXCLUDED_TIER_ONE" else {"n": num(count)})
+    return f"{scope} · {clause}"
+
+
 def market(payload: Mapping) -> str:
     """The market block, scoped out loud.
 
@@ -429,8 +501,7 @@ def market(payload: Mapping) -> str:
         noun = "at the recorded ceiling " if in_force != recorded else "at the ceiling "
         ceiling_clause = f'{noun}{num(market["atCeilingCount"])} — {esc(labels.render("A16"))}'
     out.append(
-        f'<p>in this tier {num(market["sales"])} {plural(value_of(market["sales"]), "sale")} of '
-        f'{num(market["eventSales"])} on this event · '
+        f'<p>{_tier_sales_scope(market, payload)} · '
         f'median markup {bps_text(market["medianMarkupBps"], trim=False)} · '
         f'mean markup {bps_text(market["meanMarkupBps"], trim=False)} · '
         f'{ceiling_clause}</p>'

@@ -61,12 +61,26 @@ def _excluded_own_counts(tickets, ledger, event_id: str, cut: datetime) -> dict:
     event's own record. Without it the page printed `0 resales` and `0 tickets` for a store
     that holds 12 of each, which reads as an absent record rather than as an excluded one
     (08-fix-verification 3.1/R1, 10-final-review N4).
+
+    The same count is kept per tier, because the market block is scoped to one tier and its
+    `0 sales of 0 on this event` was the event-scoped fact printed in a tier-scoped sentence:
+    the two zeros are the mode's, and the rows that produce them are in this tier (11-final,
+    item 5). The per-tier counts are read off the same ticket rows, so the tier figure can
+    never disagree with the tier's own `sales` count about which rows exist.
     """
-    own = {ticket["id"] for ticket in tickets if ticket["eventId"] == event_id}
+    tier_of = {ticket["id"]: ticket["tierId"] for ticket in tickets if ticket["eventId"] == event_id}
+    own = set(tier_of)
     at_cut = [row for row in ledger if row["ticketId"] in own and parse(row["occurredAt"]) <= cut]
+    by_tier: dict[str, dict[str, int]] = {}
+    for row in at_cut:
+        if row["kind"] != "sale" or row["priceLamports"] is None:
+            continue
+        bucket = by_tier.setdefault(tier_of[row["ticketId"]], {"resales": 0})
+        bucket["resales"] += 1
     return {
         "resales": sum(1 for row in at_cut if row["kind"] == "sale" and row["priceLamports"] is not None),
         "tickets": len({row["ticketId"] for row in at_cut if row["kind"] == "issue"}),
+        "byTier": by_tier,
     }
 
 
@@ -453,6 +467,10 @@ class Orchestrator:
             # mode excluded is measured here, at the same cut, from the same store, and travels
             # beside the zero that enters the decision.
             excluded=_excluded_own_counts(tickets, ledger, event_id, cut) if not own_rows else None,
+            # The loader's own record of what it would not serve. The served list is what every
+            # number above is computed from, so the store's total can only be printed beside it
+            # by carrying both (N6, 10-final-review).
+            held_back=held_back,
         )
         payload["modelVersion"] = MODEL_VERSION
         payload["provenance"] = {

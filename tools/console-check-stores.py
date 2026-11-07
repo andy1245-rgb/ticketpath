@@ -112,6 +112,21 @@ def ask(url):
         return 0, f"{type(exc).__name__}: {exc}"
 
 
+def store_line(html):
+    """The evidence strip's account of the store, tag-stripped: the total and what was served.
+
+    N6: the noun `in the store` was printed from the served list, so a store of eight events
+    with one held back read `7 events in the store`. The healthy page must now name the
+    store's own total, the served count and that one was withheld.
+    """
+    stripped = re.sub(r"<style>.*?</style>", " ", html, flags=re.S)
+    visible = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", stripped))
+    found = re.search(
+        r"\[FIXTURE\] (\d+) events in the store, \[FIXTURE\] (\d+) served, one held back", visible
+    )
+    return (int(found.group(1)), int(found.group(2))) if found else None
+
+
 def code_of(html):
     visible = re.sub(r"<[^>]+>", " ", html)
     for code in ("sale_not_priced", "sale_after_event_start", "event_has_no_tier", "console_error"):
@@ -161,6 +176,14 @@ for name, data, path, want, healthy_path in CASES:
         print(
             f"{'ok  ' if rest_ok else 'FAIL'} {'  the rest still prices':32s} "
             f"{healthy_path:44s} status={status} page={'<!doctype html>' in body} code={code or '-'}"
+        )
+        served = store_line(body)
+        counted = len(data["events"])
+        counted_ok = served == (counted, counted - 1)
+        failures += 0 if counted_ok else 1
+        print(
+            f"{'ok  ' if counted_ok else 'FAIL'} {'  the store count is the store':32s} "
+            f"file={counted} page={served}"
         )
 
 print("\nFAILURES:", failures)

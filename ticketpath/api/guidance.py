@@ -59,6 +59,7 @@ def build(
     canonical_url: str,
     decision_mode: str = "counterfactual",
     excluded: Mapping | None = None,
+    held_back: Mapping | None = None,
 ) -> dict:
     """The whole console payload. Shape is the spec's; every leaf is labelled.
 
@@ -66,12 +67,19 @@ def build(
     ticket rows and priced sale rows at the cut, counted from the store. It is a count, not
     an input -- the estimator never sees it -- and it exists so the page can say the rows are
     excluded instead of saying there are none.
+
+    `held_back` is what the loader refused to serve at all, by event id, each with its typed
+    reason. The served count and the store's own count differ by exactly this, so both travel
+    to the page: `7 events in the store` was a store total printed from the served list (N6,
+    10-final-review), and the noun could only be made true by naming what was withheld.
     """
     sales = features["event"]["sales"]
     at_ceiling = features["event"]["atCeiling"]
     events_with_resale = int(pooled.get("eventsWithResale", 0))
     events_completed = int(pooled.get("eventsCompleted", pooled.get("eventsInWindow", 0)))
     fee_present = params.get("feeLamports") is not None
+    held_back = dict(held_back or {})
+    events_served = len(events_index)
     tier_payloads = []
     for tier in tiers:
         tier_id = tier["tierId"]
@@ -161,7 +169,16 @@ def build(
                 "lamports",
             ),
         },
-        "decisionMode": _decision_mode(event, as_of, decision_mode, events_with_resale, events_completed, excluded),
+        "decisionMode": _decision_mode(
+            event,
+            as_of,
+            decision_mode,
+            events_with_resale,
+            events_completed,
+            excluded,
+            selected_tier,
+            next((tier["name"] for tier in tiers if tier["tierId"] == selected_tier), None),
+        ),
         "evidence": {
             "resales": county(sales, sales, at_ceiling, events_with_resale, "A1"),
             "tickets": num(
@@ -176,7 +193,23 @@ def build(
                 "A1",
             ),
             "atCeiling": county(at_ceiling, sales, at_ceiling, events_with_resale, "A16"),
-            "eventsOnPlatform": county(len(events_index), sales, at_ceiling, events_with_resale, "A17"),
+            "eventsOnPlatform": county(events_served, sales, at_ceiling, events_with_resale, "A17"),
+            # The store's own total is served plus withheld, and it is the only number the
+            # noun `in the store` may carry. Zero held back is the normal case and the page
+            # prints the one number it always printed.
+            "eventsInStore": county(
+                events_served + len(held_back), sales, at_ceiling, events_with_resale, "A17"
+            ),
+            "eventsHeldBack": num(
+                len(held_back),
+                "FIXTURE",
+                "event rows the loader held back at load, each with its own typed reason",
+                "A17",
+            ),
+            "heldBackReasons": [
+                {"eventId": event_id, "code": reason.get("code") or reason.get("labelId")}
+                for event_id, reason in sorted(held_back.items())
+            ],
             "eventsWithResale": county(events_with_resale, sales, at_ceiling, events_with_resale, "A13"),
             "onchainTransactions": num(
                 1 if chain.get("state") == "verified" else 0,
@@ -224,6 +257,8 @@ def _decision_mode(
     events_with_resale: int,
     events_completed: int,
     excluded: Mapping | None = None,
+    selected_tier: str | None = None,
+    tier_name: str | None = None,
 ) -> dict:
     """The decision instant, on the payload so the page cannot print a number without it.
 
@@ -263,6 +298,24 @@ def _decision_mode(
             f"{excluded['tickets']} ticket rows on this event with an issue row at or before the cut, excluded by the before-on-sale mode",
             "A1",
         )
+        # The same exclusion, scoped to the tier the market block prints. Without it the block
+        # said `0 sales of 0 on this event` inside a sentence that is the tier's, while the
+        # strip above it said 12 rows were being excluded: two scopes, one zero, no clause
+        # saying which zero is which (11-final, item 5).
+        tier_rows = (excluded.get("byTier") or {}).get(selected_tier or "", {})
+        out["excludedTierResales"] = num(
+            tier_rows.get("resales", 0),
+            "FIXTURE",
+            (
+                f"{tier_rows.get('resales', 0)} priced sale rows in this tier at or before the cut, "
+                "excluded by the before-on-sale mode"
+            ),
+            "A1",
+        )
+        out["excludedTierId"] = selected_tier
+        out["excludedTierName"] = tier_name
+    else:
+        out["excludedTierResales"] = None
     return out
 
 

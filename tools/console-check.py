@@ -45,6 +45,7 @@ CASES = [
     ("PUT /", "/", "PUT", 405),
     ("DELETE /", "/", "DELETE", 405),
     ("PATCH /", "/", "PATCH", 405),
+    ("TRACE /", "/", "TRACE", 405),
 ]
 
 fails = []
@@ -175,6 +176,9 @@ check("before: both excluded counts are printed",
 check("before: the no-denominator refusal names the excluded tickets",
       "[FIXTURE] 12 tickets are recorded on this event at this instant, and the BEFORE-ON-SALE "
       "decision mode excludes every one of them" in b)
+check("before: the excluded record is counted in the tier the block is scoped to",
+      "in this tier [FIXTURE] 0 sales of [FIXTURE] 0 on this event \u00b7 "
+      "[FIXTURE] 9 recorded sales in this tier are excluded by the mode" in b)
 check("before: no primary price", "Recommended primary price" not in b)
 check("before: pooled other events named",
       "pooled mean log price-to-face over 4 other events with resale" in b)
@@ -182,6 +186,30 @@ check("before: pooled other events named",
 done = text(body_of("/?event=evt_syn_06"))
 check("completed: counterfactual and status",
       "Decision mode: COUNTERFACTUAL" in done and "status completed" in done)
+
+# The cap refusal is about resale. It said a recommendation above the ceiling was "a price the
+# cap forbids", which reads a proportional cap as an absolute one (11-cap-capture-check 10.1).
+capzero = text(body_of("/?event=evt_syn_01&capBps=0"))
+check("cap refusal: the narrowed claim, not the absolute one",
+      "a price the cap forbids" not in capzero
+      and "decides how the resale price divides, not what the organizer may charge" in capzero)
+check("cap refusal: both numbers unchanged",
+      "[DECLARED] 0 bps" in capzero and "[EXACT] 1,000,000,000 lamports" in capzero)
+
+# A status field that cannot follow the decision instant, on the instant the review named.
+postcut = text(body_of("/?event=evt_syn_02&asOf=2027-06-01T00:00:00Z"))
+check("post-end: the status is named as the loaded field, not the cut's",
+      "status on_sale is the store" in postcut
+      and "current field, not the status at this decision instant" in postcut
+      and "the field and the instant disagree" in postcut)
+check("post-end: the plain line is not printed for this cut", "status on_sale \u00b7 starts" not in postcut)
+check("TRACE on an API route is 405 with the JSON error, not a 501 page",
+      get("/api/events", "TRACE")[0] == 405 and "method_not_allowed" in get("/api/events", "TRACE")[2])
+check("TRACE on a path that does not exist is still 404", get("/nope", "TRACE")[0] == 404)
+
+lated = text(body_of("/?event=evt_syn_02&asOf=2027-06-01T00:00:00Z&mode=before_on_sale"))
+check("post-end before-on-sale: the premise is not claimed as a decision it could have taken",
+      "not a decision that could have been taken at that instant" in lated)
 
 banned = ["under the deployed program", "the flat line below", "{n}", "{'value'"]
 for path in ("/", "/?event=evt_syn_03", "/?event=evt_syn_04", "/?event=evt_syn_07",

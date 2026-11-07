@@ -151,12 +151,15 @@ def recommend(
             "extraLabelIds": ["A13", "A17"],
         }
 
-    # The cap in force is a rule on the recommendation, not only on the recorded sales. It
-    # is the same integer ceiling the store uses, `face * (10000 + cap) // 10000`, and when
-    # it sits below the price this record supports, the recommendation is a price the policy
-    # forbids. The ceiling is not offered in its place: a cap is a ceiling on the resale
-    # price and a floor on value, never a target for the primary price (A10). So the engine
-    # refuses with a typed reason instead of printing a number the cap forbids.
+    # The cap in force is a data-validity rule on the recommendation, not only on the recorded
+    # sales. It is the same integer ceiling the store uses, `face * (10000 + cap) // 10000`, and
+    # when it sits below the price this record supports, the resales behind that price would be
+    # illegal under the policy being tested, so the record cannot support a price under it. The
+    # ceiling is not offered in its place: a cap is a ceiling on the resale price and a floor on
+    # value, never a target for the primary price (A10). The refusal is a statement about the
+    # record, not about what the cap forbids the organizer to charge -- a proportional cap moves
+    # with face and therefore constrains the reseller, not the organizer (11-cap-capture-check
+    # §10.1).
     if cap_bps_candidate is not None:
         candidate_ceiling = face * (10000 + int(cap_bps_candidate)) // 10000
         if recommended > candidate_ceiling:

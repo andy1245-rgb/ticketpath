@@ -1325,3 +1325,136 @@ and unchanged, for the reason in item 3.
    501** (N9) are still there: both are review findings, neither is one of the four, and the brief
    says change nothing else.
 5. **`7 events in the store` on a held-back store** (N6) is untouched for the same reason.
+
+## 2026-11-07T15:30Z — the last four review items and the market block's tier zero
+
+**Scope:** one sentence in `core/labels.py` (item 1, `11-cap-capture-check.md` §10.1); the store
+count on the payload and in the strip (item 2, N6); the mode line and the before-on-sale premise
+(item 3, N8); two verbs in `server.py` (item 4, N9); the tier-scoped excluded count in the market
+block (item 5, the block's `0 sales of 0`). One new test file,
+`tests/test_last_mile_fixes.py`; three checks added and one case added in `tools/console-check.py`;
+one check added per store in `tools/console-check-stores.py`; one field pair added to
+`tests/test_labels.py`'s sample table for the two new sentences; `docs/CONSOLE.md` updated where it
+describes these states. No commit, no push, no frontend touched, 8787 not bound and not contacted,
+no state file, no new dependency, no read or write of the fleet's trees.
+
+**No number moved.** The only arithmetic in this pass is item 5, and it is a count: the number of
+priced sale rows in the selected tier at the cut, read off the same ticket rows the tier's own
+`sales` count is read from. Every other item is prose, a scope noun, or an HTTP status.
+
+**Test count: 408 before, 427 after, all OK.** Conformance 22 OK.
+`python3 tools/console-check.py` against the restarted 8788 → **FAILURES: 0** (23 URL cases, 79
+label checks, 102 checks). `python3 tools/console-check-stores.py` → **FAILURES: 0** (12 checks on
+four held-back stores: the refused page, the healthy page, and the store count on it).
+
+**Revert, demonstrated.** A scratch copy of this tree (`/tmp/tp/scratch`) with the seven touched
+source files restored byte-for-byte from `git show HEAD:` and everything else left as it is:
+`tests.test_last_mile_fixes` → **FAILED (failures=11, errors=6)** of 19 tests. The four that pass
+there are the intended ones: the two item-3 guards (a page whose status and instant agree, and a
+`completed` event at a post-end instant), the guard that the held-back event still refuses by name,
+and the test that the printed ceiling is still `face x (10000+cap)//10000` — that one must pass on
+both trees, because no arithmetic moved in this pass. The same scratch tree
+against the new `tools/console-check.py` (pointed at a scratch server on 8791) → **8 of the new
+checks fail**, including `TRACE /` reporting `501 page=False`. The same tree with the new
+`tools/console-check-stores.py` → **4 of the 4 new store-count checks fail** with `page=None`.
+
+### 1. The cap refusal, narrowed (`11-cap-capture-check.md` §10)
+
+`core/labels.py`, `recommendation_above_cap`, rendered by `blocks._cap_refusal`. No number changed:
+the cap in force and the ceiling are the same two badged numbers in the same two slots.
+
+| URL | before | after |
+|---|---|---|
+| `/?event=evt_syn_01&capBps=0` | `… so no primary price is stated: a recommendation above that ceiling is a price the cap forbids, and the ceiling is not a target for the primary price.` | `… so no primary price is stated. A cap in basis points over face decides how the resale price divides, not what the organizer may charge: it forbids a resale price, and the resales this record prices from would be illegal under this one. The record, not the cap, is what has run out, and the ceiling is not a target for the primary price.` |
+
+The comment above the label, the docstring on `_cap_refusal_headline` and the comment on the check
+in `core/primary_optimum.py` said the same absolute-cap thing in prose; all three now say what §10.1
+says. `[DECLARED] 0 bps` and `[EXACT] 1,000,000,000 lamports` are unchanged, and a test pins the
+ceiling to `face x (10000+cap)//10000` on three event/cap pairs that actually reach the refusal.
+
+### 2. The store's own count, with what was served and what was withheld (N6)
+
+The payload gains `evidence.eventsInStore` (served + held back), `evidence.eventsHeldBack` and
+`evidence.heldBackReasons` (id and typed code, for the JSON); the strip renders them.
+
+| URL | before | after |
+|---|---|---|
+| the fixture with one sale at 0 lamports, `/?event=evt_syn_02` | `[FIXTURE] 7 events in the store, [FIXTURE] 4 with any resale at this instant` | `[FIXTURE] 8 events in the store, [FIXTURE] 7 served, one held back: a sale recorded without money, [FIXTURE] 4 with any resale at this instant` |
+
+A store with nothing held back — every shipped store — prints the line it always printed. The
+withheld reason is given in words and not as the typed code: the code stays in the payload and on
+that event's own page, because `test_console_fixes.py` holds that a page about one event must not
+carry another event's refusal token, and the first cut of this line broke that test. Two held-back
+events read `[FIXTURE] 2 events held back: <reason>; <reason>`.
+
+### 3. The status field and the decision instant (N8)
+
+`blocks._mode_event_line` now compares the store's status with the dates and the instant. Where the
+field says the event is ahead (`draft`, `on_sale`) and the instant is after a recorded end, the
+sentence states both and says they differ; otherwise it is the line it always was. `completed` and
+`sold_out` are not time claims on this record and are left alone.
+
+| URL | before | after |
+|---|---|---|
+| `/?event=evt_syn_02&asOf=2027-06-01T00:00:00Z` | `Event Synthetic Stage: Resale Cap Binds · status on_sale · starts 2026-11-21T23:00:00.000Z · ends 2026-11-22T02:00:00.000Z · decision instant 2027-06-01T00:00:00.000Z.` | `… · status on_sale is the store's current field, not the status at this decision instant · starts … · ends … · decision instant 2027-06-01T00:00:00.000Z. The instant is after the end, so as of it the event had already ended: the field and the instant disagree.` |
+| the same with `&mode=before_on_sale` | the premise `This is the decision as it is taken before this event's first ticket is issued` beside that instant | the premise, then `This decision instant is after the event ended, so this is what the before-on-sale decision would price on the record that exists today, not a decision that could have been taken at that instant.` |
+| `/?event=evt_syn_02` (default clock) | `status on_sale · starts 2026-11-21T23:00:00.000Z` | unchanged |
+
+### 4. `TRACE` and `CONNECT` (N9)
+
+`server.py` gains `do_TRACE` and `do_CONNECT`, both routed through the same `_handle` as `PUT`.
+
+| request | before | after |
+|---|---|---|
+| `TRACE /` | 501, `text/html`, Python's own page: `<title>Error response</title>`, `Message: Unsupported method ('TRACE')`, no banner | 405, the rendered console page: `TRACE is not allowed here; allowed: GET, HEAD`, `method_not_allowed`, banner intact |
+| `TRACE /api/events` | 501 | 405 with the JSON error, `method_not_allowed` |
+| `TRACE /nope` | 501 | 404, the same answer `PUT /nope` gets |
+| `CONNECT /` | 501 | 405, the rendered page; `CONNECT /nope` → 404 |
+
+### 5. The market block's tier zero, and the tier's own excluded count
+
+In the before-on-sale mode the tier's `0 sales` and the event's `0` are both the mode's, and the
+strip above the block names 12 excluded rows at event scope. The block is the tier's sentence, so
+it now carries the tier's count, from the same scan of the same rows (`_excluded_own_counts` keeps
+a per-tier tally; `decisionMode.excludedTierResales` carries the selected tier's).
+
+| URL | before | after |
+|---|---|---|
+| `/?event=evt_syn_02&mode=before_on_sale` | `in this tier [FIXTURE] 0 sales of [FIXTURE] 0 on this event · median markup [REFUSED] not stated · …` | `in this tier [FIXTURE] 0 sales of [FIXTURE] 0 on this event · [FIXTURE] 9 recorded sales in this tier are excluded by the mode · median markup [REFUSED] not stated · …` |
+| `/?event=evt_syn_02&tier=tier_stg_front&mode=before_on_sale` | same, no tier count | `… · [FIXTURE] 3 recorded sales in this tier are excluded by the mode · …` |
+| `/?event=evt_syn_02` (counterfactual) | `in this tier [FIXTURE] 9 sales of [FIXTURE] 12 on this event · …` | unchanged |
+| `/?event=evt_syn_08&mode=before_on_sale` (no rows at all) | no clause | no clause: a tier with no rows has none excluded, and `0 … are excluded` would be a clause about nothing |
+
+### The URLs, checked by hand over HTTP against the restarted server on 8788
+
+`python3 -m ticketpath.server --port 8788` (fixture store, synthetic). The previous instance on
+8788 was stopped and this one started; 8787 was not bound and not contacted. The held-back store was
+checked over a socket by `tools/console-check-stores.py` and by hand on an ephemeral port.
+
+| URL | status | what the page says |
+|---|---|---|
+| `/?event=evt_syn_01&capBps=0` | 200 | the narrowed refusal, `[DECLARED] 0 bps`, `[EXACT] 1,000,000,000 lamports` |
+| `/?event=evt_syn_02&capBps=0` | 200 | same sentence, `[EXACT] 1,200,000,000 lamports` |
+| `/?event=evt_syn_04&capBps=1700` | 200 | uncapped event under a typed cap: unchanged from the 14:49Z pass |
+| `/?event=evt_syn_01&capBps=298` | 200 | band stops at the ceiling in force: unchanged |
+| `/?event=evt_syn_02&asOf=2027-06-01T00:00:00Z` | 200 | status named as the loaded field, and the disagreement stated |
+| `/?event=evt_syn_02&asOf=2027-06-01T00:00:00Z&mode=before_on_sale` | 200 | the same, plus the premise clause |
+| `/?event=evt_syn_02&mode=before_on_sale` | 200 | `[FIXTURE] 9 recorded sales in this tier are excluded by the mode`; strip still 12 at event scope |
+| `/?event=evt_syn_06&asOf=2027-06-01T00:00:00Z` | 200 | `status completed`, no disagreement clause: the field and the instant agree |
+| `/?event=evt_syn_03&asOf=2026-12-31T00:00:00Z` | 200 | cold start after its end: unchanged |
+| `TRACE /`, `CONNECT /` | 405 | rendered page; `TRACE /api/events` 405 JSON; `TRACE /nope` 404 |
+| held-back store, `/?event=evt_syn_02` | 200 | `8 events in the store, 7 served, one held back: a sale recorded without money`; no typed code on the page |
+| held-back store, `/?event=evt_syn_01` | 422 | the refusal for that event, sentence and code, as before |
+
+### What I left, and why
+
+**`/api/events` still lists the seven it serves and says nothing about the eighth (N6's second
+half).** The review asks the API to say the same thing as the page. `GET /api/events` returns
+`Page<Event>`, which is the wire contract in `../ticketing-frontend/lib/types.ts`; a `heldBack`
+field or a second count would be a contract change made without the frontend, and a JSON body has
+no strip to put a sentence in. Item 2 was scoped to the page, so that is where it stops. What a
+caller can already see is consistent: the list is the served list, and asking for a held-back event
+by id returns 422 with its typed reason.
+
+`CONNECT` is now routed like `TRACE` (it was not one of the five items; the review's N9 names both,
+and leaving one verb on the interpreter's 501 page would have been the same defect one word later).

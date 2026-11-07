@@ -201,6 +201,18 @@ class TicketpathHandler(BaseHTTPRequestHandler):
     def do_PATCH(self) -> None:  # noqa: N802
         self._handle("PATCH")
 
+    def do_TRACE(self) -> None:  # noqa: N802
+        # Named in the final review (N9, 10-final-review) as the last verb still answered by
+        # `http.server`'s own 501 page: the same route, the same rendered 405 every other
+        # unserved verb gets, so a judge on a method probe never meets a page without a badge.
+        self._handle("TRACE")
+
+    def do_CONNECT(self) -> None:  # noqa: N802
+        # The other verb the same fix named. A proxy verb on a page server is not a tunnel,
+        # so it gets the route's own answer: 405 on a path that exists, 404 on one that does
+        # not, both rendered. Never the interpreter's 501 with no banner.
+        self._handle("CONNECT")
+
     def do_OPTIONS(self) -> None:  # noqa: N802
         self._send(204, None)
 

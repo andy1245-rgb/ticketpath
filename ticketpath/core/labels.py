@@ -308,6 +308,24 @@ PAGE: Mapping[str, str] = {
         "Event {name} · status {status} · starts {startsAt} · ends {endsAt} · decision "
         "instant {asOf}."
     ),
+    # The status is the store's current field: the schema carries no instant at which a status
+    # changed, so it cannot follow the decision instant. Where the field and the dates disagree
+    # -- a store that still says on_sale for an event whose end is before the instant -- the
+    # page states both and says they differ, rather than printing the field as the cut's (N8,
+    # 10-final-review).
+    "P_MODE_EVENT_ENDED": (
+        "Event {name} · status {status} is the store's current field, not the status at this "
+        "decision instant · starts {startsAt} · ends {endsAt} · decision instant {asOf}. The "
+        "instant is after the end, so as of it the event had already ended: the field and "
+        "the instant disagree."
+    ),
+    # The mode's premise is about an instant before the first issue. On a cut after the end it
+    # would be a false claim about when the decision is taken, so it is said separately.
+    "P_MODE_BEFORE_LATE": (
+        "This decision instant is after the event ended, so this is what the before-on-sale "
+        "decision would price on the record that exists today, not a decision that could "
+        "have been taken at that instant."
+    ),
     "P_NET": (
         "Net to the seller per ticket: {net} SOL after the declared fee of {fee} SOL."
     ),
@@ -339,6 +357,14 @@ PAGE: Mapping[str, str] = {
         "The top of that band is the ceiling the cap in force puts on this tier, at "
         "{ceiling} SOL, so the range stops where the cap does."
     ),
+    # The event total is the store's, and the store's is served plus withheld. The reason is
+    # named in words, not as a typed code: the code belongs in the API's error body and on the
+    # refused event's own page, and a page about another event must not carry it (N6).
+    "P_HELD_BACK_ONE": "one held back: {reason}",
+    "P_HELD_BACK_MANY": "{n} events held back: {reasons}",
+    "held_back_sale_not_priced": "a sale recorded without money",
+    "held_back_sale_after_event_start": "a sale dated after the event starts",
+    "held_back_event_has_no_tier": "the event has no tier to price",
     # The before-on-sale strip counts the excluded rows as excluded. `0 resales` and
     # `0 tickets` were printed for a store holding 12 of each, which says the record does not
     # exist rather than that this mode does not read it (N4).
@@ -350,6 +376,15 @@ PAGE: Mapping[str, str] = {
     ),
     "P_STRIP_EXCLUDED_CEILING": (
         "no at-ceiling count while the event's own record is excluded"
+    ),
+    # The market block is the tier's, so its zero has to be the tier's zero. On the store this
+    # page is served from, `0 sales of 0 on this event` was printed while 12 sale rows sat in
+    # the file; the strip named them at event scope and the block named nothing at tier scope.
+    "P_MARKET_EXCLUDED_TIER": (
+        "{n} recorded sales in this tier are excluded by the mode"
+    ),
+    "P_MARKET_EXCLUDED_TIER_ONE": (
+        "One recorded sale in this tier is excluded by the mode"
     ),
     "P_EXACT_CEILING": (
         "ceiling {lamports} lamports = face {face} lamports × (10,000 + {cap}) / 10,000 "
@@ -416,15 +451,20 @@ REFUSAL_TEXT: Mapping[str, str] = {
         "the time from that sale to the event is negative, and no number for this event is "
         "stated."
     ),
-    # The cap in force on the page is a hard ceiling on the recommendation, in the same
-    # integer arithmetic the store uses. When it sits below the price this record supports,
-    # the record's recommendation is a price the policy forbids, and the ceiling is not
-    # printed in its place: a cap is a floor on value, not a target for a primary price.
+    # The cap in force on the page is a rule about resale, in the same integer arithmetic the
+    # store uses. When it sits below the resales this record prices from, those resales would
+    # be illegal under the policy being tested, so the record cannot support a price under it.
+    # It does not forbid a primary price: a cap in basis points over face moves with face, so
+    # it decides how the resale price divides, not what the organizer may charge. The ceiling
+    # is still not printed in the recommendation's place -- a cap is a floor on value, not a
+    # target for a primary price (11-cap-capture-check §10.1).
     "recommendation_above_cap": (
         "The cap of {cap_bps} in force on this page puts the resale ceiling at "
-        "{ceiling_lamports}, below the price this record supports, so no primary "
-        "price is stated: a recommendation above that ceiling is a price the cap forbids, "
-        "and the ceiling is not a target for the primary price."
+        "{ceiling_lamports}, below the price this record supports, so no primary price is "
+        "stated. A cap in basis points over face decides how the resale price divides, not "
+        "what the organizer may charge: it forbids a resale price, and the resales this "
+        "record prices from would be illegal under this one. The record, not the cap, is "
+        "what has run out, and the ceiling is not a target for the primary price."
     ),
     # No flat path is drawn anywhere in the console, so the sentence may not promise one.
     "insufficient_marks": "{n} sales is too few to fit a path, so no path is quoted.",

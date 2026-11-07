@@ -57,6 +57,9 @@ FIELDS = {
     "cap_bps": 0,
     "ceiling_lamports": "1,000,000,000 lamports",
     "row": "led_0002",
+    # what a held-back store withheld, said in words rather than as a typed code (N6)
+    "reason": "a sale recorded without money",
+    "reasons": "a sale recorded without money",
 }
 
 

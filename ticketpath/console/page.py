@@ -214,7 +214,6 @@ def evidence(payload: Mapping) -> str:
     tiers_text = " · ".join(t["name"] for t in tiers)
     resales = value_of(ev["resales"])
     tickets = value_of(ev["tickets"])
-    platform = value_of(ev["eventsOnPlatform"])
     transactions = value_of(ev["onchainTransactions"])
     in_force = value_of(payload["selection"]["capBpsCandidate"])
     recorded = value_of(payload["event"]["capBps"])
@@ -252,13 +251,7 @@ def evidence(payload: Mapping) -> str:
         [
             '<section class="panel evidence" aria-label="[FIXTURE] the evidence">',
             f"<p>{counts}{ceiling_item}</p>",
-            # The event total is the store's, not the cut's: the schema carries no instant at
-            # which an event was created, so the count of events cannot be cut-aware, and
-            # `on this platform` presented a whole-store total as a fact about the instant
-            # under a line that says nothing after the instant enters any number. The noun
-            # says what the number is, and the count beside it is the one at the cut.
-            f'<p>{num(ev["eventsOnPlatform"])} {plural(platform, "event")} in the store, '
-            f'{num(ev["eventsWithResale"])} with any resale at this instant</p>',
+            _store_line(ev),
             f'<p>{num(ev["onchainTransactions"])} {plural(transactions, "on-chain transaction")}</p>',
             f'<p class="label-sentence">[FIXTURE] tiers on this event: {esc(tiers_text)}'
             + (f' · showing {esc(selected["name"])}' if selected else "")
@@ -266,6 +259,61 @@ def evidence(payload: Mapping) -> str:
             "</section>",
         ]
     )
+
+
+def _store_line(ev: Mapping) -> str:
+    """The store's own event total, and -- only where it differs -- what was withheld.
+
+    The noun `in the store` is the store's, not the cut's: the schema carries no instant at
+    which an event was created, so the count of events cannot follow the decision instant,
+    and `on this platform` presented a whole-store total as a fact about the instant under a
+    line that says nothing after the instant enters any number. That noun then had to survive
+    the loader's per-event rejection, which serves fewer events than the file carries: `7
+    events in the store` on a store of 8 (N6, 10-final-review). So the store total is served
+    plus held back, the served count is named beside it, and why each event was withheld is
+    said in words where a reader meets the number. With nothing held back -- every shipped
+    store -- the line is the one number it always was.
+    """
+    stored = ev["eventsInStore"]
+    served = ev["eventsOnPlatform"]
+    held = ev.get("eventsHeldBack")
+    held_count = 0 if held is None else int(value_of(held) or 0)
+    line = f'<p>{num(stored)} {plural(value_of(stored), "event")} in the store, '
+    if held_count:
+        reasons = _held_back_reasons(ev)
+        if held_count == 1:
+            # One withheld event reads as `one held back: ...` with no digit, like A1_ONE.
+            reason = reasons[0] if reasons else "the loader gave no reason"
+            withheld = labels.render("P_HELD_BACK_ONE", reason=esc(reason))
+        else:
+            withheld = labels.render(
+                "P_HELD_BACK_MANY",
+                n=num(held),
+                reasons=esc("; ".join(reasons) or "the loader gave no reason"),
+            )
+        line += f"{num(served)} served, {withheld}, "
+    return line + f'{num(ev["eventsWithResale"])} with any resale at this instant</p>'
+
+
+def _held_back_reasons(ev: Mapping) -> list[str]:
+    """Why each withheld event was withheld, in the label registry's own words.
+
+    The typed codes travel in the payload (`heldBackReasons`) and on each refused event's own
+    page, where the reader asked about it. A page about a different event says what was
+    withheld in words: an engine token in the strip is the class of defect the console spent
+    three passes removing, and `sale_not_priced` on a healthy event's page reads as that
+    event's refusal.
+    """
+    out: list[str] = []
+    for row in ev.get("heldBackReasons", []):
+        label_id = f"held_back_{row.get('code')}"
+        try:
+            phrase = labels.render(label_id)
+        except KeyError:
+            phrase = f"a reason the loader did not name ({row.get('code')})"
+        if phrase not in out:
+            out.append(phrase)
+    return out
 
 
 def design_panel(payload: Mapping) -> str:
