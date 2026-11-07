@@ -1,24 +1,36 @@
 """The only path to a Solana RPC. Read-only, disabled by default, honest when on.
 
-There is no program deployed, no mint and no cluster account that belongs to this
-project, so the adapter's answer today is a structured "no program deployed"
-rather than a number. It never opens a socket: `enabled` only decides whether the
-answer says "not checked" or "checked, nothing there", and even that second state
-is unreachable in this build because there is no program id to check against.
+This adapter never opens a socket, on any flag. What it *can* do is tell the console whether
+someone asked for a live read, and it says so rather than pretending a check happened.
+
+**The flag that enables a re-read, and why the default is off.** Three environment variables
+are read through `from_env`:
+
+    TICKETPATH_RPC_ENABLED=1                 # off unless this is exactly "1"
+    TICKETPATH_RPC_URL=https://api.devnet.solana.com
+    TICKETPATH_PROGRAM_ID=<program id>       # the cap-check program the artefact names
+
+With all three set, `transfer_enforcement` says `not_queried` instead of `rpc_disabled`, and
+`program_status` reports the configured id. **It still does not read the chain.** The console's
+`[DEVNET]` slot is rendered from `records/devnet-artefacts.json`, which
+`tools/devnet_publish.py` wrote after reading the memo back at the slot it reports: that is
+*recorded, not independently re-read*, and it is the safe default on a demo laptop. Turning
+these three on is what a live re-read would need; building it is not part of this build, and
+no page claims it happened.
 
 `Ticket.transferRestricted` in the contract is defined as whether the restriction
 is *actually enforced on-chain right now*, not whether the event config asks for
-it. Until a program is deployed the only true answer is false, and that is what
-this adapter returns.
+it, so this adapter returns false with a reason. The artefact says what is on chain; this
+adapter says what it has read, which is nothing.
 """
 
 from __future__ import annotations
 
 import os
 
-NOT_DEPLOYED = "no_program_deployed"
 DISABLED = "rpc_disabled"
 NO_PROGRAM_ID = "no_program_id_configured"
+NOT_QUERIED = "not_queried"
 
 
 class RpcAdapter:
@@ -49,9 +61,15 @@ class RpcAdapter:
         elif not self.program_id:
             reason = NO_PROGRAM_ID
             detail = "no program id is configured, so there is nothing to query"
+        elif not self.rpc_url:
+            reason = NO_PROGRAM_ID
+            detail = "no RPC url is configured, so there is nothing to query"
         else:
-            reason = NOT_DEPLOYED
-            detail = "no transfer-hook program is deployed by this project on any cluster"
+            reason = NOT_QUERIED
+            detail = (
+                "a program id and an RPC url are configured, but this build opens no socket: "
+                "the recorded artefact is the only chain evidence, not a live read"
+            )
         return {
             "mintAddress": mint_address,
             "enforced": False,
@@ -62,12 +80,17 @@ class RpcAdapter:
         }
 
     def program_status(self) -> dict:
-        """Small status block for /health. Never claims a deployment."""
+        """Small status block for /health. Reports the id it was given, and never a deployment.
+
+        `programDeployed` stays false because this adapter does not ask the cluster. That is
+        not pessimism, it is the boundary: the console renders a `[DEVNET]` slot only from
+        `records/devnet-artefacts.json`, which is *recorded, not independently re-read* here.
+        """
         return {
             "programDeployed": False,
             "rpcEnabled": self.enabled,
-            "programId": None,
+            "programId": self.program_id,
             "cluster": self.cluster,
-            "reason": DISABLED if not self.enabled else NOT_DEPLOYED,
+            "reason": DISABLED if not self.enabled else NOT_QUERIED,
             "designDoc": "docs/ON-CHAIN-DESIGN.md",
         }

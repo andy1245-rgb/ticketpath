@@ -23,9 +23,21 @@ MEMO_PROGRAM_ID = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
 CANONICAL_FIELDS = ("quoteId", "eventId", "tierId", "recommendedLamports", "asOf", "modelVersion")
 CHECKER_VERSION = "devnet-check-2026-11-07"
 
+# The one memo grammar this project speaks: `ticketpath:quote:<quoteId>:<hash>`. Everything
+# that writes a memo -- `tools/devnet_publish.py` on the command line, `quote_commit` here --
+# spells it with `expected_memo`, and `load_artefact` refuses an artefact whose memo is not
+# this string, so a `v1`-shaped memo cannot render as verified.
+MEMO_PREFIX = "ticketpath:quote"
+CLUSTER = "devnet"
+
 
 class ChainUnavailable(RuntimeError):
     """There is nothing to submit to, so submitting is not a thing this build does."""
+
+
+def expected_memo(quote_id: str, digest: str) -> str:
+    """The memo a quote commits with. One function, so two writers cannot spell it two ways."""
+    return f"{MEMO_PREFIX}:{quote_id}:{digest}"
 
 
 def canonical_json(fields: Mapping) -> str:
@@ -56,7 +68,7 @@ def quote_commit(*, quote_id: str, recommendation: Mapping, mint: str | None = N
         "modelVersion": model_version,
     }
     digest = quote_hash(fields)
-    memo = f"ticketpath:quote:{quote_id}:{digest}"
+    memo = expected_memo(quote_id, digest)
     return {
         "available": False,
         "reason": "no_toolchain_no_keypair_no_program",
@@ -80,7 +92,14 @@ def submit(payload: Mapping) -> dict:
 
 
 def load_artefact(path: str | Path | None) -> dict:
-    """Read and verify the operator's devnet artefact. Absent stays absent."""
+    """Read and verify the operator's devnet artefact. Absent stays absent.
+
+    Four things have to hold for `verified`: every field the console displays is present, the
+    quote hash recomputes from those fields, the memo is this repository's grammar, and the
+    cluster is **devnet**. A file written by a local rehearsal carries `cluster: "localnet"`
+    and is refused here rather than rendered as chain evidence -- the rehearsal proves the
+    path runs, not that anything is on devnet.
+    """
     if path is None:
         return {"state": "absent", "reason": "devnet_absent"}
     target = Path(path)
@@ -90,9 +109,15 @@ def load_artefact(path: str | Path | None) -> dict:
         record = json.loads(target.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return {"state": "unverified", "reason": "devnet_unverified"}
+    if not isinstance(record, dict):
+        return {"state": "unverified", "reason": "devnet_unverified"}
     required = ("signature", "slot", "blockTime", "quoteHash", "quoteId", "eventId", "tierId", "recommendedLamports", "asOf", "modelVersion")
     if any(record.get(name) is None for name in required):
         return {"state": "unverified", "reason": "devnet_unverified"}
+    if record.get("cluster") != CLUSTER:
+        return {"state": "unverified", "reason": "cluster_not_devnet", "cluster": record.get("cluster")}
+    if record.get("memoText") is not None and record["memoText"] != expected_memo(record["quoteId"], record["quoteHash"]):
+        return {"state": "unverified", "reason": "memo_grammar_mismatch"}
     if quote_hash(record) != record["quoteHash"]:
         return {"state": "unverified", "reason": "quote_hash_mismatch"}
     return {
@@ -100,7 +125,7 @@ def load_artefact(path: str | Path | None) -> dict:
         "signature": record["signature"],
         "slot": record["slot"],
         "blockTime": record["blockTime"],
-        "cluster": record.get("cluster", "devnet"),
+        "cluster": record["cluster"],
         "rpcUrl": record.get("rpcUrl"),
         "quoteId": record["quoteId"],
         "quoteHash": record["quoteHash"],
@@ -108,4 +133,6 @@ def load_artefact(path: str | Path | None) -> dict:
         "checkerVersion": record.get("checkerVersion", CHECKER_VERSION),
         "mint": record.get("mint"),
         "programId": record.get("programId"),
+        "explorer": record.get("explorer"),
+        "transfers": record.get("transfers"),
     }

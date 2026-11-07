@@ -1,0 +1,23 @@
+[package]
+name = "cap-hook"
+version = "0.1.0"
+edition = "2021"
+description = "Smallest transfer hook that refuses a ticket transfer whose staged resale price exceeds the cap."
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "cap_hook"
+
+[dependencies]
+solana-program = "2.1"
+spl-transfer-hook-interface = "0.10"
+spl-tlv-account-resolution = "0.10"
+spl-discriminator = "0.4"
+borsh = { version = "1.5", features = ["derive"] }
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1

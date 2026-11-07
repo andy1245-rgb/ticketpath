@@ -370,16 +370,35 @@ def chain_slot(payload: Mapping) -> str:
     out = ['<section class="panel chain" aria-label="[DEVNET] the chain slot">']
     out.append("<h2>[DEVNET] The chain slot</h2>")
     if chain["state"] == "verified":
+        explorer = _explorer_link(chain)
+        program_id = (chain.get("programStatus") or {}).get("programId")
         out.append(
             f'<p>[DEVNET] Verified at {esc(chain.get("checkedAt"))} against api.devnet.solana.com</p>'
             f'<p>[DEVNET] signature <code>{esc(chain["signature"])}</code> · slot '
             f'<span class="n">[DEVNET] {esc(chain["slot"])}</span> · block time '
             f'<span class="n">[DEVNET] {esc(chain["blockTime"])}</span> · cluster {esc(chain.get("cluster"))}</p>'
             f'<p>[DEVNET] quote id <code>{esc(chain["quoteId"])}</code> · quote hash <code>{esc(chain["quoteHash"])}</code></p>'
-            f'<p class="label-sentence">{esc(labels.render("P_CHAIN_MEMO"))}</p>'
         )
+        if explorer:
+            out.append(
+                f'<p>[DEVNET] transaction <a href="{esc(explorer)}">{esc(chain["signature"][:16])}…</a>'
+                + (f' · program <code>{esc(program_id)}</code>' if program_id else '')
+                + "</p>"
+            )
+        out.append(
+            '<p class="label-sentence">[DEVNET] Recorded, not independently re-read: this page '
+            'recomputes the quote hash from the fields above and does not ask the cluster. The '
+            'publisher read the memo back at the slot it reports; a re-read here needs '
+            "TICKETPATH_RPC_ENABLED=1, which is off by default.</p>"
+        )
+        out.append(f'<p class="label-sentence">{esc(labels.render("P_CHAIN_MEMO"))}</p>')
     else:
         out.append(f'<p>[DEVNET] {esc(labels.render("devnet_absent"))}</p>')
+        if chain.get("reason") == "cluster_not_devnet":
+            out.append(
+                '<p>[DEVNET] A local rehearsal was recorded and is not devnet evidence. '
+                'Nothing on this page is rendered from it: no signature, no slot, no link.</p>'
+            )
         out.append(f'<p>[DEVNET] {esc(labels.render("T5"))}</p>')
         out.append(f'<p class="label-sentence">{esc(labels.render("P_CHAIN_ABSENT"))}</p>')
         out.append(
@@ -389,6 +408,19 @@ def chain_slot(payload: Mapping) -> str:
         )
     out.append("</section>")
     return "".join(out)
+
+
+def _explorer_link(chain: Mapping) -> str | None:
+    """The explorer URL for the verified signature, and never for anything else.
+
+    Built only in the `verified` branch: the spec's rule is that no explorer link exists until
+    an artefact has verified, so a placeholder signature can never produce one.
+    """
+    signature = chain.get("signature")
+    cluster = chain.get("cluster")
+    if not signature or cluster != "devnet":
+        return None
+    return f"https://explorer.solana.com/tx/{signature}?cluster=devnet"
 
 
 def render_error(*, status: int, message: str, code: str) -> str:

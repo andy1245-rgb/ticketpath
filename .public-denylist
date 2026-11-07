@@ -126,3 +126,15 @@ allow records/findings/13-submission-readiness.md    home-path|personal-name quo
 allow records/findings/14-frontend-attach-explore.md home-path|live-service quoted measurement evidence; not operational
 allow records/findings/15-visionhelper.md            home-path|live-service quoted measurement evidence; not operational
 allow tests/test_public_safety.py fleet-repo|home-path|tmp-path|cron-line|deploy-key|live-service|contact-email|personal-name A test for a pattern has to spell the pattern it plants. The credential classes are deliberately not exempt here, and that file builds those by concatenation instead.
+
+# --- solana key material (added by SOLANA-INSTALL-AND-TEST) ---
+# A Solana keypair file is the secret itself: a JSON array of 64 integers written by
+# solana-keygen. It is not a PEM and carries no extension convention, so neither the
+# original secret-file rules nor .gitignore caught it. Measured before adding these:
+# a repo holding one staged a clean check (exit 0); after, it is a hit. Two nets,
+# because a rename must not walk past a single one: the file names people actually
+# use, and the shape. The shape rule is exact about 64 integers, so a 32-element
+# seed fixture or a pubkey string does not fire.
+path secret-file     (?i)(^|/)(authority|keypair|id)[^/]*\.json$
+path secret-file     (?i)(^|/)[^/]*keypair[^/]*\.json$
+content secret-file  all    ^\s*\[\s*(?:-?\d{1,3}\s*,\s*){63}-?\d{1,3}\s*\]\s*$

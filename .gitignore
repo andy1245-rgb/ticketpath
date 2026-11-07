@@ -33,3 +33,27 @@ id_ed25519*
 # Scratch space: work in progress, patches and logs that are not evidence.
 tmp/
 scratch/
+
+# Solana key material (added by SOLANA-INSTALL-AND-TEST). A keypair file is the
+# secret itself: 64 integers in JSON. Kept out of the repo by name here, and by
+# shape in .public-denylist, which is the check that actually runs before a commit.
+authority*.json
+*keypair*.json
+**/authority*.json
+**/*keypair*.json
+
+# Rust build products for the on-chain program (added by ONCHAIN-WIRE). `target/` holds the
+# .so and `cap_hook-keypair.json`, which is the secret that owns the program id: neither is
+# ever committed. The keypair is refused again by shape in .public-denylist.
+programs/cap_hook/target/
+**/target/deploy/
+
+# 64 KB of dependency pins that `cargo-build-sbf` regenerates on every machine that builds the
+# program. Kept on disk for a reproducible local build, out of the tree because it is a
+# generated artefact of the toolchain, not source.
+programs/cap_hook/Cargo.lock
+
+# A rehearsal, not evidence (added by ONCHAIN-WIRE). `tools/devnet_publish.py --local` writes
+# this and the console refuses to render it as devnet; keeping it out of the tree means it
+# cannot be mistaken for the real artefact by a reader who does not run the code.
+records/devnet-artefacts.local.json
