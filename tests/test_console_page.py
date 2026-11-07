@@ -5,10 +5,11 @@ Four checks matter and each has cost me something to get right:
 1. The banner is first, undismissable and not sticky, because a screenshot of the page
    must carry the label even if the crop starts halfway down.
 2. Every number is rendered through `units.num`, which puts the badge in the same text
-   run, in front of the value. So: every `.n` span starts with a badge, and the only
-   digits on the page that are not in a `.n` span are inside a sentence from the
-   registry -- A19 says "8 of 9 recorded resales (88.9%)" in one breath, and those digits
-   are also printed badged in the evidence and market blocks.
+   run, in front of the value. So: every `.n` span starts with a badge, and a count that
+   sits inside a sentence is its own `.n` span -- A19's `8 of 9 recorded resales (88.9%)`
+   and A1's `records 9 sales` are four and one badged count, not one sentence under the
+   panel's badge. Other digits that are not counts are still allowed inside a sentence from
+   the registry (a timestamp in the mode line, the lamport equality on the [EXACT] line).
 3. No `title=` attribute, so no label lives in a tooltip nobody reads.
 4. The prohibited sentences are absent from the visible text of every state.
 """
@@ -136,6 +137,34 @@ class TestEveryNumberCarriesItsBadge(unittest.TestCase):
             _, html = render(**state)
             self.assertNotIn(" title=", html)
             self.assertNotIn("title='", html)
+
+    def test_the_counts_inside_a19_are_each_their_own_badged_span(self) -> None:
+        """Review 3.11, made strict: `8 of 9 (88.9%)` sat under the panel's `[UNVALIDATED]`.
+
+        The four counts in A19 -- the cap in percent, the sales at the ceiling, the sales,
+        and the share -- are `[FIXTURE]` facts inside a panel badged `[UNVALIDATED]`, so the
+        badge has to travel with each number. Asserted in both directions: the spans exist,
+        and with every badged span removed the sentence's digits are gone from the page.
+        """
+        _, html = render(event_id="evt_syn_02")
+        for span in (
+            '<span class="n">[FIXTURE] 15%</span>',
+            '<span class="n">[FIXTURE] 8</span>',
+            '<span class="n">[FIXTURE] 9</span>',
+            '<span class="n">[FIXTURE] 88.9%</span>',
+        ):
+            with self.subTest(span=span):
+                self.assertIn(span, html)
+        unbaged = html_module.unescape(re.sub(r'<span class="n">.*?</span>', " ", html, flags=re.S))
+        self.assertNotRegex(unbaged, r"\d+\.?\d*% over face")
+        self.assertNotRegex(unbaged, r"\d+ of \d+ recorded resales")
+        self.assertNotRegex(unbaged, r"\(\s*88\.9%\s*\) settled")
+
+    def test_the_count_inside_a1_is_its_own_badged_span(self) -> None:
+        _, html = render(event_id="evt_syn_01")
+        self.assertIn('<span class="n">[FIXTURE] 6</span> sales.', html)
+        unbaged = html_module.unescape(re.sub(r'<span class="n">.*?</span>', " ", html, flags=re.S))
+        self.assertNotRegex(unbaged, r"ledger records \d+ sales")
 
 
 class TestMandatorySentences(unittest.TestCase):

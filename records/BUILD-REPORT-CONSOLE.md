@@ -574,3 +574,268 @@ number, which this pass was told not to make. They are the remaining half of R1 
   **R5** the doubled `[REFUSED]` badge on 422 pages. All four are in the verifier's list and
   none of them is one of the four items this pass was given.
 - The engine, the arithmetic, the payload, the thresholds and the page's other blocks.
+
+## 2026-11-07T13:40Z — the five residues: R2, R3, R4, R5, and the counts inside A19 and A1
+
+**Writer:** residue fixer, not the verifier and not the engineer reviewer. **Scope:** the
+five items named in the brief and nothing else. No number, threshold, refusal code or
+arithmetic changed; the engine, the payload's computed values, the store and the fixture
+hash are untouched (`fixtures/synthetic_store.json` is still `15e6f6611652ae43`). Nothing
+committed, nothing pushed, no dependency added, `../ticketing-frontend` and `:3000`
+untouched, 8787 untouched, and the fleet trees were not read or written.
+
+Files touched, and only these: `ticketpath/console/blocks.py`,
+`ticketpath/console/page.py`, `ticketpath/console/units.py` (docstring),
+`ticketpath/core/labels.py`, `ticketpath/server.py`, `tests/test_console_fixes.py`,
+`tests/test_console_page.py`, `tools/console-check.py`, `docs/CONSOLE.md`, and this
+section. Hashes after the pass: `blocks.py bad697e5ce4243c5`, `labels.py b98be810efc9b2c8`,
+`page.py 7fbde2fff50becee`, `server.py f14961ca2591c1b0`,
+`tests/test_console_fixes.py 20bc8fcd3116ce81`.
+
+**The tree moved under this pass.** `records/findings/09-sim-recovery.md`, `records/sim/`
+and `tools/sim_recovery.py` appeared while it ran, from another writer (not me), and
+`NIGHT-LOG.md` was already modified when it started. I did not touch any of them, and
+`ticketpath/` and `tests/` hold my changes and nothing else.
+
+**Note on the item numbers.** The verifier's R4 is the duplicated A1/T4 rate sentence and
+its R5 is the doubled `[REFUSED]` badge on error pages. The brief for this pass defines its
+R4 as a cap sentence on an uncapped event and its R5 as a count that is not cut-aware, and
+these five entries are what those definitions name. Both verifier items are named in
+"What I chose not to change" below, untouched.
+
+### R2. `1 ticket` beside "No ticket had been issued at this instant"
+
+The event's first issue row is at exactly that instant, so the cut counts one ticket and
+the exposure denominator is zero: the sentence described the denominator and blamed the
+issue record.
+
+**before**, `http://127.0.0.1:8788/?event=evt_syn_02&asOf=2026-09-11T11:00:00Z`:
+
+> `[FIXTURE] 0 resales on this event · [FIXTURE] 1 ticket · [FIXTURE] 0 at the ceiling`
+> … `[REFUSED] No ticket had been issued at this instant, so there is no denominator.`
+
+**after**, same URL:
+
+> `[REFUSED] [FIXTURE] 1 ticket had been issued on this event by this instant, but no
+> ticket-day of exposure has elapsed in this tier, so the rate has no denominator.`
+
+How it is true by construction:
+
+- `blocks._no_exposure_sentence` reads `payload["evidence"]["tickets"]`, the same wrapper
+  the strip prints, so the sentence and the strip cannot disagree about the count. It
+  branches on that count: zero keeps `no_exposure` verbatim, one takes
+  `no_exposure_issued_one`, more than one takes `no_exposure_issued`.
+- The zero case is unchanged and still prints at
+  `?event=evt_syn_02&asOf=2026-09-01T00:00:00Z` and on `?event=evt_syn_08`, where the store
+  really has no issue row (`[FIXTURE] 0 tickets`).
+- The clause says "in this tier" because the denominator is the tier's: if the event's
+  tickets sat in another tier, this tier's exposure would still be zero and the sentence
+  would still be true. No tier in this fixture is in that state, so the wording is belt and
+  braces rather than a case a URL reaches.
+- The count is badged and sits in its own span, through the helper the `{n}` refusal already
+  used.
+
+Held by `TestTheZeroExposureRefusalFollowsTheCut` (4 tests: the fix, the zero case kept, the
+sentence's number equal to the strip's number, and a hand-built store with two tickets
+issued at one instant for the plural). Reverting the sentence to
+`labels.render("no_exposure")` fails three of the four, one of them with
+`'No ticket had been issued at this instant' unexpectedly found`; the fourth, the zero case,
+is the guard against over-correcting and passes either way.
+
+### R3. `PUT /` returned 501
+
+Python's `http.server` answers an unimplemented verb with its own 501 page, which is a
+different answer to the same question `POST /` gets.
+
+**before:** `PUT http://127.0.0.1:8788/` → `501`, body Python's own page:
+`Error response / Error code: 501 / Message: Unsupported method ('PUT').`
+
+**after:** → `405`, the console's rendered error page:
+`[REFUSED] [REFUSED] 405 method_not_allowed: PUT is not allowed here; allowed: GET, HEAD`.
+
+- `do_PUT`, `do_DELETE` and `do_PATCH` route into the same `_handle` the other verbs use, so
+  a route that exists answers 405 and a path that does not is still 404, exactly as for GET.
+  `DELETE /` and `PATCH /` were 501 for the same reason and are 405 now.
+- One new plumbing line: a verb that never reads a body sets `close_connection` when the
+  request carries one, so an unread body cannot be parsed as the next request on a
+  keep-alive socket. Checked over the socket with `PUT /` plus `{"capBps":0}`: 405, then
+  `GET /` 200 on a new connection.
+- `HEAD /` 200, `GET /` 200, `POST /` 405 are unchanged.
+
+Held by `TestVerbsThisServerDoesNotImplement` (3 tests). Removing the three `do_*` methods
+fails them with `501 != 405` on the console route and the API route and `501 != 404` on the
+unknown path.
+
+### R4. A sentence about a cap on an event whose regime is uncapped
+
+The decision block printed "A cap does not hide the price; it hides the top of the price
+distribution" on every page, including the three events whose cap field is null and whose
+own regime line says `uncapped` two lines below it. On those pages it read as a claim about
+a cap this event does not have.
+
+**before**, `http://127.0.0.1:8788/?event=evt_syn_04`:
+
+> `[UNVALIDATED] Decision mode: COUNTERFACTUAL. … A cap does not hide the price; it hides
+> the top of the price distribution.` … `regime [FIXTURE] uncapped`
+
+**after**, same URL:
+
+> `… No cap applies to this event, so nothing hides the top of the price distribution.` …
+> `regime [FIXTURE] uncapped`
+
+- New registry id `P_CAPLINE_UNCAPPED`; `blocks.decision` chooses on
+  `payload["event"]["capBps"]`, the same field the A2/A16 branch already reads. Where a cap
+  exists the spec's line is printed word for word and no negative appears
+  (`evt_syn_01`, `evt_syn_02`, `evt_syn_03`).
+- The uncapped page's other cap sentences were already conditional (A2_UNCAPPED, `P_NO_CAP`,
+  `P_CEILING_NONE`), or are inside `[DESIGN]`, which describes the program rather than this
+  event. I read every sentence on `evt_syn_04`, `evt_syn_05` and `evt_syn_08` looking for a
+  positive cap claim; this was the only one left.
+
+Held by `test_the_uncapped_page_does_not_say_a_cap_hides_the_top_of_the_distribution` (three
+uncapped events, each asserted to have a null cap first) and
+`test_a_capped_page_keeps_the_cap_line` (three capped events). Reverting the line to the
+unconditional `P_CAPLINE` fails the first on all three events.
+
+### R5. A count that is not cut-aware, beyond the ticket count
+
+I swept for one and there is no other stale number on the page. The sweep takes eight
+events, every tier of each, six cut instants and both decision modes, and compares the
+page's counts against a hand count of the store's own rows at the same instant: the ticket
+count from `issue` rows, the resale and at-ceiling counts from `sale` rows, the tier's
+sales, the events with a resale, the events completed. **Zero mismatches**, and
+`TestNoCountOnThePageIsStaleAtTheCut` keeps six of those cases in the suite.
+
+The one printed count that cannot follow a cut is the event total, and it was presented as
+if it could. The schema carries no instant at which an event was created, so "8 events" is
+the store's event list at every cut, while the strip sits under the sentence "Nothing after
+{asOf} enters any number".
+
+**before**, `http://127.0.0.1:8788/?event=evt_syn_02&asOf=2026-09-01T00:00:00Z`:
+
+> `[FIXTURE] 8 events on this platform, [FIXTURE] 1 with any resale`
+
+**after**, same URL:
+
+> `[FIXTURE] 8 events in the store, [FIXTURE] 1 with any resale at this instant`
+
+- No number changed: the noun now names what the number counts, and the clause beside it is
+  the one that moves with the cut (1 at that instant, 2 at 2026-09-11, 5 today).
+- This is the "re-scope the noun" fix shape the 13:08Z pass named, chosen over inventing an
+  event-creation timestamp the schema does not carry.
+- `docs/CONSOLE.md` quoted the old strip text and was updated with it.
+  `tools/console-check.py` gained a check that the store count is named as the store's and
+  that the cut-aware clause moves.
+
+Held by `test_the_event_total_is_named_as_the_store_and_the_cut_count_beside_it_moves`
+(reverting the noun fails it) and `test_the_strip_and_the_market_counts_are_the_counts_at_the_cut`.
+
+### Review 3.11. The counts inside A19 and A1
+
+A19's "8 of 9 (88.9%)" and A1's "records 9 sales" sat in paragraphs whose nearest badge was
+the panel's `[UNVALIDATED]`, while each of those numbers is a `[FIXTURE]` count. The badge
+now travels with the number.
+
+**before**, `http://127.0.0.1:8788/?event=evt_syn_02`:
+
+> `The resale price in this tier is capped at 15% over face, and the cap is binding: 8 of 9
+> recorded resales (88.9%) settled at exactly the ceiling.`
+> `In this tier the ledger records 9 sales.`
+
+**after**, same URL (spans shown as the reader's text; the markup is one `.n` span each):
+
+> `The resale price in this tier is capped at [FIXTURE] 15% over face, and the cap is
+> binding: [FIXTURE] 8 of [FIXTURE] 9 recorded resales ([FIXTURE] 88.9%) settled at exactly
+> the ceiling.`
+> `In this tier the ledger records [FIXTURE] 9 sales.`
+
+- `blocks._sentence` hands each count to `labels.render` as a marker and replaces the marker
+  with `units.num`'s output, so the wording stays the registry's and one sentence can carry
+  four badged numbers. The cap percent is the record's own bps wrapper; the share is the
+  ratio of the two badged counts and takes the sales count's badge.
+- Two registry edits came with it: A19's template now reads `{c} over face` and `({s})`
+  because the percent sign travels inside the badged number, and A1's `{n}` is substituted
+  as a span instead of a bare int. The printed digits are identical, which the whole-page
+  digit comparison below shows for every state.
+- A1_ONE and A1_ZERO say `one sale` and `no sale`; they carry no digits and need no badge,
+  so they print exactly as before.
+- **The badge model did not move; two test expectations did, and in the strict direction.**
+  The two A1 assertions in `tests/test_console_fixes.py` now require the badge
+  (`"In this tier the ledger records [FIXTURE] 6 sales."`), and
+  `tests/test_console_page.py` gained two tests that pin the new rule in both directions:
+  each of A19's four counts and A1's count is a `.n` span that begins with a badge, and with
+  every badged span stripped out of the page the sentence's digits are gone. The old
+  rendering fails both (`'<span class="n">[FIXTURE] 15%</span>' not found`, and the regex
+  `\d+ of \d+ recorded resales` matching) while the existing badge tests still pass, so
+  nothing was weakened to make room for this.
+
+### No number moved
+
+The whole page's digit multiset was compared between the pre-pass tree (`git archive HEAD`)
+and the current tree over 25 states: the default page, all eight events, four cuts on
+`evt_syn_02`, two non-default tiers, `capBps=0` on a capped and on an uncapped event, three
+fees, `sim=1`, both decision modes, `tau=0.406`, and `mode=nonsense`. Every state's status
+and every digit token are identical except one: the R2 state gains a second `1`, which is
+the count its new sentence carries and which the strip was already printing. The percent
+signs in A19 moved into the badged numbers without changing a digit
+(`capped at [FIXTURE] 15%` where it read `capped at 15%`).
+
+### What I chose not to change
+
+- **The doubled `[REFUSED]` badge on error pages** (the verifier's R5, and the reason the
+  new 405 page reads `[REFUSED] [REFUSED] 405 method_not_allowed: …`). It is cosmetic, it is
+  not one of the five items, and it is one line in `page.render_error`. Left as found and
+  named here.
+- **R1's mode-scoped counts on the before-on-sale page.** `[FIXTURE] 0 resales on this
+  event · [FIXTURE] 0 tickets` and the basis `0 ticket rows exist in the store` still print
+  where the store holds 12. Making them true means changing a number or giving the strip a
+  mode-aware noun table; both are outside this brief, and the previous pass names it.
+- **The `[DEVNET]` on-chain transaction count.** It is the one other printed count that does
+  not move with the cut, because it is a live chain read at wall-clock time, badged
+  `[DEVNET]` rather than `[FIXTURE]` and not a count of the record. Making it cut-aware
+  would need chain state per instant, which the artefact file does not carry.
+- **The duplicated A1/T4 rate sentence** (the verifier's R4, not the cap line this brief
+  calls R4): spec section 2.3 and spec line 940 require A1 and T4 together, so it stays.
+- **Review 5.2, the candidate cap not reaching `primary_optimum`, and C8, the store
+  validator versus the core.** Both still stand where the earlier passes left them; neither
+  is a label, and the first changes a recommendation.
+
+### Verified after the change
+
+- `python3 -m unittest discover -s tests -t .` → **Ran 366 tests, OK** (353 before; 13 new:
+  11 in `tests/test_console_fixes.py`, 2 in `tests/test_console_page.py`).
+- `python3 tools/console-check.py` against the live server → **FAILURES: 0** (19 response
+  cases, three of them new: `PUT /`, `DELETE /` and `PATCH /` at 405, plus the new label
+  checks).
+- Server restarted on 8788 (`python3 -m ticketpath.server`, job `jmw6g5m1vume9`, pid
+  287813); 8787 was not touched and is still the fleet page's.
+- Each new test was shown to fail on the old behaviour, by reverting that one change in a
+  scratch copy of the tree (`git archive HEAD` in `/tmp/old` and `/tmp/res`), never in
+  place:
+
+| Fix reverted | Failing assertion |
+|---|---|
+| R2 sentence | `'No ticket had been issued at this instant' unexpectedly found` (3 of 4 tests) |
+| R3 verbs | `501 != 405` on `/` and on `/api/events`, `501 != 404` on `/nope` |
+| R4 cap line | `'A cap does not hide the price' unexpectedly found` on evt_syn_04, 05, 08 |
+| R5 noun | `'[FIXTURE] 8 events in the store,' not found` |
+| A19/A1 badges | `'<span class="n">[FIXTURE] 15%</span>' not found`; regex `\d+ of \d+ recorded resales` matched |
+
+- By hand on the restarted server, the five URLs and the pages around them:
+
+| URL | status | what it renders now |
+|---|---|---|
+| `/?event=evt_syn_02&asOf=2026-09-11T11:00:00Z` | 200 | the issue-count sentence above; strip `[FIXTURE] 1 ticket`; no `No ticket had been issued` |
+| `/?event=evt_syn_02&asOf=2026-09-01T00:00:00Z` | 200 | `[FIXTURE] 0 tickets` and the original no-denominator sentence, unchanged |
+| `PUT /` | 405 | the rendered page and `method_not_allowed`; no Python 501 page, no `Unsupported method` |
+| `PUT`, `DELETE`, `PATCH` on `/api/events` | 405 | typed `method_not_allowed`; on `/nope` all three are 404 |
+| `/?event=evt_syn_04` | 200 | `No cap applies to this event, so nothing hides the top of the price distribution.` beside `regime uncapped`; `A cap does not hide the price` absent |
+| `/?event=evt_syn_05`, `/?event=evt_syn_08` | 200 | the same negative line, and no positive cap claim |
+| `/?event=evt_syn_01`, `evt_syn_02`, `evt_syn_03` | 200 | the spec's cap line, word for word, and no negative |
+| `/?event=evt_syn_02` | 200 | `records [FIXTURE] 9 sales`, `capped at [FIXTURE] 15%`, `[FIXTURE] 8 of [FIXTURE] 9 recorded resales ([FIXTURE] 88.9%)` |
+| `/?event=evt_syn_01`, `/?event=evt_syn_07` | 200 | the same shape: `[FIXTURE] 6 sales`, `[FIXTURE] 4 sales`, `25%`, `100.0%` |
+| `/?event=evt_syn_02&mode=before_on_sale`, `evt_syn_06`, `capBps=0`, `feeLamports=50000000`, `feeLamports=5000000000`, `sim=1` | 200 | unchanged, including A1_ONE and A1_ZERO (`one sale`, `no sale`) |
+| `/?capBps=nope` (400), `/?event=evt_nope` (404), `/?mode=nonsense` (400) | 400 / 404 / 400 | unchanged |
+| `HEAD /` | 200 | same headers as GET, no body |
+
+*End of this pass. Five defects, five repairs, one item left alone and named.*

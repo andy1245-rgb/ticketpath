@@ -39,6 +39,9 @@ CASES = [
     ("unknown event", "/?event=evt_nope", "GET", 404),
     ("HEAD /", "/", "HEAD", 200),
     ("POST /", "/", "POST", 405),
+    ("PUT /", "/", "PUT", 405),
+    ("DELETE /", "/", "DELETE", 405),
+    ("PATCH /", "/", "PATCH", 405),
 ]
 
 fails = []
@@ -75,8 +78,12 @@ market = re.search(r"in this tier \[FIXTURE\] (\d+) sales of \[FIXTURE\] (\d+) o
 check("default: strip and market agree on resales",
       bool(strip and market) and strip.group(1) == market.group(2),
       f"{strip.group(1) if strip else '?'} vs {market.group(2) if market else '?'}")
-check("default: A1 counts the tier", "In this tier the ledger records 9 sales." in d)
+check("default: A1 counts the tier", "In this tier the ledger records [FIXTURE] 9 sales." in d)
 check("default: no 'On this event the ledger records'", "On this event the ledger records" not in d)
+check("default: A19's counts each carry their own badge",
+      "capped at [FIXTURE] 15% over face" in d and "[FIXTURE] 8 of [FIXTURE] 9 recorded resales" in d)
+check("default: the cap line is printed where a cap exists",
+      "A cap does not hide the price" in d and "No cap applies to this event" not in d)
 
 c = text(body_of("/?event=evt_syn_03"))
 check("cold: zero-sale rate carries DECLARED", "[DECLARED] 7.5" in c or "[DECLARED] 7.6" in c)
@@ -90,6 +97,9 @@ check("cold: no measured-rate claim", "not measured from the record" in c)
 u = text(body_of("/?event=evt_syn_04"))
 check("uncapped: no ceiling anywhere",
       "no resale cap, so no ceiling" in u and "resale cap gives a ceiling" not in u and "At the cap" not in u)
+check("uncapped: no sentence says a cap hides the top of the distribution",
+      "A cap does not hide the price" not in u
+      and "No cap applies to this event, so nothing hides the top of the price distribution." in u)
 
 s7 = text(body_of("/?event=evt_syn_07"))
 check("evt07: EXACT equality exact",
@@ -104,6 +114,16 @@ check("cap0: no payload wrapper", "{'value'" not in z and "of 9 recorded sales" 
 
 cu = text(body_of("/?event=evt_syn_02&asOf=2026-09-01T00:00:00Z"))
 check("cut before issue: 0 tickets", "[FIXTURE] 0 tickets" in cu)
+check("cut before issue: the no-denominator sentence is the true one",
+      "No ticket had been issued at this instant" in cu)
+
+ci = text(body_of("/?event=evt_syn_02&asOf=2026-09-11T11:00:00Z"))
+check("cut on the first issue: the strip and the sentence agree",
+      "[FIXTURE] 1 ticket" in ci
+      and "[FIXTURE] 1 ticket had been issued on this event by this instant" in ci
+      and "No ticket had been issued at this instant" not in ci)
+check("cut on the first issue: the store count is named as the store's",
+      "[FIXTURE] 8 events in the store," in ci and "with any resale at this instant" in ci)
 
 f = text(body_of("/?event=evt_syn_02&feeLamports=50000000"))
 check("fee: net line renders",

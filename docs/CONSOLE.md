@@ -11,8 +11,11 @@ control is a query parameter, so every state has a URL. `docs/RUN.md` has the co
 2. **Controls.** Event, tier, `asOf`, `capBps`, `feeLamports`, `tau`, `Recompute`, and
    `Show the refusal` (which submits `sim=1` — it is a button, not a script).
 3. **Evidence strip.** `[FIXTURE] 12 resales · 12 tickets · 9 at the ceiling`,
-   `[FIXTURE] 8 events on this platform, 5 with any resale`, `[DEVNET] 0 on-chain
-   transactions`. The evidence count is the headline metric on purpose.
+   `[FIXTURE] 8 events in the store, 5 with any resale at this instant`, `[DEVNET] 0
+   on-chain transactions`. The evidence count is the headline metric on purpose. The event
+   total is the store's -- the schema carries no instant at which an event was created, so
+   that one count cannot follow a cut and its noun says so -- and every count beside it is
+   the count at the decision instant.
 4. **The decision**, by regime:
    - *capped and binding*: `at least {ceiling} SOL per ticket`, A19 in full, the value
      line as a floor, `Range: 1.38 SOL and up. We do not state an upper bound from this
@@ -39,9 +42,12 @@ control is a query parameter, so every state has a URL. `docs/RUN.md` has the co
 Every number is rendered through `units.num`, which puts the badge in the same text run,
 in front of the value. `tests/test_console_page.py` asserts that every `.n` span begins
 with one of the eight badges and that the only digits on the page outside a badge are
-inside a sentence from `ticketpath/core/labels.py`. `tests/test_guidance_api.py` walks
-the payload and fails on any number without a badge, a basis naming the record and its
-counts, and a label id.
+inside a sentence from `ticketpath/core/labels.py`. A count that sits inside a sentence is
+its own `.n` span, substituted by `blocks._sentence`: A19's `8 of 9 recorded resales
+(88.9%)` is four badged numbers under a panel badged `[UNVALIDATED]`, so the badge travels
+with the count and not with the block. `tests/test_guidance_api.py` walks the payload and
+fails on any number without a badge, a basis naming the record and its counts, and a label
+id.
 
 ## What is intentionally absent
 

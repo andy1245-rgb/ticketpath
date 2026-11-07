@@ -188,6 +188,19 @@ class TicketpathHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         self._handle("POST")
 
+    # Every other verb lands here rather than in `http.server`'s default, which answers 501
+    # with Python's own error page: the route exists and the method does not, so the answer is
+    # the same 405 `POST /` gets, on the same rendered page. A path that does not exist is
+    # still 404, exactly as it is for GET.
+    def do_PUT(self) -> None:  # noqa: N802
+        self._handle("PUT")
+
+    def do_DELETE(self) -> None:  # noqa: N802
+        self._handle("DELETE")
+
+    def do_PATCH(self) -> None:  # noqa: N802
+        self._handle("PATCH")
+
     def do_OPTIONS(self) -> None:  # noqa: N802
         self._send(204, None)
 
@@ -197,6 +210,12 @@ class TicketpathHandler(BaseHTTPRequestHandler):
         split = urlsplit(self.path)
         head_only = method == "HEAD"
         read_method = "GET" if head_only else method
+        if method not in ("GET", "HEAD", "POST"):
+            length = (self.headers.get("content-length") or "").strip()
+            if self.headers.get("transfer-encoding") or (length.isdigit() and int(length) > 0):
+                # A verb that never reads a body: leave it unread and close the connection, so
+                # a kept-alive socket cannot parse the next request out of this body.
+                self.close_connection = True
         try:
             if split.path == "/favicon.ico":
                 self._send(204, None, head_only=head_only)

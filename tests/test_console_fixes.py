@@ -269,9 +269,17 @@ class TestTheRendererFixesStayFixed(unittest.TestCase):
 
 class TestA1CountsTheTierAndSaysSo(unittest.TestCase):
     def test_a1_names_the_tier_its_count_comes_from(self) -> None:
+        """A1's count is the tier's, and it carries its own badge rather than the panel's.
+
+        The count used to be printed bare inside a paragraph whose nearest badge was the
+        panel heading (`[UNVALIDATED]`), while the count is a `[FIXTURE]` fact. The
+        expectation is stricter now: the number is inside its own `.n` span, so the badge
+        is in the same text run as the value (review 3.11).
+        """
         text = visible(page_for(event="evt_syn_01")[1])
-        self.assertIn("In this tier the ledger records 6 sales.", text)
-        self.assertNotIn("On this event the ledger records 6 sales", text)
+        self.assertIn("In this tier the ledger records [FIXTURE] 6 sales.", text)
+        self.assertNotIn("On this event the ledger records", text)
+        self.assertNotIn("ledger records 6 sales", text)
 
     def test_the_strip_and_the_market_block_agree_on_the_event_count(self) -> None:
         text = visible(page_for()[1])
@@ -288,7 +296,7 @@ class TestA1CountsTheTierAndSaysSo(unittest.TestCase):
                 payload = orchestrator().price_guidance(event_id=event)
                 tier = blocks.selected_tier(payload)
                 text = visible(page_for(event=event)[1])
-                self.assertIn(f"In this tier the ledger records {tier['market']['sales']['value']} sale", text)
+                self.assertIn(f"In this tier the ledger records [FIXTURE] {tier['market']['sales']['value']} sale", text)
 
 
 class TestA13NamesTheBandItUses(unittest.TestCase):
@@ -336,6 +344,35 @@ class TestACapIsOnlyMentionedWhereOneExists(unittest.TestCase):
         text = visible(page_for(event="evt_syn_01")[1])
         self.assertIn("the resale cap gives a ceiling", text)
         self.assertIn("At the cap", text)
+
+    def test_the_uncapped_page_does_not_say_a_cap_hides_the_top_of_the_distribution(self) -> None:
+        """R4: the decision block's cap line was printed on every page.
+
+        On an event whose own regime line says `uncapped` and whose cap field is null, a
+        sentence about what a cap does reads as a claim that this event has one. The line
+        now follows the cap: the capped sentence where a cap exists, the negative where it
+        does not.
+        """
+        for event in ("evt_syn_04", "evt_syn_05", "evt_syn_08"):
+            payload = orchestrator().price_guidance(event_id=event)
+            text = visible(page_for(event=event)[1])
+            with self.subTest(event=event):
+                self.assertIsNone(payload["event"]["capBps"]["value"], "the premise: no cap on this event")
+                self.assertNotIn("A cap does not hide the price", text)
+                self.assertNotIn("it hides the top of the price distribution.", text)
+                self.assertIn(
+                    "No cap applies to this event, so nothing hides the top of the price distribution.",
+                    text,
+                )
+
+    def test_a_capped_page_keeps_the_cap_line(self) -> None:
+        for event in ("evt_syn_01", "evt_syn_02", "evt_syn_03"):
+            text = visible(page_for(event=event)[1])
+            with self.subTest(event=event):
+                self.assertIn(
+                    "A cap does not hide the price; it hides the top of the price distribution.", text
+                )
+                self.assertNotIn("No cap applies to this event", text)
 
 
 class TestTheZeroSaleRateIsNotAMeasuredRate(unittest.TestCase):
@@ -641,6 +678,164 @@ class TestMethodsAndHeaders(unittest.TestCase):
     def test_an_unknown_path_is_still_404(self) -> None:
         with serving() as base:
             self.assertEqual(request(base + "/nope")[0], 404)
+
+
+# -- the residue pass: R2, R5, and the verbs this server does not implement --
+
+
+class TestTheZeroExposureRefusalFollowsTheCut(unittest.TestCase):
+    """R2: `1 ticket` in the strip beside `No ticket had been issued at this instant`."""
+
+    def _issued_at(self, event_id: str, cut: str) -> int:
+        store = fixture_store()
+        own = {ticket["id"] for ticket in store["tickets"] if ticket["eventId"] == event_id}
+        at_cut = parse(cut)
+        return sum(
+            1
+            for row in store["ledger"]
+            if row["ticketId"] in own and row["kind"] == "issue" and parse(row["occurredAt"]) <= at_cut
+        )
+
+    def test_at_the_first_issue_instant_the_sentence_counts_the_ticket(self) -> None:
+        cut = "2026-09-11T11:00:00Z"
+        self.assertEqual(self._issued_at("evt_syn_02", cut), 1, "the premise: one ticket is issued here")
+        text = visible(page_for(event="evt_syn_02", asOf=cut)[1])
+        self.assertIn("[FIXTURE] 1 ticket", text)
+        self.assertNotIn("No ticket had been issued at this instant", text)
+        self.assertIn("1 ticket had been issued on this event by this instant", text)
+        self.assertIn("no ticket-day of exposure has elapsed in this tier", text)
+
+    def test_a_cut_before_the_first_issue_keeps_the_sentence_that_is_true_there(self) -> None:
+        cut = "2026-09-01T00:00:00Z"
+        self.assertEqual(self._issued_at("evt_syn_02", cut), 0)
+        text = visible(page_for(event="evt_syn_02", asOf=cut)[1])
+        self.assertIn("[FIXTURE] 0 tickets", text)
+        self.assertIn("No ticket had been issued at this instant, so there is no denominator.", text)
+        self.assertNotIn("had been issued on this event by this instant", text)
+
+    def test_the_refusal_and_the_strip_print_one_number(self) -> None:
+        cut = "2026-09-11T11:00:00Z"
+        text = visible(page_for(event="evt_syn_02", asOf=cut)[1])
+        strip = re.search(r"\[FIXTURE\] (\d+) tickets? ", text)
+        refusal = re.search(r"\[FIXTURE\] (\d+) tickets? had been issued on this event", text)
+        self.assertIsNotNone(strip, text[:800])
+        self.assertIsNotNone(refusal, text[:2000])
+        self.assertEqual(strip.group(1), refusal.group(1))
+        self.assertEqual(refusal.group(1), str(self._issued_at("evt_syn_02", cut)))
+
+    def test_more_than_one_ticket_at_the_instant_reads_as_a_plural(self) -> None:
+        """Two tickets issued at the cut: no ticket-day has elapsed, and the sentence says so.
+
+        The fixture issues one ticket per instant, so this state is built: the two earliest
+        issue rows on `evt_syn_02` are moved onto one instant, and the cut is taken there.
+        """
+        store = fixture_store()
+        own = {ticket["id"] for ticket in store["tickets"] if ticket["eventId"] == "evt_syn_02"}
+        at = "2026-09-11T11:00:00Z"
+        issues = sorted(
+            (row for row in store["ledger"] if row["ticketId"] in own and row["kind"] == "issue"),
+            key=lambda row: (row["occurredAt"], row["id"]),
+        )
+        for row in issues[:2]:
+            row["occurredAt"] = at
+        path = write_store(store)
+        try:
+            engine = orchestrator(LedgerAdapter.from_fixture(path))
+            status, html = console_index(engine, {"event": "evt_syn_02", "asOf": at}, base="http://x")
+        finally:
+            os.unlink(path)
+        text = visible(html)
+        self.assertEqual(status, 200)
+        self.assertIn("[FIXTURE] 2 tickets", text)
+        self.assertIn("2 tickets had been issued on this event by this instant", text)
+        self.assertNotIn("No ticket had been issued at this instant", text)
+
+
+class TestNoCountOnThePageIsStaleAtTheCut(unittest.TestCase):
+    """R5: every printed count is the count at the cut, and the one that cannot be says so.
+
+    The ticket count was fixed in an earlier pass. This sweep re-derives the strip's and the
+    market block's counts from the store's own rows at five cuts and compares them with the
+    page. The single count that cannot follow a cut is the store's event total: the schema
+    carries no instant at which an event was created, so the noun now names the store instead
+    of presenting a whole-store total as a fact about the decision instant.
+    """
+
+    def test_the_strip_and_the_market_counts_are_the_counts_at_the_cut(self) -> None:
+        store = fixture_store()
+        tier_of = {ticket["id"]: ticket["tierId"] for ticket in store["tickets"]}
+        event_of = {ticket["id"]: ticket["eventId"] for ticket in store["tickets"]}
+        engine = orchestrator()
+        cases = (
+            ("evt_syn_02", "2026-09-01T00:00:00Z"),
+            ("evt_syn_02", "2026-09-11T11:00:00Z"),
+            ("evt_syn_02", "2026-09-20T09:00:00Z"),
+            ("evt_syn_01", "2026-10-01T00:00:00Z"),
+            ("evt_syn_07", "2026-10-01T00:00:00Z"),
+            ("evt_syn_04", "2026-09-20T00:00:00Z"),
+        )
+        for event, cut in cases:
+            at_cut = parse(cut)
+            rows = [row for row in store["ledger"] if parse(row["occurredAt"]) <= at_cut]
+            issued = {row["ticketId"] for row in rows if row["kind"] == "issue" and event_of.get(row["ticketId"]) == event}
+            sold = [
+                row
+                for row in rows
+                if row["kind"] == "sale"
+                and row["priceLamports"] is not None
+                and event_of.get(row["ticketId"]) == event
+            ]
+            payload = engine.price_guidance(event_id=event, as_of=cut)
+            tier = blocks.selected_tier(payload)
+            tier_sold = [row for row in sold if tier_of[row["ticketId"]] == tier["tierId"]]
+            text = visible(page_for(event=event, asOf=cut)[1])
+            with self.subTest(event=event, cut=cut):
+                self.assertEqual(payload["evidence"]["tickets"]["value"], len(issued))
+                self.assertEqual(payload["evidence"]["resales"]["value"], len(sold))
+                self.assertEqual(tier["market"]["sales"]["value"], len(tier_sold))
+                self.assertIn(f"[FIXTURE] {len(issued)} ticket", text)
+                self.assertIn(f"in this tier [FIXTURE] {len(tier_sold)} sale", text)
+
+    def test_the_event_total_is_named_as_the_store_and_the_cut_count_beside_it_moves(self) -> None:
+        store = fixture_store()
+        early = visible(page_for(event="evt_syn_02", asOf="2026-09-01T00:00:00Z")[1])
+        late = visible(page_for(event="evt_syn_02", asOf="2026-11-07T12:00:00Z")[1])
+        self.assertIn(f"[FIXTURE] {len(store['events'])} events in the store,", early)
+        self.assertRegex(early, r"\[FIXTURE\] \d+ with any resale at this instant")
+        self.assertRegex(late, r"\[FIXTURE\] \d+ with any resale at this instant")
+        self.assertNotEqual(
+            re.search(r"\[FIXTURE\] (\d+) with any resale at this instant", early).group(1),
+            re.search(r"\[FIXTURE\] (\d+) with any resale at this instant", late).group(1),
+            "the cut-aware half of the strip is the one that moves with the cut",
+        )
+
+
+class TestVerbsThisServerDoesNotImplement(unittest.TestCase):
+    """R3: `PUT /` answered 501 with Python's own error page, alone among the verbs."""
+
+    def test_put_to_the_console_is_405_not_501(self) -> None:
+        with serving() as base:
+            status, headers, body = request(base + "/", method="PUT")
+        self.assertEqual(status, 405)
+        self.assertIn("method_not_allowed", body)
+        self.assertIn("<!doctype html>", body)
+        self.assertNotIn("Unsupported method", body)
+
+    def test_every_other_verb_answers_like_post(self) -> None:
+        with serving() as base:
+            for method in ("PUT", "DELETE", "PATCH"):
+                with self.subTest(method=method, route="console"):
+                    self.assertEqual(request(base + "/", method=method)[0], 405)
+                with self.subTest(method=method, route="api"):
+                    status, headers, body = request(base + "/api/events", method=method)
+                    self.assertEqual(status, 405)
+                    self.assertIn("method_not_allowed", body)
+
+    def test_a_verb_on_a_path_that_does_not_exist_is_still_404(self) -> None:
+        with serving() as base:
+            for method in ("PUT", "DELETE", "PATCH"):
+                with self.subTest(method=method):
+                    self.assertEqual(request(base + "/nope", method=method)[0], 404)
 
 
 if __name__ == "__main__":

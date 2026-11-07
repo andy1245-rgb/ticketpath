@@ -190,8 +190,13 @@ def evidence(payload: Mapping) -> str:
             f'<p>{num(ev["resales"])} {plural(resales, "resale")} on this event · '
             f'{num(ev["tickets"])} {plural(tickets, "ticket")}'
             f'{ceiling_item}</p>',
-            f'<p>{num(ev["eventsOnPlatform"])} {plural(platform, "event")} on this platform, '
-            f'{num(ev["eventsWithResale"])} with any resale</p>',
+            # The event total is the store's, not the cut's: the schema carries no instant at
+            # which an event was created, so the count of events cannot be cut-aware, and
+            # `on this platform` presented a whole-store total as a fact about the instant
+            # under a line that says nothing after the instant enters any number. The noun
+            # says what the number is, and the count beside it is the one at the cut.
+            f'<p>{num(ev["eventsOnPlatform"])} {plural(platform, "event")} in the store, '
+            f'{num(ev["eventsWithResale"])} with any resale at this instant</p>',
             f'<p>{num(ev["onchainTransactions"])} {plural(transactions, "on-chain transaction")}</p>',
             f'<p class="label-sentence">[FIXTURE] tiers on this event: {esc(tiers_text)}'
             + (f' · showing {esc(selected["name"])}' if selected else "")

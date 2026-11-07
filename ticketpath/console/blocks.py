@@ -7,6 +7,7 @@ every number goes through `units.num`, every sentence through `labels.render`.
 
 from __future__ import annotations
 
+import re
 from typing import Mapping
 
 from ticketpath.core import labels
@@ -16,7 +17,6 @@ from ticketpath.console.units import (
     lamports_text,
     money,
     num,
-    pct_text,
     plural,
     sol_exact,
     sol_text,
@@ -40,7 +40,10 @@ def decision(payload: Mapping) -> str:
     out = ['<section class="panel decision" aria-label="[UNVALIDATED] the decision">']
     out.append("<h2>[UNVALIDATED] The decision</h2>")
     out.extend(decision_mode(payload))
-    out.append(f"<p>{esc(labels.render('P_CAPLINE'))}</p>")
+    # The cap line is about a cap. Printed on every page it read as a claim about this event's
+    # own cap, and the page it sat on said `regime uncapped` two lines later.
+    capline = "P_CAPLINE" if value_of(payload["event"]["capBps"]) is not None else "P_CAPLINE_UNCAPPED"
+    out.append(f"<p>{esc(labels.render(capline))}</p>")
     out.append(tier_name_line(tier))
     if tier["regime"] == "capped_and_binding":
         out.append(_binding(payload, tier))
@@ -105,22 +108,62 @@ def tier_name_line(tier: Mapping) -> str:
 
 def _binding(payload: Mapping, tier: Mapping) -> str:
     floor = tier["recommendation"]["bandLoLamports"] or tier["band"]["loLamports"]
-    cap_bps = value_of(payload["event"]["capBps"])
     ceiling = value_of(tier["band"]["loLamports"])
     at_ceiling = value_of(tier["market"]["atCeilingCount"])
     sales = value_of(tier["market"]["sales"])
     share = (at_ceiling / sales) if sales else 0.0
-    cap_percent = (cap_bps / 100.0) if cap_bps is not None else None
+    cap_bps = value_of(payload["event"]["capBps"])
     out = [
         f'<p class="headline">[UNVALIDATED] {esc(labels.render("P_HEAD_FLOOR", P=sol_exact(value_of(floor)), tier=tier["name"]))}</p>',
         f'<p class="exact">{esc(_exact_ceiling_line(tier, cap_bps))}</p>',
-        f'<p>{esc(labels.render("A19", c=_trim(cap_percent), k=at_ceiling, n=sales, s=pct_text(share)))}</p>',
+        "<p>"
+        + _sentence(
+            "A19",
+            {
+                # The cap in percent is the record's own bps wrapper: `15%`, badged.
+                "c": num(payload["event"]["capBps"], "bps"),
+                "k": num(tier["market"]["atCeilingCount"]),
+                "n": num(tier["market"]["sales"]),
+                # A share of two fixture counts is a fixture count: it carries the badge of
+                # the sales it divides, so `8 of 9 (88.9%)` reads as three record numbers.
+                "s": num(_share(tier, share), "percent"),
+            },
+        )
+        + "</p>",
         f'<p class="floor">{esc(labels.render("P_A19_VALUE", m=sol_exact(value_of(floor))))}</p>',
         f'<p class="range">{esc(labels.render("P_A19_RANGE", lo=sol_exact(value_of(floor))))}</p>',
         f'<p class="label-sentence">[DECLARED] τ {esc(_trim(value_of(tier["band"]["tau"])))} · '
         f'[REFUSED] {esc(labels.render("P_TAU_INERT"))}</p>',
     ]
     out.append(_net_line(payload, tier))
+    return "".join(out)
+
+
+def _share(tier: Mapping, share: float) -> dict:
+    """A share of two badged counts, as a number that can go through `units.num`.
+
+    It is built here rather than in the payload because it is a ratio of two numbers the
+    payload already carries, and the alternative -- a bracket of digits under the panel's
+    `[UNVALIDATED]` badge -- is the defect. The badge is the sales count's own.
+    """
+    return {"value": share, "badge": tier["market"]["sales"]["badge"], "unit": None}
+
+
+def _sentence(label_id: str, numbers: Mapping[str, str], **fields: object) -> str:
+    """A registry sentence whose counts are each their own badged number span.
+
+    The wording stays the registry's: each count is handed to `labels.render` as a marker,
+    and the marker is replaced with the rendered number, so a sentence that carries four
+    counts cannot drift from the numbers it describes. `units.num` puts the badge in the
+    same text run as the value, which is what makes the badge survive a screenshot.
+    """
+    markers = {key: f"\x00{index}\x00" for index, key in enumerate(numbers)}
+    rendered = labels.render(label_id, **{**fields, **markers})
+    keys = list(numbers)
+    out = []
+    for part in re.split(r"(\x00\d+\x00)", rendered):
+        match = re.fullmatch(r"\x00(\d+)\x00", part)
+        out.append(numbers[keys[int(match.group(1))]] if match else esc(part))
     return "".join(out)
 
 
@@ -317,11 +360,17 @@ def market(payload: Mapping) -> str:
         # badge in front of it -- `[DECLARED]` when it is a prior posterior mean, never
         # `[FIXTURE]` as if the record had measured it.
         out.append(f'<p>sale rate in this tier: {num(market["per1000TicketDays"], "rate")}.</p>')
-        out.append(f'<p>{esc(labels.render(label_id, n=sales))}</p>')
+        # A1's count is the tier's, so it carries its own badge here rather than borrowing
+        # the panel's: `In this tier the ledger records [FIXTURE] 9 sales.` The singular and
+        # zero variants say `one sale` and `no sale`, which carry no digits and need none.
+        if label_id == "A1":
+            out.append(f'<p>{_sentence(label_id, {"n": num(market["sales"])})}</p>')
+        else:
+            out.append(f"<p>{esc(labels.render(label_id))}</p>")
         out.append(f'<p class="label-sentence">[{_badge(prior)}] {esc(labels.render("T4"))}</p>')
         out.append(f'<p>exposure {num(market["exposureTicketDays"], "float")} at risk.</p>')
     else:
-        out.append(f'<p>[REFUSED] {esc(labels.render("no_exposure"))}</p>')
+        out.append(f"<p>[REFUSED] {_no_exposure_sentence(payload)}</p>")
     out.append("</section>")
     return "".join(out)
 
@@ -329,6 +378,22 @@ def market(payload: Mapping) -> str:
 def _badge(is_prior: bool) -> str:
     """The badge the rate above carries, for the sentence that describes it."""
     return "DECLARED" if is_prior else "FIXTURE"
+
+
+def _no_exposure_sentence(payload: Mapping) -> str:
+    """The zero-denominator refusal, in the number of tickets the cut actually has.
+
+    It used to say no ticket had been issued, which was false at a cut exactly on the first
+    issue instant: one issue row exists there, and the strip two lines above it read
+    `[FIXTURE] 1 ticket`. The count is that strip's own wrapper, so the sentence and the
+    strip cannot disagree, and the count of zero keeps the sentence that is true then.
+    """
+    tickets = payload["evidence"]["tickets"]
+    count = value_of(tickets)
+    if not count:
+        return esc(labels.render("no_exposure"))
+    label_id = "no_exposure_issued_one" if count == 1 else "no_exposure_issued"
+    return _count_sentence(label_id, tickets, {})
 
 
 def refusals(payload: Mapping) -> str:

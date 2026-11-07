@@ -1,0 +1,139 @@
+SIM -- estimator-property study. Simulation only: no ticket data, no fixture, no market claim.
+SIM | seed=20261107-sim-recovery | python=3.12.3 | stdlib only (D2)
+SIM | start=2026-11-07T13:30:27Z
+
+==============================================================================================================
+SIM STUDY A+B -- pooled mean and between-event variance recovery; declared-band coverage
+SIM | DGP: theta_j ~ N(mu=0.2612, tau=0.3^2); y_ij|theta_j ~ N(theta_j, sigma=0.406^2); n_marks=20 per event; rejected truth: none
+SIM | grid: J in [2, 5, 20] (events) x declared tau in [0.2, 0.3]; R=2000 replications per cell; seed=20261107-sim-recovery
+==============================================================================================================
+
+SIM | A | J=2 n_marks=20 R=2000 | DGP mu=0.2612 tau=0.3 sigma=0.406 | tau2_true=0.0900
+SIM | A | J=2 | tau2_hat (DL, no floor): mean=0.0909 rel_bias=+0.010 p10=-0.0064 p50=0.0388 p90=0.2586 share<=floor(0.01)=0.331
+SIM | A | J=2 declared=0.20 | mu_hat mean=0.2709 bias=+0.0097 mc_se=0.0049 mean_var_of_mu=0.0241 | method=['declared']
+SIM | A | PASS | A.mu | J=2 declared=0.20 bias=+0.0097 threshold=0.0196 | declared: |bias(mu_hat)| <= max(0.01, 4 x Monte-Carlo SE of the bias) in every cell
+SIM | B | J=2 declared=0.20 | coverage_declared=0.620 (R=2000) width_declared_log=0.6580 | coverage_pooled=0.720 width_pooled_log=0.8328
+SIM | B | PASS | B.declared_default | J=2 declared=0.20 coverage=0.620 | declared: coverage at declared=0.20 is < 0.87 at every J (under-covers a tau of 0.30) | declared 0.20 is below the true tau 0.3
+SIM | B | FAIL | B.pooled_width | J=2 declared=0.20 coverage=0.720 | declared: coverage of mu +/- z sqrt(tau2_hat + varOfMu) in [0.87, 0.93] at every J
+SIM | A | J=2 declared=0.30 | mu_hat mean=0.2709 bias=+0.0097 mc_se=0.0049 mean_var_of_mu=0.0491 | method=['declared']
+SIM | A | PASS | A.mu | J=2 declared=0.30 bias=+0.0097 threshold=0.0196 | declared: |bias(mu_hat)| <= max(0.01, 4 x Monte-Carlo SE of the bias) in every cell
+SIM | B | J=2 declared=0.30 | coverage_declared=0.805 (R=2000) width_declared_log=0.9869 | coverage_pooled=0.897 width_pooled_log=1.2270
+SIM | B | FAIL | B.declared_matched | J=2 declared=0.30 coverage=0.805 | declared: coverage of the declared band at declared=0.30 in [0.87, 0.93] at every J
+SIM | B | PASS | B.pooled_width | J=2 declared=0.30 coverage=0.897 | declared: coverage of mu +/- z sqrt(tau2_hat + varOfMu) in [0.87, 0.93] at every J
+SIM | A | PASS | A.tau_mean | J=2 mean_tau2=0.0909 rel_bias=+0.010 | declared: |mean(tau2_hat) - tau2_true| / tau2_true <= 0.25 at every J
+SIM | A | PASS | A.tau_unpinned_small | J=2 p10=-0.0064 p90=0.2586 (1.5x=0.1350, 0.5x=0.0450) | declared: at J=2 and J=5: p90(tau2_hat) >= 1.5 tau2_true OR p10 <= 0.5 tau2_true
+SIM | A | PASS | A.tau_at_floor | J=2 share(raw tau2_hat <= 0.01)=0.331 required >= 0.30 | declared: share(raw tau2_hat <= 0.01) >= 0.30 at J=2, >= 0.02 at J=5, <= 0.10 at J=20
+SIM | A | PASS | A.switch | J=2 shipped method over all reps=['declared'] | declared: method == 'declared' in 100% of fits at J<9; never 'declared' at J>=9
+
+SIM | A | J=5 n_marks=20 R=2000 | DGP mu=0.2612 tau=0.3 sigma=0.406 | tau2_true=0.0900
+SIM | A | J=5 | tau2_hat (DL, no floor): mean=0.0891 rel_bias=-0.010 p10=0.0169 p50=0.0715 p90=0.1849 share<=floor(0.01)=0.056
+SIM | A | J=5 declared=0.20 | mu_hat mean=0.2566 bias=-0.0046 mc_se=0.0032 mean_var_of_mu=0.0096 | method=['declared']
+SIM | A | PASS | A.mu | J=5 declared=0.20 bias=-0.0046 threshold=0.0128 | declared: |bias(mu_hat)| <= max(0.01, 4 x Monte-Carlo SE of the bias) in every cell
+SIM | B | J=5 declared=0.20 | coverage_declared=0.694 (R=2000) width_declared_log=0.6580 | coverage_pooled=0.746 width_pooled_log=0.7329
+SIM | B | PASS | B.declared_default | J=5 declared=0.20 coverage=0.694 | declared: coverage at declared=0.20 is < 0.87 at every J (under-covers a tau of 0.30) | declared 0.20 is below the true tau 0.3
+SIM | B | FAIL | B.pooled_width | J=5 declared=0.20 coverage=0.746 | declared: coverage of mu +/- z sqrt(tau2_hat + varOfMu) in [0.87, 0.93] at every J
+SIM | A | J=5 declared=0.30 | mu_hat mean=0.2565 bias=-0.0047 mc_se=0.0032 mean_var_of_mu=0.0196 | method=['declared']
+SIM | A | PASS | A.mu | J=5 declared=0.30 bias=-0.0047 threshold=0.0128 | declared: |bias(mu_hat)| <= max(0.01, 4 x Monte-Carlo SE of the bias) in every cell
+SIM | B | J=5 declared=0.30 | coverage_declared=0.872 (R=2000) width_declared_log=0.9869 | coverage_pooled=0.904 width_pooled_log=1.0893
+SIM | B | PASS | B.declared_matched | J=5 declared=0.30 coverage=0.872 | declared: coverage of the declared band at declared=0.30 in [0.87, 0.93] at every J
+SIM | B | PASS | B.pooled_width | J=5 declared=0.30 coverage=0.904 | declared: coverage of mu +/- z sqrt(tau2_hat + varOfMu) in [0.87, 0.93] at every J
+SIM | A | PASS | A.tau_mean | J=5 mean_tau2=0.0891 rel_bias=-0.010 | declared: |mean(tau2_hat) - tau2_true| / tau2_true <= 0.25 at every J
+SIM | A | PASS | A.tau_unpinned_small | J=5 p10=0.0169 p90=0.1849 (1.5x=0.1350, 0.5x=0.0450) | declared: at J=2 and J=5: p90(tau2_hat) >= 1.5 tau2_true OR p10 <= 0.5 tau2_true
+SIM | A | PASS | A.tau_at_floor | J=5 share(raw tau2_hat <= 0.01)=0.056 required >= 0.02 | declared: share(raw tau2_hat <= 0.01) >= 0.30 at J=2, >= 0.02 at J=5, <= 0.10 at J=20
+SIM | A | PASS | A.switch | J=5 shipped method over all reps=['declared'] | declared: method == 'declared' in 100% of fits at J<9; never 'declared' at J>=9
+
+SIM | A | J=20 n_marks=20 R=2000 | DGP mu=0.2612 tau=0.3 sigma=0.406 | tau2_true=0.0900
+SIM | A | J=20 | tau2_hat (DL, no floor): mean=0.0903 rel_bias=+0.003 p10=0.0508 p50=0.0868 p90=0.1316 share<=floor(0.01)=0.000
+SIM | A | J=20 declared=0.20 | mu_hat mean=0.2566 bias=-0.0046 mc_se=0.0016 mean_var_of_mu=0.0049 | method=['dersimonian_laird']
+SIM | A | PASS | A.mu | J=20 declared=0.20 bias=-0.0046 threshold=0.0100 | declared: |bias(mu_hat)| <= max(0.01, 4 x Monte-Carlo SE of the bias) in every cell
+SIM | B | J=20 declared=0.20 | coverage_declared=0.718 (R=2000) width_declared_log=0.6580 | coverage_pooled=0.873 width_pooled_log=0.9982
+SIM | B | PASS | B.declared_default | J=20 declared=0.20 coverage=0.718 | declared: coverage at declared=0.20 is < 0.87 at every J (under-covers a tau of 0.30) | declared 0.20 is below the true tau 0.3
+SIM | B | PASS | B.pooled_width | J=20 declared=0.20 coverage=0.873 | declared: coverage of mu +/- z sqrt(tau2_hat + varOfMu) in [0.87, 0.93] at every J
+SIM | A | J=20 declared=0.30 | mu_hat mean=0.2566 bias=-0.0046 mc_se=0.0016 mean_var_of_mu=0.0049 | method=['dersimonian_laird']
+SIM | A | PASS | A.mu | J=20 declared=0.30 bias=-0.0046 threshold=0.0100 | declared: |bias(mu_hat)| <= max(0.01, 4 x Monte-Carlo SE of the bias) in every cell
+SIM | B | J=20 declared=0.30 | coverage_declared=0.879 (R=2000) width_declared_log=0.9869 | coverage_pooled=0.873 width_pooled_log=0.9982
+SIM | B | PASS | B.declared_matched | J=20 declared=0.30 coverage=0.879 | declared: coverage of the declared band at declared=0.30 in [0.87, 0.93] at every J
+SIM | B | PASS | B.pooled_width | J=20 declared=0.30 coverage=0.873 | declared: coverage of mu +/- z sqrt(tau2_hat + varOfMu) in [0.87, 0.93] at every J
+SIM | A | PASS | A.tau_mean | J=20 mean_tau2=0.0903 rel_bias=+0.003 | declared: |mean(tau2_hat) - tau2_true| / tau2_true <= 0.25 at every J
+SIM | A | PASS | A.tau_pinned_20 | J=20 p10=0.0508 p90=0.1316 (0.35x=0.0315, 2.0x=0.1800) | declared: at J=20: p10(tau2_hat) >= 0.35 tau2_true AND p90 <= 2.0 tau2_true
+SIM | A | PASS | A.tau_at_floor | J=20 share(raw tau2_hat <= 0.01)=0.000 required <= 0.10 | declared: share(raw tau2_hat <= 0.01) >= 0.30 at J=2, >= 0.02 at J=5, <= 0.10 at J=20
+SIM | A | PASS | A.switch | J=20 shipped method over all reps=['dersimonian_laird'] | declared: method == 'declared' in 100% of fits at J<9; never 'declared' at J>=9
+
+SIM | A | replication check: the harness DL formula reproduces the shipped tau2 (after its floor) at J>=9 with max_abs_diff=0.000e+00
+SIM | A | canary: the same bias test applied to an estimator shifted by +0.02 log units at J=20 (the harness must call it a failure)
+SIM | A | canary J=20 shifted=+0.02 | bias=+0.0180 threshold=0.0100 | harness verdict=FAIL(correct)
+SIM | A | PASS | A.canary | shifted estimator bias=+0.0180 exceeds threshold=0.0100 | declared: an estimator shifted by +0.02 must be caught: |bias| > max(0.01, 4 x MC SE) | a harness that cannot fail is evidence about the author, not the estimator (06 3.1(4))
+SIM | B | FAIL | B.width_shrinks | declared=0.20 pooled widths J=[2, 5, 20] -> [0.8328, 0.7329, 0.9982] | declared: the pooled width is strictly decreasing in J (2 > 5 > 20) in both arms
+SIM | B | PASS | B.width_shrinks | declared=0.30 pooled widths J=[2, 5, 20] -> [1.227, 1.0893, 0.9982] | declared: the pooled width is strictly decreasing in J (2 > 5 > 20) in both arms
+SIM | B | the declared band's own width does not depend on J: [0.658, 0.9869] for declared [0.2, 0.3]
+
+==============================================================================================================
+SIM STUDY C -- the path estimator: recovery of theta from within-ticket first differences, with the cap binding
+SIM | DGP: y_it = a_i + theta*log(1+d) + beta*d + eps; a_i ~ N(0, 0.15^2); eps ~ N(0, sigma^2); theta=0.3 beta=0.0; 40 tickets x 2 observations; cap c at the (1-s) quantile of latent y, observed y~ = min(y, c)
+SIM | grid: 7 cells x R=400 replications; seed=20261107-sim-recovery
+==============================================================================================================
+
+SIM | C | cell=uncapped_low_noise sigma=0.02 s=None window=(5.0, 60.0) R=400 | DGP theta=0.3 beta=0.0 ticket_sd=0.15
+SIM | C | cell=uncapped_low_noise | observed cap mass=0.000 share of ticket pairs with >=1 clipped end=0.000 mean c=-
+SIM | C | cell=uncapped_low_noise | theta_hat_diff mean=0.2998 bias=-0.0002 rmse=0.0153 | theta_hat_shipped mean=0.2949 bias=-0.0051 rmse=0.0770 | latent_oracle bias=-0.0002 | shipped reasons={'fitted': 400}
+SIM | C | PASS | C.diff_uncapped | cell=uncapped_low_noise bias(theta_diff)=-0.0002 rmse=0.0153 | declared: uncapped cells: |bias(theta_hat_diff)| <= 0.01 and RMSE reported
+
+SIM | C | cell=uncapped_noisy sigma=0.1 s=None window=(5.0, 60.0) R=400 | DGP theta=0.3 beta=0.0 ticket_sd=0.15
+SIM | C | cell=uncapped_noisy | observed cap mass=0.000 share of ticket pairs with >=1 clipped end=0.000 mean c=-
+SIM | C | cell=uncapped_noisy | theta_hat_diff mean=0.2995 bias=-0.0005 rmse=0.0755 | theta_hat_shipped mean=0.2972 bias=-0.0028 rmse=0.0879 | latent_oracle bias=-0.0005 | shipped reasons={'fitted': 400}
+SIM | C | PASS | C.diff_noisy | cell=uncapped_noisy bias(theta_diff)=-0.0005 | declared: noisy uncapped cell: |bias(theta_hat_diff)| <= 0.02
+
+SIM | C | cell=narrow_window sigma=0.02 s=None window=(40.0, 60.0) R=400 | DGP theta=0.3 beta=0.0 ticket_sd=0.15
+SIM | C | cell=narrow_window | observed cap mass=0.000 share of ticket pairs with >=1 clipped end=0.000 mean c=-
+SIM | C | cell=narrow_window | theta_hat_diff mean=0.2937 bias=-0.0063 rmse=0.2107 | theta_hat_shipped mean=0.3648 bias=0.0648 rmse=1.0425 | latent_oracle bias=-0.0063 | shipped reasons={'outside_support': 392, 'fitted': 8}
+SIM | C | PASS | C.diff_uncapped | cell=narrow_window bias(theta_diff)=-0.0063 rmse=0.2107 | declared: uncapped cells: |bias(theta_hat_diff)| <= 0.01 and RMSE reported
+
+SIM | C | cell=cap10_low_noise sigma=0.02 s=0.1 window=(5.0, 60.0) R=400 | DGP theta=0.3 beta=0.0 ticket_sd=0.15
+SIM | C | cell=cap10_low_noise | observed cap mass=0.100 share of ticket pairs with >=1 clipped end=0.130 mean c=1.2650
+SIM | C | cell=cap10_low_noise | theta_hat_diff mean=0.3124 bias=+0.0124 rmse=0.0167 | theta_hat_shipped mean=0.3122 bias=0.0122 rmse=0.0721 | latent_oracle bias=+0.0008 | shipped reasons={'fitted': 400}
+SIM | C | PASS | C.oracle | cell=cap10_low_noise bias(latent oracle)=+0.0008 | declared: |bias(theta_hat_latent)| <= 0.01 in every capped cell (the attenuation is the clip)
+
+SIM | C | cell=cap40_low_noise sigma=0.02 s=0.4 window=(5.0, 60.0) R=400 | DGP theta=0.3 beta=0.0 ticket_sd=0.15
+SIM | C | cell=cap40_low_noise | observed cap mass=0.400 share of ticket pairs with >=1 clipped end=0.464 mean c=1.0519
+SIM | C | cell=cap40_low_noise | theta_hat_diff mean=0.3393 bias=+0.0393 rmse=0.0178 | theta_hat_shipped mean=0.3447 bias=0.0447 rmse=0.0662 | latent_oracle bias=+0.0001 | shipped reasons={'fitted': 400}
+SIM | C | PASS | C.oracle | cell=cap40_low_noise bias(latent oracle)=+0.0001 | declared: |bias(theta_hat_latent)| <= 0.01 in every capped cell (the attenuation is the clip)
+
+SIM | C | cell=cap70_low_noise sigma=0.02 s=0.7 window=(5.0, 60.0) R=400 | DGP theta=0.3 beta=0.0 ticket_sd=0.15
+SIM | C | cell=cap70_low_noise | observed cap mass=0.700 share of ticket pairs with >=1 clipped end=0.772 mean c=0.8413
+SIM | C | cell=cap70_low_noise | theta_hat_diff mean=0.3255 bias=+0.0255 rmse=0.0311 | theta_hat_shipped mean=- bias=- rmse=- | latent_oracle bias=+0.0001 | shipped reasons={'cap_mass_dominates': 400}
+SIM | C | PASS | C.oracle | cell=cap70_low_noise bias(latent oracle)=+0.0001 | declared: |bias(theta_hat_latent)| <= 0.01 in every capped cell (the attenuation is the clip)
+
+SIM | C | cell=cap40_noisy sigma=0.1 s=0.4 window=(5.0, 60.0) R=400 | DGP theta=0.3 beta=0.0 ticket_sd=0.15
+SIM | C | cell=cap40_noisy | observed cap mass=0.400 share of ticket pairs with >=1 clipped end=0.506 mean c=1.0521
+SIM | C | cell=cap40_noisy | theta_hat_diff mean=0.3362 bias=+0.0362 rmse=0.0703 | theta_hat_shipped mean=0.3494 bias=0.0494 rmse=0.0726 | latent_oracle bias=+0.0018 | shipped reasons={'fitted': 400}
+SIM | C | PASS | C.oracle | cell=cap40_noisy bias(latent oracle)=+0.0018 | declared: |bias(theta_hat_latent)| <= 0.01 in every capped cell (the attenuation is the clip)
+
+SIM | C | attenuation ladder (theta_hat_diff, low noise): s=0.00:0.2998 -> s=0.10:0.3124 -> s=0.40:0.3393 -> s=0.70:0.3255
+SIM | C | FAIL | C.cap_direction | means=[0.2998, 0.3124, 0.3393, 0.3255] strictly_decreasing=False all_below_truth=False | declared: capped cells: bias(theta_hat_diff) < 0 and mean theta_hat strictly decreasing in s
+SIM | C | FAIL | C.cap_magnitude | relative attenuation at s=0.40: -0.131; at s=0.70: -0.085 | declared: relative attenuation >= 10% at s=0.40 and >= 30% at s=0.70
+SIM | C | PASS | C.guard | cap_mass_dominates share: s=0.70 1.000, s=0.40 0.000, s=0.10 0.000, uncapped 0.000 | declared: cap_mass_dominates in 100% of fits at s=0.70 and 0% at s<=0.40
+
+SIM | C | POST-RUN DIAGNOSTIC (added after the first run; no pass condition changed) | noiseless latent path y = theta log(1+d), theta=0.30, d on a grid over [5, 60]
+SIM | C | POST-RUN DIAGNOSTIC | s=0.10 c=1.2049 theta_hat=0.3117 beta_hat=-0.00057 | observed end-to-end drop=0.6674 vs latent 0.6957 | fitted drop omega=0 0.7228, omega=1 0.6914, truth 0.6957
+SIM | C | POST-RUN DIAGNOSTIC | s=0.25 c=1.1566 theta_hat=0.3591 beta_hat=-0.00303 | observed end-to-end drop=0.6191 vs latent 0.6957 | fitted drop omega=0 0.8328, omega=1 0.6659, truth 0.6957
+SIM | C | POST-RUN DIAGNOSTIC | s=0.40 c=1.0991 theta_hat=0.4160 beta_hat=-0.00645 | observed end-to-end drop=0.5615 vs latent 0.6957 | fitted drop omega=0 0.9649, omega=1 0.6103, truth 0.6957
+SIM | C | POST-RUN DIAGNOSTIC | s=0.70 c=0.9341 theta_hat=0.3998 beta_hat=-0.01014 | observed end-to-end drop=0.3965 vs latent 0.6957 | fitted drop omega=0 0.9272, omega=1 0.3696, truth 0.6957
+SIM | C | POST-RUN DIAGNOSTIC | design window (5.0, 60.0): corr(d, log(1+d))=0.962077, theta variance factor S_dd/delta=0.189202 per unit residual variance
+SIM | C | POST-RUN DIAGNOSTIC | design window (40.0, 60.0): corr(d, log(1+d))=0.998679, theta variance factor S_dd/delta=143.611630 per unit residual variance
+
+==============================================================================================================
+SIM | VERDICTS
+SIM | A  pooled mu and tau2 recovery: PASS
+SIM | B  declared-band coverage: FAIL | failed: B.pooled_width, B.declared_matched, B.width_shrinks
+SIM | C  path theta from within-ticket differences: FAIL | failed: C.cap_direction, C.cap_magnitude
+SIM | conditions: 37/43 held
+SIM | runtime: A+B 0.57 s, C 0.35 s, total wall 0.92 s
+SIM | cpu time 0.92 s
+
+SIM | WHAT THIS PROVES: that each shipped estimator does what its finding says it does when the
+SIM | generative model is the estimator's own assumption -- bias, dispersion, coverage, the
+SIM | nine-event switch, the cap-mass guard, and the size and sign of the truncation bias.
+SIM | WHAT IT DOES NOT PROVE: anything about ticket markets. The DGP was written from the
+SIM | estimator's assumptions, so a pass cannot detect a wrong assumption. No number here is an
+SIM | accuracy claim about tickets, and none is evidence that real prices look like this.
+==============================================================================================================

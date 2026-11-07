@@ -204,9 +204,15 @@ ALLOWED: Mapping[str, str] = {
         "One ticket sold twice: {p1} → {p2} SOL over {d} days. One pair is a fact, not an "
         "index."
     ),
+    # The four counts in A19 -- the cap in percent, the sales at the ceiling, the sales, and
+    # the share -- each carry their own badge: the sentence sits in a panel badged
+    # `[UNVALIDATED]` while every one of its numbers is a `[FIXTURE]` count, so the block's
+    # badge alone let a reader take a record count for an engine output. The percent signs
+    # moved out of the template and into the badged number (`15%`, `88.9%`), so the printed
+    # digits are unchanged.
     "A19": (
-        "The resale price in this tier is capped at {c}% over face, and the cap is binding: "
-        "{k} of {n} recorded resales ({s}%) settled at exactly the ceiling. Those buyers each "
+        "The resale price in this tier is capped at {c} over face, and the cap is binding: "
+        "{k} of {n} recorded resales ({s}) settled at exactly the ceiling. Those buyers each "
         "paid the most the platform allows, so the record shows what was paid, not what "
         "buyers would have paid, and every sale the ceiling turned away is missing from it "
         "entirely."
@@ -222,6 +228,12 @@ ALLOWED: Mapping[str, str] = {
 
 PAGE: Mapping[str, str] = {
     "P_CAPLINE": "A cap does not hide the price; it hides the top of the price distribution.",
+    # The same idea on an event whose regime is `uncapped`. The capped sentence was printed on
+    # every page, including the ones whose own regime line says `uncapped` and whose cap field
+    # is null, where it read as a claim about a cap this event does not have.
+    "P_CAPLINE_UNCAPPED": (
+        "No cap applies to this event, so nothing hides the top of the price distribution."
+    ),
     "P_HEAD": "Recommended primary price: {P} SOL per ticket.",
     "P_HEAD_FLOOR": "Recommended primary price: at least {P} SOL per ticket, {tier} tier.",
     "P_BAND": "Band {P_lo} – {P_hi} SOL.",
@@ -335,6 +347,18 @@ REFUSAL_TEXT: Mapping[str, str] = {
     "insufficient_time_spread": "The {n} resales span {d} days; 5 days of spread are required to separate time from the level.",
     "degenerate_design": "The resales are too clustered in time to separate curvature from drift.",
     "no_exposure": "No ticket had been issued at this instant, so there is no denominator.",
+    # The same refusal where a ticket *had* been issued and no ticket-day of exposure has
+    # elapsed: a cut exactly on the first issue instant. The old sentence said no ticket had
+    # been issued, beside a strip that said `[FIXTURE] 1 ticket`. The count is the strip's own
+    # wrapper, so the two cannot disagree; the zero case keeps the sentence that is true there.
+    "no_exposure_issued": (
+        "{n} tickets had been issued on this event by this instant, but no ticket-day of "
+        "exposure has elapsed in this tier, so the rate has no denominator."
+    ),
+    "no_exposure_issued_one": (
+        "{n} ticket had been issued on this event by this instant, but no ticket-day of "
+        "exposure has elapsed in this tier, so the rate has no denominator."
+    ),
     "not_identified": (
         "The platform does not record asking prices, so we cannot estimate the chance a "
         "ticket sells at a specific price. What is shown is what actually happened."

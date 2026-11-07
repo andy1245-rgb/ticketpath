@@ -5,10 +5,11 @@ same text run as the value, first. That is what makes "every number carries its 
 checkable by stripping tags and reading text, and what makes it survive a screenshot, a
 projector and a colour-blind judge.
 
-A sentence from `labels` may contain counts -- A19 says "8 of 9 recorded resales
-(88.9%)" in one breath -- and it carries its badge on the block it belongs to. The
-numbers on their own are also printed badged, in the evidence strip and the market
-block, so a reader can check the sentence against them.
+A sentence from `labels` may contain counts -- A19 says "8 of 9 recorded resales (88.9%)"
+and A1 says "records 9 sales" -- and each of those counts is rendered by this function and
+substituted into the sentence as its own span, so the badge travels with the number rather
+than with the panel. `blocks._sentence` does the substitution; a sentence whose count is a
+word (`one sale`, `no sale`) needs none.
 """
 
 from __future__ import annotations
