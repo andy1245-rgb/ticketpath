@@ -301,6 +301,7 @@ def _band(band: Mapping, tier: Mapping, sales: int, at_ceiling: int, events: int
 def _recommendation(recommendation: Mapping, sales: int, at_ceiling: int, events: int) -> dict:
     basis = f"{sales} sales, {at_ceiling} at the ceiling, {events} events with resale"
     value = recommendation["recommendedLamports"]
+    ceiling = recommendation.get("candidateCeilingLamports")
     return {
         "refused": recommendation["refused"],
         "refusalCode": recommendation["refusalCode"],
@@ -315,6 +316,15 @@ def _recommendation(recommendation: Mapping, sales: int, at_ceiling: int, events
         "noUpperBound": recommendation["noUpperBound"],
         "basis": recommendation["basis"],
         "labelId": recommendation["labelId"],
+        "candidateCeilingLamports": None
+        if ceiling is None
+        else num(
+            ceiling,
+            "EXACT",
+            f"face x (10,000 + {int(recommendation.get('candidateCapBps'))}) / 10,000, integer arithmetic",
+            None,
+            "lamports",
+        ),
         "extraLabelIds": list(recommendation.get("extraLabelIds", [])),
         "consequence": [
             {
@@ -480,6 +490,13 @@ def _refusals(chosen: Mapping | None, pooled: Mapping, fee_present: bool = False
         lines.append({"code": path["reason"] or "path_answered", "labelId": path["labelId"], "reason": path["reason"]})
         if chosen["recommendation"]["noUpperBound"]:
             lines.append({"code": "no_upper_bound", "labelId": "no_upper_bound", "reason": None})
+        if chosen["recommendation"].get("refusalCode") == "recommendation_above_cap":
+            # The cap the page carries sits below the price this record supports, so the
+            # recommendation is refused and the panel says why, in the same sentence the
+            # decision block prints.
+            lines.append(
+                {"code": "recommendation_above_cap", "labelId": "recommendation_above_cap", "reason": None}
+            )
         if chosen["band"].get("refusalCode") == "before_on_sale_no_pool":
             lines.append(
                 {"code": "before_on_sale_no_pool", "labelId": "before_on_sale_no_pool", "reason": "nothing_to_pool"}

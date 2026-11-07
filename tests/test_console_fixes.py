@@ -157,15 +157,30 @@ class TestTheConsoleIsTotal(unittest.TestCase):
             self.assertEqual(request(base + "/health")[0], 200)
 
     def test_a_zero_priced_sale_refuses_with_a_typed_reason(self) -> None:
+        """The offending event refuses by name; every other event still prices.
+
+        The old version asked for `evt_syn_04` and expected a 422: one bad row in
+        `evt_syn_01` refused the whole console, because `cross_section` built every event.
+        The loader now holds that one event back, so the refusal is for it and only it.
+        """
         store = fixture_store()
+        event_of = {ticket["id"]: ticket["eventId"] for ticket in store["tickets"]}
+        broken = None
         for row in store["ledger"]:
-            if row["kind"] == "sale" and row["ticketId"].startswith("tkt_syn_") and row["eventId" if False else "id"]:
+            if row["kind"] == "sale":
                 row["priceLamports"] = 0
+                broken = event_of[row["ticketId"]]
                 break
-        status, html = self._console(store, {"event": "evt_syn_04"})
+        self.assertIsNotNone(broken)
+        status, html = self._console(store, {"event": broken})
         self.assertEqual(status, 422)
         self.assertIn("sale_not_priced", visible(html))
         self.assertIn("<!doctype html>", html)
+        healthy = next(row["id"] for row in store["events"] if row["id"] != broken and row["tiers"])
+        status, html = self._console(store, {"event": healthy})
+        self.assertEqual(status, 200)
+        self.assertIn("<!doctype html>", html)
+        self.assertNotIn("sale_not_priced", visible(html))
 
     def test_a_sale_after_the_event_started_refuses_with_a_typed_reason(self) -> None:
         store = fixture_store()
@@ -236,10 +251,13 @@ class TestTheConsoleIsTotal(unittest.TestCase):
                 row["priceLamports"] = 0
                 break
         with serving(store) as base:
-            status, headers, body = request(base + "/?event=evt_syn_04")
+            status, headers, body = request(base + "/?event=evt_syn_01")
             self.assertEqual(status, 422)
             self.assertIn("text/html", headers.get("content-type", ""))
             self.assertIn("sale_not_priced", body)
+            # and the rest of the store is still served: one bad event is not a whole outage
+            self.assertEqual(request(base + "/?event=evt_syn_04")[0], 200)
+            self.assertEqual(request(base + "/health")[0], 200)
 
 
 # -- item 2: the two renderer fixes, pinned -------------------------------

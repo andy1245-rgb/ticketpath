@@ -133,7 +133,12 @@ fields, or money, or both.
 
 Recorded, not resolved.
 
-1. **01-b §4.4(ii) overstates the cap as an instrument.** It says `resalePriceCapBps` "varies … across tiers
+1. **01-b ~~§4.4(ii)~~ §5.3 overstates the cap as an instrument.** **[CORRECTION 2026-11-07T14:00Z, R2-8 —
+   attribution corrected: the sentence quoted in this item is §5.3 item 3's. `01-b` §4.4(ii) says the
+   opposite — "Because the cap is bps over *each tier's own* face, its **absolute level** differs across tiers
+   within one event" — and is already correct. The criticism survives the correction as stated and loses no
+   force: it turns on the wire contract, not on which section of `01-b` got it wrong, and §5.3 is the section
+   that awards the cap identifying variation. No conclusion below changes; §4.4(ii) needs no correction.]** It says `resalePriceCapBps` "varies … across tiers
    within an event because it is bps over each tier's own face". The *absolute* ceiling does differ across
    tiers, but the bps does not: `resalePriceCapBps` is a single field on `Event`, not on `TicketTier`, and the
    cross-tier variation is exactly proportional to face value, so it carries no independent information. There
@@ -141,7 +146,9 @@ Recorded, not resolved.
    therefore confounded with everything else that varies across events. That weakens the instrument behind
    01-b's one-sided bounds. It does not destroy it — cross-event bps variation is real and observed — but the
    bounds should be reported with that confound named. Checkable in ten seconds against `types.ts`; fold into
-   `C-variable-registry.md`.
+   `C-variable-registry.md`. `C-variable-registry.md` C-3 does and cites `01-b` §5, correctly;
+   `D-model-registry.md` C6 carries this item's wrong section number and was corrected with it on
+   2026-11-07T14:00Z.
 2. **01-b §4.3 says the missing observation is "the ask, not the exposure"; for a hazard model the exposure is
    the binding object.** The four fields deliver both at once, which is why they are one request, so nothing
    operational changes. What changes is the estimator: without `listedAt`/`delistedAt` there is no risk set,

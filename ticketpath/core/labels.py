@@ -314,6 +314,31 @@ PAGE: Mapping[str, str] = {
         "— integer arithmetic on the tier face, not an estimate. That is exactly {sol} SOL."
     ),
     "P_CEILING_NONE": "no resale cap on this event, so no ceiling: face {face} SOL.",
+    # The cap field and the canonical URL under it carry the cap this page prices against,
+    # and on the page with no capBps parameter that cap is the event's recorded one. The
+    # two sentences say which number the reader is looking at, so a field that shows 2500
+    # while the record's own cap is 1500 is read as two facts and not as a contradiction.
+    "P_CAP_RULE": (
+        "The cap field shows the resale cap this page prices against and the canonical URL "
+        "carries the same number: clear the field and submit to fall back to this event's "
+        "recorded cap of {recorded} bps."
+    ),
+    "P_CAP_RULE_UNCAPPED": (
+        "This event records no cap, so a blank field means no cap and this page prices "
+        "against none: type a number to price against that cap, and the canonical URL "
+        "carries it."
+    ),
+    # The decision block names the cap in force whenever it is not the record's own. The
+    # recorded sales are still described under the cap they were made under; the two
+    # numbers are named so the reader never has to reconcile them.
+    "P_CAP_IN_FORCE": (
+        "This page prices against a cap of {cap}. The record was made under a cap of "
+        "{recorded}, so the recorded sales are described under that cap, not this one."
+    ),
+    "P_CAP_IN_FORCE_UNCAPPED": (
+        "This page prices against a cap of {cap}. This event records no cap of its own, so "
+        "no recorded sale is reclassified by this one."
+    ),
 }
 
 # -- the refusal sentences (section 4.8) ----------------------------------
@@ -337,6 +362,28 @@ REFUSAL_TEXT: Mapping[str, str] = {
         "and no primary price is stated."
     ),
     "no_upper_bound": "We do not state an upper bound from this record.",
+    # The two store states the loader holds an event back for, typed at load. A sale with no
+    # money and a sale dated after the event starts are not prices the engine can read, and
+    # the row is named so a reader can go and look at it.
+    "sale_not_priced": (
+        "Row {row} is a sale recorded without money, so this event cannot be priced: a zero "
+        "resale price has no ratio to face value, and no number for this event is stated."
+    ),
+    "sale_after_event_start": (
+        "Row {row} is a sale dated after this event starts, so this event cannot be priced: "
+        "the time from that sale to the event is negative, and no number for this event is "
+        "stated."
+    ),
+    # The cap in force on the page is a hard ceiling on the recommendation, in the same
+    # integer arithmetic the store uses. When it sits below the price this record supports,
+    # the record's recommendation is a price the policy forbids, and the ceiling is not
+    # printed in its place: a cap is a floor on value, not a target for a primary price.
+    "recommendation_above_cap": (
+        "The cap of {cap_bps} in force on this page puts the resale ceiling at "
+        "{ceiling_lamports}, below the price this record supports, so no primary "
+        "price is stated: a recommendation above that ceiling is a price the cap forbids, "
+        "and the ceiling is not a target for the primary price."
+    ),
     # No flat path is drawn anywhere in the console, so the sentence may not promise one.
     "insufficient_marks": "{n} sales is too few to fit a path, so no path is quoted.",
     "insufficient_marks_one": "One sale is too few to fit a path, so no path is quoted.",

@@ -813,11 +813,17 @@ carries both statements in V2.
 
 **C-3 — The value of the cap (00-data-situation versus 01-b).** The audit sees the truncation as a
 nuisance that biases the top of the distribution. 01-b §5 shows the same object is an instrument: the cap
-is observed, varies across events, and varies across tiers within one event because it is bps over each
-tier's own face, so a mass point at the cap measures rationed *quantity* though not the latent tail's
+is observed, varies across events, ~~and varies across tiers within one event because it is bps over each
+tier's own face~~ **[CORRECTION 2026-11-07T14:00Z, R2-25 — dead: `resalePriceCapBps` is a single field on
+`Event`, so there is no within-event variation; only the implied money ceiling varies, as face × (1 + c),
+collinear with face. The instrument is cross-event only. See the CORRECTION below.]**, so a mass point at the cap measures rationed *quantity* though not the latent tail's
 location. The registry treats V3 as both, and 01-b's original point stands: **no class-A claim about caps
-may appear in the deliverable**, because no peer-reviewed study of resale price caps in ticket markets was
-found.
+may appear in the deliverable**, ~~because no peer-reviewed study of resale price caps in ticket markets was
+found~~ **[CORRECTION 2026-11-07T14:00Z, R2-26 — dead: one was found. `01-a` §3 cites He & Lin (2026),
+*Marketing Science* 45(3):515–533, "Price Caps by Matching Platforms: The Case of Ticket Resales", which is
+peer-reviewed and about exactly this object. The claim that survives is `01-b` §4.5's narrower one, "no
+peer-reviewed **econometric** study", and whether He & Lin is econometric is unread by this programme. The
+rule the sentence supports — no class-A cap claim in the deliverable — is unaffected and still binds.]**.
 
 **C-4 — `AGENTS.md`'s first consequence.** `AGENTS.md` argues that because a resale here is a recorded
 transaction, the asking-versus-realised part of Phase 2A is smaller than the literature implies. 01-d
@@ -887,7 +893,12 @@ plus no peer-reviewed *measurement* of one satisfies both files. So read C-3's e
 **no peer-reviewed econometric study**, not no study. The rule it supports — "no class-A claim about caps may
 appear in the deliverable" — is unaffected, is still correct, and is unchanged. The full distinction, with both
 passages quoted and the one open question (is He & Lin econometric?), is `01-a-market-structure.md`'s NOTE of the
-same timestamp. Nothing else in C-3 or in this file rests on the broader wording.
+same timestamp. Nothing else in C-3 or in this file rests on the broader wording. **[CORRECTION
+2026-11-07T14:00Z, R2-26b — that NOTE said the clause was narrowed; it was not, because a note below a sentence
+cannot amend the sentence a reader meets first. C-3's closing clause is now struck in place (R2-26, above),
+which is what this NOTE asks a reader to do, and the instruction to read it as "no peer-reviewed econometric
+study" stands. `DELIVERABLE.md` §20.5 previously said the clause "is narrowed to `01-b`'s wording there"; that
+sentence was false and was corrected at the same timestamp.]**
 
 ---
 

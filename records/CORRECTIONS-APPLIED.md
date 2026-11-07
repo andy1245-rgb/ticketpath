@@ -167,3 +167,130 @@ check made in this pass was a Crossref query whose returned record is printed in
 3. **`records/README.md` describes `DELIVERABLE.md` as "a stub … it is not written yet".** The file is 199KB and
    written through §21. That is a stale index pointer of the same kind as defect 1, found while working here and
    not part of the four, so it is recorded and not changed.
+
+---
+
+# Corrections applied — verification round 2
+
+**Status:** complete. **UTC:** 2026-11-07T14:00Z. **Agent:** corrections pass, round 2.
+**Trigger:** `records/findings/00-verification-round2.md` (2026-11-07T13:50Z), an independent check of round 1's
+corrections, of the four protection tests those corrections were meant to establish, of `09-sim-recovery.md`,
+and of `DELIVERABLE.md` §20–§22.
+**Scope:** exactly what that file names, in the order it names it. Nothing outside `records/` was read for
+evidence or edited. No code was touched. Nothing was committed or pushed.
+
+**Why there was a round 2.** Round 1's corrections were right in substance (11 of 16 held, 5 right in substance
+with a defective detail, 0 new falsehoods about a source) and the protections failed anyway: nine false
+statements sat in records no correction reached, and twelve more were corrected only on the last page of the
+file that still asserted them in the body. The verifier's sentence is the one this pass was written to answer:
+*"the section and the file disagree until the tail is read."*
+
+## 6. The two marking rules, and which was used where
+
+**Rule A — inline marking.** The false sentence is struck where it stands and carries a dated one-line marker
+(`**[CORRECTION 2026-11-07T14:00Z, R2-n — dead: <what is true in one line>. <pointer>]**`). Used wherever a
+reader would otherwise believe a false sentence mid-argument and the correction fits in a line or a short
+bracket. Nothing is deleted: the text stays visible, struck, so the history of the defect survives in the place
+the defect was made.
+**Rule B — appended or newly written prose.** The correction is a block (§) carrying the argument, the arithmetic
+or the quoted source. Used where a one-liner would mangle a derivation or a table, where the correction needs
+counts the reader should be able to check, or where the file is an index or the deliverable and a block is the
+only place the correction can live without rewriting what it corrects.
+
+Every mark carries a UTC ISO-8601 date and the word CORRECTION. Every number is quoted from a named source in
+this repository or shown as arithmetic on one; no number in this pass comes from `lib/mock/`.
+
+## 6.1 Round-2 defects, one row per site
+
+| # | File | The wrong sentence (quoted, trimmed) | What is true | Verifier's finding | Rule |
+|---|---|---|---|---|---|
+| R2-1 | `findings/01-b-identifiability.md` §4.1 | "only 90 of 128 fixture tickets ever sell, so pairs come from the liquid subset of an already-selected subset" | 90 is a `sale` **row** count. `00-data-situation.md` §2: 253 rows (128 `issue` + 90 `sale` + 21 `transfer` + 14 `redeem`) and 79 of 128 tickets with no sale, so **49** tickets sell (128 − 79) and 41 sold more than once. It is also a fixture figure doing argumentative work, which the audit bars | §1 item 1, (c); §2.1 row 1; §5 B10 | A |
+| R2-2 | `findings/01-b-identifiability.md` §4.3 item 2 | "14 of 128 tickets redeem" | 14 is a `redeem` row count; the record carries no ticket-level redemption count, and the programme's rule forbids producing one from the fixture | §1 item 2; §2.1 row 2; §5 B11 | A |
+| R2-3 | `findings/01-b-identifiability.md` §4.3 item 3 | "fits 79-of-128 better than a long tail" | The fraction is a recorded property of the fixture, so it cannot choose a specification. The cure component stands on censusing and Boag (1949) | §2.1 row 3 (named, not withdrawn) | A |
+| R2-4 | `findings/01-b-identifiability.md` §4.6 | "so 79-of-128 is an upper bound on the never-*offered* fraction" | Same rule: a fixture fraction bounds nothing about tickets offered on the platform. The attenuation direction stands on Bollinger (1996) and Aigner (1973) | §2.1 row 4 (named by no correction) | A |
+| R2-5 | `findings/00-ledger-verification.md` §3, "Confirmed wrong as cited" | the S-prefixed Aigner DOI "returns HTTP 404 … the single unresolvable citation in the records" | `01-b` does not contain that string. Both its Aigner occurrences are the resolving form; the only `S0304-4076` DOI in the file is Bollinger's. The 404 was real but was run on an input that is not in the file | §1 items 8–10, (c); §2.2 | A |
+| R2-6 | `findings/00-ledger-verification.md` P1.C row (verdict and correction cell) | "No `01-c*` file exists"; "`dispatched` is correct here" | `01-c-methods.md` exists, complete, 1,558 lines, written 10:57Z–11:09Z. The row was a 10:55Z observation, true then, stale four minutes later | §5 A6 | A |
+| R2-7 | `findings/00-ledger-verification.md` §3 opening | "Every DOI … resolves … with one exception" | No DOI fails to resolve. Two printed **author sets** do not match Crossref, which is a printing error inside a resolving record | §1 item 8 note | A |
+| R2-7b | `findings/00-ledger-verification.md` closing list item 6 | "One unresolvable citation and one mis-cited register page are the only bibliographic failures" | One failure, the register page. The other real defect is `01-b` §7's two printed author sets | §1 items 8–10 | A |
+| R2-8 | `findings/01-c-methods.md` §1.4(1) | "**01-b §4.4(ii) overstates the cap as an instrument.** It says `resalePriceCapBps` 'varies … across tiers within an event …'" | The quoted sentence is §5.3 item 3's. §4.4(ii) says the opposite — "its **absolute level** differs across tiers within one event" — and is already correct. **The argument survives the correction:** it turns on the wire contract (`resalePriceCapBps` is one field on `Event`), not on which section got it wrong, and §5.3 is the section that awards identifying variation. No conclusion in `01-c` changes | §2.3; §5 A2 | A |
+| R2-8b | `D-model-registry.md` C6 | "`01-b` §4.4(ii) treats the cap as an instrument with cross-tier variation" | Same mis-attribution, same correction; §4.4(ii) uses cross-**event** cap variation. C6's conclusion was never resting on it | §2.3; §5 A3 | A |
+| R2-9 | `A-research-ledger.md` defects list | "`01-b` §7 cites Aigner (1973) as `10.1016/S0304-4076(73)90005-5`, which returns 404" | It does not. No unresolvable DOI, so no citation defect there | §1 item 10; §2.2; §5 B21 | A |
+| R2-9b | `A-research-ledger.md` fixture bullet | the fixture-count bullet as written | The count is right and the bullet stands as a defect record; the four fixture sentences in `01-b` are now marked dead in that file, not only in its tail | §2.1 | A |
+| R2-9c | `A-research-ledger.md` V1 row | "one unresolvable DOI and two wrong fixture counts" | No unresolvable DOI. Of the two fixture counts, one was wrong (90 rows read as tickets) and one is a row count whose ticket count the record does not establish | §1 item 10 | A |
+| R2-10 | `findings/09-sim-recovery.md` summary heading | "**The three failures first**, because they are the result" | Five conditions failed (`B.pooled_width`, `B.declared_matched`, `B.width_shrinks`, `C.cap_direction`, `C.cap_magnitude`), six of the 43 condition-lines; 43 − 6 = 37 held, the printed count | §3.3 | U+A |
+| R2-10b | `findings/09-sim-recovery.md` summary | the list omits a failed condition | The omitted failure is `B.width_shrinks` in the 0.20 arm: pooled width 0.8328 / 0.7329 / 0.9982 at J = 2 / 5 / 20, which falls then jumps because the variance switches from a declared 0.04 to an estimated 0.09 at nine events | §3.3 | A |
+| R2-11 | `findings/09-sim-recovery.md` summary item 2 | "**B, the default declared tau**" listed as a failure | Not a failed condition: the log prints `B.declared_default` **PASS** at J = 2, 5 and 20, because the condition was pre-declared as a predicted failure ("coverage at declared=0.20 is < 0.87"). The numbers 0.620 / 0.694 / 0.718 are the log's and are right | §3.3 | A |
+| R2-11b | `findings/09-sim-recovery.md` summary item 3 | one condition named | Two failed here: `C.cap_direction` and `C.cap_magnitude` ("relative attenuation" −0.131 at s=0.40, −0.085 at s=0.70) | §3.3 | A |
+| R2-12 | `findings/01-b-identifiability.md` §5.3 item 3 | "across events and across tiers within an event … so the cap is an instrument" | `resalePriceCapBps` is one field on `Event`; only the implied ceiling varies, as face × (1 + c), collinear with face. Cross-event instrument only | §5 B12 | A |
+| R2-13 | `DELIVERABLE.md` §11.1, last row | "a price-distribution coverage number … **not available and must not be simulated into existence**" | True of a price distribution and now too strong unqualified: `09-sim-recovery.md` reports coverage of the **declared band on an event's mean** (0.805 at J=2; 0.620 / 0.694 / 0.718 at the default tau). Class SIM, not calibration | §4.3 item 2; §5 A9 | A |
+| R2-14 | `DELIVERABLE.md` §8.2 | "The evidence that would validate it is a SIM recovery study and, on a real ledger, …" | The study exists and did **not** validate the band: 0.805 at two events against `[0.87, 0.93]`. A SIM study can only test an estimator against its own assumption, so it was never the validating evidence; the real-ledger half stands | §4.3 item 2; §5 A9 | A |
+| R2-15 | `findings/01-a-market-structure.md` §3 | "He & Lin (*Marketing Science*, **2025**)" | Crossref for `10.1287/mksc.2023.0623`: 45(3):515–533, issued 2026-05 | §1 item 7; §5 B15 | A |
+| R2-15b | `findings/01-a-market-structure.md` §7 reference | "He, D. & Lin, S. (2025). *Marketing Science*." | 2026; 45(3):515–533. DOI is right | §1 item 7 | A |
+| R2-16 | `findings/01-a-market-structure.md` §3 | "≈£184 gross average, ≈£269 per resale ticket inclusive of all fees" | 350 / 1.9 = 184.2, so £184 follows. £269 is £404m / 1.5m, a second flow; 269 × 1.9 = £511m, not £350m | §1 item 6; §5 B14 | A |
+| R2-17 | `findings/01-a-market-structure.md` §4 | "1.4% of primary revenue, **even after scaling for** the ~50% of resale the authors do not observe" | The paper: "1.4% … even if we are accounting for only half of resale activity". 1.4% is the observed half, unscaled; "even after scaling" inverts the caveat | §1 item 5; §5 B13 | A |
+| R2-18 | `findings/01-d-external.md` "What I concluded" | "Nineteen candidate variables were examined … and eleven survive at usable priority" | 28 examined (17 + 11 rejected), 9 at priority 1–2 (4 obtainable today), 15 above 0. Eleven is the reject count. The tables are the artefact | §1 item 13; §5 B16 | A |
+| R2-19 | `findings/02-e-cold-start.md` §4.7 table header | "as markup around face" with "−49% to +95%" | The column is exp(±1.645τ) − 1, the percentage move in the point estimate. As markup over face centred at 0.261 the last row is −33% to +153% | §1 item 11; §5 B17 | A |
+| R2-19b | `findings/02-e-cold-start.md` E8 | the same claim in the evidence table | Same; the arithmetic stands, the object named was wrong | §1 item 11; §5 B17 | A |
+| R2-20 | `findings/02-a-price-paths.md` reference list | "Mason, K. O., Mason, W. M., **Winship, C.** & Poole, W. K. (1973)" | Crossref: third author **Winsborough, H. H.** Titles, journal, volume and pages right | §1 item 4; §5 B18 | A |
+| R2-21 | `findings/02-a-price-paths.md` reference list | "**Luo, L. (2019).** Analyzing age-period-cohort data" | Fosse, E. & Winship, C. (2019), same title, journal, volume, pages and year | §1 item 15; §5 B19 | A |
+| R2-22 | `findings/03-b-temporal-correctness.md` reference list | "[Luo 2019] Luo, L. (2019). **Bayesian age-period-cohort analysis**. *Annu. Rev. Sociol.* 45, **109–132**" | Fosse & Winship (2019), "Analyzing Age-Period-Cohort Data: A Review and Critique", 45:467–492. Author, title and pages wrong; volume and DOI right | §1 item 16; §5 B19 | A |
+| R2-23 | `records/README.md` | "**It is a stub and says so at the top: it is not written yet.**" | `DELIVERABLE.md` is 210,575 bytes at this pass's count, §1 to §22 plus a closing note, and its header says it is the Phase 8 document rather than a table of contents for one | §4.3 item 3; §5 A1 | A |
+| R2-24 | `DELIVERABLE.md` §20.5, He & Lin bullet | "Whether the sentence is false depends on whether that paper is an econometric study … which nobody has read" | The clause needing no reading is settled: a peer-reviewed paper on resale caps *was* found, so C-3's broader sentence is false and is dead there. Whether it is econometric is still unread | §4.2; §5 A8 | A |
+| R2-25 | `C-variable-registry.md` C-3 | "varies across tiers within one event because it is bps over each tier's own face" | One field on `Event`; only the money ceiling varies, collinear with face. No within-event identifying variation | §1 item 14; §5 A4 | A |
+| R2-26 | `C-variable-registry.md` C-3 | "because no peer-reviewed study of resale price caps in ticket markets was found" | One was found and `01-a` §3 cites it: He & Lin (2026), *Marketing Science* 45(3):515–533. The surviving claim is `01-b` §4.5's "no peer-reviewed **econometric** study"; whether He & Lin is econometric is unread | §1 item 14; §5 A5 | A |
+| R2-26b | `C-variable-registry.md`, the 12:55Z NOTE | "read C-3's evidence clause as `01-b`'s" | The NOTE was an instruction under a sentence that still read the other way; a note below a sentence cannot amend it. The clause is now struck, which is what the NOTE asked for | §1 item 14 | B |
+| R2-27 | `findings/00-adversarial-review-phase1.md` notes on the prior pass | "the Aigner DOI (I re-checked Crossref: the `S`-prefixed DOI returns 404, the corrected one 200)" | The check is real, the attribution is not: `01-b` contains no S-prefixed DOI | §2.2 | A |
+| R2-28 | `DELIVERABLE.md` §22 | "Full bibliography … Deduplicated from the sources the findings cite" | Ahn & Lee (2007), *IJFS* 2(2):79–93, doi:10.1177/155862350700200203, cited at `02-d` lines 839-840, was missing (added as entry `1a`). Five `Used by` cells named a file that does not cite the source: Artzner→06, Ekeland→02a, Gallego→01a, Lakkaraju→01c, DBT→02e. Cells now name only citing files, checked by searching every file under `records/findings/`. Counts 123→124 and 161→162, with the arithmetic shown | §4.1; §5 A7 | B |
+| R2-29 | `DELIVERABLE.md` §20 | §20 did not mention the simulation study at all | New §20.6: coverage 0.805 at J=2 against the declared `[0.87, 0.93]`; 0.620 / 0.694 / 0.718 at the default τ = 0.20 against a true 0.30; RMSE 1.0425 in a 40–60-day window with no conditioning guard; and the cap's upward bias on the curvature, which corrects the reading of `02-a` C1. Class SIM throughout, with what the study cannot support stated | §4.3 item 1 | B |
+| R2-30 | `DELIVERABLE.md` §20.5 status note and §21.2 row | "The He & Lin question **is settled** … C-3's broader 'no peer-reviewed study' **is narrowed to `01-b`'s wording there**" | Nothing narrowed it, and the question is open: §21.2 said so in the same document. §20.5 now says the question is open and C-3's sentence is dead as printed; §21.2's row is worded to match | §4.2; §5 A8 | B |
+| R2-31 | `DELIVERABLE.md` §20.5 list | the list omitted the README staleness | Added as an eighth bullet: an index that misdescribes its own deliverable is a limitation of the record | §4.3 item 3 | B |
+
+**Note on R2-10.** That row used both rules: the two false sentences in the summary are struck in place and the
+reconciliation — because it needs the declared conditions quoted and the 43-line arithmetic shown — is appended
+in a block. It is the only defect in this pass that needed both.
+
+## 6.2 Counts
+
+- **Rule A, struck in place:** 32 marks across 15 files.
+- **Rule B, appended or newly written prose:** 8 blocks — 4 appended correction blocks in findings (`01-b`,
+  `00-ledger-verification`, `A-research-ledger`, `09-sim-recovery`), 1 note appended inside an existing note
+  (`C-variable-registry` C-3), 1 new subsection (§20.6), 1 corrected status note (§20.5), and 1 corrected table
+  with its correction paragraph (§22).
+- **Total items:** R2-1 to R2-31 with nine sub-items (R2-7b, R2-8b, R2-9b, R2-9c, R2-10b, R2-11b, R2-15b,
+  R2-19b, R2-26b), i.e. 40 dated marks. One site, R2-10, is corrected by both rules.
+- **Of the verifier's list:** all nine §5-A false statements and all twelve §5-B ones are marked; four
+  protection-test sites from §2.1 are added (two of which no earlier correction had named); §3.3's framing
+  defect and §4's four §22/§20 defects are corrected. Nothing the verifier did not name was changed, except one
+  count inside round 1's own CORRECTION 1 (the "one of two places" tally, which §1.1 of the verification says is
+  wrong in two documents) and a grammar repair where a strike crossed a sentence boundary.
+
+## 6.3 Files touched
+
+`records/findings/01-b-identifiability.md`, `records/findings/00-ledger-verification.md`,
+`records/findings/00-adversarial-review-phase1.md`, `records/findings/01-c-methods.md`,
+`records/findings/01-a-market-structure.md`, `records/findings/01-d-external.md`,
+`records/findings/02-e-cold-start.md`, `records/findings/02-a-price-paths.md`,
+`records/findings/03-b-temporal-correctness.md`, `records/findings/09-sim-recovery.md`,
+`records/A-research-ledger.md`, `records/C-variable-registry.md`, `records/D-model-registry.md`,
+`records/README.md`, `records/DELIVERABLE.md`, and this file. **Fifteen files plus this one.**
+
+Nothing outside `records/` was edited. No code was touched. Nothing was committed or pushed. No fleet path was
+read or written.
+
+## 6.4 The one defect this pass could not fix without changing a conclusion
+
+**The He & Lin question.** `C-variable-registry.md` C-3's broader sentence is now dead, because a peer-reviewed
+paper on resale price caps in ticket markets exists and is cited in this programme. What cannot be settled from
+the record is whether that paper is an **econometric** study, and that single unread fact decides two live
+sentences in opposite directions:
+
+- if He & Lin is econometric, `01-b` §4.5's "I found **no peer-reviewed econometric study** of resale price caps
+  in ticket markets" is false, and with it the rule it supports — "no class-A claim about caps may appear in the
+  deliverable";
+- if it is a matching model, `01-b` §4.5 is true and `01-a` §3's class-C use of it is right, and only C-3 was
+  wrong.
+
+Closing it means either withdrawing `01-b` §4.5's first sentence or reclassifying `01-a`'s use — both are
+conclusion changes on evidence nobody in this programme has read. This pass marked both sites, left both
+conclusions standing, and recorded the question as open in `DELIVERABLE.md` §20.5 and §21.2. It is the one item
+in the verification's list whose repair depends on something other than editing.

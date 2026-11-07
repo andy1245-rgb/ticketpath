@@ -109,7 +109,9 @@ A binding cap does three observationally distinct things.
    and any mean or quantile from it is biased down by construction (class C).
 2. **A mass point at the cap with rationing behind it.** The market clears by speed and allocation,
    not price: tickets at the cap sell fast and excess demand queues. The spike's height and the sale
-   velocity at the cap measure excess demand, not value. He & Lin (*Marketing Science*, 2025) add the
+   velocity at the cap measure excess demand, not value. He & Lin (*Marketing Science*, ~~2025~~ **2026**)
+   **[CORRECTION 2026-11-07T14:00Z, R2-15 — dead year: Crossref for `10.1287/mksc.2023.0623` gives
+   *Marketing Science* 45(3):515–533, issued 2026-05. See CORRECTION 3 at the end of this file.]** add the
    non-obvious corollary: a stringent cap can push high-price sellers out, reduce seller-side
    competition, and *raise* average transaction price (class C).
 3. **Evasion that moves price off the rail.** Four channels: side payment (transfer at face on-chain,
@@ -122,15 +124,21 @@ A binding cap does three observationally distinct things.
 Calibration for the unconstrained case: the CMA found "most tickets sold through the Parties'
 platforms in 2019 had a mark-up over their face value of more than 50%" (Viagogo/StubHub final
 report p.131, as quoted by DBT, class A via regulator). The UK's 37.1m primary tickets a year support
-≈1.9m secondary sales worth £350m before fees — ≈£184 gross average, ≈£269 per resale ticket
-inclusive of all fees.
+≈1.9m secondary sales worth £350m before fees — ~~≈£184 gross average, ≈£269 per resale ticket
+inclusive of all fees~~. **[CORRECTION 2026-11-07T14:00Z, R2-16 — dead: £184 is right for this flow
+(350 / 1.9 = 184.2) but £269 is not. £269 is £404m / 1.5m, a second flow in the same DBT note; 269 × 1.9 =
+£511m, so the two pairs cannot be quoted as a before-and-after. Quote each pair on its own. See CORRECTION 2
+at the end of this file.]**
 
 ---
 
 ## 4. Primary versus secondary value, and what happened when organisers repriced
 
 Sized three ways: resale profit of slightly over $1.17m on 56 concerts = **1.4% of primary revenue**,
-even after scaling for the ~50% of resale the authors do not observe (class A); repricing the top 10%
+~~even after scaling for the ~50% of resale the authors do not observe~~ **[CORRECTION 2026-11-07T14:00Z,
+R2-17 — dead: 1.4% is the observed half, unscaled. The paper's own wording is "even if we are accounting for
+only half of resale activity", which is a limitation and not a correction upwards for the missing half. See
+CORRECTION 1 at the end of this file.]** (class A); repricing the top 10%
 of seats at the median resale price for those seats raises primary revenue **3.4%**, ≈$27,000 per
 event (their counterfactual — a model-based simulation, not an observed adoption); and adding a
 fourth seating category is worth about half of going from one to two, with multi-category pricing
@@ -289,7 +297,7 @@ cited in detail):
 - Courty, P. & Pagliero, M. (2012). *REStat* 94(1):359-369. doi:10.1162/rest_a_00179
 - Courty, P. (2003). *JEP* 17(2). doi:10.1257/089533003765888449
 - Shapiro, S. L. & Drayer, J. (2012). *J. Sport Management* 26(6):532. doi:10.1123/jsm.26.6.532
-- He, D. & Lin, S. (2025). *Marketing Science*. doi:10.1287/mksc.2023.0623
+- He, D. & Lin, S. (~~2025~~ **2026**). *Marketing Science* 45(3):515–533. doi:10.1287/mksc.2023.0623 **[CORRECTION 2026-11-07T14:00Z, R2-15b — dead year only: Crossref gives 45(3):515–533, issued 2026-05. The DOI is right and was checked. See CORRECTION 3.]**
 - Cui, Y., Duenyas, I. & Şahin, Ö. (2014). *Management Science* 60(9). doi:10.1287/mnsc.2013.1862
 - Wardhaugh, B. (2026). *Legal Studies*. doi:10.1017/lst.2026.10125 (legal argument, not measurement)
 

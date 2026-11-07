@@ -124,7 +124,22 @@ def controls(payload: Mapping) -> str:
         + "".join(tier_options)
         + "</select></label>"
     )
-    cap = value_of(payload["event"]["capBps"])
+    # The field carries the cap this page prices against, which is the one in the URL when
+    # the URL names one and the event's recorded cap otherwise. It used to carry the
+    # recorded cap unconditionally, so `?capBps=0` printed a decision against a 0 bps cap
+    # beside a field reading 1500 and a canonical URL reading 0.
+    cap_in_force = value_of(payload["selection"]["capBpsCandidate"])
+    recorded_cap = value_of(payload["event"]["capBps"])
+    cap_label = (
+        "capBps (0–10000)"
+        if recorded_cap is not None
+        else "capBps (0–10000, this event records no cap)"
+    )
+    cap_rule = (
+        labels.render("P_CAP_RULE_UNCAPPED")
+        if recorded_cap is None
+        else labels.render("P_CAP_RULE", recorded=int(recorded_cap))
+    )
     fee = payload["selection"]["feeLamports"]["value"]
     tau = payload["selection"]["tau"]["value"]
     mode = (payload.get("decisionMode") or {}).get("mode") or "counterfactual"
@@ -146,13 +161,14 @@ def controls(payload: Mapping) -> str:
             tier_select,
             mode_select,
             f'<label for="asOf">asOf (ISO-8601 UTC)<br><input id="asOf" name="asOf" type="text" size="24" value="{esc(payload["asOf"])}"></label>',
-            f'<label for="capBps">capBps (0–10000)<br><input id="capBps" name="capBps" type="number" min="0" max="10000" value="{esc("" if cap is None else cap)}"></label>',
+            f'<label for="capBps">{esc(cap_label)}<br><input id="capBps" name="capBps" type="number" min="0" max="10000" value="{esc("" if cap_in_force is None else cap_in_force)}"></label>',
             f'<label for="feeLamports">feeLamports (blank = no fee model)<br><input id="feeLamports" name="feeLamports" type="number" min="0" value="{esc("" if fee is None else fee)}"></label>',
             f'<label for="tau">tau (0.10–0.406)<br><input id="tau" name="tau" type="number" step="0.001" min="0.1" max="0.406" value="{esc(tau)}"></label>',
             '<button type="submit">Recompute</button> ',
             f'<button type="submit" name="sim" value="1">{esc(labels.render("P_SIM_BUTTON"))}</button>',
             "</form>",
             f'<p class="label-sentence">{esc(labels.render("P_ASOF", asOf=payload["asOf"]))}</p>',
+            f'<p class="label-sentence">{esc(cap_rule)}</p>',
         ]
     )
 

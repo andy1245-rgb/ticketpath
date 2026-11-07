@@ -839,3 +839,283 @@ signs in A19 moved into the badged numbers without changing a digit
 | `HEAD /` | 200 | same headers as GET, no body |
 
 *End of this pass. Five defects, five repairs, one item left alone and named.*
+
+## 2026-11-07T13:58Z — the two defects the review left open: the cap that never reached the optimum (§5.2), and the loader that admitted what the core cannot price (C8)
+
+**Writer:** fix engineer. **Scope:** `records/findings/07-engine-review.md` section 5.2 and
+C8, and nothing else. No fixture, no store, no threshold and no other number, sentence or
+refusal changed; `fixtures/synthetic_store.json` is still `15e6f6611652ae43`. Nothing
+committed, nothing pushed, no dependency added. `../ticketing-frontend` and `:3000` were not
+touched, 8787 was not touched, and the fleet trees were not read or written.
+
+Files touched, and only these: `ticketpath/core/primary_optimum.py`,
+`ticketpath/orchestrator.py`, `ticketpath/adapters/ledger_adapter.py`,
+`ticketpath/core/labels.py`, `ticketpath/console/blocks.py`,
+`ticketpath/console/units.py` (one new formatting kind), `ticketpath/api/guidance.py`,
+`tools/build_fixture_store.py`, `tools/console-check-stores.py`, `docs/CONSOLE.md`,
+`tests/test_cap_and_loader_refusals.py` (new, 14 tests), `tests/test_console_fixes.py`
+(two tests rewritten, see below), `tests/test_labels.py` (three sample fields), and this
+section. Hashes after the pass: `primary_optimum.py 53322138877df920`,
+`orchestrator.py 32f3f440330ee72a`, `ledger_adapter.py 4b11dd712e5afa36`,
+`labels.py 8d2ea5d16cf584cc`, `blocks.py eef3545d88a13a80`, `units.py 38e435a993d08016`,
+`guidance.py 2c97d3977ccdafa5`, `tools/build_fixture_store.py 8aca72e9a6a4bcfc`,
+`tests/test_cap_and_loader_refusals.py 2dc0de323e8ff577`.
+
+### 1. The cap in force is now a rule on the recommendation (§5.2)
+
+`price_guidance` resolved a cap for the payload (`selection.capBpsCandidate`, the URL's cap
+or the recorded one) and passed it to `value_band.estimate` only. `primary_optimum.recommend`
+had no such parameter, so the number and the page disagreed: the page reported a cap, the
+recommendation ignored it, and on `?event=evt_syn_01&capBps=0` the page printed 1.03 SOL per
+ticket against a ceiling of 1.00 SOL that its own cap implies.
+
+**before** (old code, `http://127.0.0.1:8788/?event=evt_syn_01&capBps=0`, status 200):
+
+> `[UNVALIDATED] Recommended primary price: 1.03 SOL per ticket.`
+> `[UNVALIDATED] Band 0.74 – 1.25 SOL.`
+> `[FIXTURE] 4 of 6 recorded sales in this tier are above this cap; ...`
+
+The violation line flagged the recorded sales and said nothing about the recommendation,
+which was the number the cap actually forbade.
+
+**after** (same URL, status 200):
+
+> `[REFUSED] The cap of [DECLARED] 0 bps in force on this page puts the resale ceiling at
+> [EXACT] 1,000,000,000 lamports, below the price this record supports, so no primary price
+> is stated: a recommendation above that ceiling is a price the cap forbids, and the ceiling
+> is not a target for the primary price.`
+
+and the refusal panel carries the same sentence under `recommendation_above_cap`.
+
+How it is true by construction:
+
+- `orchestrator.price_guidance` resolves the cap once, into `cap_in_force` (the URL's
+  `capBps`, else the event's recorded `resalePriceCapBps`), and that one value is what the
+  payload reports and what `primary_optimum.recommend(cap_bps_candidate=...)` receives. A
+  test patches `primary_optimum.recommend` and asserts the argument, so a future caller
+  cannot drop it silently.
+- The ceiling is `face * (10000 + cap) // 10000`, integer lamports, the same expression
+  `price_features` uses for the recorded ceiling. It is computed inside `core`, so the page
+  prints `core`'s arithmetic and not the renderer's.
+- The recommendation is refused, not clamped. Handing back the ceiling would print the cap
+  dressed as a primary price, and A10 says the cap is a ceiling on the resale price and a
+  floor on value, never a target for the primary price. The refusal names what would change
+  it: "a cap at or above the price this record supports".
+- The refusal is a state of the recommendation, so it travels to every surface that reads
+  one: the decision block (`blocks._binding` and `blocks._banded` both branch before they
+  print a number), the refusal panel, the payload, and `tools/guidance.py`, which prints the
+  same payload over the same call. The console is the only route that carries a cap today:
+  the pricing seam (`engine_model`) asks for no cap, so its answer is unchanged, and if it
+  ever asks for one the refusal arrives with it because the code is a state of the
+  recommendation and not a sentence the renderer writes.
+- The ceiling is printed because a reader can check it by hand; the forbidden recommendation
+  is not printed anywhere, in either block.
+
+What stayed the same, proved by bytes rather than by argument: 19 fixture states were
+rendered under the old code and the new one and diffed. **17 are byte-identical**
+(`/`, `evt_syn_01`, `evt_syn_01 capBps=1000`, `evt_syn_01 capBps=2500`, `evt_syn_02`,
+`evt_syn_02 capBps=1500`, `evt_syn_02` with a fee, `mode=before_on_sale`, the 2026-09-01
+cut, `evt_syn_03` through `evt_syn_08`, `sim=1`, `tau=0.406`). The two that differ are the
+two states where the cap forbids the price: `evt_syn_01&capBps=0` and `evt_syn_02&capBps=0`.
+`?event=evt_syn_01&capBps=2500` still prints `1.03 SOL` and its ceiling is `1.25`, so the
+number agrees with its own cap.
+
+### 2. The loader holds back what the core cannot price, and the rest keeps serving (C8)
+
+`LedgerAdapter._validate` admitted a zero-priced sale, a sale dated after the event starts,
+and an event with no tiers. `price_features` then raised `FeatureError` on the first two,
+and because `cross_section` builds every event for the pool, one bad row in one event turned
+**every** console URL into a 422. The review's C1 fix made that a labelled page instead of a
+closed connection, which is why the defect was visible and not fatal.
+
+**The choice, stated.** These three are per-event rejections, not store-fatal errors. The
+loader keeps the event out of `events()`, `tickets()` and `raw_ledger()`, records a typed
+reason (`code`, registry sentence id, fields), and serves the rest of the store untouched.
+The alternatives and why they lost:
+
+- *Raise `StoreError`, refuse the whole store.* Simple, and wrong: one malformed row from
+  real data would take a store of seven good events offline. The brief forbids it.
+- *Leave it to the engine, as before.* That is C8: the loader becomes a gate that admits
+  rows the core cannot price, and one bad row refuses every page.
+- *Keep the event and render it with a null price.* A page that looks priced and is not.
+- *Per-event rejection with the other events served.* Chosen. The offending event is
+  refused by name at its own URL with a code, and every healthy event still prices.
+
+The three typed reasons:
+
+| code | when | the sentence on the page |
+|---|---|---|
+| `sale_not_priced` | a `sale` row with `priceLamports` 0 (a negative price was already store-fatal) | "Row {row} is a sale recorded without money, so this event cannot be priced: a zero resale price has no ratio to face value, and no number for this event is stated." |
+| `sale_after_event_start` | a `sale` row strictly after the event's `startsAt`, the same boundary `price_features` refuses on | "Row {row} is a sale dated after this event starts, so this event cannot be priced: the time from that sale to the event is negative, and no number for this event is stated." |
+| `event_has_no_tier` | an event with `tiers: []` | `P_NO_TIER`, the sentence and the code that URL already produced |
+
+The codes are the ones `price_features.FeatureError` already used, so a reader who met the
+refusal before meets the same word now; `price_features` keeps its own raise as the second
+line of defence. `sale` rows with a *null* price are still skipped rather than rejected,
+because that is what the core does with them (a gift is an unpriced sale in this schema's
+own custody trail) and changing it would change a behaviour nobody named.
+
+Details that make it hold:
+
+- The check runs per event, before the structural checks for that event, so an event with no
+  tiers is held back even when its `totalSupply` no longer agrees with the tiers it lost.
+  Before this, that store raised `StoreError` and the server did not start at all.
+- `_index_tiers` no longer raises a bare `KeyError` for a ticket whose tier does not exist,
+  which is the state a tierless event with tickets leaves behind. The event is held back
+  before anything reads that index.
+- After the hold-back the tier and entry indexes are rebuilt from the survivors, so no
+  number, pool or page can reach a rejected row.
+- `tools/build_fixture_store.py --check` now fails (exit 1, one `[FAIL]` line naming the
+  event and the code) if the shipped store carries one of the three. A store that fails to
+  load for any other reason also reports `[FAIL]` and returns 1 instead of printing a
+  traceback. On the committed store it is unchanged: exit 0.
+- `tools/console-check-stores.py` now asks each malformed store for the held-back event's
+  page **and** for a healthy event on the same server, and fails if either half is wrong.
+  The old version asked only for `?event=evt_syn_04`, which was the wrong half of this.
+
+### The six URLs, before and after
+
+Served on 8788 by the shipped code after the restart, one store per run, killed and
+restarted between runs (`/tmp/tp-bad-zero.json`, `/tmp/tp-bad-late.json`,
+`/tmp/tp-bad-tierless.json` are the fixture with one mutation each).
+
+| # | URL | before | after |
+|---|---|---|---|
+| 1 | `/?event=evt_syn_01&capBps=0` | 200, `Recommended primary price: 1.03 SOL per ticket` against a 1.00 SOL ceiling | 200, `[REFUSED] recommendation_above_cap` with `[DECLARED] 0 bps` and `[EXACT] 1,000,000,000 lamports`; no price |
+| 2 | `/?event=evt_syn_01&capBps=2500` | 200, `1.03 SOL` | 200, `1.03 SOL`, unchanged, and `1.03 <= 1.25` |
+| 3 | zero-priced sale, `/?event=evt_syn_01` | 422 `sale_not_priced`, from the core, after every event had been built | 422 at load, `Row led_0002 ...`, same code |
+| 4 | sale after start, `/?event=evt_syn_04&asOf=2026-11-14T12:00:00Z` | 422 `sale_after_event_start`, same reason | 422 at load, `Row led_0066 ...`, same code |
+| 5 | no tiers, `/?event=evt_syn_03` | 422 `event_has_no_tier`, `P_NO_TIER` | 422 `event_has_no_tier`, `P_NO_TIER` (the page is the same; the difference is that the loader now reports it and `--check` fails on the store) |
+| 6 | same zero-priced store, healthy `/?event=evt_syn_04` | **422 `sale_not_priced`**: one bad event refused the whole store | **200**, `Recommended primary price: 0.93 SOL per ticket`, band 0.67 to 1.29 |
+
+URL 6 is the half of C8 the review did not spell out and the half the brief asked for: with
+the same three stores, `?event=evt_syn_02` on the tierless store still prints `at least 1.38
+SOL per ticket`, and `?event=evt_syn_01` on the late-sale store still prices at that cut.
+
+### Verified after the change
+
+- `python3 -m unittest discover -s tests -t .` → **Ran 380 tests, OK** (366 before; 14 new
+  in `tests/test_cap_and_loader_refusals.py`).
+- `python3 tools/build_fixture_store.py --check` → exit 0, store unchanged
+  (`15e6f6611652ae43`), adapter accepts it. Pointed at a store with one zero-priced sale it
+  returns 1 and prints `[FAIL] evt_syn_01 cannot be priced: sale_not_priced`.
+- `python3 tools/console-check.py` against 8788 → **FAILURES: 0** (83 checks).
+- `python3 tools/console-check-stores.py` → **FAILURES: 0** (8 checks: 4 held-back events,
+  4 healthy events on the same stores).
+- Server restarted on 8788 (`python3 -m ticketpath.server`, job `jmw6gswtezg8l`, pid
+  292206); `/health` is 200, `/` is 200 and still prints `at least 1.38 SOL` for the binding
+  event. 8787 was not touched.
+
+Each new test was shown to fail on the old behaviour, by reverting only the product files to
+`HEAD` in a scratch copy of the tree (`/tmp/tp-old`, an `rsync` copy plus `git show
+HEAD:<file>` for each of them) and running the new file there. Never in place:
+
+| Test | On the old code |
+|---|---|
+| `test_a_cap_below_the_supported_price_is_refused_not_printed` | `TypeError: recommend() got an unexpected keyword argument 'cap_bps_candidate'` |
+| `test_a_cap_that_permits_the_price_changes_nothing` | same `TypeError` |
+| `test_without_a_cap_the_arithmetic_is_unchanged` | passes on both (control) |
+| `test_the_orchestrator_passes_the_resolved_cap_into_the_recommendation` | `None != 0` |
+| `test_no_recommendation_exceeds_its_own_pages_ceiling` | fails on `evt_syn_01 capBps=0` (and 43 more sub-cases) |
+| `test_the_zero_cap_url_prints_a_typed_reason_and_no_price` | `1026573088 is not None` |
+| `test_a_cap_that_permits_the_price_still_prints_the_price` | passes on both (control) |
+| `test_a_binding_floor_above_the_cap_is_refused_too` | `None != 'recommendation_above_cap'` on `evt_syn_02` |
+| the five loader tests | `AttributeError: 'LedgerAdapter' object has no attribute 'rejections'` |
+| `test_the_fixture_check_fails_on_a_store_that_carries_one` | `0 != 1`: the old gate passed the bad store |
+| `test_console_fixes.test_a_zero_priced_sale_refuses_with_a_typed_reason` | `422 != 200` on the healthy event |
+| `test_console_fixes.test_a_malformed_store_still_answers_over_a_socket` | `422 != 200` on the healthy event |
+
+### What I chose not to change, and why
+
+- **Two existing tests in `tests/test_console_fixes.py` were rewritten, not deleted.** They
+  pinned the old behaviour on purpose: they asked for `?event=evt_syn_04` on a store whose
+  `evt_syn_01` carried a zero-priced sale and asserted 422, which is exactly the "one bad
+  row refuses every page" rule the brief replaces. Each now asserts both halves (the
+  offending event refuses with its code, a healthy event on the same server returns 200).
+  This is the one place where an assertion changed rather than a number.
+- **The band's upper end still uses the recorded ceiling, not the candidate one.** In
+  `capped_no_mass_point` the band is trimmed to the ceiling recorded when the sales
+  happened. Trimming it to a candidate cap would change a band number on pages the review
+  did not name, and the band is a statement about the record, not about the policy.
+- **`capViolations` still counts against the URL cap only.** A page whose cap comes from the
+  store therefore reports no violations, because the store's own sales cannot violate the
+  store's own cap. Changing that would restate the past under a policy.
+- **The `capBps` form field still shows the event's recorded cap** while the canonical URL
+  carries the URL's cap. That is a control-wording defect (the field reads as if the page is
+  honouring the recorded cap when the URL says otherwise), it is not in section 5.2 or C8,
+  and fixing it changes what a judge types into. Named here so it is not lost.
+  **Closed 2026-11-07T14:10Z — see the cap-field section at the end of this file.**
+- **`GET /api/events/<rejected id>` still answers 404 `not_found`.** The loader does not
+  serve the event, so the contract's not-found answer is not a lie about the contract, but it
+  is less informative than the console's typed 422. Changing an API status for a store state
+  the contract does not describe is a decision for the operator, not a fix.
+- **`list_events` now lists one event fewer on a store with a rejection** (8 became 7 in the
+  zero-priced test). That follows from holding the event back; the alternative is a list
+  entry with no price behind it.
+- **`sale` rows with a null price are still accepted and skipped.** See above.
+- **A store where every event is rejected answers with the first rejection's reason**, not
+  `no_ledger`. `no_ledger` would be false there: a ledger exists and it is unpriceable.
+
+## 2026-11-07T14:10Z — the cap field shows the cap in force, and the page says which cap that is
+
+**Scope:** the `capBps` control, the one line of prose that states its rule, the cap line and
+the cap-in-force line in the decision block, one regression test file, and this section. No
+commit, no push, no change to `../ticketing-frontend`, no touch to 8787 or the fleet's trees,
+no new dependency.
+
+The defect the previous pass named at line 1043 above is closed. On
+`/?event=evt_syn_02&capBps=0` the page used to show a control reading `1500`, a canonical URL
+reading `capBps=0`, and a decision reading "The cap of 0 bps in force on this page puts the
+resale ceiling at 1,200,000,000 lamports" — three different numbers for the cap on one page.
+The control rendered `event.capBps` (the cap in force when each sale was recorded) while the
+URL, the refusal headline and the recommendation all used `selection.capBpsCandidate` (the cap
+this page prices against). The control now renders the same wrapper the URL and the decision
+read from, so the page has one cap in force.
+
+**The rule, stated on the page in one line (P_CAP_RULE):** "The cap field shows the resale cap
+this page prices against and the canonical URL carries the same number: clear the field and
+submit to fall back to this event's recorded cap of 1500 bps." The number in that line is the
+event's own recorded cap, printed from the payload, not a literal.
+
+**An uncapped event (P_CAP_RULE_UNCAPPED):** "This event records no cap, so a blank field means
+no cap and this page prices against none: type a number to price against that cap, and the
+canonical URL carries it." The field's own label also says `capBps (0–10000, this event records
+no cap)`, so the empty box is explained where the box is.
+
+**One addition to the decision block, because the agreement is only honest if both caps are
+named:** when the URL names a cap that is not the event's recorded one, the block prints
+`[DECLARED] This page prices against a cap of [DECLARED] N bps. The record was made under a cap
+of [FIXTURE] M bps, so the recorded sales are described under that cap, not this one.`
+(P_CAP_IN_FORCE, and P_CAP_IN_FORCE_UNCAPPED where the event records no cap.) Without it, the
+`capBps=2500` page showed 2500 in the control and the URL while A19 and the ceiling line said
+1500, which is correct arithmetic about the record but left the reader to reconcile two
+unnamed caps. Both numbers already existed on the payload; no arithmetic changed. The cap line
+above the block (`A cap does not hide the price…`) now follows the cap in force rather than the
+recorded cap, so an uncapped event priced under a URL cap does not say "No cap applies" two
+lines above a sentence naming the cap it is pricing against.
+
+**Verified by hand over HTTP against the restarted server on 8788** (`python3 -m
+ticketpath.server --port 8788`, fixture store, synthetic):
+
+| URL | form shows | canonical URL carries | decision block says |
+|---|---|---|---|
+| `/?event=evt_syn_02` (no capBps) | `1500` | `capBps=1500` | cap is binding at `[FIXTURE] 15%` over face; ceiling `(10,000 + 1500) / 10,000`; form and URL carry the record's own cap |
+| `/?event=evt_syn_02&capBps=0` | `0` | `capBps=0` | `[DECLARED] This page prices against a cap of [DECLARED] 0 bps`, record was made under `[FIXTURE] 1500 bps`, then `[REFUSED] The cap of [DECLARED] 0 bps in force on this page` |
+| `/?event=evt_syn_02&capBps=2500` | `2500` | `capBps=2500` | `[DECLARED] This page prices against a cap of [DECLARED] 2500 bps`, record made under `[FIXTURE] 1500 bps`; A19 and the ceiling still describe 1500 |
+| `/?event=evt_syn_04` (uncapped) | blank, label says the event records no cap | no `capBps` parameter | `No cap applies to this event, so nothing hides the top of the price distribution.` |
+
+All three agree on every row: the control and the URL carry the same integer, and the block
+names that integer wherever it is not the record's own.
+
+**Regression test:** `tests/test_console_cap_field.py`, 11 tests, including one that fetches the
+four URLs above from a real socket and reads the control out of the served HTML. Reverting the
+fix in a scratch copy (`/tmp/tp-cap-scratch`: the control back to `event.capBps`, the decision
+block's in-force line removed, the cap line back on the recorded cap) fails 15 assertions in
+that file; on this tree all 11 pass. Full suite: **391 tests, OK** (was 380).
+
+**What I chose not to change:** the recorded ceiling, the A19 sentence and the band arithmetic
+still describe the sales under the cap they were made under (`capBps=2500` does not restate the
+past at 2500). The canonical URL still writes `capBps` explicitly when it equals the recorded
+cap, because it already did and because the field now shows that number too; dropping it would
+make the URL and the field disagree in the other direction.
+

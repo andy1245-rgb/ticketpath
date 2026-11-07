@@ -882,9 +882,15 @@ event; the horizon constants are constants.
 **Data requirement: zero new fields.** Per event, settled sales with `priceLamports` and each ticket's
 tier `faceValueLamports`, both in the contract.
 
-**Validation status: UNVALIDATED.** The evidence that would validate it is a SIM recovery study and, on a
-real ledger, the skill score `1 - MAE_model/MAE_B0` against the martingale on event-level walk-forward
-folds with both leakage boundaries enforced. **Until the second exists, no accuracy claim of any kind may
+**Validation status: UNVALIDATED.** The evidence that would validate it is ~~a SIM recovery study and, on a
+real ledger,~~ the skill score `1 - MAE_model/MAE_B0` against the martingale on event-level walk-forward
+folds with both leakage boundaries enforced. **[CORRECTION 2026-11-07T14:00Z, R2-14 — the first half is now
+stale: the SIM recovery study exists (`09-sim-recovery.md`, 13:30Z) and did not validate the band. It found
+coverage of the declared band at the true tau of 0.805 at two events against the declared [0.87, 0.93], with
+the pooled width restoring 0.897. A SIM study can only test an estimator against its own assumption, so it was
+never the evidence that would validate this model on tickets; what it has done is show where the shipped band
+under-covers. The real-ledger half stands as printed, and it is what "the second" in the next sentence refers
+to.]** **Until the second exists, no accuracy claim of any kind may
 be made about this model**, and the number on screen carries "illustrative parameters, not calibrated"
 at the same weight as the number.
 
@@ -1090,7 +1096,7 @@ engine labels it that way on screen.**
 | a cold-start band from the literature prior | the borrowed lognormal, widened by a declared tau | class B for the prior, class D for the transfer |
 | an interval for a single ticket | the event band widened by the within-event dispersion | declared, never measured |
 | the sale indicator's calibration | proper scoring on the full censused population: Brier, log score, reliability curve, reliability-resolution decomposition | methods-complete, data-blocked, UNVALIDATED |
-| a price-distribution coverage number | nothing | **not available and must not be simulated into existence** |
+| a price-distribution coverage number | nothing | ~~**not available and must not be simulated into existence**~~ **[CORRECTION 2026-11-07T14:00Z, R2-13 — true of a price distribution and now false as written without that qualifier: `09-sim-recovery.md` reports measured coverage of the *declared band on an event's mean* (0.805 at J=2; 0.620 / 0.694 / 0.718 at the default tau against a true 0.30). That is coverage of a band on a mean under a stated generative model, class SIM, not a price-distribution coverage number and not calibration on this platform. The distinction this cell was making — that no coverage number may be *simulated into existence* for a price distribution — stands and is unchanged. See §20.6.]** |
 
 ### 11.2 The arithmetic the reader can check
 
@@ -2064,19 +2070,85 @@ rule is to record conflicts rather than smooth them:
   +153%, not +155%, computed from the file's own inputs (`02-e` CORRECTION 1).
 - **`He & Lin` is cited in `01-a` while `01-b` and the variable registry say no peer-reviewed study of
   resale caps exists.** Whether the sentence is false depends on whether that paper is an econometric study
-  or a model of matching, which nobody in this programme has read. It is recorded as noticed and not
+  or a model of matching, which nobody in this programme has read. **[CORRECTION 2026-11-07T14:00Z, R2-24 — the
+  clause that needed no reading is now settled: a peer-reviewed paper on resale price caps in ticket markets
+  *was* found, so `C-variable-registry.md` C-3's "no peer-reviewed study" is false as printed and is marked
+  dead there. Whether it is econometric is still unread, so `01-b` §4.5's narrower sentence is neither
+  confirmed nor refuted. See the status note below and §21.2.]** It is recorded as noticed and not
   resolved (`CORRECTIONS-APPLIED.md` §4 question 1).
+- **`records/README.md` described this document as a stub.** **[R2-31]** It read "It is a stub and says so at the top: it
+  is not written yet", which was true before 12:40Z and false after it. Struck in place on 2026-11-07T14:00Z
+  (R2-23). It is listed here because an index that misdescribes its own deliverable is a limitation of the
+  record, not only of the index.
 
-**Status note appended 2026-11-07T12:55Z — three of the seven items above are now closed, and the list is
-kept as written so the history of the audit survives.** (1) `A-research-ledger.md`'s P1.C row now carries
+**Status note appended 2026-11-07T12:55Z, amended 2026-11-07T14:00Z, R2-30 — two items in the list above are now
+closed and two more are corrected but not closed; an eighth bullet was added, and the list is kept as written
+so the history of the audit survives.** (1) `A-research-ledger.md`'s P1.C row now carries
 `01-c`'s conclusion, its classes and its path; the row was stale, the finding was not. (2) "Gap 5" is now
 defined in `00-data-situation.md` §4 as the missing primary inventory time series, in the same style as Gaps
-1–4, and all eight forward references were checked for a common referent and kept. (3) The He & Lin question
-is settled as far as the record can settle it without the paper's full text: `01-a`'s NOTE of that timestamp
-quotes both passages and shows that `01-b`'s "no peer-reviewed **econometric** study" and `01-a`'s class-C use
-of a peer-reviewed **model** are claims about different objects; `C-variable-registry.md` C-3's broader
-"no peer-reviewed study" is narrowed to `01-b`'s wording there. What is still open is whether He & Lin is
-econometric, which needs the paper read. Items 4 to 7 stand unchanged.
+1–4, and all eight forward references were checked for a common referent and kept.
+
+**(3) The He & Lin item is corrected on 2026-11-07T14:00Z, and the earlier wording of this note was itself false
+in two clauses.** It said the question "is settled as far as the record can settle it" and that
+`C-variable-registry.md` C-3's broader "no peer-reviewed study" "is narrowed to `01-b`'s wording there". Neither
+holds. **Nothing narrowed that sentence:** it stood at `C-variable-registry.md:820-822` as printed until this
+pass struck it there, and the note thirty lines below it said in terms that it did not settle the question. It
+is now marked dead in place with a dated correction, and the surviving claim is `01-b` §4.5's narrower one, "no peer-reviewed **econometric**
+study". **The question is open, not settled:** whether He & Lin (2026) is an econometric study or a model of
+matching is unread by everyone in this programme, and §21.2 says so. What the record can now say without
+reading the paper is only that a peer-reviewed paper on resale price caps in ticket markets exists and is
+cited here for a class-C theoretical proposition, so C-3's clause cannot say no study was found. Items 4 to 8
+stand unchanged.
+
+**Items 1 to 7 above were assembled at 12:40Z. §20.6 was added at 14:00Z because the simulation study
+landed after this document was written, and three of its results are limitations of shipped code.**
+
+### 20.6 The simulation study, and the limits it puts on shipped code
+
+Added 2026-11-07T14:00Z, R2-29, from `09-sim-recovery.md` (run 13:30Z, harness `tools/sim_recovery.py`, log
+`records/sim/sim-recovery-2026-11-07.txt`, verdicts A **PASS**, B **FAIL**, C **FAIL**, 37 of 43 pre-declared
+conditions held). **Every number in this subsection is class SIM**: it is a property of an estimator measured
+against a generative model that is the estimator's own assumption. It is not a measurement of a ticket market,
+it is not calibration on this platform, and the gap between the two is the whole of §20.1. What it can do, and
+what nothing class B or C in this document could do, is show where shipped code does not deliver what the
+findings say it does.
+
+Three results are limitations rather than confirmations:
+
+1. **The declared band under-covers at two events, and it does so by construction.** At the true between-event
+   tau of 0.30, coverage of a new event's mean is **0.805 at J=2** against the pre-declared `[0.87, 0.93]`, and
+   0.872 and 0.879 at J=5 and J=20. The cause is arithmetic: the width is `z·tau`, while the gap the band must
+   cover has variance `tau² + V(hat mu)`, and `V(hat mu)` is 0.0491 at J=2 against a `tau²` of 0.09. The width
+   is a floor, as the code's own docstring says, and this is what a floor does at small J. The pooled width the
+   payload already prints beside the band restores coverage to 0.897 at J=2 and 0.904 at J=5. **The limitation
+   for a reader of this document: at two or five events the band on the event mean is too narrow to be a 90%
+   interval, and the engine prints it anyway because it labels the width as declared rather than as coverage.**
+2. **One constant is mis-set for the variance the programme actually assumes.** At the API default `tau = 0.20`,
+   the declared band covers **0.620 / 0.694 / 0.718** of draws at J = 2 / 5 / 20 when the truth is 0.30. This
+   condition was pre-registered as a predicted failure and it held, so it is a confirmed property of the
+   constant, not a surprise. **The limitation: the default declared tau is narrower than the `tau` the
+   literature prior implies, and a user who leaves the constant alone gets coverage of 0.620 to 0.718 against a
+   nominal 0.90 — which is why §11.2 prints the whole sensitivity grid instead of one row.**
+3. **The path estimator is meaningless in a short window, and no guard tests that.** In a 40-to-60-day window
+   the shipped curvature estimator has **RMSE 1.0425** against a true `theta` of 0.30, with bias +0.0648. The
+   cause is conditioning: the correlation between `d` and `log(1+d)` is 0.998679 over that window against
+   0.962077 over 5 to 60 days. The shipped guard tests `delta <= 1e-12`, an absolute threshold that does not
+   fire; what kept the number off the page was the horizon-support guard, which refused 392 of 400 fits because
+   the default horizons sit outside a window starting at 40 days. **The limitation: the page is protected by a
+   horizon check, not by any test of the design's conditioning, so a horizon set that fits a short window would
+   print a curvature with no accuracy at all.**
+
+A fourth result is a correction to a finding rather than a limitation of code: a cap that truncates the top of
+the distribution biases the fitted curvature **up** — +0.0124 at a 10% cap mass, +0.0393 at 40%, +0.0255 at 70%
+— while flattening the *observed* end-to-end path exactly as `02-a` C1 describes. C1 is right about the object
+it names (the observed drop falls from 0.6957 to 0.3965 across those cells) and a report that cites it as
+evidence that `theta` is attenuated downward would be wrong.
+
+**What this subsection cannot support.** No coverage number here is calibration: the truth was chosen, the
+bands are declared, and the errors are independent. Nothing here says event means are normal, that `tau` is
+constant across events, or that `theta` is common. And the study does not test the object the product's third
+claim needs — it tests the pooled mean and the curvature, and `P(sale at price p)` remains unidentified for the
+reason §10.1 gives, unchanged by any SIM result.
 
 ---
 
@@ -2155,7 +2227,7 @@ product should ever present the first as a recommendation is the operator's deci
 | Whether the sell-through sign result holds | open | Q4 answered, then resale prices on sold-out against not-sold-out events |
 | Whether a cheaper architecture performs as well | open, and the programme's own question | the benchmark ladder, run on real data: if the martingale or a fixed markup rule wins, it ships |
 | Whether the price-response coefficient is even identifiable in practice | open | the four-diagnostic check on the first real listing panel: if ask dispersion within event-tier-time cells is zero, it is not |
-| Whether a peer-reviewed study of resale caps in tickets exists | **narrowed 2026-11-07T12:55Z**: one does (He & Lin 2026, peer-reviewed); whether it is an *econometric* study is still open | reading He & Lin (2026) and settling whether it is econometric or a model of matching; `01-a` NOTE of that timestamp |
+| Whether a peer-reviewed study of resale caps in tickets exists | open, and now in two parts. **Closed 2026-11-07T14:00Z: one does** — He & Lin (2026), peer-reviewed, cited in `01-a` §3, so `C-variable-registry.md` C-3's "no peer-reviewed study" is dead as printed and is marked in place. **Open: whether it is an *econometric* study**, which is the bar `01-b` §4.5 sets | reading He & Lin (2026) and settling whether it is econometric or a model of matching; `01-a` NOTE of 12:55Z, §20.5 above |
 | Whether the 14-of-128 redemption reading is a ticket count | open and unclosable from the record | a ticket-level status count, which the programme's own rule discourages producing from the fixture |
 | What "Gap 5" means | **closed 2026-11-07T12:55Z**: the missing primary inventory time series, hence no sell-through velocity | defined in `00-data-situation.md` §4 as the fifth gap; all eight forward references agree |
 
@@ -2188,6 +2260,7 @@ Findings are abbreviated: 01a, 01b, 01c, 01d, 02a, 02ai, 02c, 02d, 02e, 03a, 06 
 | # | Source | Locator | Used by |
 |---|---|---|---|
 | 1 | Abadie, A. & Imbens, G. W. (2006). Large sample properties of matching estimators for average treatment effects | Econometrica 74(1):235-267, doi:10.1111/j.1468-0262.2006.00655.x | 02e |
+| 1a | Ahn, S. C. & Lee, Y. H. (2007). Lifecycle demand for Major League Baseball | International Journal of Sport Finance 2(2):79-93, doi:10.1177/155862350700200203 | 02d |
 | 2 | Aigner, D. J. (1973). Regression with a binary independent variable subject to errors of observation | J. Econometrics 1(1):49-59, doi:10.1016/0304-4076(73)90005-5 | 01b |
 | 3 | Allison, P. D. (1982). Discrete-time methods for the analysis of event histories | Sociological Methodology 13:61-98, doi:10.2307/270718 | 01c, 02c |
 | 4 | Amemiya, T. (1984). Tobit models: a survey | J. Econometrics 24(1-2):3-61, doi:10.1016/0304-4076(84)90074-5 | 01c |
@@ -2195,7 +2268,7 @@ Findings are abbreviated: 01a, 01b, 01c, 01d, 02a, 02ai, 02c, 02d, 02e, 03a, 06 
 | 6 | Andersen, P. K., Abildstrom, S. Z. & Rosthoj, S. (2002). Competing risks as a multi-state model | Stat. Methods Med. Res. 11(2):203-215, doi:10.1191/0962280202sm281ra | 02c |
 | 7 | Anenberg, E. (2016). Information frictions and housing market dynamics | Int. Economic Review 57(4):1449-1479, doi:10.1111/iere.12204 | 02e |
 | 8 | Angelopoulos, A. N. & Bates, S. (2023). Conformal prediction: a gentle introduction | FnT Machine Learning 16(4):494-591, doi:10.1561/2200000101 | 01c |
-| 9 | Artzner, P., Delbaen, F., Eber, J.-M. & Heath, D. (1999). Coherent measures of risk | Mathematical Finance 9(3):203-228, doi:10.1111/1467-9965.00068 | 01c, 02d, 06 |
+| 9 | Artzner, P., Delbaen, F., Eber, J.-M. & Heath, D. (1999). Coherent measures of risk | Mathematical Finance 9(3):203-228, doi:10.1111/1467-9965.00068 | 01c, 02d |
 | 10 | Aviv, Y. & Pazgal, A. (2008). Optimal pricing of seasonal products with forward-looking consumers | M&SOM 10(3):339-359, doi:10.1287/msom.1070.0183 | 01c |
 | 11 | Bailey, M. J., Muth, R. F. & Nourse, H. O. (1963). A regression method for real estate price index construction | JASA 58(304):933-942, doi:10.1080/01621459.1963.10480679 | 01b, 01c, 02a |
 | 12 | Barber, R. F., Candes, E. J., Ramdas, A. & Tibshirani, R. J. (2023). Conformal prediction beyond exchangeability | Ann. Statist. 51(2):816-845, doi:10.1214/23-AOS2276 | 01c |
@@ -2230,13 +2303,13 @@ Findings are abbreviated: 01a, 01b, 01c, 01d, 02a, 02ai, 02c, 02d, 02e, 03a, 06 
 | 41 | Efron, B. (2010). Large-Scale Inference | CUP, doi:10.1017/CBO9780511761362 | 01c |
 | 42 | Efron, B. & Morris, C. (1973). Stein's estimation rule and its competitors | JASA 68(341):117-130, doi:10.1080/01621459.1973.10481350 | 02e |
 | 43 | Efron, B. & Morris, C. (1975). Data analysis using Stein's estimator and its generalizations | JASA 70(350):311-319, doi:10.1080/01621459.1975.10479864 | 01b, 01c, 02a, 02c, 02e |
-| 44 | Ekeland, I., Heckman, J. J. & Nesheim, L. (2004). Identification and estimation of hedonic models | JPE 112(S1):S60-S109, doi:10.1086/379947 | 01b, 01c, 02a, 02e |
+| 44 | Ekeland, I., Heckman, J. J. & Nesheim, L. (2004). Identification and estimation of hedonic models | JPE 112(S1):S60-S109, doi:10.1086/379947 | 01b, 01c, 02e, 03a |
 | 45 | Farewell, V. T. (1982). Mixture models for survival data with long-term survivors | Biometrics 38(4):1041-1046, doi:10.2307/2529885 | 02c |
 | 46 | Fine, J. P. & Gray, R. J. (1999). A proportional hazards model for the subdistribution of a competing risk | JASA 94(446):496-509, doi:10.1080/01621459.1999.10474144 | 01b, 01c, 02c |
 | 47 | Firth, D. (1993). Bias reduction of maximum likelihood estimates | Biometrika 80(1):27-38, doi:10.1093/biomet/80.1.27 | 02c |
 | 48 | Fleming, T. R. & Harrington, D. P. (2005). Counting Processes and Survival Analysis | Wiley, doi:10.1002/9781118150672 | 01c |
 | 49 | Fosse, E. & Winship, C. (2019). Analyzing age-period-cohort data: a review and critique | Annu. Rev. Sociology 45:467-492, doi:10.1146/annurev-soc-073018-022616 (corrected authorship; the findings first printed it as Luo) | 01b, 02a, 03b |
-| 50 | Gallego, G. & van Ryzin, G. (1994). Optimal dynamic pricing of inventories with stochastic demand over finite horizons | Management Science 40(8):999-1020, doi:10.1287/mnsc.40.8.999 | 01a, 01b, 01c, 02a, 02c, 02d, 02e |
+| 50 | Gallego, G. & van Ryzin, G. (1994). Optimal dynamic pricing of inventories with stochastic demand over finite horizons | Management Science 40(8):999-1020, doi:10.1287/mnsc.40.8.999 | 01b, 01c, 02a, 02c, 02d, 02e, 03a |
 | 51 | Gallego, G. & van Ryzin, G. (1997). A multiproduct dynamic pricing problem | Operations Research 45(1):24-41, doi:10.1287/opre.45.1.24 | 01c |
 | 52 | Gatzlaff, D. H. & Haurin, D. R. (1997). Sample selection bias and repeat-sales index estimates | JREFE 14(1):33-50, doi:10.1023/A:1007763816289 | 01b, 01c |
 | 53 | Ge, Q., Humphreys, B. R. & Zhou, K. (2020) (weather and attendance) | J. Sports Economics 21(3):304-322, no DOI given in the citing finding | 01d |
@@ -2260,7 +2333,7 @@ Findings are abbreviated: 01a, 01b, 01c, 01d, 02a, 02ai, 02c, 02d, 02e, 03a, 06 
 | 71 | Koenker, R. & Bassett, G. (1978). Regression quantiles | Econometrica 46(1):33-50, doi:10.2307/1913643 | 01c |
 | 72 | Lagakos, S. W. (1979). General right censoring and its impact on the analysis of survival data | Biometrics 35(1):139-156, doi:10.2307/2529941 | 01b, 01c, 02c |
 | 73 | Laird, N. & Olivier, D. (1981). Covariance analysis of censored survival data using log-linear analysis | JASA 76(374):231-240, doi:10.1080/01621459.1981.10477634 | 02c |
-| 74 | Lakkaraju, H., Kleinberg, J., Leskovec, J., Ludwig, J. & Mullainathan, S. (2017). The selective labels problem | KDD '17:275-284, doi:10.1145/3097983.3098066 | 01b, 01c, 02c |
+| 74 | Lakkaraju, H., Kleinberg, J., Leskovec, J., Ludwig, J. & Mullainathan, S. (2017). The selective labels problem | KDD '17:275-284, doi:10.1145/3097983.3098066 | 01b, 02c |
 | 75 | Lancaster, T. (1979). Econometric methods for the duration of unemployment | Econometrica 47(4):939-956, doi:10.2307/1914140 | 02c |
 | 76 | Lattimore, T. & Szepesvari, C. (2020). Bandit Algorithms | CUP, doi:10.1017/9781108571401 | 01c |
 | 77 | Lee, J., Morse, A., Hyun, M., Shapiro, S. L. & Drayer, J. (2023). Does time matter? How MLB secondary market sellers make ticket pricing decisions | Sport, Business and Management 13(3):397-415, doi:10.1108/sbm-05-2022-0042 (abstract read only) | 02a |
@@ -2317,7 +2390,7 @@ Findings are abbreviated: 01a, 01b, 01c, 01d, 02a, 02ai, 02c, 02d, 02e, 03a, 06 
 |---|---|---|---|
 | 124 | 16 CFR Part 464, Rule on Unfair or Deceptive Fees (the all-in ticket pricing rule), 90 FR 2166, effective 2025-05-12 | https://www.ecfr.gov/current/title-16/chapter-I/subchapter-D/part-464 | 01a, 02d, 02e |
 | 125 | UK Department for Business and Trade, press release, 2025-11-19, banning ticket touting | gov.uk news release (URL as printed in 01a) | 01a |
-| 126 | UK DBT analytical note, 2025-12-19: 37.1m primary and 1.9m secondary tickets, GBP 350m, 75% markup, 20% displacement, no elasticity | gov.uk publication page (URL as printed in 01a and 02d); read in full | 01a, 02d, 02e |
+| 126 | UK DBT analytical note, 2025-12-19: 37.1m primary and 1.9m secondary tickets, GBP 350m, 75% markup, 20% displacement, no elasticity | gov.uk publication page (URL as printed in 01a and 02d); read in full | 01a, 02d, 03a |
 | 127 | CMA, completed acquisition by PUG LLC (viagogo) of the StubHub business of eBay Inc., final report | as quoted by the DBT analytical note (p.131 onward); the report itself was not fetched | 01a |
 | 128 | NSW Fair Trading, Ticket reselling (10% cap since 2018-06-01) | https://www.nsw.gov.au/legal-and-justice/consumer-rights-and-protection/services/ticket-reselling | 01a |
 | 129 | Ireland, Sale of Tickets Act 2021, in force 2021-07-31 | Gov.ie, post-enactment report | 01a |
@@ -2377,9 +2450,37 @@ document:
 | 160 | UNC undergraduate honours thesis, Price Dynamics in Live Event Ticket Sales: Evidence from College Football | grey literature; its one qualitative finding is consistent with the rest and is not relied on |
 | 161 | A ticket-market paper attributed to "Hakes" in the programme brief | no such paper could be identified; nothing is cited rather than guessed |
 
-**Counts.** 123 peer-reviewed papers, working papers and books; 7 regulatory or legal items; 3 contract and
+**Counts.** 124 peer-reviewed papers, working papers and books; 7 regulatory or legal items; 3 contract and
 platform items; 22 API, data-provider and terms items; 2 competition and event items; 4 checked and not used.
-**157 distinct sources are cited and 4 are listed as checked and not used, 161 entries in total.**
+**158 distinct sources are cited and 4 are listed as checked and not used, 162 entries in total.**
+*(As first printed this read 123 / 157 / 161; Ahn & Lee adds one cited source, so 123 + 1 = 124 cited entries in
+that section, 157 + 1 = 158 cited sources, 161 + 1 = 162 entries, and 124 + 7 + 3 + 22 + 2 = 158.)*
+
+Changed in place on 2026-11-07T14:00Z: the five `Used by` cells and the missing entry. The previous values of
+the five cells were "01c, 02d, 06" (Artzner), "01b, 01c, 02a, 02e" (Ekeland et al.), "01a, 01b, 01c, 02a,
+02c, 02d, 02e" (Gallego & van Ryzin), "01b, 01c, 02c" (Lakkaraju et al.) and "01a, 02d, 02e" (UK DBT note).
+
+**CORRECTION 2026-11-07T14:00Z, R2-28 — the bibliography is corrected against the citations the findings carry.**
+Five `Used by` cells named a finding that does not cite the source, and one cited source was missing. Nothing
+is deleted. (1) **Artzner et al. (1999)** said "01c, 02d, 06"; `06-validation-protocol.md` uses CVaR and never
+cites Artzner, so the cell is now "01c, 02d", which are the two files that quote it. (2) **Ekeland, Heckman &
+Nesheim (2004)** said "02a"; `02-a-price-paths.md` does not cite it, and `03-a-interactions.md` does, so the cell
+is now "01b, 01c, 02e, 03a". (3) **Gallego & van Ryzin (1994)** said "01a"; `01-a-market-structure.md` does not
+cite it, and `03a` does, so the cell is now "01b, 01c, 02a, 02c, 02d, 02e, 03a". (4) **Lakkaraju et al. (2017)**
+said "01b, 01c, 02c"; the phrase and the paper are in `01-b` and `02-c` and not in `01-c`, so the cell is now
+"01b, 02c". (5) **The UK DBT analytical note** said "01a, 02d, 02e"; `02-e` cites no DBT material and `03-a`
+does, so the cell is now "01a, 02d, 03a". Each cell was checked by searching every file under
+`records/findings/` for the author's surname or the note's short name, and a file is listed only if the source
+appears in it.
+
+(6) **Ahn & Lee (2007)** is added as entry **1a**: *Lifecycle demand for Major League Baseball*, *International
+Journal of Sport Finance* 2(2):79-93, doi:10.1177/155862350700200203, cited at `02-d-elasticity-fees-optimum.md`
+lines 839-840. It sat in the gap between Abadie and Aigner, so it is numbered `1a` and placed in alphabetical
+order rather than renumbering the forty rows below it; the section's counts therefore become **124
+peer-reviewed papers, working papers and books** and **162 entries in total** (123 + 1 and 161 + 1, the same
+"157 cited plus 4 checked and not used" split with Ahn & Lee moving into the cited group). The header's claim
+"No source appears here that no finding cites" was already true and still is: the defect was the converse, a
+cited source absent here.
 
 ---
 

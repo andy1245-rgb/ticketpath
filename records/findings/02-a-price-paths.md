@@ -893,11 +893,15 @@ in full here, and no numeric result is quoted from any of them):
 - **Gallego, G. & van Ryzin, G. (1994).** Optimal dynamic pricing of inventories with stochastic demand over
   finite horizons. *Management Science* 40(8):999-1020. doi:10.1287/mnsc.40.8.999. (the finite-horizon
   perishable-inventory result behind the declining reservation, §5.2)
-- **Mason, K. O., Mason, W. M., Winship, C. & Poole, W. K. (1973).** Some methodological issues in cohort
-  analysis of archival data. *American Sociological Review* 38(2):242-258. doi:10.2307/2094398. (the exact
+- **Mason, K. O., Mason, W. M., ~~Winship, C.~~ Winsborough, H. H. & Poole, W. K. (1973).** Some methodological issues in cohort
+  analysis of archival data. *American Sociological Review* 38(2):242-258. doi:10.2307/2094398. **[CORRECTION
+  2026-11-07T14:00Z, R2-20 — dead surname: Crossref returns Winsborough as third author. Title, journal, volume
+  and pages are right. See CORRECTION at the end of this file.]** (the exact
   age-period-cohort linear dependency, §4.2)
-- **Luo, L. (2019).** Analyzing age-period-cohort data: a review and critique. *Annual Review of Sociology*
-  45:467-492. doi:10.1146/annurev-soc-073018-022616. (why every APC point estimate is a normalisation in
+- ~~**Luo, L. (2019).**~~ **Fosse, E. & Winship, C. (2019).** Analyzing age-period-cohort data: a review and critique. *Annual Review of Sociology*
+  45:467-492. doi:10.1146/annurev-soc-073018-022616. **[CORRECTION 2026-11-07T14:00Z, R2-21 — dead author:
+  Crossref returns Fosse & Winship for this DOI, same title, journal, volume, pages and year. See CORRECTION at
+  the end of this file.]** (why every APC point estimate is a normalisation in
   disguise, and why bounds are the honest output, §4.3)
 - **Powell, J. L. (1986).** Censored regression quantiles. *Journal of Econometrics* 32(1):143-155.
   doi:10.1016/0304-4076(86)90016-3. (why a quantile below the censoring point is identified, §6.2)

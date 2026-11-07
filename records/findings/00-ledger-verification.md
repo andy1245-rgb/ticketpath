@@ -22,7 +22,7 @@ I did not edit the ledger or any finding. Nothing was committed or pushed.
 | **P0.5** | `answered`; "No. Every quantitative conclusion is class B, C, SIM or UNVALIDATED. Simulation is admissible only for estimator properties."; class `verified` | **SUPPORTED** | "**No result in this programme can be class A from our own data.** Every quantitative conclusion is class B, C, SIM, or UNVALIDATED." and "Simulation is legitimate, but only for estimator properties." | Keep. |
 | **P1.A** | `dispatched`; finding `—`; class `—` | **UNSUPPORTED** | The ledger row says `dispatched`, and the file on disk (24,600 bytes, mtime 08:42:11Z) opens: "**Status:** complete. **Last updated:** 2026-11-07T09:10Z. **Author:** Phase 1 subagent A." | `answered`. One-line finding: "Primary tickets are systematically priced below secondary clearing value, but the prize is small (≈41% markup on the ~5% of tickets that resell, worth 1.4% of primary revenue); secondary prices near the event overwhelmingly fall, and on a capped on-chain ledger the recorded markup is a biased-down lower bound exactly where value is highest." Classes: A for the empirical core, C for the truncation argument, D for the three new mechanisms. |
 | **P1.B** | `dispatched`; finding `—`; class `—` | **UNSUPPORTED** | File on disk (34,046 bytes, mtime 08:52:13Z): "**Status:** complete (first pass). **Written:** 2026-11-07T08:55Z. **Author:** Phase 1-B research agent." | `answered-partial` (the file labels itself a first pass). One-line finding: "Of six targets, one is buildable today, two are set-identified with computable bounds and three are not identified; the missing object is the asking price of the risk set, not the at-risk denominator, and four fields per listing convert the sale hazard from unidentifiable to estimable." Classes: C for the identification arguments, B for the demand bracket, A only where cited. |
-| **P1.C** | `dispatched`; finding `—`; class `—` | **FILE-ABSENT** | `records/findings/` contains exactly `01-a-market-structure.md`, `01-b-identifiability.md`, `01-d-external.md`. No `01-c*` file exists. | `dispatched` is correct here, and it is the only Phase 1 row for which it is. Record "no deliverable on disk" rather than leaving the row looking like the other three. |
+| **P1.C** | `dispatched`; finding `—`; class `—` | **FILE-ABSENT** | `records/findings/` contains exactly `01-a-market-structure.md`, `01-b-identifiability.md`, `01-d-external.md`. ~~No `01-c*` file exists.~~ **[CORRECTION 2026-11-07T14:00Z, R2-6 — dead: `01-c-methods.md` exists and is complete, 1,558 lines, written 10:57Z–11:09Z. This row was a 10:55Z observation and was true then; the file landed four minutes later. The FILE-ABSENT verdict is history and is now false as a statement about the tree. `A-research-ledger.md` has since recorded P1.C as `answered` from that file.]** | ~~`dispatched` is correct here, and it is the only Phase 1 row for which it is. Record "no deliverable on disk" rather than leaving the row looking like the other three.~~ **[CORRECTION 2026-11-07T14:00Z, R2-6 — dead: `01-c` answered the question, and the ledger row was updated at 12:55Z.]** |
 | **P1.D** | `dispatched`; finding `—`; class `—` | **UNSUPPORTED** | File on disk (31,773 bytes, mtime 08:40:17Z): "**Status:** complete for Phase 1 purposes. **Written:** 2026-11-07T09:00Z. **Agent:** `p1-external`." | `answered`. One-line finding: "17 variables admitted with a class and a priority, 11 rejected on licence, mechanism or legal grounds; only Ticketmaster Discovery, a venue capacity table and NOAA weather are worth collecting, and the two highest-value variables (listing depth and seat coordinates) are not in the contract at all." Note the file's own head-line counts do not reconcile with its tables (§2.3 below). |
 
 **Tally:** 4 SUPPORTED, 1 PARTIAL, 3 UNSUPPORTED, 1 FILE-ABSENT (9 rows).
@@ -160,15 +160,20 @@ the records. Outside the tables:
 
 I checked 43 DOI lookups at Crossref covering 42 distinct works, plus four regulator and register
 documents fetched live. **Every DOI cited in the three findings resolves to the cited title, author
-set and journal, with one exception.**
+set and journal, ~~with one exception~~** **[CORRECTION 2026-11-07T14:00Z, R2-7 — dead as a tally: no DOI
+fails to resolve. Two *author sets* do not match Crossref (`01-b` §7's "Luo" and Mason entries), which is a
+printing error inside a resolving record and not an unresolvable citation; see `01-b` CORRECTION 3.]** **.**
 
 ### Confirmed wrong as cited
 
-- **`10.1016/S0304-4076(73)90005-5`** (`01-b` §7, Aigner 1973, *Journal of Econometrics* 1(1), 49-59).
+- ~~**`10.1016/S0304-4076(73)90005-5`** (`01-b` §7, Aigner 1973, *Journal of Econometrics* 1(1), 49-59).
   Crossref returns **HTTP 404**. A stray `S` has been inserted: the correct DOI is
   **`10.1016/0304-4076(73)90005-5`**, which resolves to exactly the cited title. This is the single
   unresolvable citation in the records, and it lands on the sentence in `01-b` claiming every citation
-  was checked.
+  was checked.~~ **[CORRECTION 2026-11-07T14:00Z, R2-5 — dead, and it is the only dead bullet in this
+  section: `01-b` does not contain that string. Its two Aigner occurrences are the resolving form; the only
+  `S0304-4076` DOI in the file is Bollinger's. The 404 was real but was run on an input that is not in the
+  file. Withdrawn in full at the end of this file; nothing about Aigner needed correcting.]**
 - **"16 CFR Part 464, 90 FR 2166"** (`01-a` §1 and §7). The rule is **90 FR 2066**, not 2166, federal
   register document 2024-30293, *Trade Regulation Rule on Unfair or Deceptive Fees*, published
   2025-01-10, `cfr_references` part 464 title 16, `effective_on` 2025-05-12. A digit transposition. The
@@ -292,10 +297,14 @@ naming both versions and leaving it open. It is an operator or orchestrator deci
    synthesis. `01-d` classes its variable table but not its mechanism prose or its counts. In all
    three, the unclassed material is the material a reader would act on: the identification statuses,
    the "magnitudes to carry forward", the "what we newly have", the surviving-variable count.
-6. **One unresolvable citation and one mis-cited register page** are the only bibliographic failures
+6. ~~**One unresolvable citation and one mis-cited register page** are the only bibliographic failures
    across 42 works, which is a good rate. Both are transcription errors, not invented sources. Fix
    both, and strike the sentence in `01-b` §7 claiming every item was Crossref-checked, or correct it
-   to what was actually done.
+   to what was actually done.~~ **[CORRECTION 2026-11-07T14:00Z, R2-7b — dead as a count and as an
+   instruction: there is one bibliographic failure, the 90 FR 2166 register page, which is a transcription
+   error and not an invented source. The "unresolvable citation" does not exist (see §3 above). The other
+   real defect in `01-b` §7 is two printed author sets, not a DOI, and it is corrected in that file's
+   CORRECTION 3.]**
 7. **Two fixture numbers in `01-b` break the programme's own evidence rule** and are arithmetically
    wrong on the audit's own figures (90 sale rows read as 90 sold tickets when 49 tickets sold). They
    are not load-bearing for `01-b`'s conclusion, but they are exactly the kind of number that gets
@@ -349,3 +358,29 @@ carry a dated correction withdrawing it. No other file repeats it.
 **What stands in this file.** Everything else in §3: the 90 FR 2066 finding and its Federal Register document
 2024-30293 detail, the Gov.ie 403, the unconfirmable Krueger and Get Protocol entries, the He & Lin year, and
 the whole of §1 and §2. Nothing in the verdict table rests on the withdrawn bullet.
+
+---
+
+## CORRECTION R2-5 to R2-7 (2026-11-07T14:00Z) — the withdrawal is now marked at the site, not only at the end
+
+Appended by the round-2 corrections pass after `records/findings/00-verification-round2.md` §1 items 8–10 and
+§2.2. Round 1's withdrawal above was correct and was carried on the last page of the file; §3 "Confirmed wrong
+as cited" still printed the accusation as a live finding, in the section a reader opens for the citation audit.
+The verifier's verdict on that is exact and is adopted here: a true withdrawal that leaves the withdrawn text
+standing where a reader meets it first has not corrected the record.
+
+Four passages in the body now carry dated markers: the Aigner bullet in §3 (R2-5); the P1.C row's
+"no `01-c*` file exists" and its correction cell (R2-6); §3's opening "with one exception" (R2-7); and the
+closing list's "one unresolvable citation and one mis-cited register page" (R2-7b). Nothing is deleted here or
+there; the argument remains in the round-1 block above.
+
+**What was true, and when.** The 404 was real: a Crossref query for `10.1016/S0304-4076(73)90005-5` returns it.
+The string simply is not in `01-b-identifiability.md`, whose two Aigner occurrences are the resolving form.
+The P1.C row was a 10:55Z observation and `01-c-methods.md` landed complete at 11:09Z, so the row was true when
+written and false by the time anyone read it — which is why the marker says "dead as a statement about the
+tree" rather than "always false".
+
+**One thing this file still gets right and no pass should touch.** The 90 FR 2066 finding is independent of the
+Aigner error and is unaffected. §3's "with one exception" is now shown to be wrong in a second way: the
+exception it named does not exist, and the two real bibliographic defects in `01-b` §7 are printed author sets,
+not failing DOIs. Both are recorded in `01-b` CORRECTION 3.

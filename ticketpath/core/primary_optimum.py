@@ -17,6 +17,12 @@ floor and says "at least", with no upper end (`02-b` section 3.4); everything el
 recommends the level inside its band. A level that came only from the prior is refused,
 because a prior is not a record and may not be printed as a primary price
 (`02-e` section 6.2(4)).
+
+One rule sits across all of them: the cap in force on the page is a hard ceiling on the
+recommendation (`face * (10000 + cap) // 10000`, the same integer arithmetic the store
+uses). A cap below the price this record supports is refused with a typed reason, because
+the recommendation would then be a number the policy forbids -- and the ceiling is not
+printed in its place, since the cap is a floor on value, not a target for a primary price.
 """
 
 from __future__ import annotations
@@ -62,6 +68,7 @@ def recommend(
     intensity: Mapping,
     fee: Mapping | None,
     sell_through_floor: float | None,
+    cap_bps_candidate: int | None = None,
     candidates: Sequence[int] | None = None,
 ) -> dict:
     row = _tier(features, tier_id)
@@ -143,6 +150,42 @@ def recommend(
             "labelId": "no_resale_record",
             "extraLabelIds": ["A13", "A17"],
         }
+
+    # The cap in force is a rule on the recommendation, not only on the recorded sales. It
+    # is the same integer ceiling the store uses, `face * (10000 + cap) // 10000`, and when
+    # it sits below the price this record supports, the recommendation is a price the policy
+    # forbids. The ceiling is not offered in its place: a cap is a ceiling on the resale
+    # price and a floor on value, never a target for the primary price (A10). So the engine
+    # refuses with a typed reason instead of printing a number the cap forbids.
+    if cap_bps_candidate is not None:
+        candidate_ceiling = face * (10000 + int(cap_bps_candidate)) // 10000
+        if recommended > candidate_ceiling:
+            return {
+                "refused": True,
+                "regime": regime,
+                "recommendedLamports": None,
+                "recommendedIsFloor": False,
+                "bandLamports": [None, None],
+                "noUpperBound": False,
+                "basis": "cap_below_recommendation",
+                "refusalCode": "recommendation_above_cap",
+                "requiredInputs": ["a cap at or above the price this record supports"],
+                "refusals": refusals
+                + [
+                    {
+                        "code": "recommendation_above_cap",
+                        "requiredInputs": ["a cap at or above the price this record supports"],
+                        "labelId": "recommendation_above_cap",
+                    }
+                ],
+                "consequence": [],
+                "netRevenue": None,
+                "sellThroughFloor": sell_through_floor,
+                "candidateCapBps": int(cap_bps_candidate),
+                "candidateCeilingLamports": candidate_ceiling,
+                "labelId": "recommendation_above_cap",
+                "extraLabelIds": ["A10"],
+            }
 
     sell_through = float(row["sellThrough"])
     chosen = list(candidates) if candidates else [recommended, face]

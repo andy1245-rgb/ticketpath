@@ -475,8 +475,10 @@ citation hygiene, or a label that does not travel.
 | 39 | `01-a` 13 | "≈41% average markup on the ~5% of tickets that resell" is verified against Leslie & Sorensen (41%, 5%), but the summary's "level ≈1.3–1.5× face on average" (§2) is a range the paper does not state; the paper's point estimate is 1.41×. A range around a point estimate is a synthesis, not a source. | **L** | New |
 
 **Notes on the prior pass.** I corroborate the 90/128 arithmetic, the £269 splice, the
-"Gap 5" dangling label, the 19/11 count, the Aigner DOI (I re-checked Crossref: the `S`-prefixed
-DOI returns 404, the corrected one 200), and the general point that the Phase 1 summaries are
+"Gap 5" dangling label, the 19/11 count, ~~the Aigner DOI (I re-checked Crossref: the `S`-prefixed
+DOI returns 404, the corrected one 200)~~ **[CORRECTION 2026-11-07T14:00Z, R2-27 — dead: the DOI check is real
+but the finding is not. `01-b` does not contain the `S`-prefixed string; both its Aigner occurrences are the
+resolving form. Nothing about Aigner needed correcting. Withdrawn at the end of this file.]**, and the general point that the Phase 1 summaries are
 less disciplined than their bodies. Two corrections to the prior pass's own corrections:
 (i) "90 FR 2166" is not a random digit transposition; 2166 is the **end page** and the eCFR
 "Source" line, so the error is a page-reference error, not a mistyped start page. (ii) The

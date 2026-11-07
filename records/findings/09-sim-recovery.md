@@ -15,14 +15,33 @@ tickets.
 | Determinism | two runs identical apart from the timing lines |
 | Verdicts | A **PASS**, B **FAIL**, C **FAIL**; 37 of 43 pre-declared conditions held |
 
-**The three failures first**, because they are the result:
+~~**The three failures first**, because they are the result:~~ **[CORRECTION 2026-11-07T14:00Z, R2-10 — dead
+as the count and as the list: the log prints **five** failed conditions (`B.pooled_width`, `B.declared_matched`,
+`B.width_shrinks`, `C.cap_direction`, `C.cap_magnitude`), i.e. six of the 43 condition-lines, not three. Item 2
+below is not a failed condition. The omission is named under item 3. The reconciliation is at the end of this
+file.]**
+
+The failures first, because they are the result:
 
 1. **B, declared band at the matched tau**: coverage of a new event's mean is **0.805 at J=2**,
    below the pre-declared `[0.87, 0.93]`. It is 0.872 at J=5 and 0.879 at J=20.
-2. **B, the default declared tau**: at the API default `tau = 0.20`, coverage is **0.620 / 0.694 /
-   0.718** at J = 2 / 5 / 20 against a true between-event tau of 0.30.
+2. ~~**B, the default declared tau**: at the API default `tau = 0.20`, coverage is **0.620 / 0.694 /
+   0.718** at J = 2 / 5 / 20 against a true between-event tau of 0.30.~~ **[CORRECTION 2026-11-07T14:00Z,
+   R2-11 — dead as a failure. The numbers are the log's and are right; the label is not. The log prints
+   `B.declared_default` **PASS** at J = 2, 5 and 20, because the condition was pre-declared as a predicted
+   failure ("coverage at declared=0.20 is < 0.87 … under-covers a tau of 0.30") and the under-coverage is what
+   makes it hold. §3 point 3 of this file says exactly that.]**
 3. **C, the cap bias runs the opposite way to 02-a C1**: the fitted curvature `theta` is biased
-   **up**, not attenuated down, by a cap that truncates the top of the distribution.
+   **up**, not attenuated down, by a cap that truncates the top of the distribution. **[CORRECTION
+   2026-11-07T14:00Z, R2-11b — two related conditions failed here, `C.cap_direction` and `C.cap_magnitude`;
+   this item states the second's substance (the bias has the wrong sign and the magnitude test therefore
+   fails, "relative attenuation" −0.131 at s=0.40 and −0.085 at s=0.70) without naming it.]**
+
+**[CORRECTION 2026-11-07T14:00Z, R2-10b — the third failed condition the list above omits is
+`B.width_shrinks` in the declared-0.20 arm: the pooled width is 0.8328, 0.7329, 0.9982 at J = 2, 5, 20, so it
+falls then jumps instead of shrinking, because the between-event variance switches from a declared 0.04 to an
+estimated 0.09 at nine events. It is disclosed at §3 point 4 and in §5; it belongs in the summary. With this
+line the summary names every failure the log names, and the count of five conditions is complete.]**
 
 Nothing was tuned. No pass condition, grid, replication count or seed was changed after the first
 run. The estimators are untouched.
@@ -448,3 +467,45 @@ upward bias of the path curvature under a binding cap, which corrects the readin
 `F` a decision row for the declared-tau constant, where the measured coverage at 0.20 is 0.620 to
 0.718 against a tau of 0.30, and a row recording that the width condition in `06` G2 cannot hold
 across the declared-to-estimated switch.
+
+---
+
+## CORRECTION R2-10 (2026-11-07T14:00Z) — the failure summary is reconciled with the declared conditions
+
+Appended by the round-2 corrections pass after `records/findings/00-verification-round2.md` §3.3. The summary at
+the top of this file called one held condition a failure and left one failed condition out. The body of the file
+was right: §3 point 3 says the default-tau under-coverage is the predicted failure, §3 point 4 says the width
+condition failed in the 0.20 arm, and §5 lists every condition. Only the summary disagreed, and it is the part a
+reader reads first. Nothing is deleted; the summary sentences are struck in place.
+
+**The source of truth, quoted.** `tools/sim_recovery.py` declares, among others:
+
+- `B.declared_default`: "coverage at declared=0.20 is < 0.87 at every J (under-covers a tau of 0.30)" — a
+  condition written so that under-coverage makes it **hold**.
+- `B.width_shrinks`: "the pooled width is strictly decreasing in J (2 > 5 > 20) in both arms".
+- `C.cap_direction`: "capped cells: bias(theta_hat_diff) < 0 and mean theta_hat strictly decreasing in s".
+- `C.cap_magnitude`: "relative attenuation >= 10% at s=0.40 and >= 30% at s=0.70".
+
+The log's own verdict lines agree, and are byte-reproducible:
+
+> `SIM | B  declared-band coverage: FAIL | failed: B.pooled_width, B.declared_matched, B.width_shrinks`
+> `SIM | C  path theta from within-ticket differences: FAIL | failed: C.cap_direction, C.cap_magnitude`
+> `SIM | conditions: 37/43 held`
+
+**The arithmetic.** Five condition **keys** failed. `B.pooled_width` fails at two values of J (2 and 5 in the
+declared-0.20 arm), so six of the 43 condition-lines failed, and 43 − 6 = 37 held, which is the printed count.
+The six are: `B.declared_matched` at J=2 (coverage 0.805); `B.pooled_width` at declared 0.20, J=2 (0.720) and
+J=5 (0.746); `B.width_shrinks` at declared 0.20 (0.8328 / 0.7329 / 0.9982); `C.cap_direction`; and
+`C.cap_magnitude`. `B.declared_default` is not among them: the log prints it PASS at J = 2, 5 and 20 with
+coverages 0.620, 0.694 and 0.718, all below the 0.87 the condition requires.
+
+**What this correction does not change.** No verdict, no table, no number in §1 to §7. Study A still passes
+all 19 of its conditions; B and C still fail; the 0.805 at two events is still the finding that matters, and the
+default-tau under-coverage is still a statement about one constant rather than a refutation of the label. The
+defect was in the sentence that ranked the results, not in the results.
+
+**Why a held condition was misread as a failure.** It is worth recording, because the same trap sits in every
+pre-registered study in this programme: one of these conditions was written to be satisfied by a bad number, so
+the printed word PASS sits beside a value that looks like a defect. A summary written from the numbers and not
+from the verdict column will invert it every time. `06-validation-protocol.md` §3.1 rule 4 asks for exactly such
+conditions, and the cost of them is that the results must be read from the PASS/FAIL column.

@@ -48,7 +48,13 @@ FIELDS = {
     "lamports": "1,380,000,000",
     "face": "1,200,000,000",
     "cap": 1500,
+    # the cap this page prices against when the URL names one, beside the record's own cap
+    "recorded": 1500,
     "sol": "1.38",
+    # the refusal that exists because the cap in force forbids the recommendation
+    "cap_bps": 0,
+    "ceiling_lamports": "1,000,000,000 lamports",
+    "row": "led_0002",
 }
 
 

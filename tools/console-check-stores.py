@@ -1,9 +1,13 @@
-"""Live check of the three loader-valid, engine-unpriceable stores, over a socket.
+"""Live check of the three engine-unpriceable stores, over a socket.
 
-Each store is accepted by `LedgerAdapter.from_fixture` -- the loader raises nothing -- and
-each used to leave the handler with no response at all (`HTTP 000`, "Empty reply from
-server"). This script starts a real server per store on an ephemeral port, asks for the
-page, and prints the status, the typed code and whether a page came back.
+The loader does not raise on these stores: it holds the offending event back with a typed
+reason and keeps serving the rest, which is the rule that stops one malformed row from
+turning a whole store into a refusal. This script starts a real server per store on an
+ephemeral port, asks for the held-back event's page, then asks for a healthy event on the
+same server, and prints the status, the typed code and whether a page came back for each.
+
+Before the loader learned these three states, every one of them left the handler with no
+response at all (`HTTP 000`, "Empty reply from server").
 """
 
 import contextlib
@@ -116,21 +120,48 @@ def code_of(html):
     return ""
 
 
+# (name, store, the held-back event's URL, the code it must print, a healthy event's URL,
+# the code that page must not print). The second URL is the half the old behaviour failed:
+# one bad event used to refuse every event in the store.
 CASES = [
-    ("zero-priced sale", zero_priced_sale(), "/?event=evt_syn_04"),
-    ("sale after start", late_store_fixture(), "/?event=evt_syn_04&asOf=2026-11-14T12:00:00Z"),
-    ("event with no tiers", tierless_event(), "/?event=evt_syn_03"),
-    ("event with no tiers / default", tierless_event(), "/"),
+    (
+        "zero-priced sale",
+        zero_priced_sale(),
+        "/?event=evt_syn_01",
+        "sale_not_priced",
+        "/?event=evt_syn_04",
+    ),
+    (
+        "sale after start",
+        late_store_fixture(),
+        "/?event=evt_syn_04&asOf=2026-11-14T12:00:00Z",
+        "sale_after_event_start",
+        "/?event=evt_syn_01",
+    ),
+    ("event with no tiers", tierless_event(), "/?event=evt_syn_03", "event_has_no_tier", "/?event=evt_syn_02"),
+    ("event with no tiers / default", tierless_event(), "/", "", "/?event=evt_syn_02"),
 ]
 
 failures = 0
-for name, data, path in CASES:
+for name, data, path, want, healthy_path in CASES:
     with serving(data) as base:
         status, body = ask(base + path)
         is_page = "<!doctype html>" in body
-        ok = status != 0 and is_page
+        code = code_of(body)
+        ok = status != 0 and is_page and code == want
         failures += 0 if ok else 1
-        print(f"{'ok  ' if ok else 'FAIL'} {name:32s} {path:44s} status={status} page={is_page} code={code_of(body) or '-'}")
+        print(
+            f"{'ok  ' if ok else 'FAIL'} {name:32s} {path:44s} "
+            f"status={status} page={is_page} code={code or '-'}"
+        )
+        status, body = ask(base + healthy_path)
+        code = code_of(body)
+        rest_ok = status == 200 and "<!doctype html>" in body and not code
+        failures += 0 if rest_ok else 1
+        print(
+            f"{'ok  ' if rest_ok else 'FAIL'} {'  the rest still prices':32s} "
+            f"{healthy_path:44s} status={status} page={'<!doctype html>' in body} code={code or '-'}"
+        )
 
 print("\nFAILURES:", failures)
 sys.exit(1 if failures else 0)

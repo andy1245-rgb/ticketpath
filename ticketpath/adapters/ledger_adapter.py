@@ -20,6 +20,8 @@ import os
 from pathlib import Path
 from typing import Iterable, Mapping
 
+from ticketpath.core.timeutil import parse
+
 DEFAULT_FIXTURE_PATH = Path(__file__).resolve().parents[2] / "fixtures" / "synthetic_store.json"
 MODES = ("fixture", "empty")
 
@@ -45,6 +47,7 @@ class LedgerAdapter:
         self._ledger: list[dict] = list(store["ledger"])
         self._organizers = {row["id"]: row for row in store["organizers"]}
         self._regions: dict[str, str] = dict(store.get("walletRegions") or {})
+        self._rejections: dict[str, dict] = {}
         self._tier_by_id, self._tier_by_ticket = self._index_tiers()
         self._entries_by_ticket = self._index_entries()
 
@@ -111,6 +114,7 @@ class LedgerAdapter:
             )
         for organizer in self._organizers.values():
             _require_keys(organizer, ("id", "name", "walletAddress", "verified"), "organizer")
+        rejected: dict[str, dict] = {}
         for event in self._events:
             _require_keys(
                 event,
@@ -121,6 +125,13 @@ class LedgerAdapter:
                 raise StoreError(f"event {event['id']} has unknown status {event['status']!r}")
             if event["organizerId"] not in self._organizers:
                 raise StoreError(f"event {event['id']} references unknown organizer")
+            # Per event, before the structural checks below: an event the core cannot price
+            # is held back with its own reason, and its internal consistency is not this
+            # store's problem to prove.
+            reason = self._event_rejection(event)
+            if reason is not None:
+                rejected[event["id"]] = reason
+                continue
             tier_ids = [tier["id"] for tier in event["tiers"]]
             if len(set(tier_ids)) != len(tier_ids):
                 raise StoreError(f"event {event['id']} has duplicate tier ids")
@@ -141,6 +152,9 @@ class LedgerAdapter:
                 raise StoreError(f"event {event['id']} totalSupply disagrees with its tiers")
             if event.get("issuedCount") is not None and event["issuedCount"] != len(tickets_here):
                 raise StoreError(f"event {event['id']} issuedCount disagrees with its ticket rows")
+
+        if rejected:
+            self._hold_back(rejected)
 
         seen_ids: set[str] = set()
         seen_mints: set[str] = set()
@@ -206,8 +220,71 @@ class LedgerAdapter:
             for tier in tiers:
                 tier_by_id[f"{event_id}:{tier['id']}"] = tier
         for ticket in self._tickets:
-            tier_by_ticket[ticket["id"]] = tier_by_id[f"{ticket['eventId']}:{ticket['tierId']}"]
+            # A ticket whose tier does not exist belongs to an event the loader is about to
+            # hold back (an event with no tiers). It is indexed for nothing, and it must not
+            # raise a bare KeyError out of the constructor before validation can say why.
+            key = f"{ticket['eventId']}:{ticket['tierId']}"
+            if key in tier_by_id:
+                tier_by_ticket[ticket["id"]] = tier_by_id[key]
         return tier_by_id, tier_by_ticket
+
+    def _event_rejection(self, event: Mapping) -> dict | None:
+        """The typed reason this event cannot be priced, or None.
+
+        These are the three states `core.price_features` refuses on: a sale at zero has no
+        price-to-face ratio, a sale dated after the event starts has a negative
+        time-to-event, and an event with no tier has nothing to price. They are checked here
+        so the store says so at load instead of at render time, and each one is per event --
+        not store-fatal -- so a store with one bad event still prices the other seven. The
+        codes are the ones the engine already uses, so the console renders one reason for
+        one fact.
+        """
+        if not event["tiers"]:
+            return {"code": "event_has_no_tier", "labelId": "P_NO_TIER", "fields": {}}
+        starts_at = parse(event["startsAt"])
+        here = {ticket["id"] for ticket in self._tickets if ticket["eventId"] == event["id"]}
+        for row in self._ledger:
+            if row["kind"] != "sale" or row["ticketId"] not in here:
+                continue
+            price = row["priceLamports"]
+            if price is not None and price <= 0:
+                return {
+                    "code": "sale_not_priced",
+                    "labelId": "sale_not_priced",
+                    "fields": {"row": row["id"]},
+                }
+            # Strictly after, which is the boundary `price_features` refuses on: a sale at
+            # exactly the start instant has a time-to-event of zero and is priceable.
+            if parse(row["occurredAt"]) > starts_at:
+                return {
+                    "code": "sale_after_event_start",
+                    "labelId": "sale_after_event_start",
+                    "fields": {"row": row["id"]},
+                }
+        return None
+
+    def _hold_back(self, rejections: dict[str, dict]) -> None:
+        """Drop the rejected events' rows and keep serving the rest of the store.
+
+        Everything above this adapter reads `events()`, `tickets()` and `raw_ledger()`, so an
+        event held back here cannot reach a number, a pool or a page. The store is still
+        served: the alternative -- one malformed event turning every page into a refusal --
+        is what made a single bad row in real data a whole-console outage.
+        """
+        held = set(rejections)
+        self._rejections = dict(rejections)
+        self._events = [event for event in self._events if event["id"] not in held]
+        ticket_ids = {ticket["id"] for ticket in self._tickets if ticket["eventId"] not in held}
+        self._tickets = [ticket for ticket in self._tickets if ticket["id"] in ticket_ids]
+        self._ledger = [row for row in self._ledger if row["ticketId"] in ticket_ids]
+        self._tier_by_id, self._tier_by_ticket = self._index_tiers()
+        self._entries_by_ticket = self._index_entries()
+
+    # -- what the loader would not serve -----------------------------------
+
+    def rejections(self) -> dict[str, dict]:
+        """Events held back at load, by id, each with its typed reason. Empty normally."""
+        return {event_id: dict(reason) for event_id, reason in self._rejections.items()}
 
     def _index_entries(self) -> dict[str, list[dict]]:
         grouped: dict[str, list[dict]] = {}

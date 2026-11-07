@@ -28,7 +28,11 @@ records are the curated index over them. Never delete a finding to make a conclu
 tidy — record the conflict in `F`.
 
 `DELIVERABLE.md` is the Phase 8 integrated specification (the programme's §5 final
-deliverable). **It is a stub and says so at the top: it is not written yet.** It carries a
+deliverable). ~~**It is a stub and says so at the top: it is not written yet.**~~ **[CORRECTION
+2026-11-07T14:00Z, R2-23 — dead: the file is written. It is 210,575 bytes at this pass's count, runs from §1 to
+§22 and a closing note, and its own header says the opposite — "**Status of this document:** it is the Phase 8
+document, not a table of contents for one." This line described the file as it stood before it was written and
+was never updated. See §20.6 of that file for the limitations in it.]** It carries a
 status per required section and points at the record that holds the material for each, so the
 promise of a Phase 8 document is not a missing file. Why it cannot be written from the data on
 this machine is in `records/findings/01-b-identifiability.md` and `records/F-decision-log.md`.

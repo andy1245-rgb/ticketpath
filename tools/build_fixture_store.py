@@ -1143,15 +1143,29 @@ def main(argv: list[str]) -> int:
 
 
 def _load_through_adapter() -> int:
-    """Prove the file the backend actually reads accepts it, refusals and all."""
+    """Prove the file the backend actually reads accepts it, refusals and all.
+
+    The adapter holds an event back rather than refusing the store, so "it loaded" is not
+    enough: a store the generator wrote may contain an event the engine cannot price, and
+    `--check` must fail on one. Anything the loader will not serve is a failed build here.
+    """
     sys.path.insert(0, str(REPO_ROOT))
     try:
-        from ticketpath.adapters.ledger_adapter import LedgerAdapter
+        from ticketpath.adapters.ledger_adapter import LedgerAdapter, StoreError
         from ticketpath.core import base58 as core_base58
     except ImportError as exc:  # pragma: no cover - only when run outside the repo
         print(f"  [skip] adapter cross-check unavailable: {exc}")
         return 0
-    adapter = LedgerAdapter.from_fixture(STORE_PATH)
+    try:
+        adapter = LedgerAdapter.from_fixture(STORE_PATH)
+    except StoreError as exc:
+        print(f"  [FAIL] the adapter refuses the store: {exc}", file=sys.stderr)
+        return 1
+    rejected = adapter.rejections()
+    if rejected:
+        for event_id, reason in rejected.items():
+            print(f"  [FAIL] {event_id} cannot be priced: {reason['code']}", file=sys.stderr)
+        return 1
     for event in adapter.events():
         for tier in event["tiers"]:
             assert tier["issuedCount"] >= 0

@@ -83,8 +83,8 @@ sample and repeat-sales indices are biased accordingly
 ([Steele & Goy 1997](https://doi.org/10.1023/A:1007780219924)), with
 [Goetzmann 1992](https://doi.org/10.1007/BF00153997) and [Meese & Wallace
 1997](https://doi.org/10.1023/A:1007715917198) on estimator accuracy and alternatives. Here selection is
-direct: only 90 of 128 fixture tickets ever sell, so pairs come from the liquid subset of an already-selected
-subset.
+direct: ~~only 90 of 128 fixture tickets ever sell, so pairs come from the liquid subset of an already-selected
+subset~~ **[CORRECTION 2026-11-07T14:00Z, R2-1 — dead: 90 is a `sale` row count, not a ticket count, and 49 of 128 tickets sell (128 − 79); the sentence is also a `lib/mock/` figure doing argumentative work, which the audit bars. See CORRECTION 1 at the end of this file.]**
 
 Then the decisive point, unregistered in the programme so far: **a repeat-sales index identifies only ratios.**
 The level is not in the data, and the natural-looking anchor — face value — is endogenous, being the primary
@@ -146,11 +146,16 @@ Three things survive, and are worth having.
    and event end handled by ordinary survival methods
    ([Cox 1972](https://doi.org/10.1111/j.2517-6161.1972.tb00899.x)).
 2. **The competing-risks split** among sale, unpriced transfer, redeem and revoke, with terminal states read
-   as competing events rather than censoring. This matters: 14 of 128 tickets redeem, and treating redemption
+   as competing events rather than censoring. This matters: ~~14 of 128 tickets redeem~~ **[CORRECTION
+   2026-11-07T14:00Z, R2-2 — dead: 14 is a `redeem` row count; the record carries no ticket-level redemption
+   count]**, and treating redemption
    as censoring inflates the sale hazard because it removes tickets for reasons correlated with demand
    ([Fine & Gray 1999](https://doi.org/10.1080/01621459.1999.10474144)).
 3. **The never-sells**, as a cure component rather than an infinite duration: a point mass at "will never be
-   offered" fits 79-of-128 better than a long tail and is identifiable when tickets are censused
+   offered" ~~fits 79-of-128 better than a long tail~~ **[CORRECTION 2026-11-07T14:00Z, R2-3 — dead as the
+   ground for the model form: 79-of-128 is a recorded property of the fixture, and §4.6 of the audit bars a
+   `lib/mock/` figure from choosing a specification. The cure component is argued from censusing and from
+   Boag (1949), not from that fraction]** and is identifiable when tickets are censused
    ([Boag 1949](https://doi.org/10.1111/j.2517-6161.1949.tb00020.x)). Cure means "not returned to market in
    the window", not "valued at nothing" — an owner who attends is a non-seller, not a zero.
 
@@ -244,8 +249,11 @@ order $10^9$ is a relative error near $10^{-9}$. Three real problems. (a) *Gift-
 one; a mismeasured binary regressor gives bounds, not a point, with a known attenuation direction
 ([Bollinger 1996](https://doi.org/10.1016/S0304-4076(95)01730-5);
 [Aigner 1973](https://doi.org/10.1016/0304-4076(73)90005-5)). If gifts are coded as sales, observed resale
-propensity is **too high** and mean markup **too low**, so 79-of-128 is an upper bound on the
-never-*offered* fraction. (b) *Seller identity:* Bitcoin-style clustering does not transfer — it relies on UTXO
+propensity is **too high** and mean markup **too low**, so ~~79-of-128 is an upper bound on the
+never-*offered* fraction~~ **[CORRECTION 2026-11-07T14:00Z, R2-4 — dead as a market bound: the fraction is a
+recorded property of the fixture, so it bounds nothing about tickets offered or not offered on the platform.
+The attenuation direction (resale propensity too high, markup too low) stands on Bollinger and Aigner and is
+unchanged]**. (b) *Seller identity:* Bitcoin-style clustering does not transfer — it relies on UTXO
 co-spend and Solana is account-based ([Meiklejohn et al. 2013](https://doi.org/10.1145/2504730.2504747)). What
 is available directly: a repeat reseller appears as the same `fromWallet` across tickets, and `issuedToWallet`
 links primary to secondary counterparties with no inference. Repeat-reseller behaviour is partially identified;
@@ -269,8 +277,11 @@ Recorded, not resolved. Three narrowings and one widening.
    unavailable**. Saying so plainly stops a subagent being dispatched to research something unusable.
 3. **Gap 2 cuts both ways; the audit sees only the bad side.** Worse: behind the ceiling allocation is random
    among those who want the ticket, so the observed markup distribution says nothing about rationed buyers'
-   valuations. Better: `resalePriceCapBps` is *observed and varies*, across events and across tiers within an
-   event because it is bps over each tier's own face — so the cap is an instrument, not merely a nuisance, and
+   valuations. Better: `resalePriceCapBps` is *observed and varies*, ~~across events and across tiers within an
+   event because it is bps over each tier's own face — so the cap is an instrument, not merely a nuisance~~
+   **[CORRECTION 2026-11-07T14:00Z, R2-12 — dead: the field is one on `Event`, so there is no within-event
+   variation and no within-event instrument; the instrument is cross-event only, confounded with everything
+   else that varies across events. See CORRECTION 2 at the end of this file]**, and
    the mass point at the cap is directly observable as `markupBps` equal to the cap, identifying the rationed
    *quantity* though not the latent tail's location. And the audit's own fixture check (no sale lands exactly
    on any cap) means the cap component **cannot be exercised on the fixtures at all**.
@@ -542,3 +553,32 @@ each of those files carries its own dated correction. `03-b`'s Mason entry alrea
 were checked and are right. The author names were not, in two entries out of 35, which is the reason a
 reader should treat "checked against Crossref" as a claim about the DOI record rather than about the printed
 author list.
+
+---
+
+## CORRECTION R2-1 to R2-4 (2026-11-07T14:00Z) — the four fixture-derived sentences are marked dead where they stand
+
+Appended by the round-2 corrections pass after `records/findings/00-verification-round2.md` §1 item 1 and §2.1.
+This pass deletes nothing. Its rule is stated once here and used in every file it touches: **where a reader
+would otherwise believe a false sentence mid-argument, the sentence is struck in place and carries a dated
+one-line marker pointing at its correction.** The round-1 blocks at the end of this file remain the argument;
+the marks in the body are the signpost.
+
+**Marked dead in the body, with the reason.** §4.1 "only 90 of 128 fixture tickets ever sell …" (R2-1); §4.3
+item 2 "14 of 128 tickets redeem" (R2-2); §4.3 item 3 "fits 79-of-128 better than a long tail" (R2-3); §4.6
+"79-of-128 is an upper bound on the never-*offered* fraction" (R2-4).
+
+**A correction to CORRECTION 1's own count.** That block says the §4.1 sentence "is one of two places in this
+file where a `lib/mock/` figure does argumentative work". The count is wrong. There were three such sites — §4.1,
+§4.3 item 3 and §4.6 — and that block named only the first, so two survived unnamed; it mentioned §4.3 item 3
+in passing as a use it would not withdraw and never reached §4.6 at all. `CORRECTIONS-APPLIED.md` §1 row 1 had a
+third count, "the one place". Two documents, two counts, both wrong, and the verification of round 2 found the
+discrepancy by reading both. What the round-1 block did establish correctly is the number that matters: **49 of 128 tickets sell, 79 never do, from 90 `sale` rows**.
+
+**No conclusion in this file changes.** The selection argument is class C on Gatzlaff & Haurin (1997) and
+Steele & Goy (1997); the cure component is class C on censusing and Boag (1949); the measurement-error
+direction is on Bollinger (1996) and Aigner (1973). What is withdrawn is a measured rate, a specification
+choice and a bound, each of which had borrowed the authority of a fixture record. It is worth saying plainly
+why this matters more than a wrong digit: on the record this programme actually holds, **the number of tickets
+that have ever sold is zero**, because no real ledger exists. A fixture fraction stated as a selection rate
+does not overstate a measurement, it manufactures one.

@@ -41,9 +41,35 @@ def decision(payload: Mapping) -> str:
     out.append("<h2>[UNVALIDATED] The decision</h2>")
     out.extend(decision_mode(payload))
     # The cap line is about a cap. Printed on every page it read as a claim about this event's
-    # own cap, and the page it sat on said `regime uncapped` two lines later.
-    capline = "P_CAPLINE" if value_of(payload["event"]["capBps"]) is not None else "P_CAPLINE_UNCAPPED"
+    # own cap, and the page it sat on said `regime uncapped` two lines later. It follows the
+    # cap this page prices against: the URL's when the URL names one, the record's otherwise.
+    capline = (
+        "P_CAPLINE"
+        if value_of(payload["selection"]["capBpsCandidate"]) is not None
+        else "P_CAPLINE_UNCAPPED"
+    )
     out.append(f"<p>{esc(labels.render(capline))}</p>")
+    # Whenever the cap in force is not the record's own, name both in the block a judge reads
+    # first. The ceiling and A19 below describe the sales that were made under the record's
+    # cap, and the control above carries the page's cap; without this line those two numbers
+    # read as a contradiction instead of as two facts.
+    candidate_bps = value_of(payload["selection"]["capBpsCandidate"])
+    recorded_bps = value_of(payload["event"]["capBps"])
+    if candidate_bps is not None and candidate_bps != recorded_bps:
+        if recorded_bps is None:
+            in_force = _sentence(
+                "P_CAP_IN_FORCE_UNCAPPED",
+                {"cap": num(payload["selection"]["capBpsCandidate"], "count")},
+            )
+        else:
+            in_force = _sentence(
+                "P_CAP_IN_FORCE",
+                {
+                    "cap": num(payload["selection"]["capBpsCandidate"], "count"),
+                    "recorded": num(payload["event"]["capBps"], "count"),
+                },
+            )
+        out.append(f'<p class="label-sentence">[DECLARED] {in_force}</p>')
     out.append(tier_name_line(tier))
     if tier["regime"] == "capped_and_binding":
         out.append(_binding(payload, tier))
@@ -59,8 +85,8 @@ def decision(payload: Mapping) -> str:
             f'{esc(value_of(tier["band"]["capViolations"]["of"]))} recorded sales</span> in this tier are above this cap; '
             'had this cap been enforced, those transfers would have failed, so this record could not exist.</p>'
         )
-    candidate = value_of(payload["selection"]["capBpsCandidate"])
-    recorded = value_of(payload["event"]["capBps"])
+    candidate = candidate_bps
+    recorded = recorded_bps
     if recorded is not None:
         # The cap is a rule about a future this event has; an uncapped event has no such rule.
         out.append(f'<p class="label-sentence">{esc(labels.render("P_CAP_FORWARD"))}</p>')
@@ -107,6 +133,8 @@ def tier_name_line(tier: Mapping) -> str:
 
 
 def _binding(payload: Mapping, tier: Mapping) -> str:
+    if tier["recommendation"].get("refusalCode") == "recommendation_above_cap":
+        return _cap_refusal_headline(payload, tier)
     floor = tier["recommendation"]["bandLoLamports"] or tier["band"]["loLamports"]
     ceiling = value_of(tier["band"]["loLamports"])
     at_ceiling = value_of(tier["market"]["atCeilingCount"])
@@ -211,8 +239,34 @@ def _net_line(payload: Mapping, tier: Mapping) -> str:
     )
 
 
+def _cap_refusal_headline(payload: Mapping, tier: Mapping) -> str:
+    """The decision line when the page's own cap forbids the price the record supports.
+
+    No number replaces it. The ceiling is printed because it is the cap's own arithmetic and
+    a reader can check it; the recommendation is not, because the cap forbids it, and a
+    ceiling dressed as a primary price is the thing `A10` forbids the engine to say.
+    """
+    return f'<p class="headline">[REFUSED] {_cap_refusal(payload, tier)}</p>'
+
+
+def _cap_refusal(payload: Mapping, tier: Mapping) -> str:
+    """The refusal sentence with its two numbers, each in its own badged span."""
+    recommendation = tier["recommendation"]
+    return _sentence(
+        "recommendation_above_cap",
+        {
+            # The unit travels with the wrapper, so the sentence carries none of its own:
+            # `[DECLARED] 0 bps` and `[EXACT] 1,000,000,000 lamports` print once each.
+            "cap_bps": num(payload["selection"]["capBpsCandidate"], "count"),
+            "ceiling_lamports": num(recommendation.get("candidateCeilingLamports"), "lamports"),
+        },
+    )
+
+
 def _banded(payload: Mapping, tier: Mapping) -> str:
     recommendation = tier["recommendation"]
+    if recommendation.get("refusalCode") == "recommendation_above_cap":
+        return _cap_refusal_headline(payload, tier)
     level = recommendation["recommendedLamports"]
     lo = recommendation["bandLoLamports"]
     hi = recommendation["bandHiLamports"]
@@ -420,6 +474,9 @@ def refusals(payload: Mapping) -> str:
             lines.append(
                 f'<li>[REFUSED] {esc(code)}: {_count_sentence(label_id, tier["market"]["sales"], fields)}</li>'
             )
+            continue
+        if label_id == "recommendation_above_cap" and tier is not None:
+            lines.append(f'<li>[REFUSED] {esc(code)}: {_cap_refusal(payload, tier)}</li>')
             continue
         if label_id == "A17":
             label_id, fields = _a17_label(fields.get("n_events"), fields.get("m"))

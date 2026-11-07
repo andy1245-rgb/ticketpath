@@ -1021,8 +1021,12 @@ Primary sources cited here for claims that belong to other findings, so this fil
 - [Mason et al. 1973] Mason, K. O., Mason, W. M., Winsborough, H. H., & Poole, W. K. (1973). Some
   methodological issues in cohort analysis of archival data. *American Sociological Review* 38(2),
   242–258. https://doi.org/10.2307/2094398: the age-period-cohort linear dependency, per `01-b` §4.2.
-- [Luo 2019] Luo, L. (2019). Bayesian age-period-cohort analysis. *Annual Review of Sociology* 45,
-  109–132. https://doi.org/10.1146/annurev-soc-073018-022616: bounds rather than point estimates.
+- ~~[Luo 2019] Luo, L. (2019). Bayesian age-period-cohort analysis. *Annual Review of Sociology* 45,
+  109–132.~~ **[CORRECTION 2026-11-07T14:00Z, R2-22 — dead: Crossref for this DOI gives Fosse, E. & Winship, C.
+  (2019), "Analyzing Age-Period-Cohort Data: A Review and Critique", *Annual Review of Sociology* 45:467–492.
+  The author, the title and the pages are wrong; the volume and DOI are right. The proposition it is cited for
+  (bounds rather than point estimates) is unaffected. See the CORRECTION at the end of this file.]**
+  https://doi.org/10.1146/annurev-soc-073018-022616: bounds rather than point estimates.
 - [Fine & Gray 1999] Fine, J. P., & Gray, R. J. (1999). A proportional hazards model for the
   subdistribution of a competing risk. *JASA* 94(446), 496–509.
   https://doi.org/10.1080/01621459.1999.10474144: redemption and revocation as competing events, not

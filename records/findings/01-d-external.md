@@ -10,7 +10,11 @@
 
 ## What I concluded
 
-Nineteen candidate variables were examined against §4.2 and eleven survive at usable priority. The
+~~Nineteen candidate variables were examined against §4.2 and eleven survive at usable priority.~~ **[CORRECTION
+2026-11-07T14:00Z, R2-18 — dead as the count: the tables in this file list **28** candidates examined (17 rows in
+Table C-1 plus 11 in Table C-2), **9** at priority 1–2 of which 4 are obtainable from the contract today, and
+**15** at any priority above 0. "Eleven" is the reject count, not the survivor count. The tables are the
+enumerated artefact and are counted in CORRECTION at the end of this file.]** The
 decisive filter was not availability and not correlation: it was **the clock**. This engine makes two
 different decisions at two different times — a primary price set before on-sale, and a reprice taken
 while the event is in market — and a variable can only enter if its value is knowable *at the decision

@@ -9,7 +9,11 @@ control is a query parameter, so every state has a URL. `docs/RUN.md` has the co
 1. **Banner.** T1 verbatim, then the sentence about no program being deployed, then the
    SHA-256 of the store the numbers came from. A screenshot names its own source.
 2. **Controls.** Event, tier, `asOf`, `capBps`, `feeLamports`, `tau`, `Recompute`, and
-   `Show the refusal` (which submits `sim=1` — it is a button, not a script).
+   `Show the refusal` (which submits `sim=1` — it is a button, not a script). The
+   `capBps` field shows the cap this page prices against, which is the URL's when the URL
+   names one and the event's recorded cap otherwise, and the canonical URL under it
+   carries the same number; the page says so in one line, and an event that records no cap
+   says that instead of showing an empty box.
 3. **Evidence strip.** `[FIXTURE] 12 resales · 12 tickets · 9 at the ceiling`,
    `[FIXTURE] 8 events in the store, 5 with any resale at this instant`, `[DEVNET] 0
    on-chain transactions`. The evidence count is the headline metric on purpose. The event
@@ -24,13 +28,19 @@ control is a query parameter, so every state has a URL. `docs/RUN.md` has the co
      02-d range line, A4, and A20 on the no-mass-point regime.
    - *no resale*: the refusal, the prior band labelled as a band around the prior, A13 or
      A12, A17, the exact cap arithmetic, and the sentence naming what would change it.
+   - *any of the three, when the cap in force sits below the price the record supports*:
+     the typed refusal `recommendation_above_cap`, with the cap and the resale ceiling its
+     own integer arithmetic implies, and no primary price. The ceiling is not printed in
+     the price's place: a cap is a ceiling on the resale price and a floor on value, not a
+     target for the primary price (A10).
 5. **The market**: median and mean markup, the at-ceiling count with A16, any repeat sale
    as A18, and the composite rate as A1 with T4.
 6. **The refusals**, always present: sale probability at a price (`not_identified`), the
    interior optimum (`no_demand_response`), net revenue without a fee (`no_fee_model`),
    and the path (a named reason: `cap_mass_dominates`, `insufficient_marks`,
    `insufficient_time_spread`, `degenerate_design`, `outside_support`), plus
-   `no_upper_bound` on a binding event.
+   `no_upper_bound` on a binding event, plus `recommendation_above_cap` when the page's cap
+   forbids the recommendation. The panel is never empty and every line is `[REFUSED]`.
 7. **The design panel**, badged `[DESIGN]`, with the instruction → check → error-code
    table.
 8. **The simulated state machine**, every line badged `[SIMULATED]`, with the caption

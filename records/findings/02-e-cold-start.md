@@ -554,7 +554,7 @@ $\theta_{\text{new}}$ is $\bar y \pm 1.6449\sqrt{\tau^2+V(\tau)}$ with $V(\tau)=
 $V(\tau)>0$ always, that width is **at least** $\pm1.6449\tau$, so every row below is a floor on the width for a
 given $\tau$ and never an overstatement:
 
-| declared $\tau$ | 90% band on the event mean, log units | as markup around face |
+| declared $\tau$ | 90% band on the event mean, log units | ~~as markup around face~~ **[CORRECTION 2026-11-07T14:00Z, R2-19 — dead label: this column is the percentage move in the point estimate, exp(±1.645τ) − 1, not markup over face. Read it as a multiplier (x0.513 to x1.950 in the last row); as markup over face centred at the fitted 0.261 the last row is −33% to +153%. See CORRECTION 1 at the end of this file.]** |
 |---|---|---|
 | 0.10 | ±0.164 | −15% to +18% |
 | 0.20 | ±0.329 | −28% to +39% |
@@ -868,7 +868,7 @@ available only because the alternative, a fitted model with no data behind it, i
 | E5 | $B=1/2$ exactly when $n=\sigma^2/\tau^2$; verified at three ratios | **[MEASURED]** arithmetic run | C |
 | E6 | A cold-start event's point estimate is the pooled mean and is independent of $\tau$; $\tau$ enters only the interval | **[ASSERTED]** algebra, §4.3 | C |
 | E7 | Leslie and Sorensen's three quoted dispersion facts are jointly consistent with log-ratio $\sim\mathcal{N}(0.261,0.406^2)$; the arithmetic-mean reading reproduces the third fact, the median reading does not | **[COMPUTED]** from `01-a` §2 figures | A for inputs, B for transfer |
-| E8 | A 90% band on a brand-new event's mean markup runs from about −49% to +95% at the borrowed upper bound for $\tau$, and from −15% to +18% at $\tau=0.10$ | **[COMPUTED]** §4.7 table | C |
+| E8 | ~~A 90% band on a brand-new event's mean markup runs from about −49% to +95% at the borrowed upper bound for $\tau$, and from −15% to +18% at $\tau=0.10$~~ | **[COMPUTED]** §4.7 table | C **[CORRECTION 2026-11-07T14:00Z, R2-19b — dead as stated: those percentages are moves in the estimate, not markups over face. As markup over face centred at 0.261 the same band is −33% to +153% at the borrowed upper bound and +10% to +53% at $\tau=0.10$. The arithmetic stands; only the object named was wrong. See CORRECTION 1.]** |
 | E9 | Face value is endogenous and cannot anchor the value level; the ratio is identified, the level is not | **[ASSERTED]** `01-b` §4.1, Ekeland et al. | C |
 | E10 | Primary tickets are priced below secondary clearing value; resale averages 41% above face on the roughly 5% that resell | **[ASSERTED]** `01-a`, Leslie & Sorensen | A |
 | E11 | Resold tickets are better seats (seat-quality percentile 0.61 against 0.50), so a prior conditioned on resale is biased up for a random ticket | **[ASSERTED]** `01-a` §6 | A |

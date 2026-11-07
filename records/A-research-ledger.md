@@ -71,7 +71,7 @@ run that was re-dispatched at 10:53Z — the placeholder it replaced is gone.
 
 | ID | Question | Who | Status | Finding | Class | File |
 |---|---|---|---|---|---|---|
-| V1 | Is every row of this ledger supported by the file it cites? | verification pass (tier `low`, run `dmw6a5h9shisa`) | answered | 4 rows supported, 1 partial (P0.1 overstates its own grep), 3 unsupported because P1.A, P1.B and P1.D said `dispatched` while their files were on disk, and 1 file-absent (P1.C); it also found the invented `verified` class, two real contradictions between 01-b §5 and the audit, one unresolvable DOI and two wrong fixture counts. | OBSERVED | `records/findings/00-ledger-verification.md` |
+| V1 | Is every row of this ledger supported by the file it cites? | verification pass (tier `low`, run `dmw6a5h9shisa`) | answered | 4 rows supported, 1 partial (P0.1 overstates its own grep), 3 unsupported because P1.A, P1.B and P1.D said `dispatched` while their files were on disk, and 1 file-absent (P1.C); it also found the invented `verified` class, two real contradictions between 01-b §5 and the audit, ~~one unresolvable DOI and two wrong fixture counts~~ **[CORRECTION 2026-11-07T14:00Z, R2-9c — dead: no unresolvable DOI (see the Aigner bullet below, now struck in place). Of the two fixture counts, one was wrong (90 `sale` rows read as tickets; 49 tickets sell) and one was a row count whose ticket count the record does not establish.]**. | OBSERVED | `records/findings/00-ledger-verification.md` |
 
 ---
 
@@ -117,13 +117,18 @@ bites only on the primary optimum; that is a narrowing of the audit's Gap 4, not
 
 From `records/findings/00-ledger-verification.md` §2 and §3, restated here only as pointers:
 
-- `01-b` §7 cites Aigner (1973) as `10.1016/S0304-4076(73)90005-5`, which returns 404; the
+- ~~`01-b` §7 cites Aigner (1973) as `10.1016/S0304-4076(73)90005-5`, which returns 404; the
   resolving DOI is `10.1016/0304-4076(73)90005-5`. The claim in that section that every
-  citation was checked is false as printed.
+  citation was checked is false as printed.~~ **[CORRECTION 2026-11-07T14:00Z, R2-9 — dead: `01-b` does not
+  contain the S-prefixed string. Both of its Aigner occurrences are the resolving form, so there is no
+  unresolvable DOI and no citation defect here. Withdrawn at the end of this file.]**
 - `01-a` §1 and §7 cite "16 CFR Part 464, 90 FR 2166"; the rule is 90 FR 2066.
 - `01-b` §4.1 and §4.3 read 90 `sale` rows as 90 sold tickets and 14 `redeem` rows as 14
   redeemed tickets; on the audit's figures 49 of 128 tickets sell and 79 never do. The same
-  file uses the correct 79-of-128 at §4.6.
+  file uses the correct 79-of-128 at §4.6. **[CORRECTION 2026-11-07T14:00Z, R2-9b — the count is right and the
+  bullet stands as a defect record; what has changed is that the four fixture-derived sentences in `01-b`,
+  including the two named here, are now marked dead inline in that file rather than only in its correction
+  block.]**
 - `01-a` §7 cites a "Gap 5" that `00-data-situation.md` never numbers. **Resolved 2026-11-07T12:55Z:**
   Gap 5 is now defined in `00-data-situation.md` §4 — the missing primary inventory time series, hence no
   sell-through velocity — and all eight forward references agree on that referent. See the correction block
@@ -202,3 +207,19 @@ withdrawn; the text that said these were open was true when it was written.
    `answered`, with the conclusion from that file's own §1 and §1.3, its per-family classes and its path.
 
 Both are recorded in the 2026-11-07T12:55Z entry of `records/CORRECTIONS-APPLIED.md`.
+
+---
+
+## CORRECTION R2-9 (2026-11-07T14:00Z) — the Aigner bullet above is struck where it stands
+
+Appended by the round-2 corrections pass after `records/findings/00-verification-round2.md` §1 item 10 and
+§2.2. The 11:28Z block above withdrew the bullet and the V1 tally, correctly; this pass found both still
+printed unmarked in the body, under the heading a reader uses to find what the verification established. They
+are now struck in place with dated pointers, and nothing is deleted. The verification file's own §3 carried the
+same defect and is marked the same way.
+
+One correction to the wording of the 11:28Z block, which says "Every sentence of the finding is withdrawn".
+The 404 itself was real — a Crossref query for `10.1016/S0304-4076(73)90005-5` returns it — and the statement
+that the resolving DOI is `10.1016/0304-4076(73)90005-5` is true. What is false is the attribution of that
+string to `01-b`, and with it the word "unresolvable". The distinction matters because it is the difference
+between a citation that needs fixing and a check that was run on the wrong input.

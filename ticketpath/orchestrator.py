@@ -319,7 +319,15 @@ class Orchestrator:
         tickets = list(self.ledger.tickets())
         ledger = self.ledger.raw_ledger()
         faces = self.ledger.face_by_ticket()
+        # An event the loader held back is refused by name, with the reason the loader gave,
+        # before anything is computed. It is not a 404: the event exists in the store and the
+        # store says why it cannot be priced. Every other event in the store still serves.
+        held_back = self.ledger.rejections()
+        if event_id not in (None, "") and event_id in held_back:
+            raise self._rejection_error(held_back[event_id])
         if not events:
+            if held_back:
+                raise self._rejection_error(next(iter(held_back.values())))
             raise bad_request("no ledger exists, so there is nothing to price", "no_ledger")
 
         own_rows = decision_mode == "counterfactual"
@@ -359,6 +367,11 @@ class Orchestrator:
         except price_features.FeatureError as exc:
             raise ApiError(422, str(exc), exc.code) from exc
         pool = value_band.pooled(rows=index, declared_tau=declared_tau)
+        # The cap in force on this page: the one in the URL when it carries one, and the
+        # recorded cap otherwise. It is one number, resolved once, and it travels into the
+        # recommendation as well as into the payload -- otherwise the page says it honours a
+        # cap that never reached the arithmetic that produced the price beside it.
+        cap_in_force = cap_candidate if cap_candidate is not None else event.get("resalePriceCapBps")
         bands: dict[str, dict] = {}
         paths: dict[str, dict] = {}
         intensities: dict[str, dict] = {}
@@ -386,6 +399,7 @@ class Orchestrator:
                 intensity=rate,
                 fee=fee,
                 sell_through_floor=None,
+                cap_bps_candidate=cap_in_force,
             )
             bands[tier["tierId"]] = band
             paths[tier["tierId"]] = path_model.estimate(
@@ -406,7 +420,7 @@ class Orchestrator:
             data_source=self.data_source(),
             params={
                 "tau": declared_tau,
-                "capBpsCandidate": cap_candidate if cap_candidate is not None else event.get("resalePriceCapBps"),
+                "capBpsCandidate": cap_in_force,
                 "feeLamports": None if fee is None else fee.get("perTicketLamports"),
             },
             events_index=index,
@@ -483,6 +497,14 @@ class Orchestrator:
             chain["state"] = "unverified"
             chain["reason"] = "quote_hash_mismatch"
         return chain
+
+    def _rejection_error(self, rejection: dict) -> ApiError:
+        """The loader's typed reason, rendered as the page's refusal for that event."""
+        return ApiError(
+            422,
+            labels.render(rejection["labelId"], **rejection.get("fields", {})),
+            rejection["code"],
+        )
 
     def _parse_query_instant(self, raw: str) -> datetime:
         try:

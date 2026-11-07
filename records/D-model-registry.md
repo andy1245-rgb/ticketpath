@@ -1477,8 +1477,12 @@ Numbered so `F` can cite them. Nothing here is settled by being listed.
   median resale price, about 3.4%) are two published class-A answers to the same commercial question, more than an
   order of magnitude apart (`01-c` §5.4). This decides what to build first and it is unresolved. It is the operator's
   fork (M27).
-- **C6 · The cap's within-event variation.** `01-b` §4.4(ii) treats the cap as an instrument with cross-tier
-  variation. `01-c` §1.4(1) corrects it: `resalePriceCapBps` is one field on `Event`, so cross-tier ceilings move
+- **C6 · The cap's within-event variation.** `01-b` ~~§4.4(ii)~~ **§5.3** treats the cap as an instrument with cross-tier
+  variation. **[CORRECTION 2026-11-07T14:00Z, R2-8b — attribution corrected: the offending sentence is §5.3
+  item 3's. `01-b` §4.4(ii) states only that the ceiling's *absolute level* differs across tiers because the cap
+  is a percentage of each tier's own face, and it draws its bound from cross-**event** cap variation, so it is
+  already correct and this registry's C6 never rested on it. `01-c` §1.4(1) carried the same wrong section
+  number and was corrected with this one.]** `01-c` §1.4(1) corrects it: `resalePriceCapBps` is one field on `Event`, so cross-tier ceilings move
   exactly in proportion to face and there is no independent within-event variation. **The registry follows the
   correction**, which weakens M08's bound and is why its instrument is labelled cross-event only.
 - **C7 · Fee neutrality.** D4 says a per-unit fee and an ad-valorem fee give different optima. `02-d` §2.3 sharpens

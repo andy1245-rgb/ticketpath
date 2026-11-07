@@ -42,6 +42,10 @@ def num(wrapper: dict | None, kind: str = "count", *, trim: bool = True) -> str:
         return '<span class="n">[REFUSED] not stated</span>'
     if kind == "money":
         text = _sol(value)
+    elif kind == "lamports":
+        # An exact integer sum of lamports, with separators, for a sentence a reader is
+        # meant to check by eye. The same digits as `lamports_text`, carrying its badge.
+        text = f"{int(round(value)):,}"
     elif kind == "percent":
         text = _pct(value)
     elif kind == "bps":
@@ -58,6 +62,8 @@ def num(wrapper: dict | None, kind: str = "count", *, trim: bool = True) -> str:
     suffix = ""
     if kind == "money":
         suffix = " SOL"
+    elif kind == "lamports":
+        suffix = " lamports"
     elif kind == "rate":
         suffix = " per 1,000 ticket-days"
     elif unit and kind in ("float", "count"):
