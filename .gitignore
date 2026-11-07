@@ -13,6 +13,12 @@ night-snapshot-*/
 night-snapshot-*
 snapshot-*/
 
+# The morning page is written for the operator and dated for the day it was written: it
+# restates the state of the machine at that hour and is stale by the next one. It stays
+# on disk as a working document and off the repo, because it is a snapshot of the run,
+# not research.
+docs/morning.html
+
 # Credentials and key material never belong in a public repository.
 .env
 *.env

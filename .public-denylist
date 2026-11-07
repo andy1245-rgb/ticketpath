@@ -54,9 +54,16 @@
 #                   hits. Narrowed twice on evidence: the first cut flagged a test's
 #                   `SEED = bytes(range(32))`, the second the fixture generator's
 #                   `SEED = 20261107`, and both are deterministic seeds, not secrets.
-#   contact-email   a third party's address in public text. GitHub's own addresses
-#                   (git@github.com, *@users.noreply.github.com) are excluded: they
-#                   are the repository's own wiring, and they are already public.
+#   contact-email   a third party's address in public text. Two kinds of address are
+#                   not a third party's: GitHub's own wiring (git@github.com,
+#                   *@users.noreply.github.com), which is already public, and the names
+#                   RFC 2606 and RFC 6761 reserve for documentation (example.*, *.invalid,
+#                   *.test, *.example), which cannot belong to anyone and exist precisely
+#                   to be written in a doc. Excluding the second kind is not a weakening:
+#                   a rule that fires on `someone@example.com` in a setup guide trains the
+#                   reader to ignore it, and the hits that matter stop being looked at. A
+#                   real address on a real domain is still a hit, including one that merely
+#                   looks reserved (`notexample.com`, `test.com`).
 #   personal-name   the copyright holder's full name, outside the two places it is
 #                   published on purpose (LICENSE, and the README line that restates
 #                   the licence).
@@ -92,7 +99,7 @@ content token-shape     all   \bxox[abposr]-[A-Za-z0-9-]{10,}
 content token-shape     all   \b[0-9]{8,10}:AA[A-Za-z0-9_-]{30,}
 content token-shape     all   \bCLAUDE_CODE_OAUTH_TOKEN\s*[:=]\s*(?!\$)\S{8,}
 content env-content     all   ^\s*[A-Z0-9_]*(?:API_KEY|APIKEY|SECRET|TOKEN|PASSWORD|PRIVATE_KEY|MNEMONIC|SEED)\s*=\s*(?=[A-Za-z0-9+/=_\-.:@]*[A-Za-z])[A-Za-z0-9+/=_\-.:@]{8,}\s*$
-content contact-email   all   [A-Za-z0-9._%+-]+@(?!(?:github\.com|users\.noreply\.github\.com)\b)[A-Za-z0-9.-]+\.[A-Za-z]{2,}
+content contact-email   all   [A-Za-z0-9._%+-]+@(?!(?:github\.com|users\.noreply\.github\.com)\b)(?!(?:[A-Za-z0-9-]+\.)*(?:example\.[A-Za-z]{2,}|[A-Za-z0-9-]+\.(?:invalid|test|example))\b)[A-Za-z0-9.-]+\.[A-Za-z]{2,}
 content personal-name   all   \bAndrew Radu\b
 
 # --- justified exceptions ----------------------------------------------------

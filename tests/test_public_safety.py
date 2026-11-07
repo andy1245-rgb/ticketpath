@@ -211,8 +211,30 @@ CASES: tuple[Case, ...] = (
     ),
     Case(
         "contact-email",
-        {"docs/terms.md": "Report a violation to someone@example.com.\n"},
+        {"docs/terms.md": "Report a violation to enforcement@presalegroup.com.\n"},
         frozenset({"contact-email"}),
+        note="a real address on a real domain is still a hit",
+    ),
+    Case(
+        "contact-email-reserved-documentation-addresses",
+        {
+            "docs/setup.md": (
+                "Set MAIL=nobody@example.com; also host@example.org, ops@example.net,\n"
+                "user@example.invalid, user@mail.example.test, admin@something.example and\n"
+                "12345+andy@users.noreply.github.com.\n"
+            )
+        },
+        frozenset(),
+        note=(
+            "RFC 2606 and RFC 6761 reserve example.*, *.invalid, *.test and *.example for"
+            " documentation: those cannot be a third party's address"
+        ),
+    ),
+    Case(
+        "contact-email-reserved-looking-real-domain",
+        {"docs/setup.md": "Write to legal@notexample.com or support@test.com.\n"},
+        frozenset({"contact-email"}),
+        note="the exclusion is on the reserved label, not on a domain that resembles one",
     ),
     Case(
         "contact-email-github-is-not-a-contact",
@@ -495,6 +517,12 @@ class TestPatternClasses(unittest.TestCase):
 
     def test_contact_emails(self) -> None:
         self.assert_case(self.case("contact-email"))
+
+    def test_reserved_documentation_addresses_are_not_contacts(self) -> None:
+        self.assert_case(self.case("contact-email-reserved-documentation-addresses"))
+
+    def test_a_domain_that_resembles_a_reserved_name_is_still_a_contact(self) -> None:
+        self.assert_case(self.case("contact-email-reserved-looking-real-domain"))
 
     def test_github_addresses_are_not_contacts(self) -> None:
         self.assert_case(self.case("contact-email-github-is-not-a-contact"))
