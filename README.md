@@ -176,13 +176,13 @@ One line per record file:
 - `CONTRACT-MAP.md` the endpoint contract field by field, and what this backend can answer.
 - `CONTRACT-CONFORMANCE.md` the contract as a test that addresses every route over a socket.
 - `CORRECTIONS-APPLIED.md` what an independent verification round found and what changed.
-- `DEMO-PROOF.md` which screens served backend numbers, measured, and why no screenshot exists.
+- `DEMO-PROOF.md` which screens served backend numbers, measured, written at a time when no screenshot existed; there is a headless browser on the build machine now, `docs/SHOTS.md` is the account of it and `tools/shot.py` is the helper that captures a page (`README.md` corrected 2026-11-07T18:45Z, see the pack's §2.5 item five).
 - `FRONTEND-INTEGRATION.md` what the frontend renders and which numbers are ours; partly superseded.
 - `FRONTEND-HONESTY-PATCH.md` the text only patch that makes the frontend say what the data is.
 - `ON-CHAIN-RECONCILIATION.md` why the design document replaced its earlier sibling.
 - `BUILD-SPEC-NIGHT.md` what the overnight build was told to build, module by module.
 - `SUBMISSION-PACK.md` the video script, submission text, field checklist and last hour checks.
-- `findings/` twenty-seven per investigation reports, append only, the primary record the six index.
+- `findings/` twenty-nine tracked per investigation reports, append only, the primary record the six index (`git ls-files records/findings | wc -l` → 29, with a thirtieth on disk and uncommitted at 18:55Z; this line said twenty-seven and was stale).
 - `BUILD-REPORT-CONSOLE.md` what the console pass built and where it departed from its spec.
 - `FINAL-PROOF.md` the end-to-end proof run: what was executed, what it showed, what it did not.
 - `FINAL-PROOF-2.md` the second proof run: the README's own commands, the live frontend's write check, and the
@@ -211,6 +211,16 @@ records/       the six research records, the build and submission packs, finding
 The root also holds `AGENTS.md` and `RESEARCH-PROGRAM.md`, the brief and the research
 standard this work was held to, and `NIGHT-BRIEF.md`, `NIGHT-LOG.md`, `NIGHT-QUEUE.md`, the
 overnight build's working log.
+
+## How this was built
+
+Most of the code and the documents in this repository were written by AI coding agents, orchestrated by
+the operator: agents wrote the backend, the engine, the console, the test suite and the research records,
+and he set the briefs, checked the claims against the commands that produced them, and made every decision
+that ships. The commit trailers name one of the tools on six of the repository's nineteen commits
+(`git log --format='%(trailers)'`). This is not a claim of solo human authorship and no part of this
+repository should be read as one. No generative model is implemented inside the product: the pricing
+engine is bounded arithmetic with declared parameters, and `/health` reports `fitted: false`.
 
 ## Licence and status
 

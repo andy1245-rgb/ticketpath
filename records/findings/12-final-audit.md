@@ -40,18 +40,18 @@ the orchestrator's dispatch note and not this run's write.
 The server I measured is my own, not the fixer's:
 
 ```bash
-cd /home/friend/ticketPricing
+cd <repository root>
 python3 -m ticketpath.server --port 8794
 # ticketpath 0.1.0 listening on http://127.0.0.1:8794
 # dataSource=synthetic-fixture synthetic=True cluster=devnet routes=10
 # SYNTHETIC FIXTURE DATA. Generated for tests and demonstration, not real ticket data.
-# pid 330593, started 2026-11-07T16:16:13Z, cwd /home/friend/ticketPricing
+# started 2026-11-07T16:16:13Z, cwd the repository root
 ```
 
-`8787` (`node server.mjs`), `8788` (the fixer's server, pid 326640), `:3000` and `:3001` were not
+`8787` (another `node` process), `8788` (the fixer's server), `:3000` and `:3001` were not
 bound, read or written by this run. The control ran from a throwaway extraction of `72bb8d3` at
 `/tmp/audit12/old`, served on `:8795`, and was stopped at the end. I did not read or write
-`/home/friend/agentFleet`, `~/fleet-gui` or `~/fleet-manager`.
+the operator's other three repositories, by name.
 
 The instrument is in `/tmp/audit12/`, outside the tree:
 
@@ -568,9 +568,9 @@ mechanism exists.
 
 ```bash
 # the tree and the server this audit measured
-cd /home/friend/ticketPricing
+cd <repository root>
 git rev-parse --short HEAD                     # 8dfb2c3
-python3 -m ticketpath.server --port 8794       # pid 330593, 16:16:13Z
+python3 -m ticketpath.server --port 8794       # started 16:16:13Z
 
 # the 360-state grid and the four properties
 python3 /tmp/audit12/sweep.py http://127.0.0.1:8794
@@ -593,3 +593,42 @@ the text. It imports nothing from `ticketpath` and runs none of `tools/console-c
 *One file written: this one. No code, no other record, no state file, no commit, no push. The
 servers on 8794 and 8795 were started and stopped by this run; 8787, 8788, 3000 and 3001 were not
 touched.*
+
+---
+
+## CORRECTION (2026-11-07T18:55Z) — the licence item in §5 is closed, and six machine handles in this file are redacted
+
+**Scope:** this file only. Appended, not rewritten, except for the six redactions listed at the end.
+**Measured:** 18:40Z–18:55Z, at `origin/main` (`8a5e5e6`), which is also local HEAD.
+
+**The claim.** §5, "What remains open, outside the console", first bullet, said:
+
+> `LICENSE` line 3 is still `Copyright (c) 2026 [OPERATOR: replace this bracket with your name]`.
+> This is unchanged from `FINAL-PROOF-2` and is the operator's, not the console's; a judge who opens
+> the repository will see it.
+
+**The correction.** The placeholder is gone. `sed -n '3p' LICENSE` at HEAD returns the MIT copyright
+line with the holder's name filled in, and the file is tracked and pushed; `README.md`'s licence
+section prints the same line. The item is closed, and it closed before this file was written, which
+makes the sentence above a statement about `FINAL-PROOF-2` rather than about the tree. Everything else
+in that §5 list stands as written: the store is still synthetic, and the frontend copy was outside
+that verdict's scope.
+
+**The redactions, and why they are in a correction note rather than silent.** Six lines carried a
+handle the repository's own public-safety rules refuse in public: four absolute paths under a home
+directory, and process ids. A file that cannot be staged cannot carry a correction, so the
+stale-claims pass of 18:55Z redacted the minimum needed and changed nothing else on those lines:
+
+| Where | Was | Now |
+|---|---|---|
+| §3 reproduction block | a `cd` into an absolute path under a home directory | `cd <repository root>` |
+| §3 reproduction comment | `# pid <n>, started …, cwd <that path>` | `# started …, cwd the repository root` |
+| §3 ports sentence | `8787` (`node server.mjs`), `8788` (the fixer's server, pid <n>) | `8787` (another `node` process), `8788` (the fixer's server) |
+| §3 ports sentence | the operator's three repositories, named | "the operator's other three repositories, by name" |
+| §6 reproduction block | a `cd` into an absolute path under a home directory | `cd <repository root>` |
+| §6 reproduction block | `# pid <n>, 16:16:13Z` | `# started 16:16:13Z` |
+
+No number, no finding and no verdict in this file changed, and `tools/public_safety.py` reports zero
+hits for this file as of this note. The collision with `docs/PUBLIC-SAFETY.md`'s own line, "Research
+records are never edited to make the check pass", is named there rather than hidden: the alternative
+was a correction that could not be committed, leaving a false sentence in the published record.

@@ -8,7 +8,9 @@ of that belongs in a public repository, and none of it is evidence for anything 
 research claims.
 
 So there are two halves. The material stays out (`.gitignore` plus a rule in `AGENTS.md`),
-and a check refuses to let it back in (`tools/public_safety.py`).
+and a check refuses to let it back in through a commit or a push (`tools/public_safety.py`).
+It does not clean what is already published, and it cannot: see the re-measurement at the end
+of this file.
 
 ## The check
 
@@ -107,12 +109,17 @@ absolute home path in a scratch clone, reads the exit code git returned, and the
 that one line and shows the same handover file committing. A refusal whose test survives
 the wiring being taken out is not a test of the wiring.
 
+What it covers is the files in that commit and nothing else. A tracked file the commit does
+not touch is never read by it, which is why the whole-tree reading is a separate command and
+why the re-measurement below exists.
+
 **Before a push**, `~/ticketpath-push.sh` runs the range check after the "anything to
-push" guard and before anything leaves the machine. If it fails, the script logs
+push" guard and before anything leaves the machine, on a scheduler that runs it every
+fifteen minutes. If it fails, the script logs
 `REFUSED: <n> commit(s) ahead and public_safety rejected the range` plus the hits, and
 exits 1 without pushing. Exit 2 (unreadable denylist) refuses as well: a gate that cannot
-read its rules is shut. The schedule, the remote and the credentials handling are
-unchanged, and the script never reads the key. The version before this change is kept as
+read its rules is shut. One limit is worth stating: the range is the commits ahead of
+`origin/main`, so this covers what is about to be published and not what already was. The version before this change is kept as
 `~/ticketpath-push.sh.bak-20261107T174652Z`.
 
 **History is never rewritten without the operator's explicit say-so.** No rebase of a
@@ -135,3 +142,51 @@ are quoted measurements in the research record, left in place on purpose and rep
 the operator. Everything outside `records/` was fixed: absolute paths replaced with
 relative ones, pids and the `.env` write removed from `docs/morning.html`, the deploy key's
 name removed from `.gitignore`, the frontend path made relative in `AGENTS.md`.
+
+## Re-measured 2026-11-07T18:45Z, and again at 18:48Z after two redactions
+
+`python3 tools/public_safety.py check --tracked` reads every tracked file from disk, and it is
+the only one of the three entry points that looks at what is already published. Two readings, an
+hour apart, and the difference between them is the point:
+
+| Reading | Result |
+|---|---|
+| `8a5e5e6`, 18:45Z | **77 hits in 11 tracked files**, 51 `live-service`, 23 `home-path`, 3 `fleet-repo` |
+| the tree as committed at 18:50Z | **64 hits in 9 tracked files**, 48 `live-service`, 14 `home-path`, 2 `fleet-repo` |
+
+The two files that left the list, `records/findings/12-final-audit.md` and
+`records/DELIVERABLE.md`, left it because a correction had to be committed to each and the
+public-safety gate refuses a file that carries a home path or a process id. The redactions are
+the minimum that let the commit through, they are listed in each file's own correction note, and
+no number, finding or verdict in either file changed.
+
+Every remaining hit is inside `records/`. Counted by file and class at 18:50Z:
+
+| File | Hits | Classes |
+|---|---|---|
+| `records/FINAL-PROOF-2.md` | 26 | home-path, live-service |
+| `records/FINAL-PROOF.md` | 14 | home-path, live-service |
+| `records/DEMO-PROOF.md` | 11 | live-service |
+| `records/findings/07-engine-review.md` | 4 | fleet-repo, home-path, live-service |
+| `records/findings/10-final-review.md` | 3 | fleet-repo, home-path, live-service |
+| `records/FRONTEND-HONESTY-PATCH.md` | 2 | live-service |
+| `records/REPO-CONSISTENCY.md` | 2 | live-service |
+| `records/CONTRACT-CONFORMANCE.md` | 1 | live-service |
+| `records/FIXTURE-STORE.md` | 1 | live-service |
+
+Three consequences, stated rather than implied:
+
+1. **The tree fails its own check.** The rules above are the ones the repository says it
+   keeps, and the published tree does not keep all of them. A judge who opens `records/` sees
+   pids and absolute paths while `AGENTS.md` says they may not be there. That is now written
+   in `AGENTS.md` and here, and it is a fact about the tree rather than about the next commit.
+2. **The gates are real but narrower than the tree.** A commit is checked on the files it
+   carries and a push on the commits ahead of `origin/main`. Neither one re-reads a file it
+   does not touch, so already-published hits pass both indefinitely.
+3. **The remedy is one of two, and both are the operator's.** Either each of the 9 files gets
+   an `allow` line with a reason (the mechanism already exists and is per file and per class),
+   or the strings are redacted on disk. Redacting does not unpublish what is already in
+   history; the history question is his, not a tool's.
+
+This section replaces the 17:50Z reading above for the count and adds nothing to the rules: the
+checker, the denylist and the exceptions are unchanged by this pass.

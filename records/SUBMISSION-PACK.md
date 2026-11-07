@@ -3,16 +3,77 @@
 **Written:** 2026-11-07T11:41Z by the submission session, from its own command output on this machine.
 **Target deadline:** initial submission Sun 2026-11-08 **10:00 ET = 15:00Z**. Final 11:45 ET. Treat 10:00
 as a hard freeze: nothing published says the initial submission can still be edited after it
-(`records/findings/02-rubric-and-scoring.md`, open question 1).
+(`records/findings/02-rubric-and-scoring.md`, open question 1). **[CORRECTED 2026-11-07T18:55Z: the
+platform does publish an edit path — MLH's Hack Days guide describes an "Accept late submissions" switch
+that "lets participants submit or edit after the deadline", and the event's own close is 13:00 ET, three
+hours after the initial. What was missing was not the edit path but the stop: MLH rules 11 cap hacking at
+11:45 ET, allow debugging and small fixes after it, and forbid new features. Hold the 10:00 ET freeze for
+the artefact anyway, because 15:00Z is what the entry is judged on, and treat 16:45Z as the last moment
+anything may be touched at all. `records/findings/17-hackathon-rules-recheck.md` §1.2 is the source.]**
 **The rule this document obeys:** nothing here claims a deploy, a devnet address, a real dataset, an
 accuracy figure, a screenshot, or a screen that does not exist. Where the entry is thin, the text says it
 is thin. What scores and what does not is decided by `records/findings/02-rubric-and-scoring.md`, and that
 finding is the authority here. The 25/25/25/25 weighting is **not** used anywhere in this document, because
-it could not be sourced on any MLH or event page (that finding, A5).
+it could not be sourced on any MLH or event page (that finding, A5). **[CLARIFIED 2026-11-07T18:55Z: the
+list is of things that must not be invented, and it still is. Captures do exist now — §2.5 item five and §3
+item 19 point at them — and the rule forbids claiming a screen the build does not have, which is a
+different thing.]**
 
 ---
 
-## Operator actions before 15:00Z
+## Operator actions before 15:00Z — refreshed 2026-11-07T18:55Z
+
+What is now known, in the order the clock forces it. Every line is his to do; none of them can be
+settled by editing this file. Measured between 18:40Z and 18:55Z unless a line says otherwise. The
+11:41Z list follows this one unchanged, so nothing he wrote earlier is lost; where the two disagree,
+this one is the later reading.
+
+1. **The video is the only gate that can lose the entry.** Under 2:00, created this weekend, the
+   hackathon named in the first spoken sentence, public for ever (rules 12–13; the cheat-check page
+   treats an unpublished video as grounds to re-pick a winner). §1.2 is the script, §1.1 the recording
+   path, and the frames it needs now exist on both surfaces: the console renders, and the copy's
+   `/pricing` page frames it at 3,383 px over 3,383 px of content at 1280.
+2. **Two AI-disclosure fields are required, and the wording is in §2.7.** A required multiselect (the
+   GenAI tools used this weekend) and a required long-text field (whether a generative model or API was
+   implemented, and how). §2.7 now carries the honest paragraph: agents wrote most of the lines, he
+   orchestrated and released them, and it is not a claim of solo human authorship. `TBD-TOOL-NAMES` is
+   still his; the commit trailers name one tool on six of nineteen commits.
+3. **The repository stays public for ever, and that collides with the ownership question.** Rules 12–13
+   and MLH's cheating-response page name making the repo private after the event as disqualifying. A
+   company-shaped project cannot both stay public for ever and assert sole ownership of it (§2.8
+   question 1). Not answered here, and it must not be guessed at paste time.
+4. **The hard stop is 11:45 ET = 16:45Z; the initial submission is 10:00 ET = 15:00Z.** The platform's
+   own close is 13:00 ET = 18:00Z and it has an edit path, but the rules cap hacking at 11:45 ET: small
+   fixes after that are allowed, new features are not. Treat 15:00Z as the freeze for the artefact and
+   16:45Z as the last moment anything at all is touched.
+5. **The git history answers the first cheat-check question cleanly.** 19 commits, the earliest
+   `744a2c2` at 2026-11-07T08:29:57Z: 15 h 29 min after hacking began and inside the window, spread over
+   9 h 43 min in 19 steps, nothing backdated (§2.8). Nine commits carry his own git identity, nine
+   `agent <agent@local>`, one `orchestrator <orchestrator@localhost>`.
+6. **Screenshots exist, and the sentence that said they did not is corrected in §2.5 item five.** There
+   is a headless browser on this machine (`docs/SHOTS.md`, `tools/shot.py`, twelve captures in
+   `~/tools/shot/out/` before this pass, a thirteenth taken during it at 18:40Z). The frontend the
+   submission shows is the copy's, which carries a `/pricing` attach with 43 checks green at 18:40Z.
+   Nothing is hosted, so the video is still the only place a judge sees either surface.
+7. **The devnet write (T9) has produced nothing yet, and nothing may be invented for it.**
+   `records/devnet-artefacts.json` does not exist at 18:45Z, so the console's `[DEVNET]` slot renders
+   empty and `/health` reports `programDeployed: false`, `programId: null`. If the Solana run lands one,
+   it is **`records/findings/18` when it lands** (that number is free at 18:55Z, though `findings/17`'s
+   header note reserves it for the frontend fix if that finding is written): cite that file and the
+   artefact it names, and do not paste a signature from anywhere else. Until then the honest state stays
+   "nothing is deployed".
+8. **Registration and check-in are machine-checked, and the form fields are §3 items 12 and 20.** Run
+   the submit path once early on Sunday rather than at 09:55; the event page shows three steps, register,
+   check in, submit, and a registered-but-not-checked-in account may not be able to submit at all.
+9. **Two answers are his alone and are written as questions in §2.8:** whether the code is his sole
+   property, and whether the pre-event research corpus may be quoted. Neither is answered anywhere in
+   this file.
+10. **After the submission:** capture the confirmation id, freeze the tree, change nothing until a judge
+    asks. The pack's own rule still holds: no push happens without his explicit yes.
+
+---
+
+## Operator actions before 15:00Z (the 11:41Z list, kept as written; the refreshed list above supersedes it)
 
 Every line here is his to do; nothing below can be settled by editing this file. Ordered by what
 decides the entry soonest. The correction pass of 2026-11-07T17:45Z fixed the text these actions
@@ -451,7 +512,19 @@ frame for 21 seconds, and the description a judge reads could not find it.]**
 > `[UNVALIDATED]`. Fourth, there is no hosted demo. The app runs locally and the run steps are in the repo; the
 > submission has no demo URL, and clicking the project link will not show a running product. Fifth, there
 > are no screenshots in this submission, because the build machine has no browser. The frontend that a
-> judge would see is the platform's own, and the labelling patch is ours.
+> judge would see is the platform's own, and the labelling patch is ours. **[REPLACED 2026-11-07T18:50Z:
+> both halves of that sentence were false of the tree. There is a headless browser on this machine —
+> `docs/SHOTS.md` is the account (Playwright and a Chromium headless shell under `~/tools/shot/`, outside
+> the repository, a dev tool the backend never imports) — and `tools/shot.py` captures a page in one
+> command. Twelve PNGs sat in `~/tools/shot/out/` when this pass began; a thirteenth was taken during it
+> (`python3 tools/shot.py http://127.0.0.1:8788/ <path> --width 1280` → a 139,390-byte PNG at 18:40Z). The
+> frontend a judge would see is the copy's, and it carries more than a labelling patch: a `/pricing` page
+> that frames the console through a closed proxy, `python3 tools/check_frontend_attach.py` → **43 passed,
+> 0 failed** at 18:40Z, a sandboxed frame measured at **3,383 px of frame over 3,383 px of console at
+> 1280** and 7,143 over 7,143 at 390 with no scrollbar inside it (measured 18:41Z), and a containment
+> policy on the proxy. What survives from the old item: the demo is local, nothing is hosted, so no
+> screenshot and no URL puts either surface in a judge's browser — the video is the only place they
+> travel.]**
 
 **[APPLIED 17:45Z: item three is replaced with the paragraph above, which is the "VERSION-IF-CONSOLE-LANDS"
 swap-in that used to sit here — the swap-in text added "on every number it prints", which the page does not
@@ -477,18 +550,80 @@ rule-based-bounded-estimator`, `fitted: false`.]**
 
 ### 2.7 AI disclosure (required, and the penalty for omitting it is disqualification)
 
-Draft, with the tool names left as a TBD because only he knows exactly what he ran:
+**Rewritten 2026-11-07T18:50Z.** The version it replaces said "Most of the code and most of the documents
+in this repository were written with AI coding agents (`TBD-TOOL-NAMES`) working under a written brief, in
+parallel sessions", which is close to true and hides the two things a judge would ask about: who was in
+charge, and whether the operator wrote it. What the form asks, from MLH's own required export, is a
+required multiselect — "Which of the following GenAI tools did you use this weekend?" — and a required
+long-text field — "Did you implement a generative AI model or API in your hack this weekend? If so, how
+and why did you use it? If not, mark your response as N/A" (`records/findings/17-hackathon-rules-recheck.md`
+§1.3). Both are on the form whether or not this file is read.
 
-> Most of the code and most of the documents in this repository were written with AI coding agents
-> (`TBD-TOOL-NAMES`) working under a written brief, in parallel sessions. Claims were checked against the
-> command output that produced them where that was possible, and are labelled where it was not. The fixture
-> generator, the test suite and the labelling patch were written this weekend. The research records name
-> their sources.
+The wording to paste, honest and complete, with the one line only he can fill:
+
+> The code and the documents in this repository were built with AI coding agents, orchestrated and
+> released by me. Agents wrote most of the lines: the backend, the engine, the console, the test suite,
+> the research records and this submission text. I wrote the briefs, directed the phases, checked the
+> claims against the commands that produced them, and made every decision that ships. The tool list is
+> `TBD-TOOL-NAMES`; the commit trailers in the repository name one of them on six of its nineteen commits.
+> No generative model or API is implemented inside the product: the pricing engine is bounded arithmetic
+> with declared parameters, `/health` reports `fitted: false`, and the only learned-model work here is
+> specified and unbuilt. This is not a claim of solo human authorship and no part of the submission should
+> be read as one.
+
+What makes that paragraph defensible rather than just honest: the git history agrees with it. Measured at
+18:45Z, the repository has **19 commits**, nine under the operator's own git identity, nine under
+`agent <agent@local>` and one under `orchestrator <orchestrator@localhost>`, and six carrying a
+`Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>` trailer. A judge who runs `git log` finds the
+same story the disclosure tells.
 
 MLH's published rule asks teams to be honest and transparent about which AI code tools they used and to
-list them in the submission, and the organizer-side copy attaches disqualification and a report to
-`cheating@mlh.io` for not crediting them (`02-rubric-and-scoring.md` B6). Naming the wrong tools is worse
-than naming none, so this line is yours to fill.
+list them in the submission; the organizer-side copy attaches disqualification and a report to
+`cheating@mlh.io`. Naming the wrong tools is worse than naming none, so `TBD-TOOL-NAMES` stays yours to
+fill.
+
+---
+
+### 2.8 Provenance, prior work, and the two questions only he can answer
+
+**Added 2026-11-07T18:50Z**, from `records/findings/17-hackathon-rules-recheck.md` §3.4, §3.9, §6 (R1, R5,
+R6) and §7. Nothing here is a decision; the two questions at the end are deliberately unanswered.
+
+**The provenance sentence, for the description and for the video.** The largest prior-work exposure in this
+entry is not code, it is a claim about who built what: the demo UI is a copy of the company's own platform
+frontend. The sentence to carry, in the submission text and once in the voice-over:
+
+> The surrounding product UI is the company's own ticketing platform frontend, which existed before this
+> weekend and which I did not build. What was built in the hackathon window is the pricing backend, the
+> engine, the console, the CLI, and the `/pricing` integration that puts the console inside that frontend.
+
+What must not be said, in any frame or field: that the frontend was built this weekend. Rule 9 of MLH's
+rules allows a prior idea "as long as they do not re-use code or other project materials", and submission
+rule 6 says "You can not submit a project that includes prior work". Presenting an inherited UI as a
+weekend build is the one thing in this entry that can cost it, and one plain sentence removes it.
+
+**The git history, on the two checks MLH's cheat-check page actually runs.** Measured 2026-11-07T18:45Z:
+19 commits, the earliest `744a2c2` at 2026-11-07T08:29:57Z, which is 15 h 29 min **after** hacking began
+(Friday 2026-11-06 12:00 ET = 17:00Z) and inside the window; the commits are spread over 9 h 43 min in 19
+steps, so it is not one blob at the start and not one blob at the end; nothing in the tree is backdated.
+The two published questions, answered from the repository rather than from memory: "Did they start before
+the event?" — no. "Is it one big commit at the beginning of the event?" — no.
+
+**Question 1, ownership, and it collides with the public-repo rule.** MLH's contest terms require that "An
+Eligible Participant (or team) must be the sole owner of the Application submitted". Rules 12–13 and the
+cheating-response page require the code to be public and to remain public, and name "making the repository
+private after the event ends" as disqualifying. Is the ticketPricing code his alone, or company work? If it
+is company IP, those two cannot both be satisfied and the entry needs reframing before Sunday. **Not
+answered here. Only he can answer it, and it must not be guessed at paste time.**
+
+**Question 2, the pre-event research corpus.** `../research/mlh-solana-2026/` was written 2026-11-06, the
+day before hacking began, and is not in this repository: leaving it out is the whole mitigation, because a
+prior *idea* is allowed and prior *materials* are not. Does that corpus draw on company or private data,
+and may it be quoted in the submission text at all? **Not answered here.** The records that stayed in the
+tree are dated and were written this weekend; quoting anything from the pre-event corpus is a different
+question and it is his. A parallel pass wrote `records/findings/19-corpus-citations.md` at 18:55Z, which
+audits every place in this repository that names, cites or reproduces that corpus and is uncommitted as of
+this note: read it on disk before quoting anything from there.
 
 ---
 
@@ -517,7 +652,7 @@ means the text is in this document and needs no decision. "TBD" means only he ca
 | 16 | Devnet program id / mint / address field | **leave empty.** Nothing is deployed. An invented address is the one lie that would sink the entry | set |
 | 17 | Licence | MIT, in `LICENSE`, copyright line filled with the holder's name. Nothing to decide; confirm the name is the one he wants on a public repo | **T6, confirm only** |
 | 18 | AI tool disclosure | §2.7 | **T7** |
-| 19 | Screenshots / thumbnail | none exist. The video's thumbnail comes from the video platform | set |
+| 19 | Screenshots / thumbnail | **captures exist** — twelve PNGs in `~/tools/shot/out/` before 18:40Z and one more taken during this pass, from the copy and from the console at 1280 and 390 (`docs/SHOTS.md`, `tools/shot.py`). Whether any go in the form is his call: the video is what a judge watches, and the form's own screenshot field was not visible without an account. The thumbnail still comes from the video platform. **[CORRECTED 2026-11-07T18:55Z: this row used to say "none exist", which was false of the build machine.]** | set (his veto) |
 | 20 | Country, school, code-of-conduct agreement, account linking | form filler | your clicks |
 
 ### The TBDs, numbered, and what each one is

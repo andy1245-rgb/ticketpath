@@ -102,9 +102,40 @@ Never commit, and treat as an incident if one lands:
 - **Pids and ports of live services** in prose. A design note may say 8787 is refused; it
   may not record which process holds the port.
 
-`tools/public_safety.py` is the check. It must pass before any commit and before any push:
-rules and their reasons are in `.public-denylist`, exceptions are per path glob and per
-class with a reason each, and `docs/PUBLIC-SAFETY.md` is the full account.
+`tools/public_safety.py` is the check. Three entry points, three different sets of files, and
+the difference between them is the whole story: read the coverage, not the intention.
+
+- **A commit.** `.githooks/pre-commit` (installed by `core.hooksPath=.githooks`) runs
+  `check --staged`, which reads only the files in that commit. It then runs a credential scan
+  over the staged blobs, and if a staged path is code (`ticketpath/`, `tests/`, `tools/`) it
+  runs `tp.py gate --quick`. A hit in a tracked file the commit does not touch is never seen
+  by it.
+- **A push.** `~/ticketpath-push.sh` is scheduled every fifteen minutes and runs
+  `check --range origin/main..HEAD`, plus a credential grep over the same diff, before it
+  pushes; exit 1 or 2 refuses the push and logs the hits. It covers the commits ahead of
+  `origin/main`, which is not the same set as the tree: what is already published is not in
+  the range.
+- **The whole tree.** `python3 tools/public_safety.py check --tracked` reads every tracked
+  file from disk and is the only one of the three that looks at what is already there. It
+  fails. Measured 2026-11-07T18:50Z: **64 hits in 9 tracked files, every one of them under
+  `records/`** — 48 `live-service`, 14 `home-path`, 2 `fleet-repo`: `FINAL-PROOF-2.md` 26,
+  `FINAL-PROOF.md` 14, `DEMO-PROOF.md` 11, `findings/07-engine-review.md` 4,
+  `findings/10-final-review.md` 3, `FRONTEND-HONESTY-PATCH.md` 2, `REPO-CONSISTENCY.md` 2,
+  `CONTRACT-CONFORMANCE.md` 1, `FIXTURE-STORE.md` 1. An hour earlier, at `8a5e5e6`, the same
+  command read **77 hits in 11 files**; `findings/12-final-audit.md` and `DELIVERABLE.md` left
+  that list only because the stale-claims pass had to redact a home path or a process id to
+  commit a correction to them, and both correction notes say what went. Those hits are quoted
+  measurements in the research record — a pid in a state table, an absolute path inside a
+  command's output — and they are published. None of the 9 carries an `allow` line, so a run
+  that stages one of them is refused until the file is redacted or a per-file exception with a
+  reason is added to `.public-denylist`, and both are the operator's call: the record is the
+  run's evidence, and history is never rewritten without his explicit yes.
+
+So a commit is gated, a push is gated, and the tree is not. The sentence this file used to
+carry, "It must pass before any commit and before any push", was true of the two gates and
+false of the tree, and it is quoted here rather than deleted. Rules and their reasons are in
+`.public-denylist`, exceptions are per path glob and per class with a reason each, and
+`docs/PUBLIC-SAFETY.md` is the full account, with the same measurement in it.
 
 Two rules that are not about the checker:
 

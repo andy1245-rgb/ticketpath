@@ -1394,3 +1394,42 @@ stale when it was written. Read §1–§3 as the brief; read this note for what 
 What has not changed: the surface, the labels, the refusals, the prohibition list in §2.6, the
 rejected-approach table in §8, and the fact that §9's `price-guidance` route proposal is still a
 proposal and is not on the wire.
+
+---
+
+## CORRECTION (2026-11-07T18:55Z) — the A4 label sentence overstates what the recommendation is based on
+
+**Measured:** 18:40Z–18:55Z at `origin/main` (`8a5e5e6`). **Scope:** this file, appended. The sentence's
+authoritative home is `ticketpath/core/labels.py:123-126`, which this pass was not allowed to write; the
+one-line change it needs is at the end of this note.
+
+**The claim**, quoted verbatim from the label table in §2 of this file (line 306) and from the label
+itself:
+
+> `The primary price recommendation is a range, not a point. It is based on the resale value signal and
+> the primary sell-through observation; it does not use a resale sale-probability curve.`
+
+**The correction.** The recommendation is not based on the sell-through observation. Read from the code
+that computes it (`ticketpath/core/value_band.py:394-419`): the level is
+`face × exp(mean(log(price/face)))` over that tier's own recorded marks, and the band is
+`level × exp(∓ z·max(τ, 0.10))` with `z = 1.6449` and `τ` declared at 0.2. Sell-through enters in two
+places and neither of them is the level or the width: the `[EXACT]` consequence table, where
+`requiredSellThrough = face × observedSellThrough / candidate` is a definition rather than an input, and
+the `sellThroughObserved` field printed beside it. The word "based" is doing work the code does not do.
+The second half of the sentence is true and stays: there is no sale-probability curve, because
+`saleProbability` is refused with `not_identified`.
+
+**The corrected sentence**, which is what the label should say:
+
+> `The primary price recommendation is a range, not a point. It is computed from the tier's own recorded
+> resale marks: the level is face value times the mean log price-to-face ratio on that tier, and the width
+> is a declared τ. The observed sell-through enters only the consequence table, where the sell-through a
+> candidate price would require is an exact division, and it does not enter the level or the width. It
+> does not use a resale sale-probability curve.`
+
+**Why it is a correction and not an edit.** The stale-claims pass of 2026-11-07T18:55Z was scoped to
+documents; `ticketpath/` was out of bounds while another run held the tree. The change is the two strings
+in the `"A4"` tuple in `ticketpath/core/labels.py` — nothing else references the wording
+(`ticketpath/console/blocks.py:399` renders it, and no check asserts the sentence's text). Until it is
+made, the console still prints the overstated sentence, and this file's table is the record of what it
+said rather than a claim about what it says.

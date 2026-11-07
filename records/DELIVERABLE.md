@@ -1375,7 +1375,7 @@ unresolved.** No number in this section may be quoted as a risk estimate.
 
 ### 14.1 The observation set, as the platform emits it
 
-`lib/types.ts` in `/home/friend/ticketing-frontend` is the wire contract and the authority. For one
+`lib/types.ts` in `../ticketing-frontend` is the wire contract and the authority. For one
 ticket the platform yields:
 
 - `LedgerEntry[]`: kind in {issue, sale, transfer, redeem, revoke}, from and to wallet, price in lamports
@@ -1878,7 +1878,7 @@ constraint, a parameter that is a prior in disguise, or a decision the operator 
 ### 18.2 Running it, and what the run proves
 
 ```bash
-cd /home/friend/ticketPricing
+cd <repository root>
 python3 -m ticketpath.server            # http://127.0.0.1:8788/ , port 8788, 8787 refused
 python3 -m unittest discover -s tests   # the suite; the count is printed
 python3 tools/guidance.py --event evt_syn_04 --as-of 2026-11-07T12:00:00Z   # the same payload without a browser
@@ -2448,8 +2448,8 @@ Findings are abbreviated: 01a, 01b, 01c, 01d, 02a, 02ai, 02c, 02d, 02e, 03a, 06 
 
 | # | Source | Locator | Used by |
 |---|---|---|---|
-| 131 | The wire contract itself | `/home/friend/ticketing-frontend/lib/types.ts` ("This file is the contract") and `API_CONTRACT.md`, 9 endpoints, read field by field | all findings |
-| 132 | The frontend's synthetic fixture data, audited and barred from estimation | `/home/friend/ticketing-frontend/lib/mock/` (6 events, 128 tickets, 253 ledger rows) | 00data, 01b |
+| 131 | The wire contract itself | `../ticketing-frontend/lib/types.ts` ("This file is the contract") and `API_CONTRACT.md`, 9 endpoints, read field by field | all findings |
+| 132 | The frontend's synthetic fixture data, audited and barred from estimation | `../ticketing-frontend/lib/mock/` (6 events, 128 tickets, 253 ledger rows) | 00data, 01b |
 | 133 | Solana devnet JSON-RPC endpoint, used for one `getAccountInfo` call that returned `WrongSize` | `https://api.devnet.solana.com` | 00data |
 
 ### 22.4 APIs, data providers and their terms
@@ -2550,3 +2550,42 @@ models of which 13 carry the SHIP role and several of those are specified and no
 The three sentences a reader should carry away are these: **the level of value is not identified from this
 record; the price response is not identified from this record; and nothing in this programme has been
 validated against a ticket market, because no ticket market data exists here.**
+
+---
+
+## CORRECTION (2026-11-07T18:55Z) — §19.1's test count and page bytes are stale, and four machine handles are redacted
+
+**Measured:** 18:40Z–18:55Z, at `origin/main` (`8a5e5e6`), which is also local HEAD. **Scope:** this file
+only, appended except for the four redactions at the end.
+
+**The claim**, from §19.1's "Measured" table:
+
+> | test suite | **352 tests in 12.157 s** | `python3 -m unittest discover -s tests` |
+> | console page render | **2.0 to 2.4 ms** per page, **12,651 to 13,368 bytes** | six states: default,
+> cold start, candidate cap of zero, uncapped, before-on-sale, with a fee |
+
+**The correction.**
+
+- **The test count is 546, not 352.** `python3 tools/tp.py gate` at 18:40Z printed `unittest: OK - 546
+tests`, then `console-check: 113 ok, 0 failed`, then `gate ok - tests=546 OK - console-check FAILURES: 0
+- wall=23.9s`. The suite grew by 194 tests after §19.1 was measured, mostly the console, CLI and
+  public-safety tests. 352 was a true reading of the suite on the day it was taken and is not a true
+  statement about the tree; 12.157 s was that suite's own wall, while the gate's 23.9 s also runs the
+  console check and a server. Quote the command's last line, never this table.
+- **The console page is 13,726 bytes now**, measured three consecutive times at 18:51Z with
+  `curl -s -o /dev/null -w '%{http_code} %{size_download} %{time_total}'` → `200 13726 0.0026`,
+  `200 13726 0.0022`, `200 13726 0.0021`. The old range's top end (13,368) is below today's page because
+  the page grew through the console fixes; the timing held at 2.1–2.6 ms per read, which is what §19.1
+  was reporting. The status code is the invariant and the byte count is not: it moves whenever the
+  console is edited, which is why `README.md` quotes it as "about 13 KB".
+- Every other row in §19.1 is unchanged and uncorrected here: the boot timings, the peak resident set and
+  the fixture check were not re-measured by this pass, so they stand as measurements of their own instant
+  and nothing more is claimed for them.
+
+**The redactions.** Four lines carried an absolute path under a home directory: §14.1's sentence about
+`lib/types.ts`, §18.2's reproduction block, and rows 131 and 132 of the source table. They now read
+`../ticketing-frontend` (which says the same thing and leaks no username or machine layout, the rule in
+`AGENTS.md`) and `cd <repository root>`. Same reason as the note at the end of
+`records/findings/12-final-audit.md`: a file that cannot be staged cannot carry a correction. No number,
+no finding and no claim in this file changed, and `tools/public_safety.py` reports zero hits for it as of
+this note.
