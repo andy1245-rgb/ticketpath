@@ -1,0 +1,110 @@
+# .public-denylist: what may never appear in this public repository.
+#
+# Read by tools/public_safety.py. Plain patterns, one rule per line, comments with
+# '#'. Every pattern is a Python regular expression, matched with re.search against
+# the repository-relative path (path rules) or one line of file content (content
+# rules). Nothing here is a replacement for judgement; it is the list of things that
+# must not be published by accident.
+#
+# Grammar, three kinds of line:
+#
+#   path    <class> <regex>              match the file PATH
+#   content <class> <scope> <regex>      match one line of the file's CONTENT
+#   allow   <glob>  <class> <reason>     suppress one or more classes for a path glob
+#
+# The <class> field of an allow line may list classes separated by "|", and "*" means
+# every class. Nothing else about an exception is implicit: it is per glob and per
+# class, so a file exempt for a quoted address is still checked for a pid.
+#
+# <scope> is either "all" (every file) or "code" (every file outside records/).
+# A line that does not parse is a hard error: a silently skipped rule is worse than
+# no rule, so the checker exits 2 and says which line it could not read.
+#
+# Classes, and why each one is denied:
+#
+#   handover-file   operational handover documents. They name live processes, pids,
+#                   panes and the operator's own machine. They stay local.
+#   secret-file     files that are a credential by existing at all.
+#   fleet-repo      the operator's other repositories. This repository does not
+#                   describe his infrastructure, and a name invites a link.
+#   home-path       absolute paths under a home directory: machine layout and a
+#                   username. Relative paths say the same thing and leak nothing.
+#   tmp-path        scratch paths under /tmp. EXCEPTION, stated here because it is a
+#                   deliberate hole: records/ may quote /tmp verbatim, because those
+#                   files are the run's evidence and a quote is not an instruction.
+#                   Hence scope "code": the rule fires everywhere except records/.
+#   cron-line       a scheduled job on his machine. Publishing one publishes his
+#                   schedule, and the path it runs.
+#   deploy-key      the name of the deploy key. It is a key handle; nothing public
+#                   needs it, and naming it points at the file.
+#   live-service    a pid, or a port tied on the same line to a running process or to
+#                   him. A pid is a handle on a live process; a bare port number in a
+#                   design note ("8787 is refused") is not, so the rule needs the
+#                   context word. 8788 is not denied: it is this project's own
+#                   documented backend port and appears in every run instruction.
+#   private-key     a PEM private key block. Obvious, and never justified.
+#   token-shape     credential shapes: GitHub tokens, OpenAI/Anthropic keys, AWS key
+#                   ids, Slack tokens, mnemonics-as-token, and a named OAuth token
+#                   with a value. The prefixes carry a \b so that "risk-adjusted"
+#                   does not read as an "sk-" key.
+#   env-content     a line assigning a value to a secret-shaped variable name. The
+#                   value has to be the whole line, at least eight characters, and has
+#                   to carry a letter: base64, hex, a token, a path. References ($VAR),
+#                   quoted prose and literals that are obviously not credentials are not
+#                   hits. Narrowed twice on evidence: the first cut flagged a test's
+#                   `SEED = bytes(range(32))`, the second the fixture generator's
+#                   `SEED = 20261107`, and both are deterministic seeds, not secrets.
+#   contact-email   a third party's address in public text. GitHub's own addresses
+#                   (git@github.com, *@users.noreply.github.com) are excluded: they
+#                   are the repository's own wiring, and they are already public.
+#   personal-name   the copyright holder's full name, outside the two places it is
+#                   published on purpose (LICENSE, and the README line that restates
+#                   the licence).
+#
+# Adding a rule: add it here with a comment, and add a case to
+# tests/test_public_safety.py. A rule with no test is a rule nobody has seen work.
+
+# --- names -------------------------------------------------------------------
+
+path handover-file   (?i)(^|/)night-
+path handover-file   (?i)snapshot
+path handover-file   (?i)(^|/)(wip|handover)[-_.]
+path secret-file     (?i)(^|/)\.env(\.|$)
+path secret-file     (?i)\.(pem|p12|pfx|key)$
+path secret-file     (^|/)id_(rsa|dsa|ecdsa|ed25519)$
+
+# --- content -----------------------------------------------------------------
+
+content fleet-repo      all   (?i)\b(agentFleet|fleet-gui|fleet-manager)\b
+content home-path       all   /home/friend/
+content home-path       all   ~/(agentFleet|fleet-gui|fleet-manager)\b
+content tmp-path        code  (^|[^\w])/tmp/
+content cron-line       all   (\*/\d+ \* \* \* \*|^\s*\d+ \* \* \* \*|@reboot|\bcrontab -[le]\b)
+content deploy-key      all   ticketpath_deploy
+content live-service    all   \b(?:p|pg)id\s*[:=]?\s*\d{3,7}\b
+content live-service    all   :(?:3000|3001|8787)\b(?=[^\n]{0,80}\b(?:pid|pgid|live|running|untouched|operator|fleet|page)\b)
+content private-key     all   -----BEGIN [A-Z0-9 ]*PRIVATE KEY-----
+content token-shape     all   \bghp_[A-Za-z0-9]{20,}
+content token-shape     all   \bgithub_pat_[A-Za-z0-9_]{20,}
+content token-shape     all   \bsk-(?:ant-)?[A-Za-z0-9_-]{20,}
+content token-shape     all   \bAKIA[0-9A-Z]{16}
+content token-shape     all   \bxox[abposr]-[A-Za-z0-9-]{10,}
+content token-shape     all   \b[0-9]{8,10}:AA[A-Za-z0-9_-]{30,}
+content token-shape     all   \bCLAUDE_CODE_OAUTH_TOKEN\s*[:=]\s*(?!\$)\S{8,}
+content env-content     all   ^\s*[A-Z0-9_]*(?:API_KEY|APIKEY|SECRET|TOKEN|PASSWORD|PRIVATE_KEY|MNEMONIC|SEED)\s*=\s*(?=[A-Za-z0-9+/=_\-.:@]*[A-Za-z])[A-Za-z0-9+/=_\-.:@]{8,}\s*$
+content contact-email   all   [A-Za-z0-9._%+-]+@(?!(?:github\.com|users\.noreply\.github\.com)\b)[A-Za-z0-9.-]+\.[A-Za-z]{2,}
+content personal-name   all   \bAndrew Radu\b
+
+# --- justified exceptions ----------------------------------------------------
+#
+# Each entry suppresses one class for one path glob, and has to say why. A glob is
+# matched with fnmatch, so "records/*" is one level only; "records/*.md" is the
+# files, "records/**" (fnmatch does not do **) is written as the two globs below.
+# Keep this list short enough to read.
+
+allow .public-denylist              *             This file has to spell the patterns it denies; it is the one file allowed to name them.
+allow LICENSE                       personal-name The MIT licence must carry the copyright holder's name to be a licence at all; it is published on purpose.
+allow README.md                     personal-name The README restates the licence line. Same name, same reason, and it is already in LICENSE.
+allow records/*                     contact-email The research record quotes the hackathon's own published address (cheating@mlh.io) verbatim as the terms that were read. A quote of a published address is evidence, not a contact of his.
+allow records/findings/*            contact-email Same quote, in the per-investigation reports that first read the terms.
+allow tests/test_public_safety.py fleet-repo|home-path|tmp-path|cron-line|deploy-key|live-service|contact-email|personal-name A test for a pattern has to spell the pattern it plants. The credential classes are deliberately not exempt here, and that file builds those by concatenation instead.

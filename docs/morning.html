@@ -138,7 +138,7 @@ what it costs.</p>
 which predates every backend file, the fixture store, the console and the research records. Your local
 <code>HEAD</code> is <code>6b27016</code> from 14:10:50Z and the tree is clean. Until you push, a judge who
 follows the link gets the pre-night code and none of the work. No wording in the form repairs that.</p>
-<pre><code>cd /home/friend/ticketPricing
+<pre><code>cd <repository root>
 git status --short && git log -1 --format='%h %ci'   # observe before you act
 git push origin main</code></pre>
 <p><b>Cost.</b> About ten seconds. It publishes every record in the tree, including the research records and
@@ -190,14 +190,14 @@ Your answer is what the on-chain paragraph and the frontend's cap sentences rest
 <div class="box dec">
 <h3>2.4 Apply the honesty patch, the env var, and restart :3000 <span class="tag no">only affects what you show</span></h3>
 <p class="declead"><b>What it unblocks.</b> The live frontend telling the truth. Right now <code>:3000</code>
-(pid 81447, your tree) is still in mock mode: it serves the "Mock data" banner and none of the fixture strip,
+(the dev server in your tree) is still in mock mode: it serves the "Mock data" banner and none of the fixture strip,
 and it 404s on the backend's events. Your copy at <code>../ticketpath-demo</code> already has the patch and
 reads the backend, which is why <code>:3001</code> is the frontend on the judge path.</p>
-<pre><code>cd /home/friend/ticketing-frontend
+<pre><code>cd ../ticketing-frontend
 git apply --check ../ticketPricing/docs/frontend-honesty.patch   # must print nothing
 git apply ../ticketPricing/docs/frontend-honesty.patch
 printf '\nNEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788\n' &gt;&gt; .env
-# then restart the dev server that holds :3000 (pid 81447 when this page was written)</code></pre>
+# then restart the dev server that holds :3000, and confirm it answers 200</code></pre>
 <p><b>Cost.</b> 11 files, +68 / −16 lines, no dependency and no new request. The restart is not optional:
 <code>NEXT_PUBLIC_*</code> is inlined at build time, so the running server cannot pick it up. Budget a minute
 of downtime and expect the first page compile after the restart to take a few seconds.</p>
@@ -273,13 +273,13 @@ while that screen is up.</p>
 page claims otherwise, and decision 2.2 is the only thing that changes it. If a link is dead when you open this
 page, start it again:</p>
 <pre><code># backend and console on 8788
-cd /home/friend/ticketPricing
-nohup python3 -m ticketpath.server &gt; /tmp/tp-backend.log 2&gt;&amp;1 &amp;
+cd <repository root>
+nohup python3 -m ticketpath.server &gt; ~/tp-backend.log 2&gt;&amp;1 &amp;
 
 # the frontend copy on 3001, pointed at it
 cd ../ticketpath-demo
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788 \
-  nohup ./node_modules/.bin/next dev -p 3001 &gt;&gt; /tmp/tp-web.log 2&gt;&amp;1 &amp;</code></pre>
+  nohup ./node_modules/.bin/next dev -p 3001 &gt;&gt; ~/tp-web.log 2&gt;&amp;1 &amp;</code></pre>
 <p class="line">Never <code>8787</code>: another process owns it, and the server refuses to bind it.</p>
 
 <h2>4. The last-hour checklist</h2>
@@ -292,7 +292,7 @@ about later.</p>
 <li>
   <p class="ck"><input type="checkbox" id="k1"><label for="k1"><b>1. Tree clean and committed.</b></label></p>
   <p class="line">Pass: an empty status, and a last commit inside the weekend window.</p>
-  <pre><code>cd /home/friend/ticketPricing
+  <pre><code>cd <repository root>
 git status --short
 git log -1 --format='%H %ci'</code></pre>
   <p class="now pass">14:19Z — PASS. Status empty; <code>6b27016 2026-11-07 14:10:50 +0000</code>.</p>

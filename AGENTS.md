@@ -19,9 +19,9 @@ economically rational, computationally efficient engine — not research volume.
 
 Verified on disk before this session started, not assumed:
 
-- `/home/friend/ticketing-frontend/` — the company's own platform UI. Next.js, no
-  backend yet. `lib/types.ts` is the wire contract and `API_CONTRACT.md` maps every
-  endpoint the frontend will call.
+- `../ticketing-frontend/` — the company's own platform UI, a sibling checkout of this
+  repository. Next.js, no backend yet. `lib/types.ts` is the wire contract and
+  `API_CONTRACT.md` maps every endpoint the frontend will call.
 - The platform is Solana-ticketed: tickets are wallet-bound tokens and **every resale
   price and custody hop is a ledger entry**. Markup is expressed in basis points over
   face value; money is integer lamports; timestamps are ISO-8601 UTC.
@@ -83,3 +83,36 @@ say what it is; it should be obvious to a stranger.
 - Autonomy: run to completion, do not ask permission for work already in scope. Come
   back only for a fork in the architecture, a design decision that changes the
   deliverable, or money.
+
+## Public repository safety
+
+This repository is public (`andy1245-rgb/ticketpath`). Everything committed is published,
+including the research record, so the record is written for a stranger to read.
+
+Never commit, and treat as an incident if one lands:
+
+- **Operational handover material.** `NIGHT-*.md`, snapshot directories, WIP handover
+  notes. They name live processes, pids, panes, a schedule and this machine. They stay
+  local and are git-ignored: not evidence, and no research claim rests on them.
+- **Credentials of any kind.** Key blocks, tokens, `.env` contents, key paths, the deploy
+  key's name. No exception for a dev key.
+- **Absolute paths under a home directory.** `../ticketing-frontend` says the same thing
+  and leaks no username and no machine layout.
+- **The operator's other repositories and infrastructure**, by name.
+- **Pids and ports of live services** in prose. A design note may say 8787 is refused; it
+  may not record which process holds the port.
+
+`tools/public_safety.py` is the check. It must pass before any commit and before any push:
+rules and their reasons are in `.public-denylist`, exceptions are per path glob and per
+class with a reason each, and `docs/PUBLIC-SAFETY.md` is the full account.
+
+Two rules that are not about the checker:
+
+- **History is never rewritten without the operator's explicit yes.** No rebase of a
+  pushed branch, no force-push, no filter. A secret that is already published is rotated
+  first; the history question is his to answer, not a tool's.
+- **Handover files stay local.** When a run ends, what it learned goes into `records/` as
+  research; the instruction sheet it was driving itself with stays on disk, out of git.
+
+Records may quote `/tmp` paths and do: a quoted path is evidence of what a run did. That is
+the one stated exception, written in the denylist rather than assumed.

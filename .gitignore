@@ -4,3 +4,26 @@ __pycache__/
 runs/
 *.db
 *.sqlite
+
+# Operational handover material stays local. It names live processes, pids, panes, a
+# schedule and this machine, and the repository is public: see docs/PUBLIC-SAFETY.md
+# and tools/public_safety.py, which enforces the same list in content and in names.
+NIGHT-*
+night-snapshot-*/
+night-snapshot-*
+snapshot-*/
+
+# Credentials and key material never belong in a public repository.
+.env
+*.env
+*.pem
+*.key
+*_deploy_*
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# Scratch space: work in progress, patches and logs that are not evidence.
+tmp/
+scratch/
