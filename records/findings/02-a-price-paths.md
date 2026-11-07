@@ -929,3 +929,26 @@ Could not establish:
 - Any published per-ticket repeat-sale price path (§3.4).
 - Any peer-reviewed measurement of a price path under a resale cap. 01-b reached the same conclusion.
 - Any published out-of-sample forecast accuracy for secondary ticket prices.
+
+---
+
+## CORRECTION (2026-11-07T11:28Z) — two author attributions in the reference list
+
+Appended by the corrections pass after `records/findings/00-verification-round1.md` §4 and §8. Nothing above
+is deleted. Both entries were inherited from `01-b` and are corrected there too (`01-b` CORRECTION 3).
+
+**Withdrawn attributions.**
+
+1. "**Mason, K. O., Mason, W. M., Winship, C. & Poole, W. K. (1973).**" The third author is **Winsborough,
+   H. H.** A Crossref query for `10.2307/2094398` on 2026-11-07 returns Mason, Mason, Winsborough, Poole.
+2. "**Luo, L. (2019).** Analyzing age-period-cohort data: a review and critique. *Annual Review of Sociology*
+   45:467-492. doi:10.1146/annurev-soc-073018-022616." Crossref returns that DOI as **Fosse, E. & Winship,
+   C. (2019)**, same title, journal, volume, pages and year.
+
+**Corrected reading.** Wherever the text cites "Luo (2019)" or "Luo", read **Fosse & Winship (2019)**. Where
+it cites Mason et al. (1973), the author set is Mason, Mason, Winsborough and Poole. Titles, journals, volumes,
+pages and DOIs are unchanged and were confirmed correct; the propositions both works are cited for in §4.3 are
+unaffected.
+
+**Scope.** This is the only bibliographic correction in this file. Its own four checked citations (Sweeting,
+Leslie & Sorensen, Lee et al., NBER 14505) and its recomputed arithmetic are not affected.

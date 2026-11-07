@@ -1,13 +1,13 @@
 # 00 — Index of the pre-VM direction documents
 
-**Purpose.** `/home/friend/research/mlh-solana-2026/` holds fifteen documents written on
+**Purpose.** `../research/mlh-solana-2026/` holds fifteen documents written on
 2026-11-06, before this VM and before the session that launched tonight. They are input, not
 product. This file exists so the night's orchestrator cannot unknowingly re-litigate a decision
 those documents already made, or redo work they already did — and so it can see, in one place,
 where they contradict tonight's plan.
 
 **Method.** All fifteen read in full from the read-only source; nothing under
-`/home/friend/research` was modified. Status is judged against tonight's eight plan items, which
+`../research` was modified. Status is judged against tonight's eight plan items, which
 are referred to below as **(a)**–**(h)** and quoted verbatim where a conflict is marked.
 
 | tag | tonight's plan item, as given |
@@ -17,7 +17,7 @@ are referred to below as **(a)**–**(h)** and quoted verbatim where a conflict 
 | (c) | "no resale-listing product path, but the anti-fraud invariant must be on-chain (Token-2022 transfer hook or PDA escrow)" |
 | (d) | "the build machine has no solana/anchor/cargo/rustc, so nothing can be deployed here - on-chain work is design-only, flagged ON-CHAIN-FOR-LAPTOP" |
 | (e) | "the backend binds port 8788 because 8787 belongs to another process" |
-| (f) | "the frontend at /home/friend/ticketing-frontend is live on :3000 and must not be touched" |
+| (f) | "the frontend at ../ticketing-frontend is live on :3000 and must not be touched" |
 | (g) | "stdlib Python only, no new dependencies" |
 | (h) | "submission deadline is Sun 2026-11-08 10:00 America/Toronto = 15:00Z, initial, not the 11:45 final" |
 
@@ -270,7 +270,7 @@ So the night does not redo it. "Exists on disk" was checked, not assumed.
 | `p2a-verified-spike.md` | A mint created (`EH2kuSM4…`); a four-extension mint (`J8hNmBD7…`); a refused transfer; a failed transaction with a signature (`2Qqpo4t9…`); a delegate burn (`28yD1xDH…`); a Node script `/tmp/mintest/failtx.js`; a validator ledger `/tmp/mlh-ledger` | `/tmp/mintest/failtx.js`, `/tmp/mlh-ledger`, and the four base58 identifiers | **No.** `/tmp/mintest` and `/tmp/mlh-ledger` are absent; all four identifiers return `null` from `api.devnet.solana.com` (apiVersion 4.4.0, slot 519,636,185). The spike ran on a local validator and no durable artefact of it survives anywhere. |
 | `p2b-scalper-prior-art.md` | Prior-art table with 23 inline URLs; the mechanism decision; the pitch | no path | n/a |
 | `p3-decision.md` | The decision, the adversarial review, kill criteria, pitch candidates | no path | n/a |
-| `p5-build-spec.md` | A repo layout — `app/(screens)/page.tsx`, `buy/page.tsx`, `ticket/[mint]/page.tsx`, `gate/page.tsx`, `components/Ticket.tsx`, `components/GatePass.tsx`, `components/RefusalPanel.tsx`, `lib/token2022.ts`, `lib/issuer.ts`, `lib/simulate.ts`, `scripts/mint-ticket.ts`, `scripts/scalpbot.ts`, `docs/README.md` | repo root, unnamed; `p5` §5 | **No.** Checked at 10:55Z: none of the twelve named paths exists, and there is no `.ts`/`.tsx` file anywhere in this repo. `/home/friend/ticketpath` does not exist. A Python package `ticketPricing/ticketpath/` was created at 10:52–10:55Z by tonight's own build — it is a different artefact with none of these files, and it is not evidence that p5's build was ever done. The only UI on disk is the live frontend, which must not be touched (f). |
+| `p5-build-spec.md` | A repo layout — `app/(screens)/page.tsx`, `buy/page.tsx`, `ticket/[mint]/page.tsx`, `gate/page.tsx`, `components/Ticket.tsx`, `components/GatePass.tsx`, `components/RefusalPanel.tsx`, `lib/token2022.ts`, `lib/issuer.ts`, `lib/simulate.ts`, `scripts/mint-ticket.ts`, `scripts/scalpbot.ts`, `docs/README.md` | repo root, unnamed; `p5` §5 | **No.** Checked at 10:55Z: none of the twelve named paths exists, and there is no `.ts`/`.tsx` file anywhere in this repo. `../ticketpath` does not exist. A Python package `ticketPricing/ticketpath/` was created at 10:52–10:55Z by tonight's own build — it is a different artefact with none of these files, and it is not evidence that p5's build was ever done. The only UI on disk is the live frontend, which must not be touched (f). |
 
 **The three consequences tonight should carry:**
 

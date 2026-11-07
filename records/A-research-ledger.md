@@ -113,3 +113,57 @@ From `records/findings/00-ledger-verification.md` §2 and §3, restated here onl
   redeemed tickets; on the audit's figures 49 of 128 tickets sell and 79 never do. The same
   file uses the correct 79-of-128 at §4.6.
 - `01-a` §7 cites a "Gap 5" that `00-data-situation.md` never numbers.
+
+---
+
+## CORRECTION (2026-11-07T11:28Z) — the Aigner bullet above is false and is withdrawn
+
+**Withdrawn text:**
+
+> "- `01-b` §7 cites Aigner (1973) as `10.1016/S0304-4076(73)90005-5`, which returns 404; the
+>   resolving DOI is `10.1016/0304-4076(73)90005-5`. The claim in that section that every
+>   citation was checked is false as printed."
+
+The first sentence is false. `01-b` contains the resolving DOI and only the resolving DOI; the S-prefixed
+string is not in the file. Checked in the working copy on 2026-11-07 and recorded in full in the new
+correction appended to `records/findings/00-ledger-verification.md` §3. The `00-adversarial-review-phase1.md`
+note that repeated it also carries a withdrawal.
+
+The second sentence is true for a different reason: two **author** attributions in that reference list are
+wrong (Fosse & Winship, not "Luo"; Winsborough, not "Winship"). Corrected in `01-b` CORRECTION 3.
+
+**Also withdrawn, from the V1 row of the table above:** "one unresolvable DOI and two wrong fixture counts".
+There is no unresolvable DOI, so the count is zero. Of the two fixture counts, the 90-of-128 is wrong
+(90 `sale` rows, 49 tickets) and the 14-of-128 is a row count whose ticket count the record does not
+establish; neither is a count of tickets. The row's substance (class discipline, the 01-b versus audit
+contradictions) is unaffected.
+
+---
+
+## Corrections applied (2026-11-07T11:28Z)
+
+This file and the findings beneath it were audited by an independent verification pass
+(`records/findings/00-verification-round1.md`, 2026-11-07T11:26Z) and then corrected by a corrections pass
+at 2026-11-07T11:28Z. Every correction is appended to the file it corrects, quoted there, and dated; nothing
+was deleted and no finding's conclusion was rewritten. The full table, including defects the verification
+reported that this pass did not touch, is `records/CORRECTIONS-APPLIED.md`.
+
+| File | Defect corrected | Status of the finding |
+|---|---|---|
+| `findings/01-b-identifiability.md` | "only 90 of 128 fixture tickets ever sell": a `sale` row count read as a ticket count, and the one place in that file where a fixture number carries an argument. True figures from `00-data-situation.md` §2: 253 rows (128 + 90 + 21 + 14), 79 of 128 tickets never sell, so **49** sell. "14 of 128 tickets redeem" is the same row-as-ticket reading and cannot be restated as a ticket count from the record. | Withdrawn as printed; the selection argument stands as class C without the number |
+| `findings/01-b-identifiability.md` | §5.3: the cap "varies ... across tiers within an event", so "the cap is an instrument". `resalePriceCapBps` is one field on `Event`; only the money ceiling varies, as face × (1+c), collinear with face. `01-c` §1.4(1) is right. | Withdrawn; cross-event instrument and the one-sided bounds survive, within-event instrument strength does not |
+| `findings/01-b-identifiability.md` | Two wrong author attributions in a list claiming Crossref verification: `10.1146/annurev-soc-073018-022616` is Fosse & Winship, and Mason et al.'s third author is Winsborough. | Corrected; DOIs, titles, journals and pages verified unchanged |
+| `findings/01-a-market-structure.md` | "even after scaling for the ~50% of resale the authors do not observe": the paper says the 1.4% covers only the half it observes. | Withdrawn; 1.4% stands as an unscaled figure with the paper's caveat attached |
+| `findings/01-a-market-structure.md` | The £269 per-ticket figure is spliced onto the £350m / 1.9m flow; 269 × 1.9 = £511m, and £269 is £404m / 1.5m. | Withdrawn as a before-and-after pair; each pair must be quoted on its own |
+| `findings/01-a-market-structure.md` | He & Lin cited as 2025; Crossref gives *Marketing Science* 45(3):515–533, 2026-05. | Corrected |
+| `findings/00-ledger-verification.md` | The Aigner 404 finding accuses `01-b` of a DOI it does not contain. | Withdrawn in full, including "the single unresolvable citation in the records" |
+| `findings/00-adversarial-review-phase1.md` | Repeated the Aigner finding. | Withdrawn |
+| `findings/02-e-cold-start.md` | "−49% to +95%" labelled "as markup around face" is a multiplier on the point estimate, not an absolute markup band. | Relabelled; the arithmetic stands as exp(±1.645τ) |
+| `findings/01-d-external.md` | "Nineteen candidate variables ... eleven survive at usable priority" is not derivable from its own tables: 17 admitted, 11 rejected, 9 at priority 1–2. | Withdrawn; the tables are the count of record |
+| `C-variable-registry.md` | C-3 repeats the within-event cap claim. | Withdrawn; the cross-event statement stands |
+| `findings/02-a-price-paths.md`, `findings/03-b-temporal-correctness.md` | Inherited the two wrong author attributions; `03-b`'s Luo entry also carries a title and page range that do not match its DOI. | Corrected at origin and in both inheritors |
+
+**Not corrected, and why:** the header timestamps on `02-a` and `02-ai-ml-decision` that postdate their own
+mtime, and the undefined "Gap 5" label, are recorded in `CORRECTIONS-APPLIED.md` with the reason each was
+left alone. Neither is a statement this pass can correct without inventing a fact (a true write time, or a
+definition of a gap nobody defined).

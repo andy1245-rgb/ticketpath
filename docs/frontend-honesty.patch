@@ -1,0 +1,320 @@
+diff -ruN a/app/events/[eventId]/page.tsx b/app/events/[eventId]/page.tsx
+--- a/app/events/[eventId]/page.tsx	2026-11-06 23:54:10.000000000 +0000
++++ b/app/events/[eventId]/page.tsx	2026-11-07 11:17:39.492804313 +0000
+@@ -4,6 +4,7 @@
+ import { Card, CardHeader, EmptyState } from "@/components/Card";
+ import { EventStatusBadge } from "@/components/Badge";
+ import { AddressPill } from "@/components/AddressPill";
++import { SyntheticNotice } from "@/components/SyntheticNotice";
+ import { TicketRow } from "@/components/TicketRow";
+ import { StatTile, StatRow } from "@/components/StatTile";
+ import { PriceHistoryChart } from "@/components/PriceHistoryChart";
+@@ -29,7 +30,7 @@
+     throw err;
+   }
+ 
+-  const [{ items: tickets }, analytics] = await Promise.all([
++  const [{ items: tickets, dataSource }, analytics] = await Promise.all([
+     getTickets({ eventId: event.id, limit: 25 }),
+     getEventAnalytics(event.id),
+   ]);
+@@ -61,6 +62,8 @@
+         </p>
+       </header>
+ 
++      <SyntheticNotice dataSource={dataSource ?? event.dataSource} />
++
+       <StatRow>
+         <StatTile label="Face value from" value={formatSol(minFace)} hint={`${event.tiers.length} tier${event.tiers.length === 1 ? "" : "s"}`} />
+         <StatTile
+@@ -159,12 +162,12 @@
+               </li>
+               <li>
+                 {event.requiresVerifiedWallet
+-                  ? "Destination wallet must be verified before a transfer will succeed."
++                  ? "Verified wallets only, by policy. Enforced by the transfer hook once the program is deployed; simulated in this build."
+                   : "Any wallet may receive a transfer."}
+               </li>
+               <li>
+                 {event.resalePriceCapBps != null
+-                  ? `Resale price is capped at +${event.resalePriceCapBps / 100}% over face value, enforced at transfer time.`
++                  ? `Resale price is capped at +${event.resalePriceCapBps / 100}% over face value by policy. Enforced by the transfer hook once the program is deployed; simulated in this build.`
+                   : "Resale price is uncapped, but every sale price is still recorded."}
+               </li>
+             </ul>
+diff -ruN a/app/my-tickets/MyTicketsClient.tsx b/app/my-tickets/MyTicketsClient.tsx
+--- a/app/my-tickets/MyTicketsClient.tsx	2026-11-06 23:33:49.000000000 +0000
++++ b/app/my-tickets/MyTicketsClient.tsx	2026-11-07 11:17:58.628870447 +0000
+@@ -3,18 +3,20 @@
+ import { useEffect, useState } from "react";
+ import { useWallet } from "@solana/wallet-adapter-react";
+ import { getEvents, getTickets, getWalletVerification, isMockMode, MOCK_DEMO_WALLET } from "@/lib/api";
+-import type { Event, Ticket, WalletVerification } from "@/lib/types";
++import type { DataSource, Event, Ticket, WalletVerification } from "@/lib/types";
+ import { Card, CardHeader, EmptyState } from "@/components/Card";
+ import { TicketRow } from "@/components/TicketRow";
+ import { WalletButton } from "@/components/WalletButton";
+ import { Badge } from "@/components/Badge";
+ import { AddressPill } from "@/components/AddressPill";
++import { SyntheticNotice } from "@/components/SyntheticNotice";
+ 
+ export function MyTicketsClient() {
+   const { publicKey, connected } = useWallet();
+   const [tickets, setTickets] = useState<Ticket[] | null>(null);
+   const [events, setEvents] = useState<Map<string, Event>>(new Map());
+   const [verification, setVerification] = useState<WalletVerification | null>(null);
++  const [source, setSource] = useState<DataSource | null>(null);
+   const [error, setError] = useState<string | null>(null);
+ 
+   // In mock mode, fall back to the fixture wallet so the page is explorable
+@@ -40,6 +42,7 @@
+         ]);
+         if (cancelled) return;
+         setTickets(ticketPage.items);
++        setSource(ticketPage.dataSource ?? null);
+         setEvents(new Map(eventPage.items.map((e) => [e.id, e])));
+         setVerification(verif);
+       } catch (err) {
+@@ -87,6 +90,8 @@
+         </div>
+       </header>
+ 
++      <SyntheticNotice dataSource={source} />
++
+       {usingDemoWallet && (
+         <p className="rounded-lg border border-hairline bg-surface px-4 py-2.5 text-xs text-ink-2">
+           Showing a sample wallet from the mock fixtures. Connect a wallet to see real holdings.
+diff -ruN a/app/organizer/page.tsx b/app/organizer/page.tsx
+--- a/app/organizer/page.tsx	2026-11-06 23:54:10.000000000 +0000
++++ b/app/organizer/page.tsx	2026-11-07 11:17:46.117827190 +0000
+@@ -5,6 +5,7 @@
+ import { PriceHistoryChart } from "@/components/PriceHistoryChart";
+ import { MarkupDistribution } from "@/components/MarkupDistribution";
+ import { AddressPill } from "@/components/AddressPill";
++import { SyntheticNotice } from "@/components/SyntheticNotice";
+ import { Badge } from "@/components/Badge";
+ import { formatCompact, formatMarkup, formatPercent, formatSol } from "@/lib/format";
+ 
+@@ -16,7 +17,7 @@
+   searchParams: Promise<{ event?: string }>;
+ }) {
+   const { event: requestedId } = await searchParams;
+-  const { items: events } = await getEvents({ limit: 100 });
++  const { items: events, dataSource } = await getEvents({ limit: 100 });
+ 
+   if (!events.length) {
+     return (
+@@ -42,11 +43,13 @@
+       <header>
+         <h1 className="text-xl font-semibold tracking-tight">Resale analytics</h1>
+         <p className="mt-1 max-w-2xl text-sm text-ink-2">
+-          What tickets are reselling for and where they are ending up, computed from the on-chain
+-          transfer record.
++          What tickets are reselling for and where they are ending up, computed from the recorded
++          custody ledger. In this build that ledger is simulated: no ticket program is deployed.
+         </p>
+       </header>
+ 
++      <SyntheticNotice dataSource={analytics.dataSource ?? dataSource} />
++
+       {/* Filters sit in one row above the charts. */}
+       <div className="flex flex-wrap items-center gap-2 border-b border-hairline pb-4">
+         <span className="mr-1 text-xs text-ink-muted">Event</span>
+diff -ruN a/app/page.tsx b/app/page.tsx
+--- a/app/page.tsx	2026-11-06 23:33:01.000000000 +0000
++++ b/app/page.tsx	2026-11-07 11:17:35.538790668 +0000
+@@ -1,11 +1,12 @@
+ import { getEvents } from "@/lib/api";
+ import { EventCard } from "@/components/EventCard";
+ import { EmptyState } from "@/components/Card";
++import { SyntheticNotice } from "@/components/SyntheticNotice";
+ 
+ export const metadata = { title: "Events" };
+ 
+ export default async function EventsPage() {
+-  const { items: events } = await getEvents();
++  const { items: events, dataSource } = await getEvents();
+ 
+   return (
+     <div>
+@@ -17,6 +18,10 @@
+         </p>
+       </header>
+ 
++      <div className="mb-6">
++        <SyntheticNotice dataSource={dataSource} />
++      </div>
++
+       {events.length === 0 ? (
+         <div className="rounded-xl border border-hairline bg-surface">
+           <EmptyState title="No events yet" body="Published events will appear here." />
+diff -ruN a/app/tickets/[ticketId]/page.tsx b/app/tickets/[ticketId]/page.tsx
+--- a/app/tickets/[ticketId]/page.tsx	2026-11-06 23:33:27.000000000 +0000
++++ b/app/tickets/[ticketId]/page.tsx	2026-11-07 11:17:42.693815364 +0000
+@@ -7,6 +7,7 @@
+ import { StatTile, StatRow } from "@/components/StatTile";
+ import { PriceHistoryChart } from "@/components/PriceHistoryChart";
+ import { TransferTrail } from "@/components/TransferTrail";
++import { SyntheticNotice } from "@/components/SyntheticNotice";
+ import { formatDateTime, formatMarkup, formatSol } from "@/lib/format";
+ import { explorerAddressUrl } from "@/lib/solana";
+ 
+@@ -76,6 +77,8 @@
+         </div>
+       </header>
+ 
++      <SyntheticNotice dataSource={history.dataSource ?? event?.dataSource} />
++
+       <StatRow>
+         <StatTile label="Face value" value={formatSol(history.faceValueLamports)} hint={`issued ${formatDateTime(ticket.issuedAt)}`} />
+         <StatTile
+@@ -137,7 +140,10 @@
+       </div>
+ 
+       <Card>
+-        <CardHeader title="On-chain" />
++        <CardHeader
++          title="On-chain (simulated)"
++          subtitle="The mint address is a fixture placeholder: no account exists on any cluster and no transaction backs these rows."
++        />
+         <dl className="grid gap-x-8 gap-y-3 px-5 pb-5 text-sm sm:grid-cols-2">
+           <div className="flex items-baseline justify-between gap-3">
+             <dt className="text-ink-2">Mint address</dt>
+@@ -155,7 +161,9 @@
+           <div className="flex items-baseline justify-between gap-3">
+             <dt className="text-ink-2">Transfer restriction</dt>
+             <dd className="text-xs">
+-              {ticket.transferRestricted ? "Enforced on-chain" : "Not enforced"}
++              {ticket.transferRestricted
++                ? "Enforced by the transfer hook once the program is deployed"
++                : "Not enforced — no program is deployed"}
+             </dd>
+           </div>
+           <div className="flex items-baseline justify-between gap-3">
+diff -ruN a/app/verify/VerifyClient.tsx b/app/verify/VerifyClient.tsx
+--- a/app/verify/VerifyClient.tsx	2026-11-06 23:34:41.000000000 +0000
++++ b/app/verify/VerifyClient.tsx	2026-11-07 11:18:06.746898550 +0000
+@@ -86,7 +86,8 @@
+         <h1 className="text-xl font-semibold tracking-tight">Verify wallet</h1>
+         <p className="mt-1 text-sm text-ink-2">
+           Events with restricted transfers only issue to, and only accept transfers into, verified
+-          wallets. Verification is a signature — it proves you control the key and moves no funds.
++          wallets once the ticket program is deployed. Verification is a signature — it proves you
++          control the key and moves no funds.
+         </p>
+       </header>
+ 
+@@ -157,7 +158,8 @@
+                   <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" className="mt-0.5 shrink-0">
+                     <path d="M2.5 6.5 5 9l4.5-5.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                   </svg>
+-                  Wallet verified. You can now receive transfers for restricted events.
++                  Wallet verified. You can now receive transfers for restricted events once the
++                  ticket program is deployed.
+                 </p>
+               )}
+ 
+diff -ruN a/components/AppShell.tsx b/components/AppShell.tsx
+--- a/components/AppShell.tsx	2026-11-06 23:29:51.000000000 +0000
++++ b/components/AppShell.tsx	2026-11-07 11:18:01.364879915 +0000
+@@ -70,8 +70,9 @@
+       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
+ 
+       <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-ink-muted sm:px-6">
+-        Every transfer is recorded on-chain. Price and custody history is public for all issued
+-        tickets.
++        Every transfer is recorded in a custody ledger, and price and custody history is public for
++        all issued tickets. On-chain recording starts when the ticket program is deployed; in this
++        build the ledger is simulated.
+       </footer>
+     </div>
+   );
+diff -ruN a/components/EventCard.tsx b/components/EventCard.tsx
+--- a/components/EventCard.tsx	2026-11-06 23:43:04.000000000 +0000
++++ b/components/EventCard.tsx	2026-11-07 11:18:04.156889581 +0000
+@@ -8,9 +8,9 @@
+   const sold = event.totalSupply ? event.issuedCount / event.totalSupply : 0;
+ 
+   const rules: string[] = [];
+-  if (event.requiresVerifiedWallet) rules.push("Verified wallets only");
++  if (event.requiresVerifiedWallet) rules.push("Verified wallets only (policy)");
+   if (event.resalePriceCapBps != null) {
+-    rules.push(`Resale capped at +${event.resalePriceCapBps / 100}%`);
++    rules.push(`Resale capped at +${event.resalePriceCapBps / 100}% (policy)`);
+   }
+   if (!event.resaleEnabled) rules.push("Transfers closed");
+ 
+diff -ruN a/components/SyntheticNotice.tsx b/components/SyntheticNotice.tsx
+--- a/components/SyntheticNotice.tsx	1970-01-01 00:00:00.000000000 +0000
++++ b/components/SyntheticNotice.tsx	2026-11-07 11:17:26.117758186 +0000
+@@ -0,0 +1,17 @@
++import type { DataSource } from "@/lib/types";
++
++/**
++ * The backend's own account of the payload, printed next to the numbers rather
++ * than in the header, because it is about them. Rendered only when the payload
++ * says it is synthetic, so a live ledger removes it without a code change.
++ */
++export function SyntheticNotice({ dataSource }: { dataSource?: DataSource | null }) {
++  if (!dataSource?.synthetic) return null;
++
++  return (
++    <p className="rounded-lg border border-hairline bg-plane px-4 py-2 text-xs text-ink-2">
++      {dataSource.label} No ticket program is deployed for this build, so every price and custody
++      row here is simulated.
++    </p>
++  );
++}
+diff -ruN a/lib/types.ts b/lib/types.ts
+--- a/lib/types.ts	2026-11-06 23:53:49.000000000 +0000
++++ b/lib/types.ts	2026-11-07 11:17:50.419842057 +0000
+@@ -9,6 +9,17 @@
+ 
+ export type SolanaCluster = "devnet" | "testnet" | "mainnet-beta" | "localnet";
+ 
++/**
++ * What a payload is, in the backend's own words. Present on every response that
++ * carries ledger-derived data; `synthetic` is the flag the UI must not drop.
++ */
++export interface DataSource {
++  mode: string;
++  synthetic: boolean;
++  label: string;
++  note?: string;
++}
++
+ /** 32-byte base58 public key. Kept as a branded-ish alias for readability. */
+ export type WalletAddress = string;
+ 
+@@ -68,6 +79,8 @@
+   resalePriceCapBps: number | null;
+   /** Transfers only permitted to wallets that passed verification. */
+   requiresVerifiedWallet: boolean;
++  /** Present on live payloads; absent from the bundled fixtures. */
++  dataSource?: DataSource;
+ }
+ 
+ export interface Ticket {
+@@ -129,6 +142,7 @@
+   /** Chronological, oldest first. Includes non-sale entries for the trail. */
+   entries: LedgerEntry[];
+   stats: ResaleStats;
++  dataSource?: DataSource;
+ }
+ 
+ export type VerificationMethod = "wallet_signature" | "identity" | null;
+@@ -194,12 +208,14 @@
+   priceSeries: PricePoint[];
+   markupDistribution: MarkupBucket[];
+   topDestinations: DestinationRow[];
++  dataSource?: DataSource;
+ }
+ 
+ /** Cursor-paginated list envelope used by the collection endpoints. */
+ export interface Page<T> {
+   items: T[];
+   nextCursor: string | null;
++  dataSource?: DataSource;
+ }
+ 
+ export interface EventQuery {

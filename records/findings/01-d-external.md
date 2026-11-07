@@ -4,7 +4,7 @@
 **Scope:** programme §3 Phase 1 domain 5 (external influence discovery) and §2.E (data-source registry).
 **Authority:** `RESEARCH-PROGRAM.md` §4 in full, especially §4.2 (mechanism before inclusion), §4.7
 (predictive vs causal), §4.8 (temporal correctness); `records/00-data-situation.md`; the wire contract
-`/home/friend/ticketing-frontend/lib/types.ts`.
+`../ticketing-frontend/lib/types.ts`.
 
 ---
 
@@ -248,3 +248,49 @@ the operator is in `00-data-situation.md` and stands: four fields per listing ev
 (a) does the company's internal ledger hold seat coordinates and listing events that the wire contract
 omits, and (b) can the company obtain Ticketmaster partner access — both are operator questions, not
 research questions.
+
+---
+
+## CORRECTION (2026-11-07T11:28Z) — the headline counts are not derivable from the tables
+
+Appended by the corrections pass after `records/findings/00-verification-round1.md` §6. Nothing above is
+deleted.
+
+**Withdrawn sentence, "What I concluded":**
+
+> "Nineteen candidate variables were examined against §4.2 and eleven survive at usable priority."
+
+**What the file's own tables give, counted on 2026-11-07.**
+
+Table C-1 has **17** rows, V1 to V17. Table C-2 has **11** rows, so 28 candidates were examined, not 19. The
+priority column of C-1, counted row by row:
+
+| Priority | Variables | Count |
+|---|---|---|
+| 1 | V1, V2, V3, V4, V5 | 5 |
+| 2 | V6, V7, V8, V9 | 4 |
+| 3 | V10, V11, V12, V13 | 4 |
+| 4 | V16, V17 | 2 |
+| 0 | V14, V15 | 2 |
+| **total** | | **17** |
+
+**Corrected statement.** Nine variables are at priority 1–2, which is the reading of "usable priority" the file
+itself sets up in §1 (1 = build now, 2 = build after the core); of those nine, four are obtainable from the
+contract today (V1, V2, V3, V5) and five need outside data (V4, V6, V7, V8, V9). Fifteen are at priority above
+0. Two are at priority 0 and blocked on a data requirement (V14 listing depth, V15 seat coordinates), and
+eleven are rejected in Table C-2.
+
+No reading of the file yields 19 candidates or 11 survivors at usable priority. The number 11 does exist
+twice in the record, and neither is a survivor count: it is the number of rows in Table C-2 (rejected), and it
+is the number of admitted variables that are obtainable only outside the contract (V4, V6–V13, V16, V17).
+The most likely explanation is that the abstraction was written from memory of the reject table. Nothing is
+substituted for it here beyond the counts above.
+
+**Why it was not caught.** `records/C-variable-registry.md` C-5 and the P1.D row of `records/A-research-ledger.md`
+both already record that the headline does not reconcile, and both follow the tables. They are right and this
+correction brings the file into line with them.
+
+**Consequence.** None of the substance changes: the admission test, the clock as the decisive filter, the
+licence rejections, and the finding that listing depth and seat coordinates are the two highest-value variables
+and neither is obtainable. What is withdrawn is the abstract's count, which a reader could otherwise cite
+without opening the tables.

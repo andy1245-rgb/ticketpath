@@ -1,0 +1,32 @@
+# Packaging metadata for the judge, not for a build.
+#
+# Nothing in this repository is built, installed or published: the package runs from the
+# source tree with `python3 -m ticketpath.server`, standard library only. There is therefore
+# no [build-system] table and no build backend declared, because there is no build to declare
+# one for, and adding one would describe machinery that does not exist here.
+#
+# What this file does declare: the Python the code actually needs, the one package, and that
+# it has no runtime dependencies at all.
+
+[project]
+name = "ticketpath"
+version = "0.1.0"
+description = "Primary-market ticket pricing off the platform's own resale record: bounded arithmetic, declared refusals, standard library only."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+dependencies = []
+
+keywords = ["tickets", "pricing", "resale", "solana"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[tool.ticketpath]
+# Recorded here so the claim in the metadata can be checked by reading one line.
+runtime-dependencies = 0
+python = "3.12"
+entry-points = { server = "python3 -m ticketpath.server", guidance = "python3 tools/guidance.py" }
+tests = "python3 -m unittest discover -s tests"

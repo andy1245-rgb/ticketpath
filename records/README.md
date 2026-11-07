@@ -28,7 +28,13 @@ records are the curated index over them. Never delete a finding to make a conclu
 tidy — record the conflict in `F`.
 
 `DELIVERABLE.md` is the Phase 8 integrated specification (the programme's §5 final
-deliverable).
+deliverable). **It is a stub and says so at the top: it is not written yet.** It carries a
+status per required section and points at the record that holds the material for each, so the
+promise of a Phase 8 document is not a missing file. Why it cannot be written from the data on
+this machine is in `records/findings/01-b-identifiability.md` and `records/F-decision-log.md`.
+
+`REPO-CONSISTENCY.md` is the audit of this tree against these files: what contradicted what,
+what was changed, the command that shows each change, and what could not be fixed.
 
 ## Evidence classes (programme §4.3) — mandatory on every important conclusion
 

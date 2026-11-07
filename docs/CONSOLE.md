@@ -1,0 +1,51 @@
+# The console: what a judge sees, and why each sentence is admissible
+
+One HTML page at **http://127.0.0.1:8788/**, server-rendered by `ticketpath/console/`,
+Python standard library only, no framework, no CDN, no build step, no JavaScript. Every
+control is a query parameter, so every state has a URL. `docs/RUN.md` has the command.
+
+## The order of the page, and why
+
+1. **Banner.** T1 verbatim, then the sentence about no program being deployed, then the
+   SHA-256 of the store the numbers came from. A screenshot names its own source.
+2. **Controls.** Event, tier, `asOf`, `capBps`, `feeLamports`, `tau`, `Recompute`, and
+   `Show the refusal` (which submits `sim=1` — it is a button, not a script).
+3. **Evidence strip.** `[FIXTURE] 12 resales · 12 tickets · 9 at the ceiling`,
+   `[FIXTURE] 8 events on this platform, 5 with any resale`, `[DEVNET] 0 on-chain
+   transactions`. The evidence count is the headline metric on purpose.
+4. **The decision**, by regime:
+   - *capped and binding*: `at least {ceiling} SOL per ticket`, A19 in full, the value
+     line as a floor, `Range: 1.38 SOL and up. We do not state an upper bound from this
+     record.`, and `This is a bound, not an optimum.`
+   - *uncapped* or *capped, no mass point*: a point, `Band {lo} – {hi} SOL`, T3, the
+     02-d range line, A4, and A20 on the no-mass-point regime.
+   - *no resale*: the refusal, the prior band labelled as a band around the prior, A13 or
+     A12, A17, the exact cap arithmetic, and the sentence naming what would change it.
+5. **The market**: median and mean markup, the at-ceiling count with A16, any repeat sale
+   as A18, and the composite rate as A1 with T4.
+6. **The refusals**, always present: sale probability at a price (`not_identified`), the
+   interior optimum (`no_demand_response`), net revenue without a fee (`no_fee_model`),
+   and the path (a named reason: `cap_mass_dominates`, `insufficient_marks`,
+   `insufficient_time_spread`, `degenerate_design`, `outside_support`), plus
+   `no_upper_bound` on a binding event.
+7. **The design panel**, badged `[DESIGN]`, with the instruction → check → error-code
+   table.
+8. **The simulated state machine**, every line badged `[SIMULATED]`, with the caption
+   saying it proves the arithmetic and not that Token-2022 calls a hook.
+9. **The chain slot**, last, `[DEVNET]` in its absent state until an artefact verifies.
+
+## The one rule that is enforced by tests, not by discipline
+
+Every number is rendered through `units.num`, which puts the badge in the same text run,
+in front of the value. `tests/test_console_page.py` asserts that every `.n` span begins
+with one of the eight badges and that the only digits on the page outside a badge are
+inside a sentence from `ticketpath/core/labels.py`. `tests/test_guidance_api.py` walks
+the payload and fails on any number without a badge, a basis naming the record and its
+counts, and a label id.
+
+## What is intentionally absent
+
+No listing, bid, buy or checkout control. No sale probability at a price. No interior
+optimum. No accuracy, calibration or coverage number. No placeholder devnet signature and
+no explorer link until an artefact verifies. No CSS-only label, no tooltip, no
+hover-only text.

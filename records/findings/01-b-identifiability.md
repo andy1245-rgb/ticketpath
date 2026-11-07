@@ -2,7 +2,7 @@
 
 **Status:** complete (first pass). **Written:** 2026-11-07T08:55Z. **Author:** Phase 1-B research agent.
 **Depends on:** `RESEARCH-PROGRAM.md` §4, §3 (Phase 1; Phase 2 A, C, F); `records/00-data-situation.md`;
-`/home/friend/ticketing-frontend/lib/types.ts`; `records/README.md`. **Append-only.** Disagreements with
+`../ticketing-frontend/lib/types.ts`; `records/README.md`. **Append-only.** Disagreements with
 `00-data-situation.md` are recorded in §5, not resolved silently.
 
 ---
@@ -428,3 +428,117 @@ https://doi.org/10.2307/1907382
 
 Working, E. J. (1927). What do statistical "demand curves" show? *QJE* 41(2), 212–235.
 https://doi.org/10.2307/1883501
+
+---
+
+## CORRECTION 1 (2026-11-07T11:28Z) — the fixture counts in §4.1 and §4.3 are row counts, not ticket counts
+
+Appended by the corrections pass after `records/findings/00-verification-round1.md`. Nothing above is deleted.
+The sentences quoted are withdrawn as printed; the arguments they support are restated below where they survive.
+
+**Withdrawn sentence, §4.1:**
+
+> "Here selection is direct: only 90 of 128 fixture tickets ever sell, so pairs come from the liquid subset of
+> an already-selected subset."
+
+**What is true.** 90 is the number of `sale` **rows** in `lib/mock/`, not the number of tickets that sell.
+`records/00-data-situation.md` §2 records the fixture as 253 ledger rows "(128 `issue`, 90 `sale`, 21
+`transfer`, 14 `redeem`)" and, in the same paragraph, that "79 of 128 tickets have no sale at all
+(`lastSalePriceLamports` null)". Arithmetic on those two statements:
+
+- 128 + 90 + 21 + 14 = 253 rows, which is the total the audit states.
+- 128 − 79 = **49** tickets with at least one sale.
+- 90 sale rows spread over 49 tickets means 41 tickets sold more than once, and that repeat-sold group, not
+  the 90 rows, is the population a repeat-sales index uses.
+
+The two numbers already sat in this file and disagreed: §4.6 uses the audit's "79-of-128" correctly. The
+figure to carry forward is **49 tickets sell, 79 never do, from 90 sale rows**.
+
+**The second defect in the same sentence: it breaks the programme's own rule.** `00-data-situation.md` §2
+adopts the rule in terms: fixtures "may be used only to exercise code paths and schemas (parsing, validation,
+arithmetic, rendering, plumbing). They may never enter an estimation, a validation claim, or a result. **No
+number in this programme comes from `lib/mock/`.**" §4.1 uses a fixture count as a measured selection rate
+inside the T1 argument. It is one of two places in this file where a `lib/mock/` figure does argumentative
+work (the other is noted at the end of this correction), and it is withdrawn.
+
+**Also corrected, §4.3 item 2:** "This matters: 14 of 128 tickets redeem". 14 is the `redeem` row count. The
+audit reports no ticket-level count of redemptions, so unlike the sale case the ticket count **cannot be
+reconciled from the record**: one redemption per ticket would make 14 rows 14 tickets, but nothing in
+`00-data-situation.md` establishes that, and I did not count the fixture to settle it, because the rule above
+forbids producing a number that way. Read the claim as "14 `redeem` rows". The substantive point, that
+redemption removes a ticket for reasons correlated with demand and therefore belongs in a competing-risks
+specification rather than in censoring, does not depend on the count and stands (Fine & Gray 1999).
+
+**Checked and left alone.** The three uses of "79-of-128" in §4.3 item 3, §4.6 and §5.3 are the audit's own
+recorded property of the fixture, and the value is arithmetically consistent with the row counts, so nothing
+is substituted. One of the three, §4.3 item 3, does use the fixture fraction to argue that a cure component
+"fits 79-of-128 better than a long tail". That is a fixture figure making a model-form choice, which the rule
+also forbids. The cure argument survives on Boag (1949) and on the logic that the population is censused; it
+should be argued from those and not from the fixture's never-sell fraction.
+
+**Consequence.** The selection argument stands as class C and is not weakened: properties that transact twice
+are not a random sample (Gatzlaff & Haurin 1997; Steele & Goy 1997), and on the record we actually hold, the
+number of tickets that have sold is zero, because there is no real ledger yet. What is withdrawn is the
+sentence's implicit claim to have measured the selection rate on data.
+
+---
+
+## CORRECTION 2 (2026-11-07T11:28Z) — §5.3's within-event cap claim is withdrawn
+
+**Withdrawn sentence, §5.3 item 3:**
+
+> "Better: `resalePriceCapBps` is *observed and varies*, across events and across tiers within an event
+> because it is bps over each tier's own face — so the cap is an instrument, not merely a nuisance"
+
+**What is true.** `resalePriceCapBps: number | null` is a **single field on `Event`**. `TicketTier` carries
+five fields and no cap (`../ticketing-frontend/lib/types.ts`). The basis-point cap therefore does
+**not** vary within an event. What varies within an event is the *money ceiling* that the one cap implies,
+which is `faceValue_tier × (1 + c)` and so moves exactly in proportion to each tier's own face value. A
+ceiling that is a fixed multiple of the tier's own price carries no information independent of that price. It
+is collinear with the tier's face by construction.
+
+`01-c-methods.md` §1.4(1) reaches this and is right. One detail: its citation is to "§4.4(ii)", while the
+sentence it quotes and corrects is §5.3's. §4.4(ii) above is already correct on this point ("its absolute
+level differs across tiers within one event"), so nothing in §4.4(ii) changes.
+
+**Withdrawn:** the claim that the cap supplies within-event *identifying* variation, and with it the
+unqualified phrase "the cap is an instrument". **What survives:** the cap is observed rather than latent; it
+varies across events, where the instrument lives; the mass point at the cap is observable as `markupBps`
+equal to the cap; and the one-sided statements V ≥ p₀(1+c) at different cap levels still trace a lower bound
+on the willingness-to-pay survival function. The cross-event instrument is confounded with everything else
+that varies across events, and any use of it has to name that confound.
+
+**Consequence.** Any claim resting on within-event cap variation is withdrawn. No other section of this file
+makes one: §4.5(ii)'s scale-free algebra (raising the primary price raises the ceiling in the same
+proportion) does not need within-event variation and stands as written. What cannot be claimed from the cap
+is econometric leverage across tiers within a single event.
+
+`records/C-variable-registry.md` C-3 repeats the withdrawn sentence and carries its own correction.
+`records/D-model-registry.md` C6 and `records/B-mathematical-kb.md` C6 already record `01-c`'s version and
+agree with this one.
+
+---
+
+## CORRECTION 3 (2026-11-07T11:28Z) — two author attributions in §7 are wrong
+
+§7 opens: "Metadata for every item below was checked against Crossref or OpenAlex during this pass; no
+citation is from memory alone". Two entries do not survive a Crossref query made for this correction pass on
+2026-11-07 (`https://api.crossref.org/works/<doi>`):
+
+1. The entry printed as "Luo, L. (2019). Analyzing age-period-cohort data: a review and critique. *Annual
+   Review of Sociology* 45, 467–492" against `10.1146/annurev-soc-073018-022616`. Crossref returns that DOI
+   as **Fosse, E. & Winship, C. (2019)**, same title, journal, volume, pages and year. The first author is
+   wrong and the second is omitted. Cite it as **Fosse & Winship (2019)**; the proposition it is cited for in
+   §3 and §4.2 (bounds, not point estimates, because every APC point estimate is a normalisation) is
+   unaffected.
+2. The entry printed as "Mason, K. O., Mason, W. M., **Winship, C.**, & Poole, W. K. (1973)" against
+   `10.2307/2094398`. Crossref returns the third author as **Winsborough, H. H.** Titles, journal, volume and
+   pages are right; the surname is wrong.
+
+Both errors are repeated in `02-a-price-paths.md` and the first is repeated in `03-b-temporal-correctness.md`;
+each of those files carries its own dated correction. `03-b`'s Mason entry already has Winsborough correct.
+
+**Consequence.** The diligence claim in §7 is not retracted: the DOIs, titles, journals, volumes and pages
+were checked and are right. The author names were not, in two entries out of 35, which is the reason a
+reader should treat "checked against Crossref" as a claim about the DOI record rather than about the printed
+author list.

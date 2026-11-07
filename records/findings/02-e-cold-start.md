@@ -8,7 +8,7 @@ named in §3 Phase 4 ("Cold-start performance") and the evidence standards of §
 `records/00-data-situation.md` (D1, D2, D3; Gaps 1-4); `records/findings/01-b-identifiability.md`
 (§4.1 T1, §4.4 T4b, §4.5 T5, §4.6 T1′ cold start, measurement error); `records/findings/01-a-market-structure.md`
 (§2 price path, §3 caps, §4 primary vs secondary, §5 liquidity, §6 what survives); `records/F-decision-log.md`
-(D1, D2, D3); `/home/friend/ticketing-frontend/lib/types.ts` (read field by field in this pass);
+(D1, D2, D3); `../ticketing-frontend/lib/types.ts` (read field by field in this pass);
 `records/E-data-source-registry.md` (S7 Get Protocol not obtainable; S8 own ledger).
 **Append-only.** Nothing here edits another file; the registry rows this implies are listed in §10.
 
@@ -1014,3 +1014,69 @@ paper, and the class is `01-a`'s.
 - Ekeland, I., Heckman, J. J. & Nesheim, L. (2004). *JPE* 112(6), 1278-1320. https://doi.org/10.1086/379947
 - Gallego, G. & van Ryzin, G. (1994). *Management Science* 40(8), 999-1020. https://doi.org/10.1287/mnsc.40.8.999
 - 16 CFR Part 464, 90 FR 2166 (all-in ticket pricing display, effective 2025-05-12), as recorded in `01-a` §1.
+
+---
+
+## CORRECTION 1 (2026-11-07T11:28Z) — the band is a multiplier on the estimate, not a markup range around face
+
+Appended by the corrections pass after `records/findings/00-verification-round1.md` §11. Nothing above is
+deleted.
+
+**Withdrawn labelling, §4.7 table and E8:**
+
+> "| 0.406 (borrowed upper bound) | ±0.668 | −49% to +95% |"
+>
+> "E8 | A 90% band on a brand-new event's mean markup runs from about −49% to +95% at the borrowed upper bound
+> for τ, and from −15% to +18% at τ=0.10"
+
+The column header that produces this, "as markup around face", is part of what is withdrawn. **What the
+column actually computes** is exp(±1.645τ), applied to the point estimate: exp(−0.668) = 0.513 and
+exp(+0.668) = 1.950, so the last row reads **×0.51 to ×1.95 of the estimate**, which is −49% / +95% *relative
+to the estimate* and not relative to face.
+
+**Corrected label.** "as a multiplier on the point estimate". The log-unit column above it is correctly
+labelled.
+
+**The same band centred where the model puts it.** The file's own fitted centre is μ = 0.261 (§4.7, the fit
+at lines 519–535; and E6:
+the cold-start point estimate is the pooled mean and does not depend on τ). An absolute band on markup over
+face is therefore exp(0.261 ± 1.6449τ):
+
+| declared τ | 90% band in log units | as a multiplier on the estimate | as markup over face, centred at μ = 0.261 |
+|---|---|---|---|
+| 0.10 | ±0.164 | ×0.849 to ×1.178 | 1.102 to 1.530, i.e. +10% to +53% |
+| 0.20 | ±0.329 | ×0.720 to ×1.390 | 0.934 to 1.804, i.e. −7% to +80% |
+| 0.30 | ±0.493 | ×0.611 to ×1.637 | 0.793 to 2.125, i.e. −21% to +113% |
+| 0.406 | ±0.668 | ×0.513 to ×1.950 | 0.666 to 2.532, i.e. −33% to +153% |
+
+Arithmetic shown, since these are new numbers: exp(0.261 − 0.164) = 1.102, exp(0.261 + 0.164) = 1.530, and so
+on for each row. The verification pass prints "−33% to +155%" for the last row; that upper end comes from
+rounding 0.261 + 0.668 to 0.935, and to three decimals the exponent is 0.929, so 2.532 and +153% is the
+figure that follows from this file's own inputs.
+
+**Why it matters.** As printed, "−49% to +95%" reads as "the markup on a new event can be 49% below face".
+That contradicts the file's own class-A inputs (26% of resold tickets below face, mean +41%), and it puts the
+sign of the downside in the wrong place. A reader who takes the label literally gets the direction of the
+cold-start risk backwards.
+
+**What stands.** Every number in the table is arithmetically correct as a multiplier; the prior fit, the χ²
+spans, the statement that the width is a floor because V(τ) > 0, and the prose "pinned only to roughly minus
+half to double" (which is the multiplier reading and is right). What is withdrawn is the "around face" label
+and E8's phrasing. E8 should read: "a 90% band on a brand-new event's mean markup is a factor of about 0.51 to
+1.95 on the point estimate at the borrowed upper bound for τ, and 0.85 to 1.18 at τ=0.10; as markup over face
+centred at μ = 0.261 that is −33% to +153%, and +10% to +53% at τ=0.10".
+
+---
+
+## CORRECTION 2 (2026-11-07T11:28Z) — the Ekeland, Heckman & Nesheim reference is the wrong issue and pages
+
+**Withdrawn entry:**
+
+> "- Ekeland, I., Heckman, J. J. & Nesheim, L. (2004). *JPE* 112(6), 1278-1320. https://doi.org/10.1086/379947"
+
+**What is true.** A Crossref query for that DOI on 2026-11-07 returns *Journal of Political Economy* **112(S1),
+S60–S109**, "Identification and Estimation of Hedonic Models". `01-b`'s reference list has it right. The paper
+the argument uses is the same one, and its proposition (preferences and technology identified from a single
+market only up to affine transformations, §3.2) is unaffected.
+
+**Corrected reading.** Cite it as *JPE* 112(S1), S60–S109. Nothing else in this file changes.

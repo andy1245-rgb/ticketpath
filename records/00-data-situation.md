@@ -17,8 +17,8 @@ result is load-bearing.
 
 | Thing | Verified state |
 |---|---|
-| `/home/friend/ticketPricing/` | Two files at audit time: `AGENTS.md`, `RESEARCH-PROGRAM.md`. Not a git repository (`git status` → `fatal: not a git repository`). |
-| `/home/friend/ticketing-frontend/` | Next.js + React + TypeScript app. 7 routes (`/`, `/events/[slug]`, `/tickets/[id]`, `/my-tickets`, `/organizer`, `/verify`, plus `not-found`/`error`). `components/` are presentational and never fetch. `lib/api.ts` is the single data seam. |
+| `.` (this repository root) | Two files at audit time: `AGENTS.md`, `RESEARCH-PROGRAM.md`. Not a git repository (`git status` → `fatal: not a git repository`). |
+| `../ticketing-frontend/` | Next.js + React + TypeScript app. 7 routes (`/`, `/events/[slug]`, `/tickets/[id]`, `/my-tickets`, `/organizer`, `/verify`, plus `not-found`/`error`). `components/` are presentational and never fetch. `lib/api.ts` is the single data seam. |
 | Backend | **None.** No server directory, no route handlers, no database, no migrations, no ORM schema. `API_CONTRACT.md` is a specification for a backend that does not yet exist. |
 | Deployed Solana program | **None referenced.** No `programId`, `PROGRAM_ID` or `program_id` anywhere in the frontend tree (grep over `*.ts|*.tsx|*.md|*.json`, `node_modules` excluded). Nothing in the app constructs a transaction; wallet interaction is a message signature only (`lib/solana.ts` → `verificationMessage`, "proves key ownership, is not a transaction, and cannot move tokens"). |
 | Toolchain | `python3` 3.12.3, **no pip, no ensurepip, no numpy/scipy/pandas/sklearn/statsmodels**, no `uv`, no `conda`, no virtualenv on disk. `venv` module exists but cannot install anything (no ensurepip). Network egress works (devnet RPC reachable, web search and the arXiv CLI work). |
@@ -163,7 +163,7 @@ sell-out and holdback-release times are unknown.
 ```bash
 # no backend, no program id
 grep -rn "programId\|PROGRAM_ID" --include=*.ts --include=*.tsx --include=*.md \
-  /home/friend/ticketing-frontend | grep -v node_modules     # → no matches
+  ../ticketing-frontend | grep -v node_modules     # → no matches
 # fixtures are not real accounts
 curl -s -X POST https://api.devnet.solana.com -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"getAccountInfo",

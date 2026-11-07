@@ -5,7 +5,7 @@
 P1.D) checked against the file each rests on: `records/00-data-situation.md`,
 `records/findings/01-a-market-structure.md`, `records/findings/01-b-identifiability.md`,
 `records/findings/01-d-external.md`, `records/README.md`, `records/F-decision-log.md`, and for the
-P0 rows the frontend tree at `/home/friend/ticketing-frontend/`. Citations checked by DOI lookup at
+P0 rows the frontend tree at `../ticketing-frontend/`. Citations checked by DOI lookup at
 Crossref and by fetching the regulator and register documents the findings quote.
 I did not edit the ledger or any finding. Nothing was committed or pushed.
 
@@ -306,3 +306,46 @@ naming both versions and leaving it open. It is an operator or orchestrator deci
 settled from the documents (the tier used at dispatch, the Irish commencement, the antitrust verdict,
 the Get Protocol count) I have said so rather than inferring. Quotes are verbatim, with ellipses where
 text is elided; nothing is paraphrased inside quotation marks.
+
+---
+
+## CORRECTION (2026-11-07T11:28Z) — the Aigner 404 finding is false, and is withdrawn
+
+Appended by the corrections pass after `records/findings/00-verification-round1.md` §2. Nothing above is
+deleted. This is the first finding in this file that the record has had to withdraw, so the withdrawal is
+stated at length.
+
+**Withdrawn text, §3 "Confirmed wrong as cited", first bullet:**
+
+> "**`10.1016/S0304-4076(73)90005-5`** (`01-b` §7, Aigner 1973, *Journal of Econometrics* 1(1), 49-59).
+> Crossref returns **HTTP 404**. A stray `S` has been inserted: the correct DOI is
+> **`10.1016/0304-4076(73)90005-5`**, which resolves to exactly the cited title. This is the single
+> unresolvable citation in the records, and it lands on the sentence in `01-b` claiming every citation
+> was checked."
+
+**What is true.** `01-b-identifiability.md` does not contain the S-prefixed DOI. Checked in the working copy
+on 2026-11-07: the Aigner DOI appears twice and both are the resolving form, at line 246 as a link and at
+line 325 in the reference list. The two occurrences of `S0304-4076` in the file are both Bollinger (1996),
+`10.1016/S0304-4076(95)01730-5`, where the `S` belongs. A Crossref query for
+`10.1016/0304-4076(73)90005-5` on 2026-11-07 returns Aigner, "Regression with a binary independent variable
+subject to errors of observation", *Journal of Econometrics* 1, 49-59.
+
+So the 404 was real and was produced by querying a string that is not in the file. The check was run against
+the wrong input and its result attributed to `01-b`. Every sentence of the bullet is withdrawn, including
+"This is the single unresolvable citation in the records".
+
+**What this does not rescue.** The closing clause of the bullet, that the sentence in `01-b` claiming every
+citation was checked is false as printed, is **true for a different reason**: two author attributions in that
+reference list are wrong (see `01-b` CORRECTION 3 and `00-verification-round1.md` §4). Consequently the
+opening sentence of this section, "Every DOI cited in the three findings resolves to the cited title, author
+set and journal, with one exception", is also wrong, because the author sets of two entries do not match
+Crossref. The correct tally for this section is: no unresolved DOI, two wrong author sets, one wrong page
+range (`02-e`, Ekeland et al.).
+
+**Propagation.** The false finding was inherited by `records/A-research-ledger.md` ("Defects the verification
+found that no record carries") and by `00-adversarial-review-phase1.md` (its notes on the prior pass). Both
+carry a dated correction withdrawing it. No other file repeats it.
+
+**What stands in this file.** Everything else in §3: the 90 FR 2066 finding and its Federal Register document
+2024-30293 detail, the Gov.ie 403, the unconfirmable Krueger and Get Protocol entries, the He & Lin year, and
+the whole of §1 and §2. Nothing in the verdict table rests on the withdrawn bullet.

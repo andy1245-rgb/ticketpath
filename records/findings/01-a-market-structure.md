@@ -314,3 +314,77 @@ peer-reviewed measurement of Ticketmaster-style dynamic primary pricing on a lar
 on-chain count from Get Protocol; the current status of the DOJ's own 2024 suit (the states' case is
 the one with a verdict); and the "Hakes" reference in the brief — no ticket-market paper by that
 author could be identified, so none is cited rather than guessed.
+
+---
+
+## CORRECTION 1 (2026-11-07T11:28Z) — "even after scaling" inverts the paper's own caveat
+
+Appended by the corrections pass after `records/findings/00-verification-round1.md` §3. Nothing above is
+deleted. The sentence is withdrawn as printed.
+
+**Withdrawn sentence, §4:**
+
+> "Sized three ways: resale profit of slightly over $1.17m on 56 concerts = **1.4% of primary revenue**, even
+> after scaling for the ~50% of resale the authors do not observe (class A)"
+
+**What the source says.** Leslie & Sorensen (2014) state, in the text the verification pass extracted from the
+paper:
+
+> "This is equivalent to 1.4% of the total primary market revenue for these events. … this suggests a fairly
+> modest amount of forgone profit by firms in the primary market, **even if we are accounting for only half of
+> resale activity**."
+
+**What is true.** 1.4% is the figure computed on the half of resale the authors observe. The paper does not
+scale it up, and it flags that the other half is missing. Its caveat is that the number is *incomplete*, not
+that it is conservative after correction. The words "even after scaling" therefore assert the opposite of the
+source, and do it on the number the commercial case rests on.
+
+**Corrected statement.** "resale profit of slightly over $1.17m on 56 concerts = 1.4% of primary revenue on
+the half of resale the authors observe; the authors note the figure excludes the other half (class A for the
+computed figure, not for any scaled figure)". The class A label attaches to the 1.4% as computed; a scaled
+figure does not exist in the paper and may not be quoted as though it did.
+
+**Downstream.** `records/findings/01-c-methods.md` carries the prize as "1.4–3.4%", which is `02-a`'s and this
+file's numbers at order-of-magnitude precision; it does not repeat the scaling claim. The ledger's P1.A row
+quotes "worth 1.4% of primary revenue" without the scaling clause, so it does not carry the defect, but any
+reader taking 1.4% from this record must carry the "only half of resale" caveat with it.
+
+---
+
+## CORRECTION 2 (2026-11-07T11:28Z) — the £269 figure is spliced onto a different flow
+
+**Withdrawn sentence, §3:**
+
+> "The UK's 37.1m primary tickets a year support ≈1.9m secondary sales worth £350m before fees — ≈£184 gross
+> average, ≈£269 per resale ticket inclusive of all fees."
+
+**What is true, with the arithmetic shown.** £184 is consistent with the first pair: 350 / 1.9 = 184.2. £269 is
+not: 269 × 1.9 = £511.1m, which is not £350m. £269 is £404m / 1.5m, a different flow in the same DBT
+analytical note (the note's own two pairs, as read by the verification pass at `00-verification-round1.md`
+§3). The sentence presents the two as a gross-then-all-in pair for one flow; they are two unrelated
+baselines.
+
+**Corrected statement.** Either quote the £350m / 1.9m pair with the £184 average it implies, or quote the
+£404m / 1.5m pair with £269. The two must not appear in one clause as a before-and-after. The substantive
+point the paragraph is making, that a platform's all-in price is materially above a pre-fee headline, is
+supported by the CMA's ">50% markup" finding cited two sentences earlier and does not need this pair.
+
+---
+
+## CORRECTION 3 (2026-11-07T11:28Z) — He & Lin is 2026, not 2025
+
+**Withdrawn labels.** §3 "He & Lin (*Marketing Science*, 2025)" and the reference at §7 "He, D. & Lin, S.
+(2025). *Marketing Science*. doi:10.1287/mksc.2023.0623".
+
+**What is true.** A Crossref query for that DOI on 2026-11-07 returns: He, D. & Lin, S., "Price Caps by
+Matching Platforms: The Case of Ticket Resales", *Marketing Science* **45(3):515–533**, issued 2026-05. Cite
+it as He & Lin (2026). The work is real and the proposition it is cited for in §3, that a stringent cap can
+push high-price sellers out and raise the average transaction price, is unaffected. The class C label on that
+corollary is also unaffected: it is a model result, not a measurement of this market.
+
+**One thing this correction does not settle.** `01-b` §4.5 and `records/C-variable-registry.md` C-3 state that
+no peer-reviewed study of resale price caps in ticket markets was found. This paper is a peer-reviewed study
+of exactly that subject, and this file already cites it. Whether it counts against that sentence depends on
+whether it is an econometric study or a model of matching, which I did not read and do not assert. The
+question is recorded in `records/CORRECTIONS-APPLIED.md` as noticed and not resolved; no conclusion is
+changed here.

@@ -9,7 +9,7 @@ an implementable decision rule.
 **Depends on:** `AGENTS.md`; `RESEARCH-PROGRAM.md` §3 Phase 2 C+F, Phase 5, §4; `records/README.md`;
 `records/00-data-situation.md` (Gap 4, and the rule that `lib/mock/` never enters a result);
 `records/findings/01-a-market-structure.md` §3–§6; `records/findings/01-b-identifiability.md` T4, T5,
-§4.5, §5; `records/F-decision-log.md` D1–D4, Q1–Q3; `/home/friend/ticketing-frontend/lib/types.ts`
+§4.5, §5; `records/F-decision-log.md` D1–D4, Q1–Q3; `../ticketing-frontend/lib/types.ts`
 and `API_CONTRACT.md` (read directly in this pass, for the measured product facts in §1.1).
 **Labelling:** every claim carries a class (A–E per §4.3) and a tag: **MEASURED** (a number or fact I
 read from a source or from a file in this pass, quoted with its market and sample) or **ASSERTED**
@@ -101,7 +101,7 @@ Four facts are measured in this pass and they constrain the objective rather tha
 
 | Fact | Evidence | Consequence |
 |---|---|---|
-| There is no resale-listing path in the product. Routes are `/`, `/events/[eventId]`, `/tickets/[ticketId]`, `/my-tickets`, `/organizer`, `/verify` plus error/not-found. | **MEASURED**, `ls app` in `/home/friend/ticketing-frontend` | The engine prices primary tickets only. It has no instrument for a resale ask and must not model one. |
+| There is no resale-listing path in the product. Routes are `/`, `/events/[eventId]`, `/tickets/[ticketId]`, `/my-tickets`, `/organizer`, `/verify` plus error/not-found. | **MEASURED**, `ls app` in `../ticketing-frontend` | The engine prices primary tickets only. It has no instrument for a resale ask and must not model one. |
 | The API surface is read-only except wallet verification: 9 endpoints, of which only `POST /api/wallets/:wallet/verification{,/challenge}` write, and those write a verification record. | **MEASURED**, `API_CONTRACT.md` endpoint list | No price-mutation endpoint exists. A price is fixed at event creation. A dynamic policy is a product change. |
 | `TicketTier.faceValueLamports` and `totalSupply` are the only price and quantity fields. `Event.resalePriceCapBps` is "hard ceiling on resale price as basis points over face value". | **MEASURED**, `lib/types.ts` | The cap is *proportional to the decision variable*. §2.5 turns this into a result. |
 | No fee, royalty, settlement, net-to-seller or total-price field exists anywhere in the contract. `grep -in` for fee/royalty/settle/net over `lib/types.ts` and `API_CONTRACT.md` returns three lines, all of them false positives: two `devnet` cluster names and the phrase "non-monetary". | **MEASURED**, this pass; confirms Gap 4 | The fee stack is a required configuration input. §2.6 says what would end that. |

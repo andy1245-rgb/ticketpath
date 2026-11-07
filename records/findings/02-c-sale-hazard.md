@@ -8,7 +8,7 @@ have, the estimator that follows, and what the four listing fields change.
 **Depends on:** `RESEARCH-PROGRAM.md` §3 Phase 2 A/C/F and §4; `AGENTS.md`;
 `records/00-data-situation.md` (Gap 1, Gap 2, §3, §4); `records/findings/01-b-identifiability.md` (T3 — "the
 crux"); `records/F-decision-log.md` (D2, D3, Q1–Q3); `records/README.md`;
-`/home/friend/ticketing-frontend/lib/types.ts` and `API_CONTRACT.md`.
+`../ticketing-frontend/lib/types.ts` and `API_CONTRACT.md`.
 **Does not touch:** any file but this one. No dataset was read. No estimator was run. No simulation was run.
 Nothing here is a measured quantity.
 
