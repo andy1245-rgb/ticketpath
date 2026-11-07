@@ -1,5 +1,6 @@
 """Re-check every URL the review names, against the live server on 8788."""
 
+import html as html_module
 import re
 import sys
 import urllib.error
@@ -18,8 +19,14 @@ def get(path, method="GET"):
 
 
 def text(html):
+    """The page as a reader sees it: entities resolved, tags stripped, whitespace collapsed.
+
+    Entities were left in place, so an assertion on a sentence carrying an apostrophe
+    (`the event's own record`) could not match the page it was written from.
+    """
     stripped = re.sub(r"<style>.*?</style>", " ", html, flags=re.S)
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", stripped))
+    plain = re.sub(r"<[^>]+>", "", stripped)
+    return re.sub(r"\s+", " ", html_module.unescape(plain))
 
 
 CASES = [
@@ -137,6 +144,37 @@ range298 = re.search(r"Band ([\d.]+) \u2013 ([\d.]+) SOL", band)
 check("cap 298: the band stops at the ceiling in force",
       bool(range298) and float(range298.group(2)) <= 1.03 and "at 1.0298 SOL" in band)
 
+# FINAL-PROOF-2 C3: on a page whose cap in force is the higher of the two, the sentence that
+# says where the band stops called the record's ceiling `the ceiling the cap in force puts on
+# this tier`. It now names the cap that produced the number it prints.
+above = text(body_of("/?event=evt_syn_01&capBps=3500"))
+check("typed cap above the record's: the band-stop sentence names the recorded cap",
+      "the ceiling the recorded cap of [FIXTURE] 2500 bps puts on this tier, at [EXACT] 1.25 SOL" in above
+      and "the ceiling the cap in force puts on this tier" not in above)
+
+# FINAL-PROOF-2 C2: this page printed a prior band to 1.26 SOL beside its own stated ceiling of
+# 0.84 SOL. The band printed is cut at the ceiling, the cut names the cap that made it, and the
+# declared prior's own extent is printed beside it rather than as the band.
+cold = text(body_of("/?event=evt_syn_03"))
+prior = re.search(
+    r"prior band around face: \[UNVALIDATED\] ([\d.]+) SOL \u2013 \[UNVALIDATED\] ([\d.]+) SOL", cold
+)
+stated = re.search(r"That is exactly ([\d.]+) SOL", cold)
+check("cold: the prior band's top is not above the ceiling the page states",
+      bool(prior and stated) and float(prior.group(2)) <= float(stated.group(1)),
+      f"band {prior.group(2) if prior else '?'} vs ceiling {stated.group(1) if stated else '?'}")
+check("cold: the cut is said, with the cap that made the ceiling",
+      "That band is cut at the ceiling of [EXACT] 0.84 SOL that the cap of [DECLARED] 2000 bps in force" in cold)
+check("cold: the declared prior's own extent is named beside the cut",
+      "The declared prior alone runs [UNVALIDATED] 0.65 SOL to [UNVALIDATED] 1.26 SOL" in cold)
+
+# A band end that is a limit is printed at the limit's own digits: 1.725 rounded to 1.73 sits
+# above the ceiling it was just cut at, which is the same defect one rounding away.
+rounded = text(body_of("/?event=evt_syn_05&capBps=1500"))
+check("cut band: the printed top is the ceiling's own digits, not a rounding above it",
+      "prior band around face: [UNVALIDATED] 1.40 SOL \u2013 [UNVALIDATED] 1.725 SOL" in rounded
+      and "cut at the ceiling of [EXACT] 1.725 SOL" in rounded)
+
 # The denominator stops at the event end, so a static record's rate stops falling.
 post = text(body_of("/?event=evt_syn_02&asOf=2027-06-01T00:00:00Z"))
 check("post-end cut: the denominator is the event, not the clock",
@@ -176,9 +214,21 @@ check("before: both excluded counts are printed",
 check("before: the no-denominator refusal names the excluded tickets",
       "[FIXTURE] 12 tickets are recorded on this event at this instant, and the BEFORE-ON-SALE "
       "decision mode excludes every one of them" in b)
-check("before: the excluded record is counted in the tier the block is scoped to",
-      "in this tier [FIXTURE] 0 sales of [FIXTURE] 0 on this event \u00b7 "
-      "[FIXTURE] 9 recorded sales in this tier are excluded by the mode" in b)
+# This assertion used to require `in this tier [FIXTURE] 0 sales of [FIXTURE] 0 on this event`,
+# which is the defect FINAL-PROOF-2 named C1 and found in 240 page states: the store holds 12
+# sale rows, the same sentence named 9 excluded, and the event's own slot read zero. It now
+# requires the record's count in that slot and fails on a zero, so the checker cannot pin the
+# defect back in place.
+check("before: the market block's event denominator is the record's count, not the mode's zero",
+      "in this tier [FIXTURE] 0 sales of [FIXTURE] 12 on this event enter this decision" in b
+      and "sales of [FIXTURE] 0 on this event" not in b
+      and "0 sales of 0 on this event" not in b)
+check("before: the at-ceiling count is refused where the mode excluded the rows",
+      "at the ceiling [FIXTURE] 0" not in b
+      and "no at-ceiling count while the event's own record is excluded" in b)
+check("before: the market block says the mode excludes the event's rows, and the tier's share",
+      "[FIXTURE] 12 recorded sales on this event are excluded by the mode, [FIXTURE] 9 of them "
+      "in this tier" in b)
 check("before: no primary price", "Recommended primary price" not in b)
 check("before: pooled other events named",
       "pooled mean log price-to-face over 4 other events with resale" in b)

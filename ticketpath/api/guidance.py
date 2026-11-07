@@ -100,7 +100,14 @@ def build(
                     "lamports",
                 ),
                 "regime": band["regime"],
-                "band": _band(band, tier, sales, at_ceiling, events_with_resale),
+                "band": _band(
+                    band,
+                    tier,
+                    sales,
+                    at_ceiling,
+                    events_with_resale,
+                    in_force_bps=params.get("capBpsCandidate"),
+                ),
                 "recommendation": _recommendation(recommendation, sales, at_ceiling, events_with_resale),
                 "market": _market(
                     tier,
@@ -319,9 +326,53 @@ def _decision_mode(
     return out
 
 
-def _band(band: Mapping, tier: Mapping, sales: int, at_ceiling: int, events: int) -> dict:
+def _band(
+    band: Mapping,
+    tier: Mapping,
+    sales: int,
+    at_ceiling: int,
+    events: int,
+    in_force_bps: int | None = None,
+) -> dict:
+    """The band block, with the interval the page prints scoped to the ceilings it states.
+
+    Two ceilings can be in play on one page: the recorded cap, which the sales were made
+    under, and the cap in force, which is what the page prices against. The band's upper end
+    may not sit above either of them -- a band printed above a ceiling stated in the same
+    block is the contradiction three reviews have now found, once in the recommendation band
+    and twice in the prior band.
+
+    So the printed interval is `shownLoLamports`..`shownHiLamports`: the band, cut at the
+    lowest ceiling the page states, with `ceilingAppliedLamports` and its source named so the
+    sentence can say which cap cut it. `loLamports` and `hiLamports` keep the computed band
+    unchanged, so the declared prior's own extent is still on the payload and the page can
+    print it beside the cut rather than instead of it.
+    """
     basis = f"{len(tier['marks'])} sales in this tier, {tier['atCeilingCount']} at the ceiling, {events} events with resale"
     lo = band["band"]["loLamports"]
+    hi = band["band"]["hiLamports"]
+    face = tier["faceValueLamports"]
+    ceilings: list[tuple[int, str, int | None]] = []
+    if band["band"].get("boundCeilingLamports") is not None:
+        ceilings.append(
+            (band["band"]["boundCeilingLamports"], "band_bound", band["band"].get("boundCeilingCapBps"))
+        )
+    if tier["capCeilingLamportsRecorded"] is not None:
+        ceilings.append((tier["capCeilingLamportsRecorded"], "recorded_cap", band.get("capBpsRecorded")))
+    if in_force_bps is not None:
+        ceilings.append((face * (10_000 + int(in_force_bps)) // 10_000, "cap_in_force", int(in_force_bps)))
+    shown_lo, shown_hi, applied, applied_source, applied_cap = lo, hi, None, None, None
+    if hi is not None and ceilings:
+        # The lowest ceiling binds; on a tie the cap in force is the one to name, because it is
+        # the cap the page prices against and the one the reader is holding in their hand.
+        limit, source, cap_used = min(
+            ceilings, key=lambda row: (row[0], 0 if row[1] == "cap_in_force" else 1)
+        )
+        if hi > limit:
+            shown_hi = limit
+            shown_lo = limit if (lo is not None and lo > limit) else lo
+            applied, applied_source = limit, source
+            applied_cap = cap_used
     out = {
         "regime": band["regime"],
         "available": band.get("available", True),
@@ -338,6 +389,33 @@ def _band(band: Mapping, tier: Mapping, sales: int, at_ceiling: int, events: int
         ),
         "noUpperBound": band["band"]["noUpperBound"],
         "topIsCeiling": band["band"]["topIsCeiling"],
+        # The interval the page prints. Equal to the computed band unless a ceiling the page
+        # states is below its top, in which case the cut is named here and said in words.
+        "shownLoLamports": None
+        if shown_lo is None
+        else num(shown_lo, "UNVALIDATED", basis, band["labelId"], "lamports"),
+        "shownHiLamports": None
+        if shown_hi is None
+        else num(shown_hi, "UNVALIDATED", basis, band["labelId"], "lamports"),
+        "ceilingAppliedLamports": None
+        if applied is None
+        else num(
+            applied,
+            "EXACT",
+            f"face {face} x (10,000 + {applied_cap}) / 10,000, integer arithmetic",
+            None,
+            "lamports",
+        ),
+        "ceilingAppliedSource": applied_source,
+        "ceilingAppliedCapBps": None
+        if applied_cap is None
+        else num(
+            applied_cap,
+            "DECLARED" if applied_source == "cap_in_force" else "FIXTURE",
+            "the cap that produced the ceiling this band stops at",
+            "A10" if applied_source == "cap_in_force" else None,
+            "bps",
+        ),
         # The ceiling the band's upper end was actually stopped at, and the cap that put it
         # there. The page prints it wherever the band's top is a ceiling rather than a width,
         # so the reader is told which limit the band stops at instead of meeting a number
@@ -353,6 +431,27 @@ def _band(band: Mapping, tier: Mapping, sales: int, at_ceiling: int, events: int
         ),
         "widenedToFloor": band["band"]["widenedToFloor"],
         "tau": num(band["band"]["tau"], "DECLARED", "the declared width; it enters the width only", "A8"),
+        # The cap that produced `boundCeilingLamports`, so the sentence that names the ceiling
+        # names its actual source: `the ceiling the cap in force puts on this tier` was printed
+        # at a number computed from the recorded cap.
+        "boundCeilingCapBps": None
+        if band["band"].get("boundCeilingCapBps") is None
+        else num(
+            band["band"]["boundCeilingCapBps"],
+            "DECLARED" if band["band"].get("boundCeilingCapBps") == in_force_bps else "FIXTURE",
+            "the cap that produced the ceiling the band's upper end stops at",
+            "A10",
+            "bps",
+        ),
+        "boundCeilingSource": (
+            None
+            if band["band"].get("boundCeilingLamports") is None
+            else (
+                "cap_in_force"
+                if band["band"].get("boundCeilingCapBps") == in_force_bps
+                else "recorded_cap"
+            )
+        ),
         "widthSource": band["band"]["widthSource"],
         "ceilingLamports": None
         if tier["capCeilingLamportsRecorded"] is None

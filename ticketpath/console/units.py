@@ -96,6 +96,21 @@ def money(wrapper: dict | None) -> str:
     return num(wrapper, "money")
 
 
+def money_exact(wrapper: dict | None) -> str:
+    """SOL at its exact value, for a band end that is a ceiling rather than a width.
+
+    Two decimals round 1.725 up to 1.73, which reads as a band whose top is above the
+    ceiling it was just cut at. The same rule the recommendation band already follows: a
+    top that is a limit is printed at the limit's own digits, not at a rounding of them.
+    """
+    if wrapper is None or wrapper.get("value") is None:
+        return '<span class="n">[REFUSED] not stated</span>'
+    return (
+        f'<span class="n">{esc(labels.badge(wrapper["badge"]))} '
+        f'{esc(sol_exact(wrapper["value"]))} SOL</span>'
+    )
+
+
 def percent(wrapper: dict | None) -> str:
     return num(wrapper, "percent")
 

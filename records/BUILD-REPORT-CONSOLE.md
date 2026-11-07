@@ -1458,3 +1458,197 @@ by id returns 422 with its typed reason.
 
 `CONNECT` is now routed like `TRACE` (it was not one of the five items; the review's N9 names both,
 and leaving one verb on the interpreter's 501 page would have been the same defect one word later).
+
+## 2026-11-07T16:10Z — FINAL-PROOF-2: the three contradictions, at the source
+
+**Scope:** `ticketpath/core/labels.py` (five page sentences), `ticketpath/api/guidance.py` (the band
+block carries the interval it prints, and the cap that produced each ceiling it names),
+`ticketpath/console/blocks.py` (the market block's scope and at-ceiling clause, the prior band cut, the
+band-stop sentence's source), `ticketpath/console/units.py` (one exact-SOL formatter),
+`tests/test_last_mile_fixes.py` (two assertions that pinned C1), one new test file
+`tests/test_final_proof_2_fixes.py` (14 tests), and `tools/console-check.py` (one assertion inverted,
+seven added, one helper corrected). Nothing computed was changed to make a sentence true: the
+engine's band is still the number the engine computes, and the page now prints two different things
+with two different names.
+
+The proof run's own words for the four items, and the counts it measured: 594 violations over 724
+swept states, 46 of them on the required 64-state grid, spread 30 of 64 states, by property (a) 44,
+(b) 310, (c) 240; plus `tools/console-check.py:179-181` asserting C1 as correct. Its scripts are in
+`/tmp/proof2/`; the sweep at `/tmp/proof2/03-sweep.py` was re-run unchanged, from a copy at
+`/tmp/fix/sweep-before.py` with only its JSON output path changed, against `127.0.0.1:8788`.
+
+### 1. C1: the market block printed an excluded count as a zero (240 states, 20 in the grid)
+
+`/?event=evt_syn_02&mode=before_on_sale`. The store holds 12 priced sale rows on this event and 9 in
+the General tier; the mode excludes them; the same sentence named them and called the event's total
+zero.
+
+| | text |
+|---|---|
+| before | `The market in this tier [FIXTURE] 0 sales of [FIXTURE] 0 on this event · [FIXTURE] 9 recorded sales in this tier are excluded by the mode · median markup [REFUSED] not stated · mean markup [REFUSED] not stated · at the ceiling [FIXTURE] 0` |
+| after | `The market in this tier [FIXTURE] 0 sales of [FIXTURE] 12 on this event enter this decision · [FIXTURE] 12 recorded sales on this event are excluded by the mode, [FIXTURE] 9 of them in this tier · median markup [REFUSED] not stated · mean markup [REFUSED] not stated · no at-ceiling count while the event's own record is excluded` |
+
+Three things changed and the numbers did not. The first count is still the tier's, and it is still
+zero, because zero rows enter the decision; the sentence now says `enter this decision` so the zero
+is scoped to the question it answers. The second count is the record's, taken from
+`decisionMode.excludedResales` (the count the strip prints, measured at the same cut from the same
+store) instead of the mode-filtered `eventSales`. The clause names the exclusion at event scope and
+the tier's share of it, with four singular/plural cases in `labels.py` so no count is dropped or
+printed as a clause about nothing. The at-ceiling count, `at the ceiling [FIXTURE] 0` on 9 tier
+states, was the same defect one clause to the right: the strip already refuses that count in this
+state (`no at-ceiling count while the event's own record is excluded`) and the block now prints the
+strip's sentence instead of a number the mode did not measure. The counterfactual page is unchanged:
+`in this tier [FIXTURE] 9 sales of [FIXTURE] 12 on this event`.
+
+The `N sold of M on this event` shape is kept deliberately, because it is the sentence the
+consistency sweep measures; a denominator of zero in that slot still fails the sweep, so this cannot
+regress quietly.
+
+### 2. C2: a band above a ceiling the page states (310 states, 24 in the grid)
+
+`/?event=evt_syn_03`, no parameters typed, the third event in the list.
+
+| | text |
+|---|---|
+| before | `prior band around face: [UNVALIDATED] 0.65 SOL – [UNVALIDATED] 1.26 SOL . That is a band around the declared prior, not a price for this ticket.` |
+| after | `prior band around face: [UNVALIDATED] 0.65 SOL – [UNVALIDATED] 0.84 SOL . That is a band around the declared prior, not a price for this ticket. [EXACT] That band is cut at the ceiling of [EXACT] 0.84 SOL that the cap of [DECLARED] 2000 bps in force puts on this tier, because a band above a ceiling the page states is the contradiction this sentence closes. The declared prior alone runs [UNVALIDATED] 0.65 SOL to [UNVALIDATED] 1.26 SOL ; the ceiling bounds what can be transacted, so the band stops where it does.` |
+
+Chosen branch: truncate at the ceiling and say so. `guidance._band` now carries three things instead
+of one: `loLamports`/`hiLamports` (the engine's band, untouched: 1,263,019,214 lamports on this page),
+`shownLoLamports`/`shownHiLamports` (the interval the page prints, cut at the lowest ceiling the page
+states) and `ceilingAppliedLamports` with its source and cap. The ceilings considered are the cap in
+force, the recorded cap, and any ceiling the band's own upper end was already stopped at; on a tie the
+cap in force is named, because it is the one the page prices against. The console prints the shown
+interval, says which cap cut it, and prints the declared prior's own extent beside the cut rather than
+as the band. Nothing in `core` moved; a doc quoting the prior's own 0.65 to 1.26 (`findings/08`) is
+still true, and so is the payload.
+
+A second rounding defect fell out of the sweep at this point: at `evt_syn_05&capBps=1500` the cut band
+printed `1.73 SOL` against a ceiling of `1.725 SOL`, because a band end that is a limit was formatted
+to two decimals. `units.money_exact` prints a limit at its own digits, the same rule the value band
+already followed, and the ceiling named in the cut sentence is now printed exactly too (`[EXACT]
+0.72086 SOL`, not `0.72`). That closed the last 17 states of the proof's "band above the cap in force,
+no ceiling printed" class.
+
+### 3. C3: the band-stop sentence named the wrong cap (44 states, 2 in the grid)
+
+`/?event=evt_syn_01&capBps=3500`, face 1.00 SOL, recorded cap 2500 bps.
+
+| | text |
+|---|---|
+| before | `The top of that band is the ceiling the cap in force puts on this tier, at 1.25 SOL, so the range stops where the cap does.` |
+| after | `The top of that band is the ceiling the recorded cap of [FIXTURE] 2500 bps puts on this tier, at [EXACT] 1.25 SOL , which is below what the cap of [DECLARED] 3500 bps in force allows, so the range stops at the recorded ceiling.` |
+
+The payload now carries the cap that produced `boundCeilingLamports` (`boundCeilingCapBps`,
+`boundCeilingSource`), rather than the console re-deriving it, and the sentence follows that source.
+When the recorded cap is the cap in force, or the typed cap is the lower one, the original sentence is
+still what the page prints, because on those pages it is true: `?event=evt_syn_01&capBps=298` still
+reads `the ceiling the cap in force puts on this tier, at 1.0298 SOL`.
+
+### 4. The checker that certified C1, and the rest of the tool
+
+`tools/console-check.py` had 47 assertion lines plus 23 response cases; one of the 47 was written
+from the page's rendering, not from the rule, and it required the defect. That is the whole of the
+class in this file: the other 46 assertions were read one by one against the rule that governs them,
+and none of them asserts a number the page cannot know. What I changed:
+
+1. **Inverted, line 179-181.** Before: `check("before: the excluded record is counted in the tier the
+   block is scoped to", "in this tier [FIXTURE] 0 sales of [FIXTURE] 0 on this event · [FIXTURE] 9
+   recorded sales in this tier are excluded by the mode" in b)`. After: `check("before: the market
+   block's event denominator is the record's count, not the mode's zero", "in this tier [FIXTURE] 0
+   sales of [FIXTURE] 12 on this event enter this decision" in b and "sales of [FIXTURE] 0 on this
+   event" not in b and "0 sales of 0 on this event" not in b)`. The old form could not fail on the
+   bug, because it required the bug.
+2. **Added** `before: the market block says the mode excludes the event's rows, and the tier's share`
+   (the event-scope clause and the tier's 9).
+3. **Added** `before: the at-ceiling count is refused where the mode excluded the rows` (the fourth
+   instance of the same zero, found while fixing 1).
+4. **Added** `typed cap above the record's: the band-stop sentence names the recorded cap` (C3), and
+   it asserts the absence of the old phrase in both directions.
+5. **Added** `cold: the prior band's top is not above the ceiling the page states` (C2, by comparing
+   the two printed numbers), `cold: the cut is said, with the cap that made the ceiling`, `cold: the
+   declared prior's own extent is named beside the cut`, and `cut band: the printed top is the
+   ceiling's own digits, not a rounding above it`. The tool had no assertion on the prior band at all,
+   which is why C2 shipped twice (N2 fixed the recommendation band; nothing pinned the prior band).
+6. **Corrected `text()`**, which stripped tags but left HTML entities in place, so no assertion in
+   this tool could match a sentence carrying an apostrophe (`the event's own record`). It now
+   unescapes. This is a reading fix, not a relaxation: every assertion compares against what a reader
+   sees.
+
+Examined and kept, with the reason: `cut before issue: 0 tickets` (the store holds 12 tickets and
+none had been issued at 2026-09-01; the page says `by this instant` and `Nothing after … enters any
+number`, so the zero is the clock's and is scoped by the cut); `default: strip and market agree on
+resales` (both counts are the record's in that mode); `cut on the first issue: the strip and the
+sentence agree`; `cap 298: the band stops at the ceiling in force` (298 bps is the lower cap, so the
+in-force sentence is the true one there, and it now goes through the same source field as C3); the
+A19 and A1 count assertions (each is a tier count from the store, and each carries its own badge);
+the fee, negative-net, status and TRACE assertions (arithmetic and status codes).
+
+### The sweep, before and after, on the same grid
+
+Method, unchanged: 8 events x 2 modes x 4 cap states at the default tier (64 required), every tier x
+both modes x 4 cap states (120 extended), every tier x both modes x 18 caps from 0 to 10000 (540
+grid); ground truth for the cap in force and the face is the payload the server builds for the same
+parameters and instant; ground truth for "does this event hold rows" is `fixtures/synthetic_store.json`;
+every displayed number is parsed out of the served bytes; three properties (a) the cap named is the
+cap priced against, (b) no band crosses a ceiling the page prints, (c) no sentence claims rows are
+absent when the mode excludes them.
+
+| | before | after |
+|---|---|---|
+| page states swept | 724 | 724 |
+| violations | 594 | 0 |
+| required 64-state grid | 46 | 0 |
+| distinct states with a violation (of 64) | 30 | 0 |
+| by property | (a) 44, (b) 310, (c) 240 | none |
+| by sweep | primary 46, extended 98, grid 450 | none |
+| observations: band above the cap in force, no ceiling printed | 151 states / 130 URLs | 0 / 0 |
+| disclosed two-cap states | 288 states / 259 URLs | 288 / 259 |
+| omissions: band printed, no ceiling stated | 164 states / 143 URLs | 208 / 181 |
+| clock sweep (8 x 2 x 4 cuts) | 64 states, 0 violations | 64 states, 0 violations |
+
+The omission class grew by 44 states and that is a parser limit, not a silent ceiling: the 44 are the
+C3 states, where the sentence now reads `the ceiling the recorded cap of 2500 bps puts on this tier,
+at [EXACT] 1.25 SOL`, which the proof's `BAND_STOPS` regex does not match. I checked all 38 newly
+listed URLs and every one of them states a ceiling in that sentence, with the cap that produced it
+(0 of 38 state no ceiling). The proof's rule for that test would need the recorded-cap form added to
+see them; I left the sweep as written so the before and after numbers are measured by one instrument.
+
+### The new assertions, shown to fail on the old code
+
+`git archive HEAD | tar -x -C /tmp/fix/old` (HEAD is the tree the proof run measured), then the new
+and changed test files and the new tool copied in. Nothing in the repository was committed or
+reverted for this; the scratch tree is outside it.
+
+- `python3 -m unittest tests.test_final_proof_2_fixes` in the scratch tree: 124 failures across 14
+  tests, including the 15 C1 states, 100 band-above-ceiling states, the C3 source assertions, and the
+  payload-clamp assertions (which fail because the fields do not exist yet).
+- `python3 -m unittest tests.test_last_mile_fixes` in the scratch tree: the two rewritten market-block
+  tests fail, the 17 others pass.
+- `tools/console-check.py` (pointed at the old tree's own server on `:8796`): 8 assertion failures,
+  the inverted one and the seven added ones, and `FAILURES: 8`.
+- In the repository: 441 tests OK (427 before), 22 contract-conformance tests OK, `console-check`
+  109 ok lines and `FAILURES: 0` (102 before), `console-check-stores` 12 ok and 0 failures,
+  `build_fixture_store.py --check` 18 of 18 with the fixture byte-identical.
+
+### What is still open
+
+- `A20` and the `?sim=1` state are unchanged; neither carries a number that crosses a ceiling.
+- `/api/events` still does not name the event the loader withheld (unchanged from the 15:30Z note).
+- The `status on_sale` beside a post-end instant is unchanged and documented as before.
+- One design difference from what the proof's wording allowed: the prior band is truncated rather
+  than relabelled, so the page's band and the engine's band are now two named numbers
+  (`shownHiLamports` 0.84, `hiLamports` 1.26). That is an additive payload change; nothing reads the
+  new fields except the console and the tests.
+
+### The server on 8788
+
+Stopped and restarted on the code in this report: `python3 -m ticketpath.server`, pid 326640, started
+2026-11-07T16:06Z, `LISTEN 127.0.0.1:8788`, `dataSource=synthetic-fixture synthetic=True routes=10`,
+banner `SYNTHETIC FIXTURE DATA`. `:8787` (`node server.mjs`, pid 246814) was not bound and not
+touched; the frontend was not read or written; the scratch server used for the old-behaviour proof ran
+on `:8796` and was stopped.
+
+Nothing is committed and nothing is pushed. `git status` carries the files named at the top of this
+section plus `tests/test_final_proof_2_fixes.py` (untracked), and `NIGHT-LOG.md`, whose new line is the
+orchestrator's dispatch note for this run, not this run's write.

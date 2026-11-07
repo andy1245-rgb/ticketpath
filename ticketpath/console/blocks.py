@@ -17,6 +17,7 @@ from ticketpath.console.units import (
     esc,
     lamports_text,
     money,
+    money_exact,
     num,
     plural,
     sol_exact,
@@ -331,10 +332,23 @@ def _banded(payload: Mapping, tier: Mapping) -> str:
     # the range stops there. The alternative, a band printed above a cap the page refuses to
     # cross, is a range the page itself contradicts (N2, 10-final-review).
     if top_is_ceiling:
-        out.append(
-            f'<p class="label-sentence">[EXACT] '
-            f'{esc(labels.render("P_BAND_STOPS", ceiling=sol_exact(value_of(tier["band"]["boundCeilingLamports"]))))}</p>'
-        )
+        bound = value_of(tier["band"]["boundCeilingLamports"])
+        # `the ceiling the cap in force puts on this tier` was printed at a number computed from
+        # the recorded cap whenever the typed cap was the higher of the two: 1.25 SOL described
+        # as the cap-in-force ceiling on a page whose cap in force puts it at 1.35. The sentence
+        # follows the cap that produced the number (12-final C3).
+        if tier["band"].get("boundCeilingSource") == "recorded_cap":
+            sentence = _sentence(
+                "P_BAND_STOPS_RECORDED",
+                {
+                    "recorded": num(tier["band"]["boundCeilingCapBps"]),
+                    "cap": num(payload["selection"]["capBpsCandidate"], "count"),
+                    "ceiling": _sol_money(tier["band"]["boundCeilingLamports"]),
+                },
+            )
+        else:
+            sentence = labels.render("P_BAND_STOPS", ceiling=sol_exact(bound))
+        out.append(f'<p class="label-sentence">[EXACT] {sentence}</p>')
     if lo is not None and hi is not None:
         out.append(
             f'<p class="range">[UNVALIDATED] {esc(labels.render("P_RANGE"))}</p>'
@@ -366,10 +380,32 @@ def _cold(payload: Mapping, tier: Mapping) -> str:
     if band.get("refusalCode") == "before_on_sale_no_pool":
         out.append(f'<p class="warning">[REFUSED] {esc(labels.render("before_on_sale_no_pool"))}</p>')
     elif lo is not None and hi is not None:
+        # The band printed is the band cut at the ceiling the page states; the computed band is
+        # printed beside it as the declared prior's own extent. A prior band to 1.26 SOL under
+        # a stated ceiling of 0.84 was a range the page contradicted in its own block (12-final
+        # C2), and one of the two has to be renamed or moved. The number the engine computed is
+        # unchanged: only the interval described as `the band` is cut, and the cut is said.
+        shown_lo = band.get("shownLoLamports")
+        shown_hi = band.get("shownHiLamports")
+        cut = band.get("ceilingAppliedLamports") is not None
+        # A band end that is a limit is printed at the limit's own digits: `1.73` beside a
+        # ceiling of 1.725 is a band above its own ceiling, which is the thing being fixed.
+        lo_text = money(lo if shown_lo is None else shown_lo)
+        hi_text = (
+            money_exact(shown_hi)
+            if cut and shown_hi is not None
+            else money(hi if shown_hi is None else shown_hi)
+        )
+        if cut and shown_lo is not None and value_of(shown_lo) == value_of(shown_hi):
+            lo_text = money_exact(shown_lo)
         out.append(
             f'<p class="range">[UNVALIDATED] prior band around face: '
-            f'{money(lo)} – {money(hi)}. {esc(labels.render("P_BAND_ON_PRIOR"))}</p>'
+            f'{lo_text} – {hi_text}. {esc(labels.render("P_BAND_ON_PRIOR"))}</p>'
         )
+        if cut:
+            out.append(
+                f'<p class="label-sentence">[EXACT] {_prior_band_truncation(payload, tier)}</p>'
+            )
         out.append(f'<p class="label-sentence">[UNVALIDATED] {esc(_band_prior_label(payload, tier))}</p>')
     out.extend(
         [
@@ -403,6 +439,51 @@ def _band_prior_label(payload: Mapping, tier: Mapping) -> str:
     """The sentence for the band that is actually on the page, with its real source."""
     label_id = tier["band"]["labelId"]
     return labels.render(label_id, n_events=_pool_events(payload))
+
+
+def _prior_band_truncation(payload: Mapping, tier: Mapping) -> str:
+    """Which ceiling cut the printed band, and what the declared prior's own band is.
+
+    The ceiling is named by the cap that produced it, not by whichever cap the page would
+    rather talk about: `the cap of 0 bps in force` on a page whose band was cut at the
+    recording cap's ceiling would be the same misattribution as C3, one block lower. Every
+    number in the sentence is its own badged span, including the two ends of the band the
+    engine computed, so the paragraph carries no bare digits.
+    """
+    band = tier["band"]
+    applied_cap = value_of(band.get("ceilingAppliedCapBps"))
+    in_force = value_of(payload["selection"]["capBpsCandidate"])
+    label_id = (
+        "P_BAND_ON_PRIOR_TRUNCATED_IN_FORCE"
+        if applied_cap is not None and applied_cap == in_force
+        else "P_BAND_ON_PRIOR_TRUNCATED_RECORDED"
+    )
+    return _sentence(
+        label_id,
+        {
+            "cap": num(band["ceilingAppliedCapBps"]),
+            "ceiling": _sol_money(band["ceilingAppliedLamports"]),
+            "lo": money(band["loLamports"]),
+            "hi": money(band["hiLamports"]),
+        },
+    )
+
+
+def _sol_money(wrapper: Mapping | None) -> str:
+    """A lamports wrapper printed in SOL at its exact value, with its own badge.
+
+    The ceiling is an exact integer number of lamports and the sentence that names it talks in
+    SOL, so it is printed at its own digits and re-badged with its own unit rather than
+    printed as a bare number under the paragraph's badge: `[EXACT] 0.72086 SOL` inside the
+    sentence, beside a band top printed at the same precision. Rounding it to `0.72` while the
+    band stops at `0.72086` is the contradiction the sentence exists to close.
+    """
+    if wrapper is None or wrapper.get("value") is None:
+        return '<span class="n">[REFUSED] not stated</span>'
+    return (
+        f'<span class="n">{esc(labels.badge("EXACT"))} '
+        f'{esc(sol_exact(wrapper["value"]))} SOL</span>'
+    )
 
 
 def _pool_events(payload: Mapping):
@@ -443,31 +524,89 @@ def _trim(value) -> str:
 
 
 def _tier_sales_scope(market: Mapping, payload: Mapping) -> str:
-    """`in this tier N sales of M on this event`, and the tier's own excluded count.
+    """`in this tier N sales of M on this event`, and what the decision mode leaves out.
 
-    Both zeros on the before-on-sale page are the mode's, not the record's: the sale rows are
-    in the store and the decision mode does not read them. The strip says so at event scope
-    (`12 recorded on this event are excluded by the mode`); the block is the tier's sentence,
-    so it carries the tier's count, from the same scan of the same rows. Without it the two
-    figures were about one event and one tier and neither said which (11-final, item 5).
+    In the counterfactual both counts are the record's and the sentence is true as it stands.
+    In the before-on-sale mode neither is: the sale rows are in the store and the mode does
+    not read them, so `sales` is zero because nothing enters the decision, and the event's
+    own count is not zero at all. Printing the mode-filtered zero in both slots read
+    `0 sales of 0 on this event` while the same sentence named 9 excluded rows below it, and
+    the store held 12 (11-final item 5, then 12-final C1).
 
-    The count prints only when it is non-zero: a tier with no rows of its own has no excluded
-    rows either, and `0 recorded sales in this tier are excluded` would be a clause about
-    nothing.
+    So in that mode the second count is the event's recorded count at this cut -- the same
+    number the strip prints as excluded -- and the clause says in words that the mode excludes
+    those rows, at event scope as well as at tier scope. The zero stays, because zero rows do
+    enter the decision; it is no longer the event's count.
     """
+    mode = payload.get("decisionMode") or {}
+    excluded_event = mode.get("excludedResales")
+    excluded_tier = mode.get("excludedTierResales")
+    event_n = value_of(excluded_event)
+    if mode.get("usesOwnRecord", True) is False and event_n:
+        # The shape `N sales of M on this event` is kept, and M is the record's count, because
+        # that is the sentence a reader checks and the one the consistency sweep measures: a
+        # zero in that slot is the defect itself. The clause after it enters the decision.
+        scope = (
+            f'in this tier {num(market["sales"])} {plural(value_of(market["sales"]), "sale")} of '
+            f'{num(excluded_event)} on this event enter this decision'
+        )
+        return f"{scope} · {_excluded_scope_clause(event_n, value_of(excluded_tier) or 0)}"
     scope = (
         f'in this tier {num(market["sales"])} {plural(value_of(market["sales"]), "sale")} of '
         f'{num(market["eventSales"])} on this event'
     )
-    mode = payload.get("decisionMode") or {}
     if mode.get("usesOwnRecord") is not False:
         return scope
-    count = mode.get("excludedTierResales")
+    count = excluded_tier
     if not count or not value_of(count):
         return scope
     label_id = "P_MARKET_EXCLUDED_TIER_ONE" if value_of(count) == 1 else "P_MARKET_EXCLUDED_TIER"
     clause = _sentence(label_id, {} if label_id == "P_MARKET_EXCLUDED_TIER_ONE" else {"n": num(count)})
     return f"{scope} · {clause}"
+
+
+def _excluded_scope_clause(event_n: int, tier_n: int) -> str:
+    """The mode's exclusion, at event scope and at the tier the block is scoped to.
+
+    Four cases and no arithmetic in any of them: every count printed is the count the mode's
+    own exclusion measured, at the cut the decision was taken at.
+    """
+    if event_n == 1 and tier_n == 1:
+        return _sentence("P_MARKET_EXCLUDED_EVENT_ONE_HERE", {})
+    if event_n == 1:
+        return _sentence("P_MARKET_EXCLUDED_EVENT_ONE_ELSEWHERE", {})
+    if tier_n == event_n:
+        return _sentence("P_MARKET_EXCLUDED_EVENT_ALL", {"m": num(_count_wrapper(event_n))})
+    if tier_n == 0:
+        return _sentence("P_MARKET_EXCLUDED_EVENT_NONE_HERE", {"m": num(_count_wrapper(event_n))})
+    return _sentence(
+        "P_MARKET_EXCLUDED_EVENT_SOME",
+        {"m": num(_count_wrapper(event_n)), "n": num(_count_wrapper(tier_n))},
+    )
+
+
+def _count_wrapper(value: int) -> dict:
+    """A badged count for a clause that reads the mode's measurement."""
+    return {
+        "value": value,
+        "badge": "FIXTURE",
+        "basis": f"{value} priced sale rows at or before the cut, excluded by the mode",
+        "labelId": "A1",
+        "unit": None,
+    }
+
+
+def _at_ceiling_is_unmeasured(payload: Mapping) -> bool:
+    """Whether the at-ceiling count would be a zero for rows the mode excluded.
+
+    Only in the before-on-sale mode, and only where the event's own record is excluded by it:
+    an event with no rows at all has a measured zero at the ceiling, and the counterfactual
+    measures the count on the record it reads.
+    """
+    mode = payload.get("decisionMode") or {}
+    if mode.get("usesOwnRecord") is not False:
+        return False
+    return bool(value_of(mode.get("excludedResales")))
 
 
 def market(payload: Mapping) -> str:
@@ -495,6 +634,13 @@ def market(payload: Mapping) -> str:
             "P_MARKET_NO_RECORDED_CAP",
             {"cap": num(payload["selection"]["capBpsCandidate"], "count")},
         )
+    elif _at_ceiling_is_unmeasured(payload):
+        # The at-ceiling count is a count of this tier's sales, and in this mode the tier's
+        # sales do not enter. Printing `at the ceiling 0` beside `9 excluded` is the same
+        # defect as C1 one clause to the right: a zero for a question the mode did not ask.
+        # The strip already refuses this count in this state; the block now says the same
+        # sentence instead of a number it did not measure.
+        ceiling_clause = esc(labels.render("P_STRIP_EXCLUDED_CEILING"))
     else:
         # The count is against the record's own ceiling, and the noun says so when the page
         # prices against a different one.

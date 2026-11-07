@@ -357,6 +357,33 @@ PAGE: Mapping[str, str] = {
         "The top of that band is the ceiling the cap in force puts on this tier, at "
         "{ceiling} SOL, so the range stops where the cap does."
     ),
+    # The prior band is the declared prior's own interval, and the record's own interval ran
+    # above the ceiling the page states in force: `0.65 SOL - 1.26 SOL` beside `ceiling ...
+    # That is exactly 0.84 SOL`, on the same page. Two facts, one band, no clause saying which
+    # is which. The band printed is now cut at that ceiling and says so, and the prior's own
+    # extent is printed beside it rather than as the band.
+    "P_BAND_ON_PRIOR_TRUNCATED_IN_FORCE": (
+        "That band is cut at the ceiling of {ceiling} that the cap of {cap} in force puts on "
+        "this tier, because a band above a ceiling the page states is the contradiction this "
+        "sentence closes. The declared prior alone runs {lo} to {hi}; the ceiling bounds what "
+        "can be transacted, so the band stops where it does."
+    ),
+    "P_BAND_ON_PRIOR_TRUNCATED_RECORDED": (
+        "That band is cut at the ceiling of {ceiling} that the recorded cap of {cap} puts on "
+        "this tier, which is below the ceiling the cap in force allows, because a band above "
+        "a ceiling the page states is the contradiction this sentence closes. The declared "
+        "prior alone runs {lo} to {hi}; the ceiling bounds what can be transacted, so the "
+        "band stops where it does."
+    ),
+    # The band-stop sentence names the ceiling's actual source. It said `the ceiling the cap in
+    # force puts on this tier` at 1.25 SOL on a page whose cap in force was 3500 bps, whose
+    # ceiling is 1.35: the number came from the record's 2500 bps cap, and the sentence
+    # attributed it to the other one.
+    "P_BAND_STOPS_RECORDED": (
+        "The top of that band is the ceiling the recorded cap of {recorded} puts on this "
+        "tier, at {ceiling}, which is below what the cap of {cap} in force allows, so the "
+        "range stops at the recorded ceiling."
+    ),
     # The event total is the store's, and the store's is served plus withheld. The reason is
     # named in words, not as a typed code: the code belongs in the API's error body and on the
     # refused event's own page, and a page about another event must not carry it (N6).
@@ -377,14 +404,31 @@ PAGE: Mapping[str, str] = {
     "P_STRIP_EXCLUDED_CEILING": (
         "no at-ceiling count while the event's own record is excluded"
     ),
-    # The market block is the tier's, so its zero has to be the tier's zero. On the store this
-    # page is served from, `0 sales of 0 on this event` was printed while 12 sale rows sat in
-    # the file; the strip named them at event scope and the block named nothing at tier scope.
+    # The market block is the tier's, and in the before-on-sale mode its counts are the mode's.
+    # The event denominator used to be the mode-filtered zero, so the block read `0 sales of 0
+    # on this event` while 12 sale rows sat in the file and the same sentence named 9 excluded.
+    # The zero belongs to what enters the decision; the event's own count belongs to the store,
+    # and the clause says which rows the mode leaves out, at event scope and at tier scope.
     "P_MARKET_EXCLUDED_TIER": (
         "{n} recorded sales in this tier are excluded by the mode"
     ),
     "P_MARKET_EXCLUDED_TIER_ONE": (
         "One recorded sale in this tier is excluded by the mode"
+    ),
+    "P_MARKET_EXCLUDED_EVENT_ALL": (
+        "{m} recorded sales on this event are excluded by the mode, all of them in this tier"
+    ),
+    "P_MARKET_EXCLUDED_EVENT_SOME": (
+        "{m} recorded sales on this event are excluded by the mode, {n} of them in this tier"
+    ),
+    "P_MARKET_EXCLUDED_EVENT_NONE_HERE": (
+        "{m} recorded sales on this event are excluded by the mode, none of them in this tier"
+    ),
+    "P_MARKET_EXCLUDED_EVENT_ONE_HERE": (
+        "The one recorded sale on this event is excluded by the mode, and it is in this tier"
+    ),
+    "P_MARKET_EXCLUDED_EVENT_ONE_ELSEWHERE": (
+        "The one recorded sale on this event is excluded by the mode, and it is not in this tier"
     ),
     "P_EXACT_CEILING": (
         "ceiling {lamports} lamports = face {face} lamports × (10,000 + {cap}) / 10,000 "

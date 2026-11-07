@@ -20,8 +20,11 @@ product.
 4. N9: `TRACE /` answered 501 with Python's own error page, alone among the verbs. It is now
    the same rendered 405 `PUT`, `DELETE` and `PATCH` get.
 5. The before-on-sale market block printed the tier's `0 sales` and the event's `0` in a
-   sentence that is the tier's, while the strip above it named 12 excluded rows. The block
-   now carries the tier-scoped excluded count, from the same scan of the same rows.
+   sentence that is the tier's, while the strip above it named 12 excluded rows. 12-final C1
+   found it a third time: the clause naming the tier's excluded rows had been added under the
+   same false denominator, so the block still said the event held none. The block now carries
+   the event's recorded count in the denominator, says the rows are excluded by the mode at
+   event scope, and gives the tier's share of them.
 """
 
 from __future__ import annotations
@@ -350,11 +353,17 @@ class TestTheBeforeOnSaleMarketBlockCarriesTheTierExcludedCount(unittest.TestCas
         self.assertEqual(payload["decisionMode"]["excludedResales"]["value"], 12, "the strip's count")
         self.assertEqual(payload["decisionMode"]["excludedTierResales"]["value"], 9)
         text = visible(html)
+        # The event's own count is the denominator, because the store holds 12 rows; the zero
+        # is the count that enters the decision, and the clause says which rows the mode left
+        # out. This assertion used to require `0 sales of 0 on this event` -- the defect.
         self.assertIn(
-            "in this tier [FIXTURE] 0 sales of [FIXTURE] 0 on this event · "
-            "[FIXTURE] 9 recorded sales in this tier are excluded by the mode",
+            "in this tier [FIXTURE] 0 sales of [FIXTURE] 12 on this event enter this decision · "
+            "[FIXTURE] 12 recorded sales on this event are excluded by the mode, "
+            "[FIXTURE] 9 of them in this tier",
             text,
         )
+        self.assertNotIn("sales of [FIXTURE] 0 on this event", text)
+        self.assertNotIn("0 sales of 0 on this event", text)
         # the strip's number and the block's number are the two different facts they are
         self.assertIn("[FIXTURE] 0 resales enter this decision; [FIXTURE] 12 recorded on this event", text)
 
@@ -365,9 +374,13 @@ class TestTheBeforeOnSaleMarketBlockCarriesTheTierExcludedCount(unittest.TestCas
             event_id="evt_syn_02", mode="before_on_sale", tier_id="tier_stg_front"
         )
         self.assertEqual(payload["decisionMode"]["excludedTierResales"]["value"], 3)
+        text = visible(html)
         self.assertIn(
-            "[FIXTURE] 3 recorded sales in this tier are excluded by the mode", visible(html)
+            "[FIXTURE] 12 recorded sales on this event are excluded by the mode, "
+            "[FIXTURE] 3 of them in this tier",
+            text,
         )
+        self.assertNotIn("sales of [FIXTURE] 0 on this event", text)
 
     def test_a_tier_scoped_count_is_never_larger_than_the_event_one(self) -> None:
         _, _, payload = page_for(event_id="evt_syn_02", mode="before_on_sale")
