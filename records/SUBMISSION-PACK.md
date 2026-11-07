@@ -12,35 +12,76 @@ it could not be sourced on any MLH or event page (that finding, A5).
 
 ---
 
+## Operator actions before 15:00Z
+
+Every line here is his to do; nothing below can be settled by editing this file. Ordered by what
+decides the entry soonest. The correction pass of 2026-11-07T17:45Z fixed the text these actions
+point at, and `records/findings/13-submission-readiness.md` is the finding behind both.
+
+1. **Decide T11 (console reachability) before recording, not after.** With no tunnel and no
+   deploy the console is seen only in the video, and no frame may imply a judge can open it. This
+   one decision sets the video framing and the Demo URL field at the same time.
+2. **Record the video from §1.2 as amended by findings 11 and 12** of
+   `13-submission-readiness.md`: under 2:00, "MLH Solana Hackathon" in the first spoken sentence,
+   the hackathon name and the repo URL in the end card. It is the one gate whose failure is
+   ineligibility rather than a lost point. T8 (which machine, LAN path A or path B) is part of
+   this step.
+3. **Fill `TBD-TOOL-NAMES` in §2.7** (`:417`) with the tools he actually ran, and put the same list
+   in the form's AI-disclosure field. Naming the wrong tools is worse than naming none.
+4. **Fill the form's operator fields** (§3 items 12 and 20, T4): team names, emails, MLH accounts,
+   school, country, code-of-conduct agreement. Leave the devnet program/mint/address field empty
+   (item 16), and the Demo URL per T3 and T11 (item 5).
+5. **Decide T5** (first-time-hacker status, which decides Best Beginner) and **T9** (whether to
+   attempt the one devnet memo write). Both change what the form says and neither changes what the
+   repo does.
+6. **Delete the remote branch** `refs/heads/wip/mode-sentences-20261107T1650Z` if a judge reading
+   "branches" should not find a branch named after an unfinished sentence fix. Measured on the
+   remote at 17:36Z.
+7. **Confirm the licence holder name** in `LICENSE` is the name he wants on a public repo. T6 is
+   otherwise closed: `LICENSE` is on `main` and the copyright line is filled.
+8. **After the submission:** capture the confirmation id, freeze the tree, change nothing until a
+   judge asks. The working tree carries an uncommitted `NIGHT-LOG.md` and the untracked
+   `records/findings/13-submission-readiness.md`; neither belongs in a submission commit.
+
+---
+
 ## 0. The state this pack is written against, measured between 11:34Z and 11:41Z
 
 Every line below was produced by a command in this session, not carried from another record.
 
 | Thing | Measured state | Where |
 |---|---|---|
-| Backend | running, pid 242675, `127.0.0.1:8788`, `/health` 200 | `curl /health` |
+| Backend | running on this machine, loopback port 8788, `/health` 200 | `curl /health` |
 | Backend store | **8 events, 76 tickets** (the regenerated store, not the old 2-event one) | `GET /api/events?limit=100` |
-| Frontend demo copy | running, pid 233166, port **3001**, honesty patch applied, notice visible in the served text | `../ticketpath-demo`, `curl :3001/` |
-| Live frontend (his) | running on :3000, pid 81447, untouched, mock mode | not ours |
+| Frontend demo copy | running on its own port, honesty patch applied, notice visible in the served text | `../ticketpath-demo`, `curl` that port |
+| Live frontend (his) | running on its own port, untouched, mock mode | not ours |
 | Screens carrying backend numbers | `/`, `/events/evt_syn_02`, `/organizer?event=evt_syn_02`, `/tickets/tkt_syn_0001` | served HTML, tag-stripped |
 | Pricing console (`ticketpath/console/`) | **does not exist** | `ls ticketpath/` |
 | Price served anywhere | **none**: `/health` → `pricingModel.available: false, reason: no_model_registered` | `/health` |
 | Chain | `programDeployed: false, programId: null, rpcEnabled: false` | `/health` |
-| Test suite | `python3 -m unittest discover -s tests` → **149 tests, OK** | run in this session |
+| Test suite | `python3 -m unittest discover -s tests` → **546 tests, OK** **[AMENDED 17:36Z, re-measured at HEAD `375126f`; count re-measured again 18:11Z with `python3 tools/tp.py gate`, `tests=546 OK`, 23.3 s for the whole gate]** | run in this session |
 | Root README | **missing** | `ls README*` |
 | LICENSE | **missing** | `ls LICENSE` |
-| Repo | public, `andy1245-rgb/ticketpath`, created 2026-11-07T10:25Z, GitHub reports `license: None` | GitHub API |
-| Remote vs local | remote `main` = `e55a18b` (pushed 10:27Z); local HEAD = `3bece48` **plus uncommitted changes**. The public repo does **not** contain the backend, the fixture store or any Phase 2 record | `git ls-remote origin` |
+| Repo | public, `andy1245-rgb/ticketpath`, created 2026-11-07T10:25Z; `LICENSE` is MIT with the holder filled in **[AMENDED 17:36Z: the `license: None` reading was true at 10:25Z and is not any more]** | GitHub API |
+| Remote vs local | remote `main` = `375126f` = local HEAD, so the public repo is the verified tree **[AMENDED 17:36Z]**. It carries the backend (41 files under `ticketpath/`), `README.md`, `LICENSE`, `fixtures/synthetic_store.json`, `docs/` and the research records. No push is outstanding; the working tree has an uncommitted `NIGHT-LOG.md` that stays out of a submission commit | `git ls-remote origin`, `git ls-tree -r --name-only HEAD \| wc -l` → 148 |
 | Browser on this machine | none (no chromium, firefox, playwright, puppeteer, selenium) | probed in this session, and `DEMO-PROOF.md` §5 |
 | Devnet from this machine | reachable: `getVersion` → `solana-core 4.4.0`; Token-2022 program account exists, `executable: true`, slot 519647005 | `curl api.devnet.solana.com` |
+
+Four more rows in that table were true at 11:41Z and are not now: the console **does** exist, a price **is**
+served, a root README and a `LICENSE` **do** exist. The 12:14Z snapshot note at the end of this file corrects
+all four, and the rows are kept as written because this section is a record of the hour it names.
 
 Two consequences, and they shape everything below.
 
 1. **The console is not built, so there is no screen that shows a decision.** The video script is written
    for the state that exists, with one clearly marked swap-in block for the day the console lands.
+   **[AMENDED 17:45Z: both halves are now false. `ticketpath/console/` exists, `GET /` serves it at 200,
+   and §1.2 is the script that matches it. The paragraph is kept as the 11:41Z reading.]**
 2. **The public repo is behind the work.** A judge who follows the project link tonight finds Phase 1
    documents and no backend. That is the single most damaging thing about the current state, and it is a
    `git push` away from being fixed. It is your click.
+   **[AMENDED 17:36Z: this is no longer true. Remote `main` is `375126f`, the commit this pack's own
+   checklist verified, with the backend, the fixture store, the console and the research records in it.]**
 
 ---
 
@@ -159,8 +200,10 @@ That URL is the one to type: it selects the event, the tier, the cap and the dec
 same on every take. Its `asOf` defaults to the instant the page loads, and the numbers do not move with it
 (checked at two `asOf` values an hour apart). The page opens on `Synthetic Stage: Resale Cap Binds — capped
 and binding`, tier `General`, face `1.20 SOL`, with the badges `12 resales on this event`, `12 tickets`,
-`9 at the ceiling`, `8 events on this platform, 5 with any resale`, `0 on-chain transactions`. The two lines
-doing the work are `[EXACT] ceiling 1.38 SOL = face 1.20 SOL plus a cap of 15%` and `[UNVALIDATED]
+`9 at the ceiling`, `8 events in the store`, `5 with any resale at this instant`, `0 on-chain transactions`,
+each carrying its own `[FIXTURE]` or `[DEVNET]` tag. The two lines
+doing the work are `[EXACT] ceiling 1,380,000,000 lamports = face 1,200,000,000 lamports × (10,000 + 1500) /
+10,000 — integer arithmetic on the tier face, not an estimate. That is exactly 1.38 SOL.` and `[UNVALIDATED]
 Recommended primary price: at least 1.38 SOL per ticket, General tier.`, followed by the sentence "the cap is
 binding: 8 of 9 recorded resales (88.9%) settled at exactly the ceiling" and `Value: at least 1.38 SOL per
 ticket. That is a floor, not an estimate.` Keep the fixture strip at the top of the page in frame: every
@@ -171,6 +214,12 @@ the highest price anyone paid and therefore a floor on value; it is not the cap 
 the page's own line (A10) says the cap is a ceiling on the resale price and a floor on value, not a target for
 the primary price. Fetched for this edit: `curl -s 'http://127.0.0.1:8788/?event=evt_syn_02&tier=tier_stg_general&capBps=1500&tau=0.2'`
 → 200, strings above.
+
+**The block that sits in the middle of the frame.** Between the `[UNVALIDATED] The decision` badge and the
+`[UNVALIDATED] Recommended primary price` line the page prints a `[UNVALIDATED] Decision mode:
+COUNTERFACTUAL` block ending `and it is not a price you could have set.` It is the newest sentence on the
+page and it lands before the number it qualifies: keep it in frame, do not read it aloud, and do not scroll
+it half off. Measured on a fresh instance at HEAD `375126f`: `127.0.0.1:8813`, 13,726 bytes on `/`.
 
 **Beat 4, spoken (36 words, about 15 s):**
 
@@ -224,7 +273,7 @@ animation. Do not show the Explorer or a terminal.
 
 ### 1.4 What must not appear on any frame
 
-- The `Mock data` banner, six `lib/mock` events, or Chicago and Indianapolis. Those are the live :3000
+- The `Mock data` banner, six `lib/mock` events, or Chicago and Indianapolis. Those are the live frontend's
   instance and they are not our data.
 - `/my-tickets` or `/verify` without a connected wallet. Both are connect prompts and both read as broken.
 - Any Solana Explorer page for a `SYN...` mint address. No account exists; the page will say so.
@@ -314,7 +363,9 @@ animation. Do not show the Explorer or a terminal.
 ## 2. The submission text
 
 Written for the state at 11:34Z. Lines that would change if the console lands are marked
-**VERSION-IF-CONSOLE-LANDS** and nothing else in the text has to move.
+**VERSION-IF-CONSOLE-LANDS** and nothing else in the text has to move. **[The console landed. Both marked
+lines were applied at 17:45Z: §2.3 now carries the console paragraph, and §2.5 item three was replaced. The
+marks are kept so the record shows what was conditional and when it stopped being so.]**
 
 ### 2.1 Title
 
@@ -329,7 +380,8 @@ Written for the state at 11:34Z. Lines that would change if the console lands ar
 > organizer would need, which is volume, median price, markup distribution and where the tickets ended up.
 > It runs tonight as a Python backend that answers nine endpoints of the platform's own frontend contract,
 > serving eight events and seventy-six tickets with a working custody trail, resale analytics and real
-> Ed25519 wallet signature verification, on a 149-test suite that passes. It also serves a console that
+> Ed25519 wallet signature verification, on a 546-test suite that passes (`python3 -m unittest discover -s
+> tests`, `Ran 546 tests`, `OK`). It also serves a console that
 > reads one event's resale record and gives a floor on the primary price from it, labelled a floor and not
 > an estimate, and it states the cap's role correctly: a cap in basis points over face sets the ceiling on
 > the resale price and, where it binds, fixes how that price divides between the organizer's price and the
@@ -342,9 +394,11 @@ closing sentence ("no price is served: the backend reports `pricingModel.availab
 11:41Z and false once the console landed; it is quoted in §4 item 9 and in the 12:14Z snapshot note. The
 cap sentence states the narrowed result and replaces "the resale premium is capturable entirely through the
 primary price" (`11-cap-capture-check.md` §9, §11.1; `F` D7): the cap fixes the split of the resale price,
-`1 : c`, and does not set the primary price. The test count in this paragraph is left as written and was
-already flagged as stale in the 12:14Z snapshot note; §5 answer 9 still carries the pre-console wording and
-§4 item 9 is the correction for it.]**
+`1 : c`, and does not set the primary price. **[AMENDED 17:45Z: the test count in this paragraph is now
+546, measured at HEAD with `python3 tools/tp.py gate` (`tests=546 OK`, 18:11Z) and with the command beside
+it so the two cannot drift; §5 answer 9 is
+rewritten too and §4 item 9's instruction was re-pointed at findings 1, 2 and 5 of
+`13-submission-readiness.md`.]**
 
 ### 2.3 How it works
 
@@ -359,12 +413,15 @@ already flagged as stale in the 12:14Z snapshot note; §5 answer 9 still carries
 > write it and we did not redesign it: a copy is pointed at our backend, plus a patch that surfaces the
 > provenance label the backend was already sending and corrects sentences that asserted on-chain
 > enforcement. The demo runs locally, on ports 8788 and 3001.
+>
+> The second surface is a server-rendered console at `/`, served by the same Python backend: it states
+> the recommended primary price for a selected event and tier, shows the evidence counts the answer
+> rests on, prints a `[UNVALIDATED]` badge on the recommendation and a `[REFUSED]` block naming each
+> question the record cannot answer.
 
-**VERSION-IF-CONSOLE-LANDS**, append to 2.3:
-
-> The second surface is a console served by the backend at `/`: it states the recommended primary price for
-> a selected event, shows the evidence counts the answer rests on, and prints a refusal with its reason
-> wherever the record cannot support a number.
+**[APPLIED 17:45Z: the console landed, so the VERSION-IF-CONSOLE-LANDS paragraph at :365-367 is now part of
+§2.3 above, with the badge and refusal details the video shows added. It is the surface §1.2 beat 3 puts in
+frame for 21 seconds, and the description a judge reads could not find it.]**
 
 ### 2.4 What is on-chain
 
@@ -387,29 +444,35 @@ already flagged as stale in the 12:14Z snapshot note; §5 answer 9 still carries
 > deployed: no program, no mint, no transaction, so a judge cannot confirm any chain claim by looking at a
 > cluster, only by reading the design and the simulation in the repo. Second, there is no real data. The
 > record is eight events and seventy-six tickets generated by a script in the repo; it is internally
-> consistent and it is not evidence about any market, and the screens say so. Third, the decision surface
-> does not exist yet: there is no page that shows a recommended price, the backend registers no pricing
-> model, and the honest output of the pricing work today is a written specification and a refusal, not a
-> number. Fourth, there is no hosted demo. The app runs locally and the run steps are in the repo; the
+> consistent and it is not evidence about any market, and the screens say so. Third, the pricing engine is
+> unvalidated. A console page served at `/` prints a recommended primary price for the selected event, and
+> that number is a bound with a declared width computed from the fixture's own resale rows: no parameter was
+> estimated from real data, `/health` reports `fitted: false`, and the page tags the recommendation
+> `[UNVALIDATED]`. Fourth, there is no hosted demo. The app runs locally and the run steps are in the repo; the
 > submission has no demo URL, and clicking the project link will not show a running product. Fifth, there
 > are no screenshots in this submission, because the build machine has no browser. The frontend that a
 > judge would see is the platform's own, and the labelling patch is ours.
 
-**VERSION-IF-CONSOLE-LANDS**, replace the third item with:
-
-> Third, the console exists but the engine behind it is not validated: the recommendation is a bound with a
-> declared width, no parameter has been checked against a real resale, and the console says so on every
-> number it prints.
+**[APPLIED 17:45Z: item three is replaced with the paragraph above, which is the "VERSION-IF-CONSOLE-LANDS"
+swap-in that used to sit here — the swap-in text added "on every number it prints", which the page does not
+claim, so the wording above is the one to paste. Verified against `/health` on a fresh instance at HEAD
+`375126f`: `pricingModel.available: true`, `modelVersion: engine-2026-11-07`, `kind:
+rule-based-bounded-estimator`, `fitted: false`.]**
 
 ### 2.6 Built with
 
 - Python 3.12, standard library only, no package installed
 - The platform's own Next.js frontend, unmodified in layout, plus our text-only labelling patch
 - Node 24 and the Next dev server, for the demo copy on port 3001
-- Solana JSON-RPC over HTTPS, devnet, read only
 - Token-2022 and a transfer-hook design, not deployed
 - Ed25519 signature verification, implemented in the repo
-- A deterministic fixture generator (seed 20261107) and a 149-test unittest suite
+- A deterministic fixture generator (seed 20261107) and a 546-test unittest suite (`python3 -m unittest
+  discover -s tests`, `Ran 546 tests`, `OK`)
+- No Solana RPC in the running build: the chain adapter is off by default and opens no socket
+  (`/health` reports `rpcEnabled: false`, `reason: rpc_disabled`). The devnet reads in §2.4 were made by
+  hand with `curl` from the build machine, are recorded there, and are not performed by the app. **[Replaces
+  the entry "Solana JSON-RPC over HTTPS, devnet, read only", 17:45Z: that listed as a building block
+  something the running product never touches.]**
 - AI coding agents, disclosed below
 
 ### 2.7 AI disclosure (required, and the penalty for omitting it is disqualification)
@@ -438,45 +501,45 @@ means the text is in this document and needs no decision. "TBD" means only he ca
 |---|---|---|---|
 | 1 | Project name | `Ticketpath` | set (a rename is your call) |
 | 2 | Elevator / short description | one sentence from §2.2 | set |
-| 3 | Project link (repo URL) | `https://github.com/andy1245-rgb/ticketpath` | URL set, **content not pushed: see T1** |
+| 3 | Project link (repo URL) | `https://github.com/andy1245-rgb/ticketpath` | URL set, **content pushed: remote `main` is `375126f`, the verified tree** |
 | 4 | Video URL | public link to the file recorded from §1 | **T2** |
 | 5 | Demo URL | still none: the console runs on a loopback address a judge cannot open, so the field stays blank or points at the repo's run steps and says the demo is local. The console does not change this answer, and turning it into a real one is **T11** | **T3, T11** |
 | 6 | Description | §2.2 | set |
 | 7 | How it works / technical description | §2.3 | set |
 | 8 | What is on-chain | §2.4, verbatim | set |
 | 9 | What is not done | §2.5, verbatim | set |
-| 10 | Inspiration / challenges / accomplishments / what we learned / what's next | accomplished: 149 tests, real signature verification, a labelling patch that makes an inherited UI tell the truth. Learned: the asking price is the missing observation, and no model fixes a missing column. Next: one write on devnet, then a real ledger | set |
+| 10 | Inspiration / challenges / accomplishments / what we learned / what's next | accomplished: 546 tests, real signature verification, a labelling patch that makes an inherited UI tell the truth. Learned: the asking price is the missing observation, and no model fixes a missing column. Next: one write on devnet, then a real ledger | set |
 | 11 | Built with / technologies | §2.6 | set |
 | 12 | Team members, names, emails, MLH accounts | your team | **T4** |
-| 13 | Track: Top 3 Overall | select. The criterion is one sentence about Solana being load-bearing, and the honest answer is "designed, not deployed" | set |
+| 13 | Track: Top 3 Overall | select, knowing the score. The criterion is applied by looking for four things, and the repo has none of them: no account that belongs to the project (`chain.programId: null`, and every mint is a `SYN*` placeholder: measured 17:47Z, devnet `getAccountInfo` on `SYNfivkiJSwcrAgDeKA2bynB9SAuH7Y8Gg1ZrNV4agm` returns `value: null`), no transaction signature with a block time (every ledger row is `signature: null`, `slot: null`), no program the team did not write doing work the product depends on (Token-2022 exists on devnet and nothing here calls it), and no read of chain state back into the app (`ticketpath/adapters/rpc_adapter.py` opens no socket). **0 of 4.** Measured in `13-submission-readiness.md` §4. Top 3 Overall is unlikely on the chain criterion; the realistic path is MLH's own four-part rubric (Technology, Design, Completion, Learning), where the console is now the interface the build did not have | set |
 | 14 | Track: Best Beginner | eligible only if more than half the team are first-time hackers | **T5** |
 | 15 | Track: AI, DeFi, Gaming | recommend none. There is no AI component in the build, no payment or lending surface, and no game | set (your veto) |
 | 16 | Devnet program id / mint / address field | **leave empty.** Nothing is deployed. An invented address is the one lie that would sink the entry | set |
-| 17 | Licence | repo is public with `license: None` on GitHub. Pick one, add `LICENSE` | **T6** |
+| 17 | Licence | MIT, in `LICENSE`, copyright line filled with the holder's name. Nothing to decide; confirm the name is the one he wants on a public repo | **T6, confirm only** |
 | 18 | AI tool disclosure | §2.7 | **T7** |
 | 19 | Screenshots / thumbnail | none exist. The video's thumbnail comes from the video platform | set |
 | 20 | Country, school, code-of-conduct agreement, account linking | form filler | your clicks |
 
 ### The TBDs, numbered, and what each one is
 
-- **T1 Push the current tree to the public repo.** Blocks submission (see below). Measured: repo is public, remote `main` is at `e55a18b` from 10:27Z, local HEAD is `3bece48` with uncommitted changes, so the public repo has no backend, no fixture store, no console spec and no research records. No push happens without your explicit yes.
+- **T1 Push the current tree to the public repo.** **CLOSED, measured 17:36Z.** Remote `main` is `375126f`, which is local HEAD, 148 tracked files, carrying the backend (41 files under `ticketpath/`), the fixture store, the console and the research records. Nothing is outstanding. What remains is not a push: the working tree holds an uncommitted `NIGHT-LOG.md` and the untracked `records/findings/13-submission-readiness.md`, and neither belongs in a submission commit. No push happens without your explicit yes.
 - **T2 The video URL.** Does not exist. Must be recorded this weekend from §1 and must stay public.
 - **T3 The demo URL field.** No hosted demo. Either blank, or the repo with a plain note that it runs locally. The console does not change this: it is served on `127.0.0.1:8788`, which is his machine and not a judge's (T11).
 - **T4 Team.** Names, emails, MLH registration state.
 - **T5 First-time-hacker status**, which decides Best Beginner eligibility (>50% of the team).
-- **T6 Licence.** GitHub reports none. MIT or Apache-2.0 are the usual two; he picks and the README line must match the file.
+- **T6 Licence.** **CLOSED, measured 17:36Z.** `LICENSE` is on `main` and is MIT; line 3 names the copyright holder. There is nothing to decide. Confirm the name is the one he wants on a public repo, and the README line matches the file.
 - **T7 AI tool names** for the disclosure in §2.7.
 - **T8 Recording machine and path** (§1.1 A or B), and whether the backend may bind to the LAN address.
 - **T9 Whether to attempt the devnet write.** One memo transaction carrying a hash of a quote, run by him on a laptop with Agave, then read back and verified. It would turn "design" into "a real transaction with a block time" (`BUILD-SPEC-NIGHT.md` §5.6 option c). It costs about an hour of his time and a few thousandths of a devnet SOL. If he does not do it, the honest state is "nothing is deployed" and the submission is complete without it.
-- **T10 Whether the honesty patch goes into the live frontend tree** and gets a `:3000` restart. The patch is applied to our copy at `../ticketpath-demo` and verified there. The live tree is his and is untouched. If he never shows `:3000`, this is moot.
+- **T10 Whether the honesty patch goes into the live frontend tree** and gets a restart of the live frontend. The patch is applied to our copy at `../ticketpath-demo` and verified there. The live tree is his and is untouched. If he never shows the live frontend, this is moot.
 - **T11 How the console becomes reachable, if at all. TBD, and it is the only one the console raises.** The console is at `http://127.0.0.1:8788/`: `127.0.0.1` is the machine it runs on, so a judge clicking anything cannot reach it, and the video is the only place a judge will ever see it. Three options, cost of each in one line: **record only** — free, nothing to run at submission time, and the form's Demo URL stays blank (T3); **a tunnel** (`cloudflared tunnel --url http://127.0.0.1:8788`, or ngrok) — free and live in a minute, but the URL is public and up only while the process runs, so it has to be up for the judging window or it reads as a dead link, and it exposes the fixture API to anyone who finds it; **a deploy** — a few hours of his time plus a hosting account, the only option that survives him closing the laptop, and the only one that puts a URL in the form he can be held to. What the video shows either way is unchanged: every console screen in §1.2 is recorded from the local address, and no frame claims the console is hosted.
 
-**T1 blocks submission outright.** A submitted entry whose project link resolves to a repository that does
-not contain the code the submission describes fails the sponsor's own evidence check and the public-code
-rule, and no wording in the form repairs it. T2 is the other unrecoverable gate, and it is a task rather
-than a decision: it either exists by 11:30 or the entry is ineligible. Fix T1 first regardless, because it
-is a ten-second action and it is the one that makes every other claim checkable. T11 does not block
-anything: with no hosted demo the entry is complete and the video is the only place the console is seen.
+**T1 is closed; T2 is the only gate left that cannot be repaired by wording.** Until 17:36Z this
+paragraph said the reverse, and it was wrong in the alarming direction: remote `main` is `375126f`, the
+verified tree, so a judge who follows the project link finds the code the submission describes. T2 is still
+a task rather than a decision: the video either exists by 11:30 or the entry is ineligible, and it is now the
+only thing on this list that can lose the entry outright. T11 does not block anything: with no hosted demo
+the entry is complete and the video is the only place the console is seen.
 
 ---
 
@@ -502,23 +565,27 @@ directory, and they are
 in the tree a judge will read. That is your call, not a defect this checklist can repair.
 
 **3. README.**
-There is no root README. Write it, with: what this is; the one command to run the backend; the endpoints;
-what Solana is doing here and that it is not deployed; the licence line; the test command; the AI
-disclosure; and the screenshots note (none, and why). Keep it free of absolute personal paths, since the
-records/ tree is not. Pass: a stranger in a fresh shell runs
+**Verified at 17:45Z, so this is a check and not a write.** `README.md` exists and satisfies the pass
+condition below: the run steps, the endpoints, the not-deployed line, the licence line, the test command,
+the AI disclosure and the no-screenshots note are all in it. Pass: a stranger in a fresh shell runs
 `python3 -m ticketpath.server`, gets a line with `listening on http://127.0.0.1:8788`, and `curl -s
 127.0.0.1:8788/health` returns 200 with `"synthetic": true`.
 
 **4. Licence.**
-Add `LICENSE` with the licence chosen in T6, and one README line naming the same licence.
-Pass: `head -3 LICENSE` matches the README, and the GitHub API returns that licence after the push.
+**Verified at 17:45Z, so this is a check and not a write.** `LICENSE` is MIT and its third line reads
+the copyright holder's name; the README names the same licence and prints the same line. Pass: `head -3
+LICENSE` matches the README, and the GitHub API returns that licence after the push.
 
 **5. On-chain honesty.**
 `git grep -n 'deployed' -- '*.md'` and read every line.
 Pass: every occurrence is a negation or a design label ("no program is deployed", "designed, not
-deployed"), no address is presented as ours, no signature appears anywhere, and no sentence says the hook
-is enforcing anything. Then `git grep -nE '[1-9A-HJ-NP-Za-km-z]{32,44}'` and confirm every long string is
-either a `SYN` placeholder or a protocol program id (Token-2022, Memo) that we do not own.
+deployed"), no address is presented as ours, no sentence says the hook is enforcing anything, and the one
+signature in the tree — `records/00-prior-direction-index.md:169`,
+`J8hNmBD7PCuVvNNxL4HSjj3LV9QHwkaUgfseZhRGdjbe`, a devnet spike from an earlier corpus, 44 characters and
+therefore not a valid 64-byte signature: `getTransaction` answers `Invalid param: WrongSize` (measured
+17:47Z) — is cited as prior work and not as this project's. Then `git grep -nE
+'[1-9A-HJ-NP-Za-km-z]{32,44}'` and confirm every long string is either a `SYN` placeholder or a protocol
+program id (Token-2022, Memo) that we do not own.
 
 **6. The labels.**
 On the machine serving the demo, for each of the four screens that print a number:
@@ -560,10 +627,11 @@ the video.
 **9. The form.**
 Fill every field from §3. Pass: no URL in the form returns a 404 when opened logged out, the track boxes
 match §3, the devnet address field is empty, and the confirmation screen or email shows a submission id
-captured before 10:00 ET. One paste-time correction, because the console moved under the text: §2.2 still
-ends "no price is served: the backend reports `pricingModel.available: false`", and §5 answer 9 still says
-the engine outputs nothing. Both were true this morning and are false now. Use the **VERSION-IF-CONSOLE-LANDS**
-replacement in §2.3 and §2.5 with them, or drop the last sentence of §2.2 rather than paste it.
+captured before 10:00 ET. Paste-time check, because the console moved under this text and the text has now
+caught up: findings 1, 2 and 5 of `records/findings/13-submission-readiness.md` are the five sentences that
+were false — §2.5 item three, §5 answers 5 and 9, §2.6's Solana line and §2.3's missing console paragraph —
+and all five are corrected in place at 17:45Z. §2.2 no longer ends with the `pricingModel.available: false`
+sentence; it was rewritten at 15:10Z. Nothing in §2 needs pasting from anywhere else.
 
 **10. Freeze.**
 Pass: `git log -1` is unchanged after the video and the URLs are recorded, and nothing is pushed after the
@@ -589,8 +657,8 @@ The five hostile ones first, because they are the ones that decide the entry.
    reason is that no data exists to fit it on.
 5. **Is this just a spreadsheet?** A spreadsheet totals a column; this computes a per-ticket custody path,
    measures markup against each ticket's own tier, and the engine is specified to refuse four questions
-   outright with the missing observation named for each rather than filling them with a guess. The page
-   that prints those refusals is not built yet.
+   outright with the missing observation named for each rather than filling them with a guess. The console at
+   `/` prints those refusals, each with the observation it is missing named beside it.
 
 The rest, in the order they tend to come.
 
@@ -599,11 +667,14 @@ The rest, in the order they tend to come.
    video.
 7. **What actually works right now?** Eight events and seventy-six tickets served from our backend into the
    platform's UI, with per-ticket custody trails, resale analytics, and Ed25519 wallet signature
-   verification, on 149 passing tests.
+   verification, on 546 passing tests (`python3 -m unittest discover -s tests` → `Ran 546 tests`, `OK`).
 8. **Can I click it?** Not without running it: there is no hosted demo and the submission has no demo URL;
    the repo has the two commands.
-9. **What does the pricing engine output today?** Nothing: `/health` reports `pricingModel.available:
-   false` with the reason `no_model_registered`, and no endpoint serves a price.
+9. **What does the pricing engine output today?** A floor, not an estimate. The console served at `/`
+   prints a recommended primary price for the selected event (at least 1.38 SOL per ticket on the default
+   event, tagged `[UNVALIDATED]`), `/health` reports `pricingModel.available: true`, `modelVersion:
+   engine-2026-11-07`, `kind: rule-based-bounded-estimator`, `fitted: false`, and the engine still refuses an
+   upper bound, a sale probability and an interior optimum, naming the missing observation for each.
 10. **Why should the chain be involved at all?** Because the pricing needs its input to be complete: if the
     program writes every custody hop and refuses a price over the cap, the resale record stops having holes,
     and today it has two, a truncated top and sales that leave the sample entirely.
@@ -624,13 +695,13 @@ The rest, in the order they tend to come.
 - Spoken words, **the script in §1.2**: **264**, six beats, 1:53 of speech at 140 words per minute and
   1:58 with the five beat pauses.
 - Spoken words, the obsolete variant A kept in §1.5: **259**, unchanged, because it is kept verbatim.
-- TBDs only he can fill: **11** (T1 to T11 in §3). T11 is the console's reachability and it is the only one
-  the console adds.
-- The TBD that blocks submission outright: **T1, pushing the current tree to the public repo.** The repo
-  is public and reachable, but its `main` stops at a commit pushed at 10:27Z and predates every backend
-  file, the fixture store and the on-chain design the submission describes.
-- Second hard gate, not counted as a decision because it is a task: **T2, the video.** It must exist, be
-  under 2:00, and stay public.
+- TBDs still open: **nine** of the eleven — T2, T3, T4, T5, T7, T8, T9, T10, T11. T1 is closed (remote
+  `main` is `375126f`, the verified tree, measured 17:36Z) and T6 is closed (MIT, holder filled); both are
+  now confirmations rather than decisions, and both are listed in the operator-actions section at the top.
+  T11 is the console's reachability and it is the only one the console adds.
+- The one thing that can lose the entry outright: **T2, the video.** It must exist, be under 2:00, and stay
+  public. The repo no longer is the gate it was: remote `main` is `375126f` and carries every file the
+  submission describes.
 
 ---
 
@@ -644,9 +715,9 @@ hour. The state table in §0 and the numbers carried into the scripts have moved
 |---|---|---|
 | "Pricing console (`ticketpath/console/`): **does not exist**" (§0), and §1's "Variant A (tonight, no console)" script | The console exists at `http://127.0.0.1:8788/` and prints a recommended primary price. §1.3 "Variant B" is the script that matches the running build | `curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8788/` → 200 |
 | "Price served anywhere: **none**" (§0), `/health` → `pricingModel.available: false, reason: no_model_registered` (§0, §1.2 line 129, §2.2 line 230, §4 pass check, §5 answer 9) | `/health` reports `available: true`, `modelVersion: engine-2026-11-07`, `kind: rule-based-bounded-estimator`, `fitted: false`, because the seam is populated by the rule-based bounded estimator. No fitted model is claimed, so the honesty rule the pack obeys is intact; the sentence "nothing is registered" is not | `curl -s http://127.0.0.1:8788/health \| python3 -m json.tool` |
-| "149 tests, OK" (§0, and in the submission text at §2.2, §2.6, §3, §5) | `OK`, on a suite that was **293 tests when this pass began and 306 when it ended** (another session was adding console tests throughout). Quote the command's own last line, never this one. | `python3 -m unittest discover -s tests` |
-| "Root README: **missing**"; "LICENSE: **missing**" (§0) | Both exist: `README.md` and `LICENSE` (MIT, copyright line still a bracketed placeholder for the operator) | `ls README.md LICENSE` |
-| "several files under `records/` already carry absolute paths … That is your call" (§2, no-secrets check) | Done in this pass: `records/`, `docs/`, `tests/` and `tools/` now carry repo-relative paths only, `../ticketing-frontend` for the sibling checkout. `NIGHT-*.md` are untouched by instruction | `grep -rn "hom[e]/" README.md records docs tests tools ticketpath` → no hits outside `NIGHT-*.md` |
+| "149 tests, OK" (§0, and in the submission text at §2.2, §2.6, §3, §5) | `OK`. The count has moved three times since this note: **306 at 12:12Z, 453 at HEAD `375126f`, 546 at 18:11Z** (measured with `python3 tools/tp.py gate`, `tests=546 OK`). Quote the command's own last line, never this one. All five sites in the pack now carry 546 with the command beside it **[AMENDED 17:45Z, count re-measured 18:11Z]** | `python3 -m unittest discover -s tests` |
+| "Root README: **missing**"; "LICENSE: **missing**" (§0) | Both exist: `README.md` and `LICENSE` (MIT, copyright line names the holder, measured 17:36Z) | `ls README.md LICENSE`, `head -3 LICENSE` |
+| "several files under `records/` already carry absolute paths … That is your call" (§2, no-secrets check) | **Not done. Corrected 17:45Z: this row used to say the sweep was complete and its own command disproves that.** 24 hits remained outside `NIGHT-*.md` at HEAD `375126f`, measured 17:36Z, on tracked files: `docs/morning.html` (4), `records/DELIVERABLE.md` (4), `records/FINAL-PROOF-2.md` (3), `records/FINAL-PROOF.md`, `records/findings/07-engine-review.md`, `records/findings/12-final-audit.md`, and the rest of `records/`. Recorded here as an open item rather than fixed, because the operator asked for the pack and not the tree, and it is a 24-line sweep at the hour he should be recording | `git grep -n "hom[e]/" HEAD -- README.md records docs tests tools ticketpath \| grep -v NIGHT- \| grep -v __pycache__ \| wc -l` → 24 |
 
 What has not changed: the chain state (`programDeployed: false`, `programId: null`), the
 frontend's lack of any pricing surface, the absence of a deploy or a screenshot, and the
@@ -663,7 +734,9 @@ inside the 12:14Z snapshot table above therefore point at numbering that no long
 unchanged, so its line has moved. §0, §2, §5 and the chain and test-count rows above were left exactly
 as they were written, and the console sentences in §2.2 and §5 answer 9 are still false: the paste-time
 correction for them is now item 9 of §4. Nothing else in this file was touched, and no other file was
-edited.
+edited. **[Superseded 17:45Z: §2.2, §2.5, §2.6, §5 answers 5 and 9 and item 9 itself are corrected in
+place, and §4 items 3 and 4 and §3 item 17 are struck to a verified line each. See the correction note at the end of
+this file.]**
 
 ### Narrowing note — 2026-11-07T15:10Z
 
@@ -684,3 +757,57 @@ the 2:00 cap at 1:58, and the two seconds it gave up are the price of the correc
 49 words. If the take is tight, §1.3's escape (shorten beat 2 to its first two sentences) is unchanged and
 still the first thing to cut. §5 answer 9 and §0's state table are left as written and carry their existing
 corrections in the 12:14Z snapshot note and §4 item 9.
+
+### Correction note — 2026-11-07T17:45Z
+
+**Scope:** this file only, against the tree at HEAD `375126f`, driven by
+`records/findings/13-submission-readiness.md`, which lists 16 stale or false claims and was written by an
+independent checker that did not write the pack. Every replacement below was measured on this machine first;
+where the finding's own replacement had itself gone stale, the measured state won and the difference is
+named. `README.md` was corrected in the same pass for the same reasons. Nothing was committed, nothing was
+pushed.
+
+| # | Site | What it said | What it says now |
+|---|---|---|---|
+| 1 | §2.5 item three | "the decision surface does not exist yet: there is no page that shows a recommended price, the backend registers no pricing model" | the pricing engine is unvalidated; a console at `/` prints a recommended price, `[UNVALIDATED]`, `fitted: false`. The VERSION-IF-CONSOLE-LANDS swap-in is applied and its "on every number it prints" dropped, because the page does not claim that |
+| 2 | §5 answers 5 and 9 | "no endpoint serves a price", "the page that prints those refusals is not built yet" | a floor, not an estimate: the console prints it, `/health` reports `available: true`, `fitted: false`, and the refusals are printed with the missing observation beside each |
+| 3 | test count, six sites | 149 (five sites) and "293 then 306" (snapshot note) | **546**, re-measured at 18:11Z with `python3 tools/tp.py gate` (`tests=546 OK`, 23.3 s for the whole gate) and before that 453 at HEAD `375126f` on 2026-11-07T17:36Z, `Ran 453 tests` in 18.0 s, `OK`, with `python3 -m unittest discover -s tests` printed beside every one so the number and its command cannot drift |
+| 4 | §2.6 | "Solana JSON-RPC over HTTPS, devnet, read only" listed as a building block | no Solana RPC in the running build: the adapter is off by default, opens no socket, `/health` says `rpcEnabled: false`, `reason: rpc_disabled`; the §2.4 devnet reads were his `curl`, not the app's |
+| 5 | §2.3 | no mention of the console, while §1.2 beat 3 films it for 21 seconds | the apply-pending paragraph is applied, plus the `[UNVALIDATED]` badge and the `[REFUSED]` block the frame shows |
+| 6 | §0 state table, three rows | "149 tests"; "GitHub reports `license: None`"; remote `main` = `e55a18b`, "does not contain the backend" | 546 (re-measured 18:11Z; 453 at the 17:36Z reading); MIT with the holder filled in; **remote `main` = `375126f` = local HEAD**, 148 tracked files, 41 under `ticketpath/`. Each row carries an `[AMENDED 17:36Z]` tag so the 11:41Z reading is not silently rewritten |
+| 7 | §0 consequences, §3 item 3, T1, the "T1 blocks submission" paragraph, §6 | the public repo has no backend, T1 "blocks submission outright", fix T1 first | T1 closed, measured: the push happened and the public tree is the verified tree. The only gate that can lose the entry is T2, the video. Each replacement says what it replaced |
+| 8 | §3 item 17, §0 Repo row, snapshot-note licence clause | licence undecided, holder a bracketed placeholder | MIT, `LICENSE` on `main`, line 3 names the copyright holder; T6 is a confirmation, not a decision |
+| 9 | README licence section | printed a bracket string that no longer exists and said the licence names no holder | names the holder, with the line quoted |
+| 10 | snapshot note, home-paths row | "Done in this pass … no hits outside `NIGHT-*.md`" | **not done**: 24 tracked hits remain, file by file, measured with the command the row itself prints. Recorded as open rather than swept, per the finding's §5 |
+| 11 | §1.2 beat 3 notes | `[EXACT] ceiling 1.38 SOL = face 1.20 SOL plus a cap of 15%`; badge `8 events on this platform, 5 with any resale` | the `[EXACT]` line in its measured form (`1,380,000,000 lamports = face 1,200,000,000 lamports × (10,000 + 1500) / 10,000`), and `8 events in the store`, `5 with any resale at this instant` |
+| 12 | §1.2 beat 3 notes | nothing about the decision-mode block now in the middle of the frame | a paragraph naming it, saying keep it in frame, do not read it aloud, do not scroll it half off |
+| 13 | README inventory | "24 test modules", "seventeen per investigation reports", "about 12 KB", and an index missing three record files | 32 test modules (measured), twenty-four per-investigation reports (24 at HEAD), about 13 KB (13,726 bytes on `/`), and `BUILD-REPORT-CONSOLE.md`, `FINAL-PROOF.md`, `FINAL-PROOF-2.md` added |
+| 14 | §4 item 5 pass condition | "no signature appears anywhere" — a check that fails on a prior spike's citation | widened: the one signature in the tree is named, resolved as `Invalid param: WrongSize`, and must be cited as prior work |
+| 15 | §4 items 3 and 4 | "There is no root README. Write it," and "Add `LICENSE`" | struck to a verified line each, so the last hour goes to the video and not to work that is done |
+| 16 | §4 item 9 | told him to fix a §2.2 sentence that no longer exists | re-pointed at findings 1, 2 and 5, which are the five sentences that were actually false, all corrected in place |
+
+**What did not change, on purpose.** §2.4 keeps `Nothing. No program, no mint, no transaction, no address,
+and no signature`; the materials test stays **0 of 4** and now says so in §3 item 13 with all four absences
+named. No line in this file claims a deployment, a signature or a program for this project, and the
+correction pass added none.
+
+### Publication note — 2026-11-07T18:11Z
+
+**Scope:** this file only, two mechanical passes over it, nothing re-argued. Both are here because this file
+is published and because a judge reads it as the current state, not as a record of 11:41Z.
+
+**1. Machine details removed, every claim kept.** The §0 state table and two later lines carried the kind
+of handle that belongs on this machine and not on a public remote: a pid for the backend, a pid and a port
+for the demo copy, and the live frontend's port in the §0 table, in §1's "what must not appear" line and in
+T10. `running, pid …, 127.0.0.1:8788, /health 200` now reads `running on this machine, loopback port 8788,
+`/health` 200`; the two frontend rows read `on its own port`, and the two prose mentions read "the live
+frontend". 8788 stays because it is this project's own documented backend port and appears in every run
+instruction. The licence holder's name is replaced by "the copyright holder" everywhere except `LICENSE`
+itself, which is where it is published on purpose. No count, no number, and no sentence about Solana, about
+validation or about what is not deployed was touched: the claims are the same claims, the handles are gone.
+
+**2. The test count re-measured once, with the gate.** `python3 tools/tp.py gate` → `tests=546 OK`, wall
+23.3 s for the whole gate, at HEAD `375126f` plus the working tree. The live claims in §0, §2.2, §2.6, §3 item 10, §4 item 7 and
+§5 answer 9 now read **546** with the command beside each, and the 17:36Z reading of **453** is kept where it
+was recorded in the 17:45Z correction note rather than overwritten. The count is still a moving number; the
+command's own last line is the one that counts.

@@ -114,4 +114,15 @@ allow LICENSE                       personal-name The MIT licence must carry the
 allow README.md                     personal-name The README restates the licence line. Same name, same reason, and it is already in LICENSE.
 allow records/*                     contact-email The research record quotes the hackathon's own published address (cheating@mlh.io) verbatim as the terms that were read. A quote of a published address is evidence, not a contact of his.
 allow records/findings/*            contact-email Same quote, in the per-investigation reports that first read the terms.
+
+# The next four lines are per file and per class, and they exist because these four files
+# quote, verbatim, the commands and the handles a run measured: a pid in a state table, an
+# absolute path inside a command's output, the licence line the check read. A quote is
+# evidence and not an instruction, the same reason records/ may quote /tmp. Nothing else is
+# exempt: the deploy-key and token classes are deliberately absent from every line below, so
+# a key handle quoted in one of these files is still a hit and is redacted, not allowed.
+allow records/BUILD-REPORT-CONSOLE.md                live-service|personal-name quoted measurement evidence; not operational
+allow records/findings/13-submission-readiness.md    home-path|personal-name quoted measurement evidence; not operational
+allow records/findings/14-frontend-attach-explore.md home-path|live-service quoted measurement evidence; not operational
+allow records/findings/15-visionhelper.md            home-path|live-service quoted measurement evidence; not operational
 allow tests/test_public_safety.py fleet-repo|home-path|tmp-path|cron-line|deploy-key|live-service|contact-email|personal-name A test for a pattern has to spell the pattern it plants. The credential classes are deliberately not exempt here, and that file builds those by concatenation instead.

@@ -18,6 +18,7 @@ rules that exist fire, and fire only where they should.
 
 from __future__ import annotations
 
+import fnmatch
 import os
 import re
 import shutil
@@ -411,6 +412,17 @@ def scratch(files: dict[str, str]) -> ScratchRepo:
     return repo
 
 
+def public_tree() -> list[str]:
+    """Every path a commit could publish: tracked files plus untracked, unignored ones."""
+    proc = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "ls-files", "--cached", "--others",
+         "--exclude-standard", "-z"],
+        capture_output=True,
+        check=False,
+    )
+    return [p.decode("utf-8", "surrogateescape") for p in proc.stdout.split(b"\0") if p]
+
+
 BY_NAME = {case.name: case for case in CASES}
 
 
@@ -702,6 +714,105 @@ class TestTheGateHolds(unittest.TestCase):
             covered,
             "a class in the denylist has no test, or a test names a class that is not denied",
         )
+
+
+class TestTheRecordsAllowlists(unittest.TestCase):
+    """Four records quote what a run measured. The exemption for each is one file wide.
+
+    These records hold a pid in a state table, an absolute path inside a command's output
+    and the licence line a check read. Those quotes are the run's evidence and cannot be
+    edited without falsifying the evidence, so the classes they trip are exempt -- but for
+    one named file and one named set of classes. The two tests below are the difference
+    between that statement and a rubber stamp: one proves the entries as written, the other
+    proves nothing outside the four files inherits them.
+    """
+
+    EXPECTED = {
+        "records/BUILD-REPORT-CONSOLE.md": {"live-service", "personal-name"},
+        "records/findings/13-submission-readiness.md": {"home-path", "personal-name"},
+        "records/findings/14-frontend-attach-explore.md": {"home-path", "live-service"},
+        "records/findings/15-visionhelper.md": {"home-path", "live-service"},
+    }
+
+    #: The same material, planted where the exemption should and should not reach.
+    EXEMPT_FILE = {
+        "records/BUILD-REPORT-CONSOLE.md": "- the runner (pid 242675) is still going.\n",
+        "records/findings/13-submission-readiness.md": "cd /home/friend/ticketPricing\n",
+        "records/findings/14-frontend-attach-explore.md": "- the copy (pid 81447) answered 200.\n",
+        "records/findings/15-visionhelper.md": "ls -la /home/friend/visionHelper\n",
+    }
+    MUST_STILL_FIRE = {
+        "records/findings/12-final-audit.md": "- the runner (pid 242675) is still going.\n",
+        "tools/shot.py": 'OUT = "/home/friend/visionHelper/out.png"\n',
+        "docs/SHOTS.md": "- the runner (pid 242675) is still going.\n",
+        "README.md": "- the runner (pid 242675) is still going.\n",
+    }
+
+    def entries(self) -> dict[str, object]:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+        import public_safety  # noqa: PLC0415
+
+        _, exemptions = public_safety.load_denylist(DENYLIST)
+        return {entry.glob: entry for entry in exemptions}
+
+    def test_each_record_exemption_names_one_file_and_its_own_classes(self) -> None:
+        entries = self.entries()
+        tree = public_tree()
+        for glob, classes in self.EXPECTED.items():
+            with self.subTest(glob=glob):
+                entry = entries.get(glob)
+                self.assertIsNotNone(entry, f"no exception for {glob}")
+                self.assertTrue((REPO_ROOT / glob).is_file(), f"{glob} is not a file")
+                self.assertEqual(set(entry.classes), classes)  # type: ignore[attr-defined]
+                self.assertNotIn("*", entry.classes)  # type: ignore[attr-defined]
+                matched = [p for p in tree if fnmatch.fnmatchcase(p, glob)]
+                self.assertEqual(
+                    matched, [glob], f"{glob} is not one exact file, it matches {len(matched)}"
+                )
+
+    def test_no_exemption_for_records_reaches_a_file_outside_records(self) -> None:
+        """Every records/ exception, old and new, matches only paths under records/.
+
+        A glob that is one level too wide is the failure this catches: `records/*` is the
+        contact-email quote and stops at the directory, and each of the four new entries is
+        an exact path, so code under tools/ and a doc under docs/ are still checked.
+        """
+        entries = self.entries()
+        tree = public_tree()
+        self.assertGreater(len(tree), 100, "the tree came back empty, so this proves nothing")
+        for glob, entry in entries.items():
+            if not glob.startswith("records/"):
+                continue
+            with self.subTest(glob=glob):
+                self.assertNotIn("*", entry.classes)  # type: ignore[attr-defined]
+                matched = [p for p in tree if fnmatch.fnmatchcase(p, glob)]
+                self.assertTrue(matched, f"{glob} matches nothing, so it exempts nothing")
+                outside = [p for p in matched if not p.startswith("records/")]
+                self.assertEqual(outside, [], f"{glob} reaches outside records/: {outside}")
+
+    def test_a_record_exemption_does_not_reach_a_neighbour_or_a_tool(self) -> None:
+        """Same material, four places: clean in the file named, a hit everywhere else."""
+        repo = scratch({**self.EXEMPT_FILE, **self.MUST_STILL_FIRE})
+        self.addCleanup(repo.remove)
+        result = RealChecker().check(repo.root, ("--tracked",), DENYLIST)
+        self.assertEqual(
+            {hit[0] for hit in result.hits},
+            set(self.MUST_STILL_FIRE),
+            "a records exemption covered a file it does not name",
+        )
+        self.assertEqual(result.code, 1)
+
+    def test_a_credential_class_is_not_exempt_in_any_record(self) -> None:
+        """The deploy key is the class the operator asked to redact rather than allow."""
+        planted = {
+            path: "push with ~/.ssh/ticketpath_deploy_ed25519\n"
+            for path in self.EXPECTED
+        }
+        repo = scratch(planted)
+        self.addCleanup(repo.remove)
+        result = RealChecker().check(repo.root, ("--tracked",), DENYLIST)
+        self.assertEqual(result.classes, {"deploy-key"})
+        self.assertEqual({hit[0] for hit in result.hits}, set(self.EXPECTED))
 
 
 if __name__ == "__main__":

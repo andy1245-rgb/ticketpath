@@ -36,7 +36,7 @@ ticketpath 0.1.0 listening on http://127.0.0.1:8793 dataSource=synthetic-fixture
 curl -s -o /dev/null -w '%{http_code} %{size_download}\n' http://127.0.0.1:8788/
 ```
 
-Observed `200`, and a page of about 12 KB. The status code is the invariant; the byte count
+Observed `200`, and a page of about 13 KB. The status code is the invariant; the byte count
 moves whenever the console is edited, so it is not quoted to the byte here. The page opens
 with a banner saying every number is computed from a synthetic fixture and no program is
 deployed, then lists all eight events with the pricing regime each is in. It shows the
@@ -71,10 +71,9 @@ block, naming no fitted model because there is none.
 python3 -m unittest discover -s tests
 ```
 
-Observed at 12:12Z: `Ran 306 tests` in 9.5 seconds, `OK`. It was 293 twenty minutes earlier
-and 306 by the end of this pass, because another session was adding console tests while these
-notes were written. The count moves as the backend grows, so the command's own output is the
-number that matters, not this line.
+Observed at 18:11Z: `python3 tools/tp.py gate` reports `unittest: OK - 546 tests`, 23.3 s for the whole
+gate. The count moves as the backend grows, so the command's own output is the number that matters, not this
+line. It was 453 at 17:36Z, 306 at 12:12Z and 293 twenty minutes before that.
 
 **Regenerate the fixtures.**
 
@@ -183,7 +182,11 @@ One line per record file:
 - `ON-CHAIN-RECONCILIATION.md` why the design document replaced its earlier sibling.
 - `BUILD-SPEC-NIGHT.md` what the overnight build was told to build, module by module.
 - `SUBMISSION-PACK.md` the video script, submission text, field checklist and last hour checks.
-- `findings/` seventeen per investigation reports, append only, the primary record the six index.
+- `findings/` twenty-seven per investigation reports, append only, the primary record the six index.
+- `BUILD-REPORT-CONSOLE.md` what the console pass built and where it departed from its spec.
+- `FINAL-PROOF.md` the end-to-end proof run: what was executed, what it showed, what it did not.
+- `FINAL-PROOF-2.md` the second proof run: the README's own commands, the live frontend's write check, and the
+  64-state sweep.
 - `DELIVERABLE.md` the Phase 8 integrated specification: a stub, marked NOT WRITTEN YET, with a
   status per required section and what would have to exist for it to be written.
 - `REPO-CONSISTENCY.md` the consistency pass over this tree: every change, its evidence, and the
@@ -198,7 +201,7 @@ ticketpath/    the backend. server.py is the route table and nothing else
   adapters/    the only paths to the ledger file, Solana RPC and the pricing model seam
   console/     the server rendered page served at /
   onchain/     the Python mirror of the state machine, simulated only
-tests/         unittest tests over 24 test modules, plus store_arithmetic.py; the run prints the count
+tests/         unittest tests over 34 test modules, plus store_arithmetic.py; the run prints the count
 fixtures/      synthetic_store.json and the note saying what it is not
 tools/         build_fixture_store.py the deterministic fixture generator, guidance.py the console payload as JSON
 docs/          backend notes, the on-chain design, the frontend labelling patch
@@ -211,15 +214,8 @@ overnight build's working log.
 
 ## Licence and status
 
-MIT. The text is in `LICENSE`, and **the copyright line is a placeholder that the operator
-must fill in.** It reads, in full:
-
-```
-Copyright (c) 2026 [OPERATOR: replace this bracket with your name]
-```
-
-Nothing else in `LICENSE` needs editing. Until that line is replaced the licence names no
-holder, which is why it is flagged here rather than left for a reader to notice.
+MIT. The text is in `LICENSE`, and the copyright line names the holder:
+`Copyright (c) 2026 Andrew Radu`.
 
 Status: a local build. Nothing is deployed, no program exists on any cluster, there is no
 hosted demo, and every number here comes from a synthetic fixture. The pricing seam is

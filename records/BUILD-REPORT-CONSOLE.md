@@ -1866,3 +1866,255 @@ In this tree the same file is 12 tests, OK.
 - Nothing committed, nothing pushed. `git status` carries the five source files, the four test files
   (`tests/test_decision_mode_states.py` untracked), `tools/console-check.py`, this report, and
   `NIGHT-LOG.md`, whose line is the orchestrator's dispatch note and not this run's write.
+
+## Correction pass — 2026-11-07T17:45Z (documents only, no code, no tests)
+
+**Scope:** `records/SUBMISSION-PACK.md`, `README.md`, `NIGHT-LOG.md` (one appended line), and this
+report (appended). Driven by `records/findings/13-submission-readiness.md`, written by an independent
+checker that did not write the pack, which ranks 16 stale or false claims. Nothing under `ticketpath/`,
+`tests/`, `tools/`, `docs/` or `.githooks` was touched: those belong to other runs. No commit, no push.
+
+**Measured in this pass before any edit, so the replacements are mine and not the finding's:** system
+clock 17:36Z; `git log -1` = `375126f` (2026-11-07 17:25:26 +0000); 148 tracked files; `git ls-remote
+origin` → `refs/heads/main` = `375126f`, i.e. **the public repo is the verified tree**, plus
+`refs/heads/wip/mode-sentences-20261107T1650Z` = `8ea1863`; `python3 -m unittest discover -s tests` →
+**`Ran 453 tests in 18.027s`, `OK`**; 32 `tests/test_*.py`; 24 tracked files in `records/findings/`; 41
+tracked files under `ticketpath/`; `head -3 LICENSE` → `Copyright (c) 2026 Andrew Radu`; `git grep -n
+"hom[e]/" HEAD -- README.md records docs tests tools ticketpath` → 24 tracked hits outside `NIGHT-*`. The
+console strings were read from **my own** instance at HEAD on `127.0.0.1:8813` (ports 8788, 8797 and 8799
+were already held by other processes and were left alone): `GET
+/?event=evt_syn_02&tier=tier_stg_general&capBps=1500&tau=0.2` → 200, 13,726 bytes; `GET /` → 200, 13,726
+bytes; `/health` → `pricingModel.available: true`, `modelVersion: engine-2026-11-07`, `kind:
+rule-based-bounded-estimator`, `fitted: false`, `chain.rpcEnabled: false`, `reason: rpc_disabled`,
+`programDeployed: false`, `programId: null`, `contract.endpointsImplemented: 9`,
+`routesImplemented: 10`. The instance was `timeout 60` and is gone; `ss` confirmed the port released.
+
+Where the finding's own replacement had gone stale since it was written, the measurement won and the
+difference is named below (items 6, 7, 13 and the licence rows).
+
+### 1. `§2.5` item three — the paste-ready paragraph that contradicted the video
+
+Before (`records/SUBMISSION-PACK.md`, §2.5):
+> … Third, the decision surface
+> does not exist yet: there is no page that shows a recommended price, the backend registers no pricing
+> model, and the honest output of the pricing work today is a written specification and a refusal, not a
+> number. …
+
+After:
+> … Third, the pricing engine is
+> unvalidated. A console page served at `/` prints a recommended primary price for the selected event, and
+> that number is a bound with a declared width computed from the fixture's own resale rows: no parameter was
+> estimated from real data, `/health` reports `fitted: false`, and the page tags the recommendation
+> `[UNVALIDATED]`. …
+
+The `VERSION-IF-CONSOLE-LANDS` block under it was removed and replaced with an `[APPLIED 17:45Z]` note,
+because its wording claimed the console "says so on every number it prints" and the page does not claim
+that. Heading before: `**VERSION-IF-CONSOLE-LANDS**, replace the third item with:`; after:
+`**[APPLIED 17:45Z: item three is replaced with the paragraph above, which is the "VERSION-IF-CONSOLE-LANDS"`
+… `fitted: false`.]**`
+
+### 2. `§5` answers 5 and 9
+
+Before (answer 9):
+> 9. **What does the pricing engine output today?** Nothing: `/health` reports `pricingModel.available:
+>    false` with the reason `no_model_registered`, and no endpoint serves a price.
+
+After:
+> 9. **What does the pricing engine output today?** A floor, not an estimate. The console served at `/`
+>    prints a recommended primary price for the selected event (at least 1.38 SOL per ticket on the default
+>    event, tagged `[UNVALIDATED]`), `/health` reports `pricingModel.available: true`, `modelVersion:
+>    engine-2026-11-07`, `kind: rule-based-bounded-estimator`, `fitted: false`, and the engine still refuses an
+>    upper bound, a sale probability and an interior optimum, naming the missing observation for each.
+
+Before (answer 5, closing): `The page\n   that prints those refusals is not built yet.`
+After: `The console at\n   \`/\` prints those refusals, each with the observation it is missing named beside it.`
+
+### 3. Every test count, six sites in the pack and one in the README
+
+Before → after, each pair verbatim:
+
+`| Test suite | \`python3 -m unittest discover -s tests\` → **149 tests, OK** | run in this session |`
+→ `| Test suite | \`python3 -m unittest discover -s tests\` → **453 tests, OK** in 18.0 s **[AMENDED 17:36Z, re-measured at HEAD \`375126f\`]** | run in this session |`
+
+`> Ed25519 wallet signature verification, on a 149-test suite that passes. It also serves a console that`
+→
+`> Ed25519 wallet signature verification, on a 453-test suite that passes (\`python3 -m unittest discover -s`
+`> tests\`, \`Ran 453 tests\`, \`OK\`). It also serves a console that`
+
+`- A deterministic fixture generator (seed 20261107) and a 149-test unittest suite`
+→ `- A deterministic fixture generator (seed 20261107) and a 453-test unittest suite (\`python3 -m unittest`
+`  discover -s tests\`, \`Ran 453 tests\`, \`OK\`)`
+
+`accomplished: 149 tests, real signature verification` → `accomplished: 453 tests, real signature verification`
+
+`on 149 passing tests.` → `on 453 passing tests (\`python3 -m unittest discover -s tests\` → \`Ran 453 tests\`, \`OK\`).`
+
+`**293 tests when this pass began and 306 when it ended**` → `**306 at 12:12Z, 453 at HEAD \`375126f\`** (measured 17:36Z, 18.0 s)`
+
+`README.md`: `Observed at 12:12Z: \`Ran 306 tests\` in 9.5 seconds, \`OK\`. It was 293 twenty minutes earlier`
+`and 306 by the end of this pass, because another session was adding console tests while these`
+`notes were written. The count moves as the backend grows, so the command's own output is the`
+`number that matters, not this line.`
+→ `Observed at 17:36Z: \`Ran 453 tests\` in 18.0 seconds, \`OK\`. The count moves as the backend grows,`
+`so the command's own output is the number that matters, not this line. It was 306 at 12:12Z and`
+`293 twenty minutes before that.`
+
+The command is printed beside every number so the two cannot drift. I ran it in this pass: `Ran 453 tests
+in 18.027s`, `OK`.
+
+### 4. `§2.6` — the Solana RPC that the build does not use
+
+Before: `- Solana JSON-RPC over HTTPS, devnet, read only`
+After: removed from the list, and this bullet added under the fixture generator:
+> - No Solana RPC in the running build: the chain adapter is off by default and opens no socket
+>   (`/health` reports `rpcEnabled: false`, `reason: rpc_disabled`). The devnet reads in §2.4 were made by
+>   hand with `curl` from the build machine, are recorded there, and are not performed by the app. **[Replaces
+>   the entry "Solana JSON-RPC over HTTPS, devnet, read only", 17:45Z: that listed as a building block
+>   something the running product never touches.]**
+
+### 5. `§2.3` — the shipped description did not mention the console
+
+Before: the `VERSION-IF-CONSOLE-LANDS` instruction, `> The second surface is a console served by the backend at \`/\`: it states the recommended primary price for` … `> wherever the record cannot support a number.`
+After: applied into §2.3 itself, and the instruction replaced with an `[APPLIED 17:45Z]` note. The added
+paragraph, which is now part of the field-7 text:
+> The second surface is a server-rendered console at `/`, served by the same Python backend: it states
+> the recommended primary price for a selected event and tier, shows the evidence counts the answer
+> rests on, prints a `[UNVALIDATED]` badge on the recommendation and a `[REFUSED]` block naming each
+> question the record cannot answer.
+
+### 6. `§0` state table — three rows, and the two consequences under it
+
+Before: `| Repo | public, \`andy1245-rgb/ticketpath\`, created 2026-11-07T10:25Z, GitHub reports \`license: None\` | GitHub API |`
+After: `| Repo | public, \`andy1245-rgb/ticketpath\`, created 2026-11-07T10:25Z; \`LICENSE\` is MIT with the holder filled in **[AMENDED 17:36Z: the \`license: None\` reading was true at 10:25Z and is not any more]** | GitHub API |`
+
+Before: `| Remote vs local | remote \`main\` = \`e55a18b\` (pushed 10:27Z); local HEAD = \`3bece48\` **plus uncommitted changes**. The public repo does **not** contain the backend, the fixture store or any Phase 2 record | \`git ls-remote origin\` |`
+After: `| Remote vs local | remote \`main\` = \`375126f\` = local HEAD, so the public repo is the verified tree **[AMENDED 17:36Z]**. It carries the backend (41 files under \`ticketpath/\`), \`README.md\`, \`LICENSE\`, \`fixtures/synthetic_store.json\`, \`docs/\` and the research records. No push is outstanding; the working tree has an uncommitted \`NIGHT-LOG.md\` that stays out of a submission commit | \`git ls-remote origin\`, \`git ls-tree -r --name-only HEAD \| wc -l\` → 148 |`
+
+Before: `1. **The console is not built, so there is no screen that shows a decision.** … 2. **The public repo is behind the work.** A judge who follows the project link tonight finds Phase 1 documents and no backend. That is the single most damaging thing about the current state, and it is a \`git push\` away from being fixed. It is your click.`
+After: the same two sentences kept as the 11:41Z reading with an `[AMENDED 17:45Z]` / `[AMENDED 17:36Z]`
+tag under each, saying both are now false and naming what is true instead. A new paragraph was added under
+the table so the four rows left as written are not read as current:
+> Four more rows in that table were true at 11:41Z and are not now: the console **does** exist, a price **is**
+> served, a root README and a `LICENSE` **do** exist. The 12:14Z snapshot note at the end of this file corrects
+> all four, and the rows are kept as written because this section is a record of the hour it names.
+
+### 7. `T1` in five places — the stale blocker, stale in the alarming direction
+
+Before (`§3` item 3): `| 3 | Project link (repo URL) | … | URL set, **content not pushed: see T1** |`
+After: `| 3 | Project link (repo URL) | … | URL set, **content pushed: remote \`main\` is \`375126f\`, the verified tree** |`
+
+Before (T1): `- **T1 Push the current tree to the public repo.** Blocks submission (see below). Measured: repo is public, remote \`main\` is at \`e55a18b\` from 10:27Z, local HEAD is \`3bece48\` with uncommitted changes, so the public repo has no backend, no fixture store, no console spec and no research records. No push happens without your explicit yes.`
+After: `- **T1 Push the current tree to the public repo.** **CLOSED, measured 17:36Z.** Remote \`main\` is \`375126f\`, which is local HEAD, 148 tracked files, carrying the backend (41 files under \`ticketpath/\`), the fixture store, the console and the research records. Nothing is outstanding. What remains is not a push: the working tree holds an uncommitted \`NIGHT-LOG.md\` and the untracked \`records/findings/13-submission-readiness.md\`, and neither belongs in a submission commit. No push happens without your explicit yes.`
+
+Before: `**T1 blocks submission outright.** A submitted entry whose project link resolves to a repository that does not contain the code the submission describes fails the sponsor's own evidence check and the public-code rule, and no wording in the form repairs it. T2 is the other unrecoverable gate … Fix T1 first regardless, because it is a ten-second action …`
+After: `**T1 is closed; T2 is the only gate left that cannot be repaired by wording.** Until 17:36Z this paragraph said the reverse, and it was wrong in the alarming direction: remote \`main\` is \`375126f\`, the verified tree, so a judge who follows the project link finds the code the submission describes. …`
+
+`§6` before: `- The TBD that blocks submission outright: **T1, pushing the current tree to the public repo.** The repo is public and reachable, but its \`main\` stops at a commit pushed at 10:27Z and predates every backend file, the fixture store and the on-chain design the submission describes.`
+After: `- The one thing that can lose the entry outright: **T2, the video.** It must exist, be under 2:00, and stay public. The repo no longer is the gate it was: remote \`main\` is \`375126f\` and carries every file the submission describes.`
+and the TBD count: before `**11** (T1 to T11 in §3)`, after `**nine** of the eleven — T2, T3, T4, T5, T7, T8, T9, T10, T11. T1 is closed … and T6 is closed …`.
+
+### 8. `T6` and the licence, three places
+
+`§3` item 17 before: `| 17 | Licence | repo is public with \`license: None\` on GitHub. Pick one, add \`LICENSE\` | **T6** |`
+After: `| 17 | Licence | MIT, in \`LICENSE\`, copyright line filled: \`Copyright (c) 2026 Andrew Radu\`. Nothing to decide; confirm the name is the one he wants on a public repo | **T6, confirm only** |`
+
+T6 before: `- **T6 Licence.** GitHub reports none. MIT or Apache-2.0 are the usual two; he picks and the README line must match the file.`
+After: `- **T6 Licence.** **CLOSED, measured 17:36Z.** \`LICENSE\` is on \`main\` and is MIT; line 3 reads \`Copyright (c) 2026 Andrew Radu\`. There is nothing to decide. Confirm the name is the one he wants on a public repo, and the README line matches the file.`
+
+Snapshot note before: `Both exist: \`README.md\` and \`LICENSE\` (MIT, copyright line still a bracketed placeholder for the operator)`
+After: `Both exist: \`README.md\` and \`LICENSE\` (MIT, copyright line reads "Andrew Radu", measured 17:36Z)`
+
+### 9. `README.md` licence section
+
+Before:
+> MIT. The text is in `LICENSE`, and **the copyright line is a placeholder that the operator must fill in.** It reads, in full:
+> ```
+> Copyright (c) 2026 [OPERATOR: replace this bracket with your name]
+> ```
+> Nothing else in `LICENSE` needs editing. Until that line is replaced the licence names no holder, which is why it is flagged here rather than left for a reader to notice.
+
+After:
+> MIT. The text is in `LICENSE`, and the copyright line names the holder:
+> `Copyright (c) 2026 Andrew Radu`.
+
+### 10. Snapshot note — the home-path cleanup that its own command disproved
+
+Before: `Done in this pass: \`records/\`, \`docs/\`, \`tests/\` and \`tools/\` now carry repo-relative paths only, \`../ticketing-frontend\` for the sibling checkout. \`NIGHT-*.md\` are untouched by instruction | \`grep -rn "hom[e]/" README.md records docs tests tools ticketpath\` → no hits outside \`NIGHT-*.md\` |`
+After: `**Not done. Corrected 17:45Z: this row used to say the sweep was complete and its own command disproves that.** 24 hits remain outside \`NIGHT-*.md\`, on tracked files: \`docs/morning.html\` (4), \`records/DELIVERABLE.md\` (4), \`records/FINAL-PROOF-2.md\` (3), \`records/FINAL-PROOF.md\`, \`records/findings/07-engine-review.md\`, \`records/findings/12-final-audit.md\`, and the rest of \`records/\`. Recorded here as an open item rather than fixed … | \`git grep -n "hom[e]/" HEAD -- README.md records docs tests tools ticketpath \| grep -v NIGHT- \| grep -v __pycache__ \| wc -l\` → 24 |`
+
+Measured in this pass: 24 tracked hits outside `NIGHT-*`, in the six files named. The fix is a sweep of
+`records/` and `docs/morning.html`, which is not this run's file set, so it is recorded and not done.
+
+### 11. `§1.2` beat 3 — two strings that were not on the page
+
+Before: `` `9 at the ceiling`, `8 events on this platform, 5 with any resale`, `0 on-chain transactions`. The two lines doing the work are `[EXACT] ceiling 1.38 SOL = face 1.20 SOL plus a cap of 15%` and `[UNVALIDATED] Recommended primary price: at least 1.38 SOL per ticket, General tier.` ``
+After: `` `9 at the ceiling`, `8 events in the store`, `5 with any resale at this instant`, `0 on-chain transactions`, each carrying its own `[FIXTURE]` or `[DEVNET]` tag. The two lines doing the work are `[EXACT] ceiling 1,380,000,000 lamports = face 1,200,000,000 lamports × (10,000 + 1500) / 10,000 — integer arithmetic on the tier face, not an estimate. That is exactly 1.38 SOL.` and `[UNVALIDATED] Recommended primary price: at least 1.38 SOL per ticket, General tier.` ``
+
+Measured on my own instance: the `[EXACT]` sentence in full is `[EXACT] ceiling 1,380,000,000 lamports =
+face 1,200,000,000 lamports × (10,000 + 1500) / 10,000 — integer arithmetic on the tier face, not an
+estimate. That is exactly 1.38 SOL.` and the badges are `[FIXTURE] 8 events in the store, [FIXTURE] 5 with
+any resale at this instant`. The `ceiling 1.38 SOL = face 1.20 SOL plus a cap of 15%` string that the
+script told him to have in frame does not exist on the page.
+
+### 12. `§1.2` beat 3 — the decision-mode block, unscripted
+
+Before: no mention. After, a new paragraph after the beat's URL note:
+> **The block that sits in the middle of the frame.** Between the `[UNVALIDATED] The decision` badge and the
+> `[UNVALIDATED] Recommended primary price` line the page prints a `[UNVALIDATED] Decision mode:
+> COUNTERFACTUAL` block ending `and it is not a price you could have set.` It is the newest sentence on the
+> page and it lands before the number it qualifies: keep it in frame, do not read it aloud, and do not scroll
+> it half off. Measured on a fresh instance at HEAD `375126f`: `127.0.0.1:8813`, 13,726 bytes on `/`.
+
+### 13. `README.md` inventory — four numbers and three missing files
+
+`about 12 KB` → `about 13 KB` (measured 13,726 bytes on `/` at HEAD).
+`seventeen per investigation reports` → `twenty-four per investigation reports` (24 tracked files in
+`records/findings/` at HEAD).
+`unittest tests over 24 test modules` → `unittest tests over 32 test modules` (32 `tests/test_*.py`).
+Added to the index, which exists in `records/` and was not listed: `BUILD-REPORT-CONSOLE.md`,
+`FINAL-PROOF.md`, `FINAL-PROOF-2.md`. The finding also named `records/NIGHT-CONTINUE.md`; that file is at
+the repository root, not under `records/`, and the README's root-file sentence already names
+`NIGHT-BRIEF.md`, `NIGHT-LOG.md`, `NIGHT-QUEUE.md` — measured, so nothing was invented for it.
+
+### 14. `§4` item 5 — a pass condition that could not pass
+
+Before: `… no address is presented as ours, no signature appears anywhere, and no sentence says the hook is enforcing anything. …`
+After: `… no address is presented as ours, no sentence says the hook is enforcing anything, and the one signature in the tree — \`records/00-prior-direction-index.md:169\`, \`J8hNmBD7PCuVvNNxL4HSjj3LV9QHwkaUgfseZhRGdjbe\`, a devnet spike from an earlier corpus, 44 characters and therefore not a valid 64-byte signature: \`getTransaction\` answers \`Invalid param: WrongSize\` (measured 17:47Z) — is cited as prior work and not as this project's. …`
+
+The check now passes where it used to fail as written, and nothing was deleted to make it pass. Both halves were
+re-measured on devnet in this pass: `getTransaction` on that string → `Invalid param: WrongSize`, and
+`getAccountInfo` on `SYNfivkiJSwcrAgDeKA2bynB9SAuH7Y8Gg1ZrNV4agm` → `value: null`.
+
+### 15. `§4` items 3 and 4 — work that is done, listed as work to do
+
+Before item 3: `There is no root README. Write it, with: what this is; the one command to run the backend; the endpoints; …`
+After: `**Verified at 17:45Z, so this is a check and not a write.** \`README.md\` exists and satisfies the pass condition below: the run steps, the endpoints, the not-deployed line, the licence line, the test command, the AI disclosure and the no-screenshots note are all in it. …`
+
+Before item 4: `Add \`LICENSE\` with the licence chosen in T6, and one README line naming the same licence.`
+After: `**Verified at 17:45Z, so this is a check and not a write.** \`LICENSE\` is MIT and its third line reads \`Copyright (c) 2026 Andrew Radu\`; the README names the same licence and prints the same line. …`
+
+### 16. `§4` item 9 — an instruction to fix a sentence that is gone
+
+Before: `One paste-time correction, because the console moved under the text: §2.2 still ends "no price is served: the backend reports \`pricingModel.available: false\`", and §5 answer 9 still says the engine outputs nothing. Both were true this morning and are false now. Use the **VERSION-IF-CONSOLE-LANDS** replacement in §2.3 and §2.5 with them, or drop the last sentence of §2.2 rather than paste it.`
+After: `Paste-time check, because the console moved under this text and the text has now caught up: findings 1, 2 and 5 of \`records/findings/13-submission-readiness.md\` are the five sentences that were false — §2.5 item three, §5 answers 5 and 9, §2.6's Solana line and §2.3's missing console paragraph — and all five are corrected in place at 17:45Z. §2.2 no longer ends with the \`pricingModel.available: false\` sentence; it was rewritten at 15:10Z. Nothing in §2 needs pasting from anywhere else.`
+
+### Supporting edits, all inside the same two files
+
+- `§2` preamble: `… and nothing else in the text has to move.` → same, followed by `**[The console landed. Both marked lines were applied at 17:45Z …]**`, so the conditional marks are not read as pending.
+- `§2.2` correction note: the sentence that said the test count was "left as written" now says it is 453 with the command beside it.
+- `§3` item 13: before, the criterion was waved at as "designed, not deployed"; after, the four materials things are named with their measurement and the score is **0 of 4**, with the realistic track named. Nothing the finding's §4 said must not change was changed: §2.4 still opens `Nothing. No program, no mint, no transaction, no address, and no signature`.
+- New top section, `## Operator actions before 15:00Z`, ordered: T11 before recording, the video, `TBD-TOOL-NAMES`, the form's operator fields, T5 and T9, the `wip/mode-sentences-…` branch, the licence name, and the post-submission freeze. Everything that needs him and cannot be settled by an edit is there and nowhere else.
+- New end section, `### Correction note — 2026-11-07T17:45Z`, a 16-row table naming each site, what it said and what it says now, plus the sentence that the materials test stays 0 of 4 and that the pass added no claim of a deployment, a signature or a program.
+- `README.md` index: three record files added; nothing removed.
+
+### What this pass did not do
+
+- No code, no tests, no `ticketpath/`, no `tools/`, no `docs/`, no `.githooks`, no `docs/CLI.md`. Other
+  files in the tree moved during this pass because concurrent runs own them (`tools/console-check.py`,
+  `docs/morning.html`, `tools/tp.py`, `tools/public_safety.py`, `.githooks/`, the other untracked
+  `records/findings/`); none of them was written by this pass. So the 24 home-path hits recorded in
+  item 10 are a 17:36Z measurement and another run was already sweeping `docs/` when this was written.
+- No commit, no push. `README.md`, `records/SUBMISSION-PACK.md` and `NIGHT-LOG.md` are modified in the tree;
+  `records/BUILD-REPORT-CONSOLE.md` is this append.
+- The 24 personal home paths were not swept (item 10): they are in `records/` and `docs/`, recorded as open.
+- The video was not recorded and the form was not filled: both are in the operator-actions section.
