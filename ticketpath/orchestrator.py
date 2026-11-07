@@ -53,6 +53,23 @@ SOURCE_FIXTURE = "synthetic-fixture"
 SOURCE_EMPTY = "empty-store"
 
 
+def _excluded_own_counts(tickets, ledger, event_id: str, cut: datetime) -> dict:
+    """What the before-on-sale mode refuses to look at, counted at the same cut.
+
+    Ticket rows and priced sale rows on this event at or before the cut. It is a count of
+    rows in the store, never an input to a price: the estimator still sees nothing of this
+    event's own record. Without it the page printed `0 resales` and `0 tickets` for a store
+    that holds 12 of each, which reads as an absent record rather than as an excluded one
+    (08-fix-verification 3.1/R1, 10-final-review N4).
+    """
+    own = {ticket["id"] for ticket in tickets if ticket["eventId"] == event_id}
+    at_cut = [row for row in ledger if row["ticketId"] in own and parse(row["occurredAt"]) <= cut]
+    return {
+        "resales": sum(1 for row in at_cut if row["kind"] == "sale" and row["priceLamports"] is not None),
+        "tickets": len({row["ticketId"] for row in at_cut if row["kind"] == "issue"}),
+    }
+
+
 class Orchestrator:
     """One instance per server process. Holds the adapters and the clock."""
 
@@ -431,6 +448,11 @@ class Orchestrator:
             chain=self._chain_payload(event_id, tier_id, recommendations[tier_id], to_iso(cut)),
             sim=sim.run() if show_sim else [],
             canonical_url="",
+            # The before-on-sale mode withholds this event's own rows from the features. The rows
+            # are still in the store, so the page may not print them as absent ones: what the
+            # mode excluded is measured here, at the same cut, from the same store, and travels
+            # beside the zero that enters the decision.
+            excluded=_excluded_own_counts(tickets, ledger, event_id, cut) if not own_rows else None,
         )
         payload["modelVersion"] = MODEL_VERSION
         payload["provenance"] = {

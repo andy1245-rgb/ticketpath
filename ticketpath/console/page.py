@@ -178,12 +178,35 @@ def canonical(payload: Mapping) -> str:
     return f'<p>canonical URL for this decision: <code>{esc(url)}</code></p>'
 
 
+def _numbered(sentence: str, numbers: list) -> str:
+    """A registry sentence whose counts each keep their own badge, in the order they appear.
+
+    The sentence is the registry's, with one `\x00` marker per count; each marker is replaced
+    by the rendered number, so a count in a sentence travels with its badge exactly as a count
+    in a `<p>` does. `blocks._sentence` does the same job by name; this one is by position
+    because a strip fragment is one clause with at most two counts in it.
+    """
+    parts = sentence.split("\x00")
+    out = []
+    for index, part in enumerate(parts):
+        out.append(esc(part))
+        if index < len(numbers):
+            out.append(num(numbers[index]))
+    return "".join(out)
+
+
 def evidence(payload: Mapping) -> str:
     """The strip spec 1.1 step 3 fixes: one badge per count, carried by the count itself.
 
     Each number arrives badged from `units.num`. A badge in front of the paragraph as well
     would print it twice for the same fact, so only the nouns live here -- and each one
     agrees in number with its count.
+
+    Two branches are about scope, and both used to be about the wrong cap or the wrong
+    record. The ceiling item follows the cap this page prices against, not the event's
+    recorded one, and it says which of the two it is counting against. In the before-on-sale
+    mode the counts say how many rows enter the decision and how many the mode excludes,
+    because a bare `0 resales` over a store that holds 12 says the record is absent.
     """
     ev = payload["evidence"]
     tiers = payload["tiers"]
@@ -193,19 +216,42 @@ def evidence(payload: Mapping) -> str:
     tickets = value_of(ev["tickets"])
     platform = value_of(ev["eventsOnPlatform"])
     transactions = value_of(ev["onchainTransactions"])
-    # A count of tickets at a ceiling exists only where a ceiling does. The uncapped page
-    # used to print "0 at the ceiling" beside a regime line that said `uncapped`.
-    ceiling_item = (
-        f' · {num(ev["atCeiling"])} at the ceiling'
-        if value_of(payload["event"]["capBps"]) is not None
-        else " · no resale cap, so no ceiling"
-    )
+    in_force = value_of(payload["selection"]["capBpsCandidate"])
+    recorded = value_of(payload["event"]["capBps"])
+    mode = payload.get("decisionMode") or {}
+    excluded_resales = mode.get("excludedResales")
+    excluded_tickets = mode.get("excludedTickets")
+    if mode.get("usesOwnRecord") is False and excluded_resales is not None:
+        # The rows are in the store and the mode does not read them. Say both counts.
+        counts = (
+            _numbered(labels.render("P_STRIP_EXCLUDED_RESALES", n="\x00", m="\x00"), [ev["resales"], excluded_resales])
+            + " · "
+            + _numbered(labels.render("P_STRIP_EXCLUDED_TICKETS", n="\x00", m="\x00"), [ev["tickets"], excluded_tickets])
+        )
+        ceiling_item = " · " + esc(labels.render("P_STRIP_EXCLUDED_CEILING"))
+    else:
+        counts = f'{num(ev["resales"])} {plural(resales, "resale")} on this event · ' f'{num(ev["tickets"])} {plural(tickets, "ticket")}'
+        if in_force is None:
+            # No cap in force and none recorded: there is no ceiling to count against.
+            ceiling_item = " · no resale cap, so no ceiling"
+        elif recorded is None:
+            # A cap in force and no recorded cap: the count of sales at the ceiling is a count
+            # against a ceiling this record never had, so it is not printed; the cap the page
+            # prices against is named instead.
+            ceiling_item = " · " + _numbered(
+                labels.render("P_STRIP_CAP_UNCAPPED_RECORD", cap="\x00"),
+                [payload["selection"]["capBpsCandidate"]],
+            )
+        elif in_force != recorded:
+            # Both exist and they differ: the count is against the record's own cap, and the
+            # noun says so rather than leaving the page's cap to be assumed.
+            ceiling_item = f' · {num(ev["atCeiling"])} at the recorded ceiling'
+        else:
+            ceiling_item = f' · {num(ev["atCeiling"])} at the ceiling'
     return "".join(
         [
             '<section class="panel evidence" aria-label="[FIXTURE] the evidence">',
-            f'<p>{num(ev["resales"])} {plural(resales, "resale")} on this event · '
-            f'{num(ev["tickets"])} {plural(tickets, "ticket")}'
-            f'{ceiling_item}</p>',
+            f"<p>{counts}{ceiling_item}</p>",
             # The event total is the store's, not the cut's: the schema carries no instant at
             # which an event was created, so the count of events cannot be cut-aware, and
             # `on this platform` presented a whole-store total as a fact about the instant

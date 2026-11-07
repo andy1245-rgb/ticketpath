@@ -4,7 +4,7 @@ Decisions with their evidence, rejected approaches, conflicting findings, and qu
 Nothing is deleted from here; a question that is no longer worth pursuing is marked
 closed with the reason, not removed.
 
-**Last updated:** 2026-11-07T12:55Z (D3 note appended; nothing else in this file changed).
+**Last updated:** 2026-11-07T15:00Z (**D7 appended**; nothing else in this file changed).
 
 ---
 
@@ -223,3 +223,74 @@ right and is recorded, the mechanism is out because the identity half is off-cha
 (c) `set_cap` with a policy history: a real product feature, deferred with its cost named, not
 silently dropped. (d) Recording refused attempts on-chain so a cap violation becomes an account: it
 turns the wall into a note, charges the seller for being refused and is floodable (§3.11).
+
+## D7 — The resale cap is a split instrument, not a capture mechanism (2026-11-07)
+
+**Decision.** The product claim narrows to what the cap does and stops claiming what it does not. The
+sentence to retire: *"the resale premium is capturable entirely through the primary price"*. The sentence to
+carry: **a cap in basis points over face removes no primary price from the organiser's feasible set and adds
+no revenue channel, so the pricing objective needs no capture rate; what the cap decides, when it binds, is
+how the resale price divides between the organiser's price and the reseller's margin, in the fixed ratio
+`1 : c` that no primary price changes.** The cap is a split instrument. The price decides how big the resale
+price is; the cap decides who gets which part of it. Superseded in `records/findings/02-d-elasticity-fees-optimum.md`
+item 3 by a dated CORRECTION in place; marked at §1.5, §2.5(b), §3.6, §5.2 and §8(2) of the same file, at
+`B-mathematical-kb.md` §2 (P5) and §6.1, at `D-model-registry.md` in the primary optimum's "Buys" list, and
+carried into `DELIVERABLE.md` §1.6, §12.3, §12.6, §20.3, §20.4, §20.5 and `SUBMISSION-PACK.md` §1.2 beat 3
+and §2.2. No engine arithmetic changed, and no console sentence stated capture, so `ticketpath/` was not
+touched.
+
+**Evidence.** `records/findings/11-cap-capture-check.md`, an independent adversarial check by an economist who
+did not write `02-d` and did not build the engine: verdict **STANDS-WITH-NARROWING**. Class C for the algebra,
+class D for every mechanism whose sign or size is unmeasured. The load-bearing step is the split identity
+(`11` §5): a ticket settling at the ceiling sells for `p(1+c) = p + pc`, so the resale price divides
+`organiser : reseller = 1 : c`; `∂(organiser's part)/∂p = 1` and `∂(reseller's margin)/∂p = c`, so raising
+`p` scales both and leaves the ratio alone. Inside the cap's reach the premium is not captured, it is
+enlarged. Transfer happens only once `p ≥ V/(1+c)`, where the cap is slack and the resale price is pinned at
+the market value; there `∂(margin)/∂p = −1`, so the transfer is ordinary pricing to the market value on the
+tickets that still sell, not a cap effect. What survives unchanged: the feasible-set result (`11` §2.1), the
+objective result that no capture-rate term belongs in (O) (`11` §2.2), and the `c = 0` corollary that an
+above-face resale ban constrains the reseller's price and not the organiser's (`11` §2.3). Two scope
+conditions were added to the claim rather than discovered in it: the ceiling is proportional to the *face
+component* of the price, not to the buyer's all-in price, so a fee-funded rise does not move it (`11` §8, A6);
+and for every ticket already issued the ceiling is a fixed number, so the finding governs setting the next
+event's face, not reading this event's record (`11` §8, A7).
+
+**Consequence for the product claim.** The engine's recommendation is unaffected: it is still the sell-through
+boundary, still printed as "at least", still a floor and not an estimate, and no elasticity, no arithmetic and
+no number moved (`11` §10.5; `DELIVERABLE.md` §18.3). What changes is the sentence around the number. The product may say
+it reads the resale record, states the price that record supports as a floor, and states the cap's role
+correctly. It may not say, imply, or let a slide imply that the premium over face is the organiser's to take.
+The demo's headline "at least 1.38 SOL" equals the ceiling because the highest recorded resale settled at the
+ceiling, and that makes it the highest price anyone paid, hence a floor on value; it does not make the cap the
+primary price (`11` §10.2, §11.4). The 22.03 SOL of recorded markup is the size of the gap the recommended
+price is designed to close, not a revenue opportunity: price at the floor and the gap is gone, leaving churn at
+face (`11` §10.4).
+
+**The test it implies, and what it needs.** A scale test, on resales where the cap does not bind, so the
+observed price is the market value and not policy: settled resales on events with `resalePriceCapBps = null`,
+or on capped events with no row at the ceiling and the highest resale strictly below it. Variation: at least
+two face levels for comparable events (same artist or tour, venue class, on-sale window). Regression:
+`ln r = α + β·ln p + δ·(days to event) + controls`, standard errors clustered by event, with the decision rule
+declared before the fit — **`β = 1`**: the value moves one for one with face, so the split is `1 : c` at every
+level and any "capture" is nominal; **`β = 0`**: the value is absolute and face is a label, so beyond
+`p = V/(1+c)` nothing is capturable and the economic content fails; **`0 < β < 1` or `β > 1`**: partial
+anchoring, and the objective must carry the anchor term (`11` §7). Rows that settle at the ceiling cannot
+answer it: there the resale price is mechanically `p(1+c)` and a regression of `ln r` on `ln p` returns one by
+construction. The fields needed are all in the contract already; the binding constraint is the number of
+comparable events, which is more than the eight events and five with any resale that this platform has. It is
+a data-collection and money question, and the money is the operator's (`11` §7; `02-d` §3.6).
+
+**What would reverse it.** Three things, in order of likelihood. (1) A cap definition change: an absolute money
+ceiling instead of basis points over face voids the whole result and forces a shadow-value term into the
+objective (`11` §2, §12). (2) The scale test returning `β = 0`: then raising face moves the ceiling but not
+the market value, and the claim loses its economic content even though the algebra survives. (3) A binding
+constraint on face, or a material reputational cost of raising face, either of which stops the organiser
+before demand does (`11` §4). A settled resale at the ceiling whose price is not `p(1+c)` would falsify the
+split identity itself, which would be an arithmetic error or an off-rail consideration, and that is `02-b`'s
+business rather than this decision's (`11` §12).
+
+**Rejected alternative.** Keeping the old sentence and adding a footnote. Rejected because the sentence is what
+a reader repeats, and the check found that the objective-level result does not need it: the part of `02-d` §2.5
+that the engine runs on is untouched, so the sentence can go without costing the mathematics anything. Also
+rejected: rewriting `02-d` item 3 in place. The record is append-only; the old wording stays, quoted, with the
+correction beside it (`11` §9).

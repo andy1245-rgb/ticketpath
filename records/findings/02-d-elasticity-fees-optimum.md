@@ -46,6 +46,26 @@ class **C**: true by construction, not by measurement in ticket markets.
    keep", and it is why 01-b §4.5(ii) found the seller's problem collapsing to one dimension.
    [C, ASSERTED, MEASURED for the bps-over-face definition]
 
+**[CORRECTION 2026-11-07T15:00Z — the headline sentence above is withdrawn by
+`records/findings/11-cap-capture-check.md` (verdict STANDS-WITH-NARROWING); the objective-level conclusion
+stands. Appended, not deleted.]** The sentence that must stop being said is item 3's first line, quoted
+exactly: **"The resale premium is capturable entirely through the primary price, so the objective needs no
+'capture rate'."** What replaces it, class C, is `11` §9: **"The cap is a split instrument, not a ceiling on
+the organizer. A cap in basis points over face removes no primary price from the organizer's feasible set and
+adds no revenue channel, so the objective needs no capture rate. What it decides, when it binds, is how the
+resale price divides: the organizer's price `p` plus the reseller's margin `pc`, in the fixed ratio `1 : c`
+that no primary price changes. The organizer's share of the resale price is a function of the cap, not of the
+price; the size of the resale market is a function of the price, not of the cap."** What survives in item 3: the
+feasible-set result (no `p` is removed from the feasible set), the objective result (no capture-rate term),
+and the death of the "how much of the secondary margin can the organizer keep" model class — that model dies
+because the margin is never the organizer's revenue, not because it is capturable. Two qualifications: the
+ceiling is proportional to the *face component* of the price, not to the buyer's all-in price, so a fee-funded
+rise does not move it (`11` §8, A6); and the result is void for any record already produced under a fixed
+face, where the ceiling is an absolute number (`11` §8, A7). The test that would settle capture is a scale test
+on uncapped or slack-cap events at two or more face levels, with a pre-declared rule (`β = 1` nominal capture,
+`β = 0` no capture beyond value over `1 + c`), and it needs more events than the platform has (`11` §7). Other
+sites marked in this file: §1.5, §2.5(b), §3.6, §5.2, §8(2).
+
 4. **There is no transferable own-price elasticity for primary-market live tickets under a resale cap,
    and the literature's elasticity estimates are not a substitute.** The published record is sports
    attendance regressions, in which "the coefficient on price ... is either positive or, if negative,
@@ -223,6 +243,10 @@ carries a bound, not an estimate.
 The term that should *not* appear is a "share of resale margin the organizer can capture through
 pricing". §2.5 proves why: under a cap defined in basis points over face, the ceiling moves with the
 decision, so there is nothing left over to capture by a separate mechanism.
+**[MARKED 2026-11-07T15:00Z — true about the objective, and the reason given is not the whole reason.**
+The cap adds no revenue channel because the reseller's margin is not the organizer's revenue at any price, not
+because the premium is captured elsewhere. On a ticket settling at the ceiling the margin `pc` is the
+reseller's, and raising `p` enlarges it rather than transferring it (`11-cap-capture-check.md` §5, §9).]**
 
 ---
 
@@ -342,6 +366,14 @@ factor `λ`. The ceiling becomes `λp(1+c)`, so the reseller can still resell at
 markup. Nothing about the cap stops the organizer from raising the price; the only things that do are
 the demand curve (sell-through falls) and the organizer's uncertainty about it. The cap binds the
 *reseller*, not the organizer. [C, ASSERTED]
+
+**[MARKED 2026-11-07T15:00Z — the first half of this paragraph stands and two of its sentences do not
+(`11-cap-capture-check.md` §9).** What stands: no primary price is removed from the feasible set by a
+bps-over-face cap. What does not: "the only things that do stop the organizer are the demand curve and the
+organizer's uncertainty about it" is false as a matter of this model's own logic, because any cost of raising
+face stops it, including a binding constraint on face itself (`11` §4); and "the cap binds the reseller, not
+the organizer" is complete only for the feasible set — when it binds, the cap determines the **split** of the
+resale price, `1 : c` (`11` §5).]**
 
 **(c) The resale market does not add a separate cross-price term to the organizer's problem.** The
 buyer's outside option, waiting to buy on resale, has a price no higher than `p(1+c)` plus fees: it is a
@@ -485,6 +517,10 @@ Three reasons this design and not another:
   a buyer.
 - Because the cap is proportional, randomising `p` randomises the resale ceiling too, so the same
   experiment identifies the cap's effect on demand as a free by-product. [C]
+  **[MARKED 2026-11-07T15:00Z — this sentence is backwards and is withdrawn (`11-cap-capture-check.md` §8,
+  A9).** Proportionality makes `c` and `p` collinear in this design, so randomising `p` cannot separate the
+  cap's effect from the price effect; the experiment estimates a mixture. Identifying the cap's effect needs
+  variation in `c` at fixed `p`, which is cross-event and confounded.]**
 
 **Sizing, as a formula and not a number, because it is a money question.** With `G` events per arm and
 sell-through as a proportion, the variance of the arm mean is `[σ²_between + σ²_within/N̄]/G`. To detect
@@ -612,7 +648,7 @@ the arithmetic in the last table is exact from the formula.
 | `b`, buyer per-unit fee | **positive**, one-for-one on the all-in price | Enters `c**` additively | Settlement field 2 |
 | `a`, ancillary margin | **negative** | Lowers `c**`: a filled seat is worth more than the ticket, so buy volume with a lower price | Organizer's accounts |
 | `u`, empty-seat cost | **negative** | Same channel, larger effect: it is the cost that makes the organizer trade margin for sell-through | Organizer's accounts |
-| `c`, resale cap (bps) | **zero** directly; **positive** if the resale option has value to the buyer | §2.5(b): proportional caps do not constrain the organizer. The second channel is WTP: a buyer who may resell is willing to pay more, and a higher cap raises that option's value | Contract field; the second channel is class D |
+| `c`, resale cap (bps) | **zero** directly; **positive** if the resale option has value to the buyer | §2.5(b): proportional caps do not constrain the organizer. The second channel is WTP: a buyer who may resell is willing to pay more, and a higher cap raises that option's value. **[MARKED 2026-11-07T15:00Z — the sign is right; the cap's other role is the split `1 : c` of the resale price, not any influence on the recommendation (`11-cap-capture-check.md` §5, §9).]** | Contract field; the second channel is class D |
 | `σ`, demand uncertainty | **ambiguous** | Two opposing effects, both derived in §5.1 below | Nothing passive; a forecast-error series or an ensemble spread |
 | `q_min`, sell-through floor | **negative** | A tighter floor forces a lower price | Organizer policy |
 
@@ -765,6 +801,11 @@ Each of these is a test, not a caveat.
    `p(1+c)` equals an *external* anchor (a published face value, a competitor's price, a press-reported
    ceiling) rather than tracking the resale price. That would mean the cap is anchored to something other
    than `p` in practice, and the whole of §2.5 is void.
+   **[MARKED 2026-11-07T15:00Z — this tests organizer behaviour, not whether the market value moves with face,
+   so it does not settle capture (`11-cap-capture-check.md` §7).** The test that does is a scale test on
+   uncapped or slack-cap events at two or more face levels, regressing `ln r` on `ln p` with a pre-declared
+   rule (`β = 1` nominal capture, `β = 0` no capture beyond value over `1 + c`). The trap is that rows settling
+   at the ceiling return a coefficient of one by construction and cannot answer the question.]**
 3. **The boundary-optimum claim (§2.4, §5.2).** Falsified if, with real settlement data and a real
    elasticity, `c** > 0` and the interior optimum falls strictly inside the feasible sell-through set
    *and* differs materially from the boundary price. Then the Lerner term matters and my conclusion that

@@ -270,13 +270,27 @@ def _banded(payload: Mapping, tier: Mapping) -> str:
     level = recommendation["recommendedLamports"]
     lo = recommendation["bandLoLamports"]
     hi = recommendation["bandHiLamports"]
+    top_is_ceiling = bool(tier["band"].get("topIsCeiling")) and value_of(
+        tier["band"].get("boundCeilingLamports")
+    ) is not None
     out = [f'<p class="headline">[UNVALIDATED] {esc(labels.render("P_HEAD", P=sol_text(value_of(level))))}</p>']
     if lo is not None and hi is not None:
+        # A band whose top is a ceiling is printed at its exact value, because rounding it to
+        # two decimals put `0.94` above the `0.936` ceiling stated in the next sentence.
+        top = sol_exact(value_of(hi)) if top_is_ceiling else sol_text(value_of(hi))
         out.append(
-            f'<p class="range">[UNVALIDATED] {esc(labels.render("P_BAND", P_lo=sol_text(value_of(lo)), P_hi=sol_text(value_of(hi))))}</p>'
+            f'<p class="range">[UNVALIDATED] {esc(labels.render("P_BAND", P_lo=sol_text(value_of(lo)), P_hi=top))}</p>'
         )
     out.append(f'<p class="label-sentence">[FIXTURE] basis: {esc(recommendation["basis"])} · '
                f'{esc(labels.render("T3"))}</p>')
+    # Where the band's top is a ceiling rather than a width, say which ceiling it is and that
+    # the range stops there. The alternative, a band printed above a cap the page refuses to
+    # cross, is a range the page itself contradicts (N2, 10-final-review).
+    if top_is_ceiling:
+        out.append(
+            f'<p class="label-sentence">[EXACT] '
+            f'{esc(labels.render("P_BAND_STOPS", ceiling=sol_exact(value_of(tier["band"]["boundCeilingLamports"]))))}</p>'
+        )
     if lo is not None and hi is not None:
         out.append(
             f'<p class="range">[UNVALIDATED] {esc(labels.render("P_RANGE"))}</p>'
@@ -284,7 +298,17 @@ def _banded(payload: Mapping, tier: Mapping) -> str:
     out.append(f'<p>{esc(labels.render("A4"))}</p>')
     if tier["regime"] == "capped_no_mass_point":
         out.append(f'<p class="warning">[UNVALIDATED] {esc(labels.render("A20"))}</p>')
-    a2 = "A2" if value_of(payload["event"]["capBps"]) is not None else "A2_UNCAPPED"
+    # The A2 variant follows the cap this page prices against, which is the same cap the
+    # decision above is built against. It used to follow the recorded cap, so an uncapped
+    # event with a typed cap was told twice that it had no cap and no ceiling.
+    in_force = value_of(payload["selection"]["capBpsCandidate"])
+    recorded = value_of(payload["event"]["capBps"])
+    if in_force is None:
+        a2 = "A2_UNCAPPED"
+    elif recorded is None:
+        a2 = "A2_CAP_IN_FORCE_UNCAPPED"
+    else:
+        a2 = "A2"
     out.append(f'<p class="label-sentence">[UNVALIDATED] {esc(labels.render(a2))}</p>')
     out.append(_net_line(payload, tier))
     return "".join(out)
@@ -385,14 +409,25 @@ def market(payload: Mapping) -> str:
     if tier is None:
         return '<section class="panel"><h2>[FIXTURE] The market</h2><p>[REFUSED] no ledger.</p></section>'
     market = tier["market"]
-    cap_bps = value_of(payload["event"]["capBps"])
+    # The ceiling clause follows the cap this page prices against. It used to read the
+    # recorded cap, so `evt_syn_04&capBps=1700` said "no ceiling to count against" four lines
+    # above the violation line that counted seven sales above that ceiling (N1).
+    in_force = value_of(payload["selection"]["capBpsCandidate"])
+    recorded = value_of(payload["event"]["capBps"])
     out = ['<section class="panel market" aria-label="[FIXTURE] the market">']
     out.append("<h2>[FIXTURE] The market</h2>")
-    ceiling_clause = (
-        f'at the ceiling {num(market["atCeilingCount"])} — {esc(labels.render("A16"))}'
-        if cap_bps is not None
-        else esc(labels.render("P_NO_CAP"))
-    )
+    if in_force is None:
+        ceiling_clause = esc(labels.render("P_NO_CAP"))
+    elif recorded is None:
+        ceiling_clause = _sentence(
+            "P_MARKET_NO_RECORDED_CAP",
+            {"cap": num(payload["selection"]["capBpsCandidate"], "count")},
+        )
+    else:
+        # The count is against the record's own ceiling, and the noun says so when the page
+        # prices against a different one.
+        noun = "at the recorded ceiling " if in_force != recorded else "at the ceiling "
+        ceiling_clause = f'{noun}{num(market["atCeilingCount"])} — {esc(labels.render("A16"))}'
     out.append(
         f'<p>in this tier {num(market["sales"])} {plural(value_of(market["sales"]), "sale")} of '
         f'{num(market["eventSales"])} on this event · '
@@ -441,7 +476,21 @@ def _no_exposure_sentence(payload: Mapping) -> str:
     issue instant: one issue row exists there, and the strip two lines above it read
     `[FIXTURE] 1 ticket`. The count is that strip's own wrapper, so the sentence and the
     strip cannot disagree, and the count of zero keeps the sentence that is true then.
+
+    In the before-on-sale mode the zero is the mode's own doing, not the record's: the ticket
+    rows are in the store and the mode does not read them. The sentence then counts the rows
+    the mode excluded, because `No ticket had been issued at this instant` is a false
+    statement about a store holding 12 (N4, 10-final-review).
+
+    A store that holds none is the exception, and it keeps the plain sentence: on
+    `evt_syn_08` nothing has been issued at all, so `0 tickets are recorded and the mode
+    excludes every one of them` would be a sentence about rows that do not exist.
     """
+    mode = payload.get("decisionMode") or {}
+    excluded = mode.get("excludedTickets")
+    if mode.get("usesOwnRecord") is False and excluded is not None and value_of(excluded):
+        label_id = "no_exposure_excluded_one" if value_of(excluded) == 1 else "no_exposure_excluded"
+        return _count_sentence(label_id, excluded, {})
     tickets = payload["evidence"]["tickets"]
     count = value_of(tickets)
     if not count:

@@ -110,7 +110,7 @@ installing one is a change to a machine nobody asked to change.
 
 ### 1.2 The script
 
-258 spoken words, 1:51 of speech at 140 words per minute, 1:56 allowing a one-second breath at each of the
+264 spoken words, 1:53 of speech at 140 words per minute, 1:58 allowing a one-second breath at each of the
 five transitions. Say `NAME` as your own name; it is the only substitution. Nothing else in the blocks below
 changes.
 
@@ -118,10 +118,10 @@ changes.
 |---|---|---|---|
 | 1 The problem | 0:00 to 0:22 | `http://<host>:3001/organizer?event=evt_syn_02`, the "Resale analytics" panel, scrolled to the four stat tiles | **22.03 SOL across 12 sales, average markup +12%, cap is +15%**, all three visible at once |
 | 2 What recorded it | 0:22 to 0:43 | same page, then tab 2: `http://<host>:8788/api/events/evt_syn_02/analytics` | the JSON shows **`"saleCount": 12`** and **`"avgMarkupBps": 1233`**, the same numbers as the page, and `dataSource.label` at the bottom says the ledger is a fixture |
-| 3 The console | 0:43 to 1:02 | `http://<host>:8788/?event=evt_syn_02&tier=tier_stg_general&capBps=1500&tau=0.2` | **`Recommended primary price: at least 1.38 SOL per ticket, General tier.`** under its `[UNVALIDATED]` badge, then `That is a floor, not an estimate.` |
-| 4 The refusal | 1:02 to 1:18 | same console page, scrolled to `What the engine refuses` | **`not_identified`** and its sentence about asking prices, and **`Range: 1.38 SOL and up.`** |
-| 5 The on-chain invariant | 1:18 to 1:40 | `http://<host>:3001/tickets/tkt_syn_0001`, the "Custody trail", then the "On-chain (simulated)" card | the `Transferred` row with **no price**, then **`Not enforced — no program is deployed`** |
-| 6 The close | 1:40 to 1:56 | end card: `Ticketpath` / `Organizer pricing from the resale record` / `github.com/andy1245-rgb/ticketpath` | **"Nothing is deployed"** has already landed; here the line is **"everything else carries a label saying what it is"** |
+| 3 The console | 0:43 to 1:04 | `http://<host>:8788/?event=evt_syn_02&tier=tier_stg_general&capBps=1500&tau=0.2` | **`Recommended primary price: at least 1.38 SOL per ticket, General tier.`** under its `[UNVALIDATED]` badge, then `That is a floor, not an estimate.`, and the cap's role said out loud: a resale ceiling, not the primary price |
+| 4 The refusal | 1:04 to 1:20 | same console page, scrolled to `What the engine refuses` | **`not_identified`** and its sentence about asking prices, and **`Range: 1.38 SOL and up.`** |
+| 5 The on-chain invariant | 1:20 to 1:42 | `http://<host>:3001/tickets/tkt_syn_0001`, the "Custody trail", then the "On-chain (simulated)" card | the `Transferred` row with **no price**, then **`Not enforced — no program is deployed`** |
+| 6 The close | 1:42 to 1:58 | end card: `Ticketpath` / `Organizer pricing from the resale record` / `github.com/andy1245-rgb/ticketpath` | **"Nothing is deployed"** has already landed; here the line is **"everything else carries a label saying what it is"** |
 
 **Beat 1, spoken (51 words, about 22 s):**
 
@@ -149,11 +149,11 @@ carries `"totalVolumeLamports": 22026000000` and, at the bottom, `dataSource.lab
 point is that they match the page. Fetched for this edit: `curl -s
 http://127.0.0.1:8788/api/events/evt_syn_02/analytics` → the fields above.
 
-**Beat 3, spoken (43 words, about 18 s):**
+**Beat 3, spoken (49 words, about 21 s):**
 
-> The console is where the decision is made. The cap binds here: eight of nine recorded resales settled at
-> exactly the ceiling, so the engine gives a floor, not an estimate. Recommended primary price, at least one
-> point three eight SOL per ticket.
+> The console is where the decision is made. The cap binds: eight of nine resales settled at the ceiling, so
+> the engine gives a floor, not an estimate. The cap sets the resale ceiling, not your price. Recommended
+> primary price, at least one point three eight SOL per ticket.
 
 That URL is the one to type: it selects the event, the tier, the cap and the declared τ, so the screen is the
 same on every take. Its `asOf` defaults to the instant the page loads, and the numbers do not move with it
@@ -165,8 +165,11 @@ Recommended primary price: at least 1.38 SOL per ticket, General tier.`, followe
 binding: 8 of 9 recorded resales (88.9%) settled at exactly the ceiling" and `Value: at least 1.38 SOL per
 ticket. That is a floor, not an estimate.` Keep the fixture strip at the top of the page in frame: every
 number on this page is tagged `[FIXTURE]`, `[EXACT]`, `[UNVALIDATED]`, `[REFUSED]`, `[DECLARED]`, `[DESIGN]`,
-`[SIMULATED]` or `[DEVNET]`, and those tags are the honesty of the screen, so do not crop them. Fetched for
-this edit: `curl -s 'http://127.0.0.1:8788/?event=evt_syn_02&tier=tier_stg_general&capBps=1500&tau=0.2'`
+`[SIMULATED]` or `[DEVNET]`, and those tags are the honesty of the screen, so do not crop them. The floor and
+the ceiling are the same number because the highest recorded resale settled at the ceiling, so the ceiling is
+the highest price anyone paid and therefore a floor on value; it is not the cap setting the primary price, and
+the page's own line (A10) says the cap is a ceiling on the resale price and a floor on value, not a target for
+the primary price. Fetched for this edit: `curl -s 'http://127.0.0.1:8788/?event=evt_syn_02&tier=tier_stg_general&capBps=1500&tau=0.2'`
 → 200, strings above.
 
 **Beat 4, spoken (36 words, about 15 s):**
@@ -206,8 +209,10 @@ animation. Do not show the Explorer or a terminal.
 
 ### 1.3 The timing, printed
 
-- **258 spoken words.** 110.6 s at 140 words per minute, which is 1:51. Five one-second beats between the
-  six sections bring it to 1:56. That leaves 4 s of headroom against the 2:00 cap, before any second take.
+- **264 spoken words.** 113.1 s at 140 words per minute, which is 1:53. Five one-second beats between the
+  six sections bring it to 1:58. That leaves 2 s of headroom against the 2:00 cap, before any second take.
+  Beat 3 is the beat that grew, by six words, when the cap's role was added to it; the word count is the text
+  in §1.2 and nothing else.
 - Nothing was cut for this edit. The script is inside the cap, so the beats stand as written; cutting one
   would cost a screen the submission is better for showing.
 - If you speak slower than 140, shorten beat 2 to its first two sentences: the fixture label is legible on
@@ -324,10 +329,22 @@ Written for the state at 11:34Z. Lines that would change if the console lands ar
 > organizer would need, which is volume, median price, markup distribution and where the tickets ended up.
 > It runs tonight as a Python backend that answers nine endpoints of the platform's own frontend contract,
 > serving eight events and seventy-six tickets with a working custody trail, resale analytics and real
-> Ed25519 wallet signature verification, on a 149-test suite that passes. The ledger is a generated fixture
-> and not ticket data, and every screen says so in the visible text. No ticket program is deployed, so no
-> price is served: the backend reports `pricingModel.available: false` and the reason, rather than a number
-> it cannot defend.
+> Ed25519 wallet signature verification, on a 149-test suite that passes. It also serves a console that
+> reads one event's resale record and gives a floor on the primary price from it, labelled a floor and not
+> an estimate, and it states the cap's role correctly: a cap in basis points over face sets the ceiling on
+> the resale price and, where it binds, fixes how that price divides between the organizer's price and the
+> reseller's margin, and it does not set the primary price. The ledger is a generated fixture and not ticket data, and
+> every screen says so in the visible text. No ticket program is deployed, so no price is enforced on chain:
+> the program that would refuse a resale above the cap is designed and simulated, not deployed.
+
+**[REWRITTEN 2026-11-07T15:10Z — two sentences replaced, and the old wording is kept for the record.** The
+closing sentence ("no price is served: the backend reports `pricingModel.available: false`") was true at
+11:41Z and false once the console landed; it is quoted in §4 item 9 and in the 12:14Z snapshot note. The
+cap sentence states the narrowed result and replaces "the resale premium is capturable entirely through the
+primary price" (`11-cap-capture-check.md` §9, §11.1; `F` D7): the cap fixes the split of the resale price,
+`1 : c`, and does not set the primary price. The test count in this paragraph is left as written and was
+already flagged as stale in the 12:14Z snapshot note; §5 answer 9 still carries the pre-console wording and
+§4 item 9 is the correction for it.]**
 
 ### 2.3 How it works
 
@@ -604,8 +621,8 @@ The rest, in the order they tend to come.
 
 ## 6. The counts
 
-- Spoken words, **the script in §1.2**: **258**, six beats, 1:51 of speech at 140 words per minute and
-  1:56 with the five beat pauses.
+- Spoken words, **the script in §1.2**: **264**, six beats, 1:53 of speech at 140 words per minute and
+  1:58 with the five beat pauses.
 - Spoken words, the obsolete variant A kept in §1.5: **259**, unchanged, because it is kept verbatim.
 - TBDs only he can fill: **11** (T1 to T11 in §3). T11 is the console's reachability and it is the only one
   the console adds.
@@ -647,3 +664,23 @@ unchanged, so its line has moved. §0, §2, §5 and the chain and test-count row
 as they were written, and the console sentences in §2.2 and §5 answer 9 are still false: the paste-time
 correction for them is now item 9 of §4. Nothing else in this file was touched, and no other file was
 edited.
+
+### Narrowing note — 2026-11-07T15:10Z
+
+Scoped to the pack's pitch. An independent economist's check,
+`records/findings/11-cap-capture-check.md` (verdict **STANDS-WITH-NARROWING**), withdrew one sentence the
+product claim rested on: **"the resale premium is capturable entirely through the primary price"**. What is
+true instead, and what the pack now says: a cap in basis points over face sets a ceiling on the resale price
+and, where it binds, divides that price between the organiser's price and the reseller's margin, in the ratio
+`1 : c` that no primary price changes; it removes no primary price from the organiser's feasible set and adds no revenue
+channel, so the objective needs no capture rate, and the premium is not promised to anyone. The decision is
+`F` D7, and the long-form correction is `DELIVERABLE.md` §12.3 with the limitation in §20.3 and the
+prohibition in §20.4.
+
+What moved in this file: §1.2 beat 3, spoken and its notes (the cap's role added; the floor-and-ceiling
+coincidence explained so a viewer does not read the ceiling as the primary price), the beat table's times
+from beat 3 on, §1.3's and §6's word counts, and §2.2. Nothing else was touched. The script is still inside
+the 2:00 cap at 1:58, and the two seconds it gave up are the price of the correction: beat 3 went from 43 to
+49 words. If the take is tight, §1.3's escape (shorten beat 2 to its first two sentences) is unchanged and
+still the first thing to cut. §5 answer 9 and §0's state table are left as written and carry their existing
+corrections in the 12:14Z snapshot note and §4 item 9.

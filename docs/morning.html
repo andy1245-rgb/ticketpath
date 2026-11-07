@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morning page — Ticketpath, Sat 2026-11-07</title>
+<style>
+  :root{
+    --ink:#15171c; --ink2:#3d424d; --ink3:#6a6f7b;
+    --paper:#fdfcf9; --panel:#f4f2ec; --rule:#d8d4c8;
+    --accent:#8a1f1f; --ok:#1d6a3c; --warn:#8a5a00;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:17px/1.55 ui-serif,Georgia,"Times New Roman",serif;
+    padding:22px 18px 80px;
+  }
+  .wrap{max-width:54rem;margin:0 auto}
+  h1{font-size:1.55rem;line-height:1.2;margin:0 0 .35rem;letter-spacing:-.01em}
+  h2{font-size:1.18rem;margin:2.6rem 0 .7rem;padding-bottom:.35rem;border-bottom:2px solid var(--ink);
+     letter-spacing:-.01em}
+  h3{font-size:1rem;margin:1.5rem 0 .35rem}
+  p{margin:.55rem 0}
+  .stamp{color:var(--ink3);font-size:.82rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+         margin:0 0 1.1rem}
+  .lede{font-size:1.02rem;color:var(--ink2);margin:.2rem 0 0}
+  code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{font-size:.86em;background:#eceade;padding:.06em .3em;border-radius:3px;word-break:break-word}
+  pre{background:#f1eee4;border-left:3px solid var(--rule);margin:.5rem 0 .7rem;padding:.6rem .7rem;
+      overflow-x:auto;font-size:.82rem;line-height:1.45}
+  pre code{background:none;padding:0;font-size:1em;white-space:pre}
+  a{color:#123f8a;text-decoration:none;border-bottom:1px solid #b9c6dd}
+  a:hover{border-bottom-color:#123f8a}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:.6rem 0 1rem;
+          border:1px solid var(--rule);border-radius:4px;background:#fff}
+  table{border-collapse:collapse;width:100%;font-size:.86rem;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  th,td{text-align:left;vertical-align:top;padding:.5rem .6rem;border-bottom:1px solid var(--rule)}
+  thead th{background:var(--panel);font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);
+           white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  .big{font-size:1.02rem}
+  .num{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tag{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+       font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;padding:.12rem .38rem;border-radius:3px;
+       border:1px solid var(--rule);background:#fff;color:var(--ink2);vertical-align:.08em}
+  .tag.no{color:var(--accent);border-color:#dfc3c3;background:#fbf1f1}
+  .tag.yes{color:var(--ok);border-color:#c3dfcc;background:#f0f8f2}
+  .tag.hold{color:var(--warn);border-color:#e5d6ab;background:#fbf7ec}
+  .box{border:1px solid var(--rule);border-radius:5px;background:#fff;padding:.85rem .9rem;margin:.9rem 0 1.2rem}
+  .box h3{margin-top:0}
+  .box.dec{border-left:4px solid var(--ink)}
+  .lbl{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);display:block;margin:.55rem 0 .1rem}
+  .declead{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:.92rem}
+  ul.checks{list-style:none;padding:0;margin:.4rem 0 0}
+  ul.checks>li{padding:.7rem 0 .8rem;border-bottom:1px dashed var(--rule)}
+  ul.checks>li:last-child{border-bottom:none}
+  .ck{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:.95rem}
+  input[type=checkbox]{width:1.15em;height:1.15em;margin:0 .45rem 0 0;vertical-align:-.16em;accent-color:#123f8a}
+  .line{font-size:.9rem;margin:.3rem 0}
+  .now{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.79rem;color:var(--ink2);
+       border-left:2px solid var(--rule);padding-left:.55rem;margin:.45rem 0 0}
+  .now.pass{border-left-color:#7fb894}
+  .now.fail{border-left-color:#c98a8a}
+  ol.judge{padding-left:1.3rem;margin:.5rem 0}
+  ol.judge>li{margin:0 0 1.1rem}
+  ol.judge>li::marker{font-weight:700}
+  .url{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92rem;word-break:break-all}
+  .say{margin:.35rem 0 .15rem}
+  .say b{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:.72rem;
+         letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);display:block}
+  .quote{border-left:3px solid var(--ink);padding:.1rem 0 .1rem .7rem;color:var(--ink2);font-style:italic}
+  .rule{border:0;border-top:1px solid var(--rule);margin:2.4rem 0 0}
+  .foot{font-size:.82rem;color:var(--ink3);margin-top:1.4rem}
+  .foot b{color:var(--ink2)}
+  .warn{border-left:4px solid var(--accent);background:#fbf3f3;padding:.6rem .8rem;margin:.8rem 0}
+  @media (max-width:520px){
+    body{font-size:16px;padding:16px 13px 64px}
+    h1{font-size:1.3rem}
+    table{font-size:.79rem}
+    th,td{padding:.42rem .45rem}
+  }
+  @media print{
+    body{background:#fff;font-size:10.5pt;padding:0}
+    .box,.scroll{break-inside:avoid}
+    h2{break-after:avoid}
+    a{color:#000;border-bottom:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Morning page: what is waiting on you</h1>
+<p class="stamp">Built Sat 2026-11-07 14:22Z · every figure on this page was produced by a command on this machine between 14:15Z and 14:20Z, or read out of the record named under it. If a time below is more than an hour old, re-run the command beside it.</p>
+<p class="lede">One page, top to bottom. The deadlines first, then the five things only you can do, then the path a judge takes through what is running, then the checklist you run in the last hour, then what is true and what is not, then the five numbers you will be asked for.</p>
+
+<h2>1. The two deadlines</h2>
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th>Deadline</th><th>Local (ET)</th><th>UTC</th><th>From 14:22Z on Sat 7 Nov</th></tr>
+  </thead>
+  <tbody>
+    <tr class="big">
+      <td><b>Initial submission</b></td>
+      <td class="num">Sun 8 Nov, 10:00 ET</td>
+      <td class="num">Sun 8 Nov, 15:00Z</td>
+      <td class="num">24 h 38 m</td>
+    </tr>
+    <tr>
+      <td>Final</td>
+      <td class="num">Sun 8 Nov, 11:45 ET</td>
+      <td class="num">Sun 8 Nov, 16:45Z</td>
+      <td class="num">26 h 23 m</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p><b>Aim at 15:00Z, the earlier one.</b> The reason is not caution: nothing published says the initial
+submission can still be edited after it closes (<code>records/findings/02-rubric-and-scoring.md</code>,
+open question 1), so the second deadline may be an edit window that does not exist. Treat 15:00Z as the
+freeze and 16:45Z as slack you may never get.</p>
+<p class="line">Both conversions are the records' own: <code>NIGHT-LOG.md</code> line 4 states
+<code>initial submission Sun 2026-11-08 10:00 ET = 15:00Z</code>, and <code>records/SUBMISSION-PACK.md</code>
+header states the final at 11:45 ET. ET is EST on 8 Nov, so the offset is UTC−5.</p>
+
+<h2>2. The five decisions only you can make</h2>
+<p class="line">Nothing here is decided. Each block says what it unblocks, the exact command or click, and
+what it costs.</p>
+
+<div class="box dec">
+<h3>2.1 Push the repository <span class="tag no">blocks submission</span></h3>
+<p class="declead"><b>What it unblocks.</b> The project link on the form. The public repo is
+<code>andy1245-rgb/ticketpath</code> and its <code>main</code> is at <code>e55a18b</code>, pushed at 10:27Z,
+which predates every backend file, the fixture store, the console and the research records. Your local
+<code>HEAD</code> is <code>6b27016</code> from 14:10:50Z and the tree is clean. Until you push, a judge who
+follows the link gets the pre-night code and none of the work. No wording in the form repairs that.</p>
+<pre><code>cd /home/friend/ticketPricing
+git status --short && git log -1 --format='%h %ci'   # observe before you act
+git push origin main</code></pre>
+<p><b>Cost.</b> About ten seconds. It publishes every record in the tree, including the research records and
+the two rounds of corrections; nothing in it is secret (checklist item 2 below was run and is clean). It is
+the one action that makes every other claim on the form checkable.</p>
+<p class="now">Observed 14:19Z: <code>git log -1</code> → <code>6b27016 2026-11-07 14:10:50 +0000</code>;
+<code>git ls-remote origin</code> → <code>e55a18b… refs/heads/main</code>; <code>git status --short</code> → empty.</p>
+</div>
+
+<div class="box dec">
+<h3>2.2 Console reachability <span class="tag hold">your call, three options</span></h3>
+<p class="declead"><b>What it unblocks.</b> Field 5 of the form, the Demo URL. The console that prints the
+recommendation is at <code>http://127.0.0.1:8788/</code>, which is this machine, so a judge cannot reach it
+and the video is currently the only place anyone sees it. This decision does not block the entry: with no
+hosted demo the entry is complete.</p>
+<p><b>Option A, record only.</b> No command. The Demo URL field stays blank or points at the repo with a
+plain note that the demo is local.
+<span class="lbl">Cost</span>Free, nothing running at judging time, and the console exists only in the
+recording.</p>
+<p><b>Option B, a tunnel.</b></p>
+<pre><code>cloudflared tunnel --url http://127.0.0.1:8788</code></pre>
+<p><span class="lbl">Cost</span>Free and live in a minute. The URL is public and works only while that process
+runs, so it has to stay up for the whole judging window or the form's link is dead; it also exposes the
+fixture API to anyone who finds the URL. The data is synthetic, so the exposure is not a data risk.</p>
+<p><b>Option C, a deploy.</b> <span class="lbl">Cost</span>A few hours and a hosting account. This is the only
+option that survives you closing the laptop and the only one that puts a URL in the form you can be held to.</p>
+<p class="now">Observed 14:16Z: <code>curl -o /dev/null -w '%{http_code}' http://127.0.0.1:8788/</code> → 200,
+13,547 bytes, and the page carries the fixture strip and the <code>[UNVALIDATED]</code> recommendation.
+Detail in <code>records/SUBMISSION-PACK.md</code> §3 T11.</p>
+</div>
+
+<div class="box dec">
+<h3>2.3 The three data questions <span class="tag hold">a reply, not work</span></h3>
+<p class="declead"><b>What they unblock.</b> Three sentences the submission currently assumes.</p>
+<p><b>Q1. Does the company's internal ledger carry seat coordinates (section, row, seat) that the wire
+contract omits?</b> The contract carries <code>tierId</code>, <code>serial</code> and a mint, and nothing else.
+Your answer decides whether this prices a <i>tier</i> or a <i>seat</i>, which the hedonic price function and
+the within-tier mix both depend on (<code>records/00-data-situation.md</code> Gap 3).</p>
+<p><b>Q2. Is anything of yours deployed anywhere, on any cluster?</b> <code>/health</code> says
+<code>programDeployed: false</code>, <code>programId: null</code>, <code>rpcEnabled: false</code>, and the
+submission's "What is on-chain" section says "nothing" in as many words. That paragraph is only true if your
+answer is no. If a program or a mint exists, that section has to be rewritten before it goes in.</p>
+<p><b>Q3. Where is the cap enforced: the sale instruction, or the transfer hook?</b> The design argues the
+sale instruction, because a Token-2022 hook never sees lamports, and the hook only gates who may receive.
+Your answer is what the on-chain paragraph and the frontend's cap sentences rest on.</p>
+<p><span class="lbl">Cost</span>Three lines of reply. No command, no run, no waiting.</p>
+</div>
+
+<div class="box dec">
+<h3>2.4 Apply the honesty patch, the env var, and restart :3000 <span class="tag no">only affects what you show</span></h3>
+<p class="declead"><b>What it unblocks.</b> The live frontend telling the truth. Right now <code>:3000</code>
+(pid 81447, your tree) is still in mock mode: it serves the "Mock data" banner and none of the fixture strip,
+and it 404s on the backend's events. Your copy at <code>../ticketpath-demo</code> already has the patch and
+reads the backend, which is why <code>:3001</code> is the frontend on the judge path.</p>
+<pre><code>cd /home/friend/ticketing-frontend
+git apply --check ../ticketPricing/docs/frontend-honesty.patch   # must print nothing
+git apply ../ticketPricing/docs/frontend-honesty.patch
+printf '\nNEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788\n' &gt;&gt; .env
+# then restart the dev server that holds :3000 (pid 81447 when this page was written)</code></pre>
+<p><b>Cost.</b> 11 files, +68 / −16 lines, no dependency and no new request. The restart is not optional:
+<code>NEXT_PUBLIC_*</code> is inlined at build time, so the running server cannot pick it up. Budget a minute
+of downtime and expect the first page compile after the restart to take a few seconds.</p>
+<p class="warn"><b>Stop if <code>--check</code> is not silent.</b> The patch was built against a clean copy of
+this tree (<code>records/FRONTEND-HONESTY-PATCH.md</code>, patch 14,290 bytes, sha256
+<code>9cb9462e…eb4c0</code>). If it does not check, the live tree has drifted and the patch needs regenerating
+rather than forcing.</p>
+<p class="now">Observed 14:19Z: <code>components/SyntheticNotice.tsx</code> exists in
+<code>../ticketpath-demo</code> and does not exist in <code>../ticketing-frontend</code>;
+<code>/proc/81447/environ</code> has no <code>NEXT_PUBLIC_API_BASE_URL</code>; <code>curl :3000/</code> → 200
+with the "Mock data" banner and no fixture strip.</p>
+</div>
+
+<div class="box dec">
+<h3>2.5 The licence line and the video <span class="tag no">two form fields</span></h3>
+<p class="declead"><b>What it unblocks.</b> Field 17 (licence) and field 4 (video URL). Both are empty right
+now.</p>
+<p><b>The licence line.</b> <code>LICENSE</code> exists and is MIT, but line 3 reads
+<code>Copyright (c) 2026 [OPERATOR: replace this bracket with your name]</code>, so the file names no holder.
+Edit that one line, and make sure the README's MIT line still matches. It has to land in the same push as 2.1,
+or GitHub keeps reporting <code>license: None</code> for the repository.</p>
+<p><b>The video.</b> No video file exists anywhere in the repo. Record from the script in
+<code>records/SUBMISSION-PACK.md</code> §1.2: 258 spoken words, target 1:56, hard cap 2:00, six beats, the
+hackathon's name in the first spoken sentence because that is a published rule. There is no browser on this
+machine, so §1.1 gives the two recording paths: path A over the LAN with
+<code>TICKETPATH_HOST=0.0.0.0</code>, or path B with everything on a laptop that has a browser.</p>
+<p><span class="lbl">Cost</span>The licence is one line. The video is the longest job on this page: set up the
+recording path, then two or three takes. The five things to check on screen before you roll are listed in §1.1
+and all five were confirmed on loopback at 12:19Z.</p>
+<p class="now">Observed 14:19Z: <code>sed -n '1,4p' LICENSE</code> → the placeholder on line 3;
+<code>ls *.mp4 *.mov *.webm</code> → nothing.</p>
+</div>
+
+<h2>3. The judge path</h2>
+<p class="line">All three were live when this page was written. The sentence under each link is the one to say
+while that screen is up.</p>
+
+<ol class="judge">
+  <li>
+    <p class="url"><a href="http://127.0.0.1:8788/?event=evt_syn_02&amp;tier=tier_stg_general&amp;capBps=1500&amp;tau=0.2">http://127.0.0.1:8788/?event=evt_syn_02&amp;tier=tier_stg_general&amp;capBps=1500&amp;tau=0.2</a></p>
+    <p class="line">The console, the decision. <span class="tag yes">200 at 14:16Z</span> 13,547 bytes.</p>
+    <p class="say"><b>Say</b><span class="quote">The cap binds here: eight of nine recorded resales settled at
+    exactly the ceiling, so the engine gives a floor, not an estimate. Recommended primary price, at least one
+    point three eight SOL per ticket.</span></p>
+    <p class="line">On screen: the fixture strip first, then <code>[UNVALIDATED] Recommended primary price: at
+    least 1.38 SOL per ticket, General tier.</code> and the sentence <code>That is a floor, not an
+    estimate.</code> Do not press the state-machine button; it reads <code>0 arms shown</code> until pressed.</p>
+  </li>
+  <li>
+    <p class="url"><a href="http://127.0.0.1:3001/organizer?event=evt_syn_02">http://127.0.0.1:3001/organizer?event=evt_syn_02</a></p>
+    <p class="line">The platform's own frontend, reading our backend. <span class="tag yes">200 at 14:17Z</span>,
+    fixture strip present, no "Mock data" banner.</p>
+    <p class="say"><b>Say</b><span class="quote">This is one event's record: twelve resales, twenty-two point
+    zero three SOL of volume, twelve percent over face, against a fifteen percent cap.</span></p>
+    <p class="line">On screen: <code>Total resale volume 22.03 SOL across 12 sales</code> /
+    <code>Average markup +12% cap is +15%</code> / <code>Median resale price 1.38 SOL</code>, with the
+    <code>SYNTHETIC FIXTURE DATA</code> strip above them. The same numbers are in the backend's JSON at
+    <code>/api/events/evt_syn_02/analytics</code>: <code>"saleCount": 12</code>,
+    <code>"avgMarkupBps": 1233</code>.</p>
+  </li>
+  <li>
+    <p class="url"><a href="http://127.0.0.1:8788/health">http://127.0.0.1:8788/health</a></p>
+    <p class="line">Where the data comes from, in one call. <span class="tag yes">200 at 14:16Z</span>, 1,177 bytes.</p>
+    <p class="say"><b>Say</b><span class="quote">The backend says in its own words what this is: a synthetic
+    fixture, no program deployed, no fitted model, nine of nine contract endpoints over ten routes.</span></p>
+    <p class="line">On screen: <code>"synthetic": true</code>, <code>"programDeployed": false</code>,
+    <code>"programId": null</code>, <code>"fitted": false</code>,
+    <code>"endpointsImplemented": 9</code>, <code>"routesImplemented": 10</code>.</p>
+  </li>
+</ol>
+
+<p class="warn"><b>All three addresses are loopback.</b> They are this machine, not a judge's. Nothing on this
+page claims otherwise, and decision 2.2 is the only thing that changes it. If a link is dead when you open this
+page, start it again:</p>
+<pre><code># backend and console on 8788
+cd /home/friend/ticketPricing
+nohup python3 -m ticketpath.server &gt; /tmp/tp-backend.log 2&gt;&amp;1 &amp;
+
+# the frontend copy on 3001, pointed at it
+cd ../ticketpath-demo
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788 \
+  nohup ./node_modules/.bin/next dev -p 3001 &gt;&gt; /tmp/tp-web.log 2&gt;&amp;1 &amp;</code></pre>
+<p class="line">Never <code>8787</code>: another process owns it, and the server refuses to bind it.</p>
+
+<h2>4. The last-hour checklist</h2>
+<p class="line">Tick as you go, stop at the first failure. Each line carries the command that proves it and the
+condition that counts as passing. The state recorded after each is what I saw at 14:15–14:20Z, not a promise
+about later.</p>
+
+<ul class="checks">
+
+<li>
+  <p class="ck"><input type="checkbox" id="k1"><label for="k1"><b>1. Tree clean and committed.</b></label></p>
+  <p class="line">Pass: an empty status, and a last commit inside the weekend window.</p>
+  <pre><code>cd /home/friend/ticketPricing
+git status --short
+git log -1 --format='%H %ci'</code></pre>
+  <p class="now pass">14:19Z — PASS. Status empty; <code>6b27016 2026-11-07 14:10:50 +0000</code>.</p>
+</li>
+
+<li>
+  <p class="ck"><input type="checkbox" id="k2"><label for="k2"><b>2. No secret in the tree.</b></label></p>
+  <p class="line">Pass: every hit is an <code>os.environ</code> read or prose, and no tracked
+  <code>.env</code>, key or keypair file.</p>
+  <pre><code>git grep -nEi 'BEGIN [A-Z ]*PRIVATE KEY|api[_-]?key|password|\.env' -- . ':!records' ':!NIGHT-*.md'
+git ls-files | grep -E '\.(pem|key|env)$'</code></pre>
+  <p class="now pass">14:18Z — PASS. 9 hits, all <code>os.environ.get(...)</code> in
+  <code>ticketpath/</code> and <code>tests/</code>; the file grep returns nothing.</p>
+</li>
+
+<li>
+  <p class="ck"><input type="checkbox" id="k3"><label for="k3"><b>3. The README's own commands run.</b></label></p>
+  <p class="line">Pass: the startup banner names <code>127.0.0.1:8788</code>, and
+  <code>/health</code> answers 200 with <code>"synthetic": true</code>.</p>
+  <pre><code>python3 -m ticketpath.server
+curl -s http://127.0.0.1:8788/health</code></pre>
+  <p class="now pass">14:16Z — PASS. The process holding 8788 answers 200 on <code>/health</code>
+  (1,177 bytes) with <code>"synthetic": true</code>; <code>README.md</code> is 13,344 bytes and every command
+  in it was exercised in <code>records/FINAL-PROOF.md</code> step 7.</p>
+</li>
+
+<li>
+  <p class="ck"><input type="checkbox" id="k4"><label for="k4"><b>4. Licence names a holder and matches the README.</b></label></p>
+  <p class="line">Pass: line 3 of <code>LICENSE</code> names you, and the README's line says the same licence.</p>
+  <pre><code>sed -n '1,4p' LICENSE
+grep -n -i 'MIT' README.md</code></pre>
+  <p class="now fail">14:19Z — FAIL, waiting on decision 2.5. Line 3 is
+  <code>Copyright (c) 2026 [OPERATOR: replace this bracket with your name]</code>.</p>
+</li>
+
+<li>
+  <p class="ck"><input type="checkbox" id="k5"><label for="k5"><b>5. On-chain honesty.</b></label></p>
+  <p class="line">Pass: every occurrence of "deployed" in the markdown is a negation, a design label, or a
+  sentence that is explicitly conditional; no address is presented as ours; every long base58 string is a
+  placeholder, a protocol id or a published test vector.</p>
+  <pre><code>git grep -n 'deployed' -- '*.md'
+git grep -hoE '[1-9A-HJ-NP-Za-km-z]{32,44}' -- '*.md' '*.py' | sort -u | grep -v '^SYN'</code></pre>
+  <p class="now pass">14:19Z — PASS on both counts, but read the non-negations yourself; they are four kinds and
+  only the last one is a live claim. 128 lines contain "deployed". Of the rest: quoted replacement text in the
+  review records (<code>07-engine-review.md</code>, <code>BUILD-REPORT-CONSOLE.md</code>, which quote the false
+  "under the deployed program" sentence in order to correct it); explicitly conditional prose ("the day the
+  program is deployed", "once the program is deployed", "if the program is deployed and the ledger is real");
+  an instruction to delete the hardcoded clauses if you ever deploy, in
+  <code>FRONTEND-HONESTY-PATCH.md</code> §5; and one hypothetical in <code>02-ai-ml-decision.md</code> that
+  begins "Q2 answered yes, a program is deployed". Nothing asserts that a program is deployed now. The long
+  base58 strings are <code>SYN…</code> and <code>FXTURE…</code> placeholders, protocol ids
+  (<code>ATokenGPv…</code>, <code>BPFLoader21…</code>, <code>Ed25519SigVerify…</code>), two base58 round-trip
+  vectors in <code>tests/test_base58.py</code>, and git blob ids. No address is presented as one of
+  ours.</p>
+</li>
+
+<li>
+  <p class="ck"><input type="checkbox" id="k6"><label for="k6"><b>6. The fixture strip is in the visible text of every screen that prints a number.</b></label></p>
+  <p class="line">Pass: four <code>True</code> from the frontend loop, and the console returning
+  <code>True True True</code>.</p>
+  <pre><code>for p in "/" "/events/evt_syn_02" "/organizer?event=evt_syn_02" "/tickets/tkt_syn_0001"; do
+  curl -s "http://127.0.0.1:3001$p" \
+  | python3 -c 'import sys,re,html; t=sys.stdin.read(); b=re.sub(r"(?is)&lt;(script|style)[^&gt;]*&gt;.*?&lt;/\1&gt;"," ",t); print("SYNTHETIC FIXTURE DATA" in re.sub(r"\s+"," ",html.unescape(re.sub(r"(?s)&lt;[^&gt;]+&gt;"," ",b))))'
+done
+
+curl -s "http://127.0.0.1:8788/?event=evt_syn_02&amp;tier=tier_stg_general&amp;capBps=1500&amp;tau=0.2" \
+| python3 -c 'import sys,re,html; t=sys.stdin.read(); b=re.sub(r"(?is)&lt;(script|style)[^&gt;]*&gt;.*?&lt;/\1&gt;"," ",t); s=re.sub(r"\s+"," ",html.unescape(re.sub(r"(?s)&lt;[^&gt;]+&gt;"," ",b))); print(s.count("SYNTHETIC FIXTURE DATA")&gt;0, "[UNVALIDATED]" in s, "Recommended primary price: at least 1.38 SOL per ticket" in s)'</code></pre>
+  <p class="now pass">14:17Z — PASS. Four <code>True</code> on :3001, and <code>True True True</code> on the
+  console. The same four pages carry no "Mock data" banner.</p>
+</li>
+
+<li>
+  <p class="ck"><input type="checkbox" id="k7"><label for="k7"><b>7. <code>/health</code> and the console agree, and both tell the truth.</b></label></p>
+  <p class="line">Pass: <code>pricingModel.available</code> true, <code>modelVersion</code>
+  <code>engine-2026-11-07</code>, <code>kind</code> <code>rule-based-bounded-estimator</code>,
+  <code>fitted</code> false, <code>programDeployed</code> false, <code>programId</code> null,
+  <code>dataSource.synthetic</code> true; and the console's recommendation is a floor under an
+  <code>[UNVALIDATED]</code> badge.</p>
+  <pre><code>curl -s http://127.0.0.1:8788/health | python3 -m json.tool
+curl -s 'http://127.0.0.1:8788/?event=evt_syn_02&amp;tier=tier_stg_general&amp;capBps=1500&amp;tau=0.2'</code></pre>
+  <p class="now pass">14:16Z — PASS, all eight fields as above. Note the trap: the submission pack's §2.2 and
+  §5 answer 9 still say <code>pricingModel.available: false</code>, which was true this morning and is false
+  now. Use the <b>VERSION-IF-CONSOLE-LANDS</b> replacement in <code>SUBMISSION-PACK.md</code> §2.3 and §2.5 with
+  them, or drop that last sentence of §2.2.</p>
+</li>
+
+<li>
+  <p class="ck"><input type="checkbox" id="k8"><label for="k8"><b>8. The video.</b></label></p>
+  <p class="line">Play it logged out on a machine that did not record it. Pass: under 2:00; the hackathon's
+  name in the first spoken sentence; the console in frame with its recommendation, its
+  <code>[UNVALIDATED]</code> badge and its fixture strip; no "Mock data" banner; the strip legible on every
+  screen that prints a number; no Explorer page; the URL plays while logged out and stays public.</p>
+  <p class="now fail">14:19Z — FAIL, waiting on decision 2.5. No video file exists.</p>
+</li>
+
+<li>
+  <p class="ck"><input type="checkbox" id="k9"><label for="k9"><b>9. The form.</b></label></p>
+  <p class="line">Pass: every URL in it opens logged out and none 404s; the devnet address field is empty
+  because nothing is deployed; the track boxes match §3 of the pack; and a submission id is captured before
+  15:00Z. Fields and their text are in <code>records/SUBMISSION-PACK.md</code> §3, one row each.</p>
+  <p class="now">Not run. It needs decisions 2.1, 2.2 and 2.5 first, because fields 3, 4, 5 and 17 are the ones
+  they fill.</p>
+</li>
+
+<li>
+  <p class="ck"><input type="checkbox" id="k10"><label for="k10"><b>10. Freeze.</b></label></p>
+  <p class="line">Pass: <code>git log -1</code> is the same hash after the video and the URLs are recorded, and
+  nothing is pushed after the submission unless a judge asks.</p>
+  <pre><code>git log -1 --format='%H %ci'
+git status --short</code></pre>
+  <p class="now">Run this last. Record the hash on the submission line so you know what you shipped.</p>
+</li>
+
+</ul>
+
+<h2>5. What is true and what is not</h2>
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th>Question</th><th>Answer</th><th>One line, with the thing that shows it</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>Is it deployed?</b></td>
+      <td><span class="tag no">No</span></td>
+      <td>No program, no mint, no transaction, no address. <code>/health</code> →
+      <code>"programDeployed": false, "programId": null, "rpcEnabled": false</code>; what exists is a design in
+      <code>docs/ON-CHAIN-DESIGN.md</code> and a Python mirror of the same state machine in the test suite.</td>
+    </tr>
+    <tr>
+      <td><b>Is the data real?</b></td>
+      <td><span class="tag no">No</span></td>
+      <td>8 events, 76 tickets, 147 ledger rows generated by <code>tools/build_fixture_store.py</code>, seed
+      20261107, <code>meta.synthetic: true</code> in the file; every screen that prints a number carries the
+      <code>SYNTHETIC FIXTURE DATA</code> strip above it.</td>
+    </tr>
+    <tr>
+      <td><b>Is the engine validated?</b></td>
+      <td><span class="tag no">No</span></td>
+      <td>A rule-based bounded estimator, <code>"fitted": false</code>, no parameter checked against a real
+      resale. The 391 tests prove the code agrees with its own specification, not that the price is right. No
+      accuracy figure exists and none may be given.</td>
+    </tr>
+    <tr>
+      <td><b>Is there AI in the product?</b></td>
+      <td><span class="tag no">No</span></td>
+      <td>No learned model runs in the build. AI wrote most of the code and the documents, and that is
+      mandatory disclosure on the form (field 18) with disqualification attached to omitting it; the tool names
+      are still a TBD only you can fill.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p class="line">Three more sentences you will need, each already argued in the pack: the frontend is the
+platform's own app with a text-only labelling patch of ours, not a UI we wrote; wallet verification is the one
+genuinely real cryptographic operation, Ed25519 against a nonce; and the biggest missing observation is what
+unsold tickets were <i>asking</i>, without which the chance of a sale at a given price is not estimable.</p>
+
+<h2>6. The five numbers you will be asked for</h2>
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th>Number</th><th>Value at 14:20Z</th><th>Where it came from</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Tests</td>
+      <td class="num">391</td>
+      <td><code>python3 -m unittest discover -s tests</code> → <code>Ran 391 tests in 14.451s</code> /
+      <code>OK</code></td>
+    </tr>
+    <tr>
+      <td>Routes conformant</td>
+      <td class="num">9 of 9</td>
+      <td><code>python3 tests/test_contract_conformance.py --table</code> → 9 routes
+      <b>CONFORMANT</b>, <code>/health</code> <b>EXTRA-ROUTE</b> (10 routes served),
+      <code>disagreements: 0</code></td>
+    </tr>
+    <tr>
+      <td>Events and tickets in the store</td>
+      <td class="num">8 / 76</td>
+      <td><code>curl -s '127.0.0.1:8788/api/events?limit=100'</code> → 8 items;
+      <code>curl -s '127.0.0.1:8788/api/tickets?limit=200'</code> → 76 items; the same file holds 147 ledger
+      rows</td>
+    </tr>
+    <tr>
+      <td>Recorded spend for the night</td>
+      <td class="num">$3.54</td>
+      <td><code>NIGHT-LOG.md</code> line 71, the 12:46Z cost line: 49 runs, 343.6M prompt tokens, 2.5M
+      completion, <code>recorded spend $3.54 for the night so far</code>. It is the last cost line in the file,
+      so nothing after 12:46Z is included in it.</td>
+    </tr>
+    <tr>
+      <td>Dispatches</td>
+      <td class="num">16 lines</td>
+      <td><code>grep -nE '· dispatched' NIGHT-LOG.md</code> → 16 lines: 10 carrying a run id, of which 5 were
+      killed as duplicates on the spot, 1 holding note, and 5 later dispatches. The fleet's own counter read
+      49 runs at 12:46Z.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p class="line"><b>Under the numbers:</b> the test count, the conformance table and the store counts were run on
+this machine on <b>Sat 2026-11-07 between 14:16Z and 14:20Z</b>. The spend and the dispatch count are read out
+of <code>NIGHT-LOG.md</code> as recorded, not re-measured: the spend is the 12:46Z line and there is no later
+one, and the dispatch count is the one figure the repo cannot pin to a single number, because the log counts
+lines, the queue names run ids that are not in the log, and the fleet counter counts runs including re-launches
+and nested ones. Say <b>"sixteen dispatched entries, ten with a run id"</b> and you will not be wrong.</p>
+
+<hr class="rule">
+<p class="foot"><b>What this page is not.</b> It is not a claim that anything is deployed, hosted, validated or
+accurate, and it contains no accuracy figure, because no such figure exists. Every link on it is loopback. The
+page was written from the files named beside each line and from commands run on this machine; where a number
+is stale it says so rather than rounding it up. If the submission deadline moves, section 1 is the only part
+that has to be re-derived.</p>
+<p class="foot">Sources, in the order the page uses them: <code>records/SUBMISSION-PACK.md</code> (deadlines,
+form fields, pre-submission list, video script), the handoff at the end of <code>NIGHT-QUEUE.md</code> (the five
+decisions), <code>records/FINAL-PROOF.md</code> (judge path, measured state), 
+<code>records/FRONTEND-HONESTY-PATCH.md</code> (the patch and the command that applies it),
+<code>records/DEMO-PROOF.md</code> (ports and the env var), and <code>NIGHT-LOG.md</code> (spend and
+dispatches).</p>
+
+</div>
+</body>
+</html>

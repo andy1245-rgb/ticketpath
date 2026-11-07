@@ -48,6 +48,8 @@ FIELDS = {
     "lamports": "1,380,000,000",
     "face": "1,200,000,000",
     "cap": 1500,
+    # the ceiling a band's upper end is stopped at, in SOL
+    "ceiling": "1.38",
     # the cap this page prices against when the URL names one, beside the record's own cap
     "recorded": 1500,
     "sol": "1.38",

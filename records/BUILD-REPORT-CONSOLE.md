@@ -1119,3 +1119,209 @@ past at 2500). The canonical URL still writes `capBps` explicitly when it equals
 cap, because it already did and because the field now shows that number too; dropping it would
 make the URL and the field disagree in the other direction.
 
+
+---
+
+## 2026-11-07T14:49Z — the four defects `10-final-review.md` failed honesty on: N1, N2, N3, N4
+
+**Scope:** three renderer branches and one label each (N1), the band's upper end in
+`core/value_band.py` plus the sentence that says where it stops (N2), the exposure denominator in
+`core/price_features.py` (N3), the before-on-sale counts on the payload and in the strip and
+refusal (N4). One new test file, `tests/test_final_review_fixes.py`; one assertion inverted and
+four cases added in `tools/console-check.py`; two harness edits in existing tests (a sample field
+for the new sentence, and the band-top assertion the review's N2 overturns); and this section. No
+commit, no push, no change to `../ticketing-frontend`, no touch to 8787, no read or write of the
+fleet's trees, no new dependency.
+
+The tree before this pass is exactly the tree the review pinned: `git archive HEAD` gives
+`ticketpath/console/page.py` = `893cccb39144d19e…` and `ticketpath/console/blocks.py` =
+`1e6a6e99d13d5b59…`, the two hashes in the review's table. Every "before" number and sentence
+below was measured from that archive at `/tmp/old-tree` and run against the same fixture on the
+same clock, not from memory and not from the review's text.
+
+**Test count: 391 before, 408 after, all OK.** Conformance 22 OK. `tools/console-check.py`
+FAILURES: 0 (22 URL cases, 71 label checks). `tools/console-check-stores.py` FAILURES: 0. A live
+sweep of 72 served pages (8 events x 8 cap states, plus the before-on-sale page of every event) is
+clean on all three internal-consistency properties in the brief.
+
+### 1. N1 — the cap branches read the recorded cap instead of the cap in force
+
+Three branches asked "does this page have a cap?" and read `event.capBps`, which is the cap each
+recorded sale was made under, while the page priced against `selection.capBpsCandidate`, which is
+the cap in force. All three now read the cap in force, and where the two differ they say which one
+they are describing. `blocks.py:46` (the cap line) was already right and was not touched.
+
+**URL: `/?event=evt_syn_04&capBps=1700`** — an uncapped event with a typed cap, the state the
+console itself tells the reader to build. Cap in force 1700 bps, ceiling `800,000,000 x 1.17 =
+936,000,000`, and 7 of the tier's 12 recorded sales above it.
+
+| | before | after |
+|---|---|---|
+| strip (`page.py`) | `[FIXTURE] 12 resales on this event · [FIXTURE] 11 tickets ·` **`no resale cap, so no ceiling`** | `… · no resale cap is recorded on this event, so its sales have no ceiling to be counted against; this page prices against a cap of [DECLARED] 1700 bps` |
+| `A2` (`blocks.py:287`) | `…` **`This event has no resale cap, so no ceiling enters the bound.`** | `… the cap this page prices against gives a ceiling … This event records no cap of its own, so that ceiling is the page's and not the record's.` |
+| market (`blocks.py:388`) | `… mean markup [FIXTURE] 19.8% ·` **`This event has no resale cap, so there is no ceiling to count against.`** | `… This event records no resale cap, so its sales have no ceiling to be counted against. This page prices against a cap of [DECLARED] 1700 bps, and the sales above that cap are counted in the decision.` |
+
+**And where both caps exist and differ, the count says which ceiling it counts.** On
+`/?event=evt_syn_01&capBps=298` (recorded 2500, in force 298) the strip and the market block now
+print `0 at the recorded ceiling` instead of `0 at the ceiling`, so the at-ceiling count cannot be
+read as a count against the 298 bps the page prices against.
+
+**Revert, demonstrated:** with the three branches put back on `event.capBps`, the new class
+`TestTheCapInForceReachesEverySentenceAboutTheCap` fails 22 assertions, including
+`'no resale cap, so no ceiling' at cap 1700` on `evt_syn_04`, `evt_syn_05` and `evt_syn_08` across
+the six typed caps in the sweep. On this tree all three tests pass.
+
+### 2. N2 — the recommendation's band ran above the cap it refuses to cross
+
+Chosen fix: **the band is truncated at the cap in force.** The other option in the brief (print
+the record's band and call the recommendation the crossed-out part) would have left the
+recommendation object carrying an upper end its own cap rule forbids. The truncation is in
+`value_band.estimate`, next to the recorded-ceiling truncation that was already there, so the band
+and the recommendation cannot disagree by construction: two ceilings exist and the lower one
+binds. The page states it in one sentence, `[EXACT] The top of that band is the ceiling the cap in
+force puts on this tier, at N SOL, so the range stops where the cap does.`, printed wherever the
+band's top is a ceiling rather than a width.
+
+**URL: `/?event=evt_syn_01&capBps=298`** — page ceiling `1,000,000,000 x 1.0298 = 1,029,800,000`.
+
+| | before | after |
+|---|---|---|
+| band | `Band 0.74 – 1.25 SOL.` (upper end 220,200,000 above the ceiling) | `Band 0.74 – 1.0298 SOL.` |
+| says where it stops | nothing | `[EXACT] … at 1.0298 SOL, so the range stops where the cap does.` |
+| `bandHiLamports` in the payload | `1,250,000,000` | `1,029,800,000`, with `boundCeilingLamports` and `topIsCeiling` true |
+
+On **`/?event=evt_syn_04&capBps=1632`** the same: `Band 0.67 – 1.29 SOL` before, `Band 0.67 –
+0.93056 SOL` after, against a page ceiling of `800,000,000 x 1.1632 = 930,560,000`.
+
+The band's top is now printed at its exact value when it is a ceiling, because two decimals put
+`0.94` above the `0.936` stated in the next sentence. That is the only precision change in this
+pass, and it is why `Band 0.74 – 1.25 SOL` still reads `1.25` (exact) while `4.50` now reads `4.5`
+and `0.62` now reads `0.625` on the two pages whose top is a ceiling that does not round to its own
+two decimals.
+
+**Revert, demonstrated:** with the candidate ceiling dropped from the trim, the new class
+`TestTheBandStopsAtTheCeilingThePageEnforces` fails 32 assertions:
+`1250000000 not less than or equal to 1029800000` on `evt_syn_01&capBps=298`,
+`1293045022 != 930560000` on `evt_syn_04&capBps=1632`, and 30 cells of the
+eight events by eight caps by every tier sweep. On this tree all three tests pass.
+
+### 3. N3 — the ticket-day denominator ran past the event end
+
+`_exposure_ticket_days` took `min(cut, redeem)`. It now takes `min(cut, event endsAt, redeem)`, so
+a ticket stops accruing exposure when the event it admits to is over, and an event with no
+recorded end is still stopped by the cut alone. Every number below is the selected tier of the
+event named, on the fixture's own record; the record does not change with the cut.
+
+**Before and after on `evt_syn_02` (General tier, 9 sales throughout):**
+
+| cut | exposure before | rate /1,000 before | exposure after | rate /1,000 after |
+|---|---|---|---|---|
+| `2026-11-07T12:00Z` (default, before the end) | 435.1 | 20.7 | 435.1 | 20.7 |
+| `2026-11-22T03:00Z` (1 h after the end 02:00) | 552.1 | 16.3 | 551.8 | 16.3 |
+| `2026-12-31T00:00Z` | 863.1 | 10.4 | 551.8 | 16.3 |
+| `2027-06-01T00:00Z` | 2079.1 | 4.3 | 551.8 | 16.3 |
+
+**Before and after on the cold-start event `evt_syn_03`** (Standing tier, 0 sales, so the printed
+rate is the `[DECLARED]` gamma-Poisson posterior mean, not a measured rate):
+
+| cut | exposure before | rate /1,000 before | exposure after | rate /1,000 after |
+|---|---|---|---|---|
+| `2026-11-07T12:00Z` (default, before the end) | 131.4 | 7.6 | 131.4 | 7.6 |
+| `2026-12-12T04:00Z` (the event end) | 339.4 | 2.9 | 339.4 | 2.9 |
+| `2027-06-01T00:00Z` | 1364.4 | 0.7 | 339.4 | 2.9 |
+
+Every post-end cut now prints one value, and the value is the one the record supports: 551.8
+ticket-days and 16.3 per 1,000 for the nine sales on `evt_syn_02`, which is the figure the review
+computed by hand (its 551.8 at a 14:12Z cut, 16.3). `evt_syn_06` at the default clock is unchanged
+(460.5 / 15.2): it is past its end, but every one of its tickets carries a `redeem` row before the
+end, so the redeem stop already bound and the end adds nothing.
+
+**Revert, demonstrated:** with the end dropped from the stops, the new class
+`TestTheDenominatorStopsAtTheEventEnd` fails 5 assertions, including
+`[('551.8', '16.3'), ('552.1', '16.3'), ('863.1', '10.4'), ('2079.1', '4.3')]` for the four cuts,
+`301.0 != 5.0` on the ten-day-after unit case, and the cold-start page's
+`exposure [FIXTURE] 339.4 ticket-days at risk` going absent. Two tests in that class still pass on
+the old code on purpose: an event with no recorded end, and a cut before the end, are the states
+where the fix must change nothing, and they are the premise that it bites only past the end.
+
+**Numbers changed, and only these:** exposure and the rates derived from it, on every cut after an
+event's end (the two tables above); and the band tops in item 2. Nothing else moved: a
+state-by-state diff of the rendered page from `/tmp/old-tree` to this tree over 26 states (`/`,
+all eight events, the non-default tiers of `evt_syn_07`, five cap states, two cuts, the fee and
+negative-net states, `sim=1`, `tau=0.10`, both before-on-sale pages, two post-end cuts) shows the
+default page, `evt_syn_02`, `evt_syn_03`, `evt_syn_04`, `evt_syn_05`, `evt_syn_07`, `evt_syn_08`,
+the fee states, `sim=1` and `tau=0.10` byte-identical.
+
+### 4. N4 — the before-on-sale page printed the excluded record as an absent one
+
+The mode withholds this event's rows from the features; it does not unrecord them. The store is
+now counted at the same cut, outside the pricing path (`Orchestrator._excluded_own_counts`), and the
+zeroes are printed as what enters the decision beside the count of what the mode excluded.
+
+**URL: `/?event=evt_syn_02&mode=before_on_sale`** — the store holds 12 priced sale rows and 12
+ticket rows on this event at the cut.
+
+| | before | after |
+|---|---|---|
+| strip | `[FIXTURE] 0 resales on this event · [FIXTURE] 0 tickets · [FIXTURE] 0 at the ceiling` | `[FIXTURE] 0 resales enter this decision; [FIXTURE] 12 recorded on this event are excluded by the mode · [FIXTURE] 0 tickets enter it; [FIXTURE] 12 recorded on this event are excluded by the mode · no at-ceiling count while the event's own record is excluded` |
+| ticket basis (payload) | `tickets with an issue row at or before the cut; 0 ticket rows exist in the store` | `… 12 ticket rows exist in the store and the decision mode excludes them` |
+| no-denominator refusal | `[REFUSED] No ticket had been issued at this instant, so there is no denominator.` | `[REFUSED] [FIXTURE] 12 tickets are recorded on this event at this instant, and the BEFORE-ON-SALE decision mode excludes every one of them, so no ticket-day of exposure enters this denominator and the rate has none.` |
+
+The zero-denominator sentence follows the count it prints: one recorded ticket reads `1 ticket is
+recorded … excludes it`, and the counterfactual mode's own zero-ticket cut
+(`/?event=evt_syn_02&asOf=2026-09-01T00:00:00Z`, 0 issue rows) keeps `No ticket had been issued at
+this instant`, which is true there.
+
+**One defect this fix introduced, caught by the live sweep and fixed before it was reported.** The
+first cut of the refusal used the excluded count unconditionally in the mode, so
+`/?event=evt_syn_08&mode=before_on_sale` — an event with no rows at all — read `0 tickets are
+recorded on this event at this instant, and the BEFORE-ON-SALE decision mode excludes every one of
+them`. That is a sentence about rows that do not exist, the same class of error as the one being
+fixed. The refusal now falls through to the plain sentence when the excluded count is zero, and
+`test_an_event_with_no_rows_keeps_the_sentence_that_is_true_there` holds it: 408 tests, not 407.
+
+**`tools/console-check.py:140` was inverted.** It asserted
+`"[FIXTURE] 0 resales on this event" in b and "[FIXTURE] 0 tickets" in b` — it pinned the false
+counts as correct. It now requires those sentences to be absent, requires both excluded counts to
+be printed, and requires the refusal to name the 12 excluded tickets.
+
+**Revert, demonstrated:** with `excluded` passed as `None` again (the whole of the old behaviour),
+`TestTheBeforeOnSaleStripSaysTheRowsAreExcluded` reports 6 failures and 1 error out of its five
+tests, and the inverted check in `tools/console-check.py` fails with `the page says '[FIXTURE] 0
+resales on this event' while the store holds 12`. On this tree all five tests and the tool pass.
+
+### The five URLs, checked by hand over HTTP against the restarted server on 8788
+
+`python3 -m ticketpath.server --port 8788` (fixture store, synthetic). The previous instance on
+8788 was stopped and this one started; 8787 was not bound and not contacted.
+
+| URL | status | what the page now says |
+|---|---|---|
+| `/?event=evt_syn_04&capBps=1700` | 200 | cap in force 1700 named in the strip, `A2` and the market; band `0.67 – 0.936`; "the range stops where the cap does"; 7 of 12 above it |
+| `/?event=evt_syn_04` | 200 | unchanged: `no resale cap, so no ceiling`, band `0.67 – 1.29`, no ceiling sentence |
+| `/?event=evt_syn_02&mode=before_on_sale` | 200 | `0 resales enter this decision; 12 recorded on this event are excluded by the mode`, and the refusal names the 12 tickets and the mode |
+| `/?event=evt_syn_03` | 200 | cold start unchanged at this cut: `0 resales`, `10 tickets`, `[DECLARED] 7.5` (the server clock is 14:46Z, so the posterior mean is 7.5 there and 7.6 at the tests' 12:00Z), prior band `0.65 – 1.26`, no price |
+| `/?event=evt_syn_02&asOf=2027-06-01T00:00:00Z` | 200 | priced seven months after its end: `exposure [FIXTURE] 551.8 ticket-days at risk`, `16.3 per 1,000`, the same as at the end and the same as on `2026-12-31` |
+
+`/?event=evt_syn_06` (a completed event, so also priced after its end at the default clock) is 200
+and unchanged, for the reason in item 3.
+
+### What I chose not to change, and why
+
+1. **The market block's tier counts in the before-on-sale mode** still read `in this tier
+   [FIXTURE] 0 sales of [FIXTURE] 0 on this event`. The review's N4 named the strip, the basis and
+   the refusal, not this sentence; fixing it needs a tier-scoped excluded count that the brief did
+   not sanction, and the strip two blocks above now states the excluded count for the event. It is
+   the next thing that should be fixed if this mode is judged again.
+2. **`A20`** ("This tier has a resale cap and no sale has reached it") is still gated on the
+   recorded cap. It is a sentence about the recorded cap in a tier whose recorded cap nothing
+   reached, it is not one of the three branches the brief names, and on `evt_syn_01&capBps=298` it
+   sits beside the in-force line that names both caps.
+3. **The cold page's prior band** (`prior band around face: 0.65 – 1.26 SOL`) is not truncated at a
+   typed cap. It is the declared prior around face, it is labelled as the prior, and the page
+   states no price on that state, so no recommendation crosses a ceiling there. The review's N2 is
+   about the recommendation object, and a cold event has none.
+4. **`status on_sale` beside a post-end decision instant** (N8) and **`TRACE` returning Python's
+   501** (N9) are still there: both are review findings, neither is one of the four, and the brief
+   says change nothing else.
+5. **`7 events in the store` on a held-back store** (N6) is untouched for the same reason.

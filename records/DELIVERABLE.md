@@ -84,8 +84,11 @@ would produce.**
 **1.6 The primary optimum is a boundary recommendation plus a set, not a point.** The whole fee stack
 collapses to one effective per-ticket wedge `c** = b + (1+β)(f − a − u)/(1−φ)` (**class C**, exact
 algebra), ad valorem fees are neutral for the optimum and per-unit fees are not, and a cap defined in
-basis points over face does not constrain the organiser at all (`02-d` §2.3, §2.5). With demand
-inelastic at observed prices and `c**` small, the interior Lerner price falls below the price at which
+basis points over face does not constrain the organiser at all (`02-d` §2.3, §2.5). It does decide how the
+resale price divides — the organiser's price plus the reseller's margin, in the ratio `1 : c` — so the
+premium is not capturable through the primary price, and the objective carries no capture rate (§12.3;
+`11-cap-capture-check.md` §9; `F` D7). With demand inelastic at observed prices and `c**` small, the interior
+Lerner price falls below the price at which
 the house fills, so the binding optimum is the sell-through boundary. **The engine follows the boundary
 rule and prints "a bound, not an optimum"** (`02-d` §6).
 
@@ -1219,6 +1222,24 @@ resale prices above it.
 cap, such as a nominal dollar ceiling, would break all three results and force an extra term into the
 objective equal to the shadow value of the rationed quantity behind the ceiling (`02-d` §2.5).
 
+**[CORRECTION 2026-11-07T15:00Z — D7: the cap decides the split, not who receives the premium.]** The three
+results above are statements about the organiser's feasible set and about what enters the objective, and they
+stand. What must not be attached to them is the sentence "the resale premium is capturable entirely through
+the primary price": it is withdrawn (`11-cap-capture-check.md` §9, verdict STANDS-WITH-NARROWING). A ticket
+that settles at the ceiling sells for `p(1+c)`, which is the organiser's price `p` plus the reseller's margin
+`pc`, in the fixed ratio `1 : c` that no primary price changes: raising `p` scales both parts and transfers
+neither. The organiser keeps a larger share of the resale price only by a tighter cap, and takes more money
+only by a higher price, which demand and its own uncertainty bound. Past `p = V/(1+c)` the cap is slack, the
+resale price is pinned at the market value `V`, and further increases in `p` transfer the reseller's margin
+one for one on however many tickets still sell at that price; that is ordinary pricing to the market value,
+not a cap effect. The organiser's revenue is `p·S(p)` throughout and the premium is never additive to it.
+Class C. **The test that would settle capture** is a scale test on uncapped or slack-cap events at two or
+more face levels, with a pre-declared rule (`β = 1` nominal capture, `β = 0` no capture beyond value over
+`1 + c`), and it needs more events than the platform has (`11` §5, §7, §9). **Scope conditions, which void
+the result**: a cap that is absolute rather than proportional; a constraint on face that binds below the
+unconstrained optimum; and any record already produced under a fixed face, where the ceiling is an absolute
+number (`11` §4, §8).**
+
 ### 12.4 The recommendation, which is a boundary and a set
 
 Three cases (`02-d` §2.4):
@@ -1271,6 +1292,11 @@ effects and, in the within-event arm, tier fixed effects. Three reasons this des
 the only one that moves price exogenously; it is legal and cheap because the organiser sets prices
 anyway; and because the cap is proportional, randomising the price randomises the resale ceiling too, so
 the same experiment identifies the cap's effect on demand as a free by-product.
+**[MARKED 2026-11-07T15:00Z — the last clause is backwards and is withdrawn (`11-cap-capture-check.md` §8,
+A9).** Proportionality makes the cap and the price collinear, so this design cannot separate the cap's effect
+from the price effect; it estimates a mixture. Identifying the cap's effect needs variation in the cap at a
+fixed price, which is cross-event and confounded. The test that settles capture is the scale test in §20.3
+(`11` §7).]**
 
 **Sizing is given as a formula and not a number**, because it is a money question: with `G` events per arm
 the variance of the arm mean is the between plus within-event variance over `G`, so detecting a
@@ -2006,6 +2032,15 @@ release times are unknown.
    events have almost no history and the cold-start case is the normal case rather than the exception.
 - **The prize is small.** Single-digit percentages of primary revenue, concentrated in the best seats. An
    engine that cannot resolve single-digit effects is not useful, and nothing here has been shown to.
+- **Capture is not established, and the test that would settle it is a data-collection question.** A cap in
+   basis points over face removes no primary price from the organiser's feasible set and adds no revenue
+   channel, so no capture-rate term belongs in the objective; what it does is fix how the resale price divides
+   between the organiser's price and the reseller's margin, in the ratio `1 : c`, and no primary price changes
+   that ratio (`11-cap-capture-check.md` §5, §9; `F` D7). Whether the market value moves with face at all is
+   unmeasured. The settling test is a scale test on uncapped or slack-cap events at two or more face levels,
+   with a pre-declared rule (`β = 1` nominal capture, `β = 0` no capture beyond value over `1 + c`), and it
+   needs more comparable events than this platform has. Rows that settle at the ceiling cannot answer it,
+   because there the resale price is mechanically `p(1+c)` (`11` §7).
 - **The last week's sign is unsettled**, so a model may not promise a direction in the final week.
 - **The price path's linear slope is a normalisation**, not an estimate, and the reported bracket is
    honest only if the reader sees which normalisation produced the number.
@@ -2043,6 +2078,9 @@ engine's banned-sentence rule and the findings, and stated as prohibitions:
 12. **Not** that the engine's numbers are consistent with each other simply because they are on one page.
     They were not, in one review, and the review's verdict was that honesty failed. The specific defects
     and their current status are in §17.4 to §17.6.
+13. **Not** that the resale premium is capturable through the primary price. The cap fixes how the resale
+    price divides, in the ratio `1 : c`, and the reseller's margin is not part of the organiser's revenue at
+    any price (`11-cap-capture-check.md` §5, §9; `F` D7; §20.3).
 
 ### 20.5 Limitations in the records themselves
 
@@ -2080,6 +2118,12 @@ rule is to record conflicts rather than smooth them:
   is not written yet", which was true before 12:40Z and false after it. Struck in place on 2026-11-07T14:00Z
   (R2-23). It is listed here because an index that misdescribes its own deliverable is a limitation of the
   record, not only of the index.
+- **`02-d` item 3's headline sentence is still printed, and is withdrawn.** "The resale premium is capturable
+  entirely through the primary price" stands at `02-d` line 40 because findings are append-only; it is
+  withdrawn immediately below it in place, on 2026-11-07T15:00Z, by `11-cap-capture-check.md` §9, and the
+  decision is `F` D7. A reader who quotes that line without the correction below it is quoting a sentence this
+  record no longer asserts. Listed here because a withdrawn sentence left standing at the top of a finding is
+  the easiest thing in this corpus to quote by accident.
 
 **Status note appended 2026-11-07T12:55Z, amended 2026-11-07T14:00Z, R2-30 — two items in the list above are now
 closed and two more are corrected but not closed; an eighth bullet was added, and the list is kept as written
@@ -2102,6 +2146,10 @@ stand unchanged.
 
 **Items 1 to 7 above were assembled at 12:40Z. §20.6 was added at 14:00Z because the simulation study
 landed after this document was written, and three of its results are limitations of shipped code.**
+
+**A ninth bullet was added to the list at 2026-11-07T15:00Z** (the withdrawn `02-d` item 3 sentence), by the
+narrowing recorded as `F` D7; it is a limitation of the record, like the rest of this subsection, and nothing
+else in the list was rewritten for it.
 
 ### 20.6 The simulation study, and the limits it puts on shipped code
 

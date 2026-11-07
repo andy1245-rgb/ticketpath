@@ -107,6 +107,15 @@ ALLOWED: Mapping[str, str] = {
         "records sales, not listings. This event has no resale cap, so no ceiling enters "
         "the bound."
     ),
+    # An uncapped event priced against a cap typed into the page: there is a ceiling, and it
+    # belongs to the page's policy rather than to the record. The sentence names which one,
+    # because `A2`'s "the resale cap gives a ceiling" would read as a cap this event has.
+    "A2_CAP_IN_FORCE_UNCAPPED": (
+        "The resale value of this ticket is bounded. The last recorded sale gives a floor, "
+        "the cap this page prices against gives a ceiling, and the interval is wide because "
+        "the ledger records sales, not listings. This event records no cap of its own, so "
+        "that ceiling is the page's and not the record's."
+    ),
     "A3": (
         "On this event the cap binds: tickets sold at the cap are recorded at the ceiling, so "
         "their value is at least the cap. How far above it we cannot say from this record."
@@ -309,6 +318,39 @@ PAGE: Mapping[str, str] = {
         "printed as one."
     ),
     "P_NO_CAP": "This event has no resale cap, so there is no ceiling to count against.",
+    # The same clause where the event records no cap and the page prices against one. The two
+    # sentences above and below it were printed on a page that had a ceiling, counted seven
+    # sales above it, and offered a band whose top the cap had not trimmed (N1, N2).
+    "P_MARKET_NO_RECORDED_CAP": (
+        "This event records no resale cap, so its sales have no ceiling to be counted "
+        "against. This page prices against a cap of {cap}, and the sales above that cap are "
+        "counted in the decision."
+    ),
+    # The evidence strip's ceiling item, on the same state: the count of sales at the ceiling
+    # is a count against the record's cap, and this event has none.
+    "P_STRIP_CAP_UNCAPPED_RECORD": (
+        "no resale cap is recorded on this event, so its sales have no ceiling to be counted "
+        "against; this page prices against a cap of {cap}"
+    ),
+    # The band's upper end is stopped at the ceiling the cap in force puts on the tier. Said
+    # where it happens, because `We would not argue with any price in that range` beside a
+    # band above the page's own ceiling is the contradiction this sentence closes (N2).
+    "P_BAND_STOPS": (
+        "The top of that band is the ceiling the cap in force puts on this tier, at "
+        "{ceiling} SOL, so the range stops where the cap does."
+    ),
+    # The before-on-sale strip counts the excluded rows as excluded. `0 resales` and
+    # `0 tickets` were printed for a store holding 12 of each, which says the record does not
+    # exist rather than that this mode does not read it (N4).
+    "P_STRIP_EXCLUDED_RESALES": (
+        "{n} resales enter this decision; {m} recorded on this event are excluded by the mode"
+    ),
+    "P_STRIP_EXCLUDED_TICKETS": (
+        "{n} tickets enter it; {m} recorded on this event are excluded by the mode"
+    ),
+    "P_STRIP_EXCLUDED_CEILING": (
+        "no at-ceiling count while the event's own record is excluded"
+    ),
     "P_EXACT_CEILING": (
         "ceiling {lamports} lamports = face {face} lamports × (10,000 + {cap}) / 10,000 "
         "— integer arithmetic on the tier face, not an estimate. That is exactly {sol} SOL."
@@ -394,6 +436,20 @@ REFUSAL_TEXT: Mapping[str, str] = {
     "insufficient_time_spread": "The {n} resales span {d} days; 5 days of spread are required to separate time from the level.",
     "degenerate_design": "The resales are too clustered in time to separate curvature from drift.",
     "no_exposure": "No ticket had been issued at this instant, so there is no denominator.",
+    # The same refusal where the rows exist and the mode excludes them. `No ticket had been
+    # issued at this instant` is true of a cut before the first issue and false on the
+    # before-on-sale page, where the store holds the ticket rows and the mode declines to read
+    # them (N4). The count is the excluded count, not the zero that enters the decision.
+    "no_exposure_excluded": (
+        "{n} tickets are recorded on this event at this instant, and the BEFORE-ON-SALE "
+        "decision mode excludes every one of them, so no ticket-day of exposure enters this "
+        "denominator and the rate has none."
+    ),
+    "no_exposure_excluded_one": (
+        "{n} ticket is recorded on this event at this instant, and the BEFORE-ON-SALE "
+        "decision mode excludes it, so no ticket-day of exposure enters this denominator and "
+        "the rate has none."
+    ),
     # The same refusal where a ticket *had* been issued and no ticket-day of exposure has
     # elapsed: a cut exactly on the first issue instant. The old sentence said no ticket had
     # been issued, beside a strip that said `[FIXTURE] 1 ticket`. The count is the strip's own

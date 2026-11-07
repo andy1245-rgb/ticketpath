@@ -302,8 +302,10 @@ def estimate(
 ) -> dict:
     """The value statement for one tier, and the refusals it carries.
 
-    `cap_bps_candidate` is a forward policy. It can add a violation count; it can never
-    reclassify a recorded sale or truncate a price the record already paid.
+    `cap_bps_candidate` is a forward policy. It can add a violation count and it can cap
+    the upper end of the band, because a band printed above a ceiling the page says it will
+    not cross is a range the page itself refuses. It can never reclassify a recorded sale or
+    move the level the record supports.
 
     `decision_mode` decides which record a cold band is allowed to come from.
     `counterfactual` (the default) reports this event's own record, and the page says so.
@@ -372,6 +374,8 @@ def estimate(
                     "noUpperBound": True,
                     "topIsCeiling": True,
                     "recordedCeilingLamports": regime["recordedCeilingLamports"],
+                    "boundCeilingLamports": regime["recordedCeilingLamports"],
+                    "boundCeilingCapBps": regime["capBpsRecorded"],
                     "widenedToFloor": False,
                     "tau": tau,
                     "widthSource": "lower_bound",
@@ -411,11 +415,29 @@ def estimate(
     half = z * max(tau, TAU_MIN)
     lo = int(round(face * math.exp(mean - half)))
     hi = int(round(face * math.exp(mean + half)))
+    # The bound may not carry an upper end above a ceiling the page's own cap enforces. Two
+    # ceilings exist and the lower one binds: the recorded cap, which the sales were made
+    # under, and the cap in force on the page, which is the one the recommendation is
+    # refused against. The band used to be trimmed only to the recorded one, so on
+    # `?event=evt_syn_01&capBps=298` it printed 0.74 - 1.25 SOL beside a page ceiling of
+    # 1.0298 SOL and a sentence saying it would not argue with any price in that range.
+    limits: list[tuple[int, int | None]] = []
+    if regime["regime"] == "capped_no_mass_point" and regime["recordedCeilingLamports"] is not None:
+        limits.append((regime["recordedCeilingLamports"], regime["capBpsRecorded"]))
+    if cap_bps_candidate is not None:
+        limits.append((face * (10000 + int(cap_bps_candidate)) // 10000, int(cap_bps_candidate)))
     top_is_ceiling = False
-    ceiling = regime["recordedCeilingLamports"]
-    if regime["regime"] == "capped_no_mass_point" and ceiling is not None and hi > ceiling:
-        hi = ceiling
-        top_is_ceiling = True
+    bound_ceiling: int | None = None
+    bound_cap_bps: int | None = None
+    if limits:
+        limit, limit_bps = min(limits, key=lambda pair: pair[0])
+        if hi > limit:
+            hi = limit
+            top_is_ceiling = True
+            bound_ceiling, bound_cap_bps = limit, limit_bps
+            # A cap this far below the band leaves no interior at all; the recommendation is
+            # refused above it, so this only keeps the interval from inverting.
+            lo = min(lo, hi)
 
     out = dict(base)
     out.update(
@@ -435,7 +457,9 @@ def estimate(
                 "hiLamports": hi,
                 "noUpperBound": False,
                 "topIsCeiling": top_is_ceiling,
-                "recordedCeilingLamports": ceiling,
+                "recordedCeilingLamports": regime["recordedCeilingLamports"],
+                "boundCeilingLamports": bound_ceiling,
+                "boundCeilingCapBps": bound_cap_bps,
                 "widenedToFloor": tau < TAU_MIN,
                 "tau": tau,
                 "widthSource": "declared_tau",

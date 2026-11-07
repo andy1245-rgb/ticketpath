@@ -223,15 +223,32 @@ class TestThinData(unittest.TestCase):
         self.assertEqual(band["band"]["hiLamports"], int(round(FACE * math.exp(mu + half))))
 
 
-class TestCandidateCapNeverTruncatesThePast(unittest.TestCase):
-    def test_a_candidate_cap_below_a_recorded_price_reports_violations_and_moves_nothing(self) -> None:
+class TestTheCandidateCapNeverTruncatesThePast(unittest.TestCase):
+    """The cap in force cannot reclassify a sale. It can, and now does, stop the band's top.
+
+    The band is a range the page offers, and the page refuses a recommendation above the
+    ceiling its own cap sets, so a band carrying an upper end above that ceiling was a range
+    the page contradicted a few lines later (10-final-review N2). What the cap may not touch
+    is the record: the lower end, the level and the violation count are the record's own.
+    """
+
+    def test_a_candidate_cap_below_a_recorded_price_stops_the_band_at_the_ceiling(self) -> None:
         face = 1_000_000_000
         tier = make_tier("t", face, [1_100_000_000, 1_300_000_000], cap=None)
         features = make_features([tier], cap=None)
         untouched = value_band.estimate(features=features, tier_id="t", tau=0.20, cap_bps_candidate=None)
         capped = value_band.estimate(features=features, tier_id="t", tau=0.20, cap_bps_candidate=0)
+        # the record is not reclassified: the floor, the level and the marks are the record's
         self.assertEqual(capped["band"]["loLamports"], untouched["band"]["loLamports"])
-        self.assertEqual(capped["band"]["hiLamports"], untouched["band"]["hiLamports"])
+        self.assertEqual(capped["level"]["lamports"], untouched["level"]["lamports"])
+        self.assertGreater(
+            untouched["band"]["hiLamports"], face, "the premise: the untrimmed band top is above the ceiling"
+        )
+        # the band's top is the candidate ceiling, which at 0 bps is the face
+        self.assertEqual(capped["band"]["hiLamports"], face)
+        self.assertEqual(face * (10000 + 0) // 10000, face)
+        self.assertTrue(capped["band"]["topIsCeiling"])
+        self.assertEqual(capped["band"]["boundCeilingLamports"], face)
         self.assertEqual(capped["capViolations"]["count"], 2)
         self.assertEqual(capped["capViolations"]["of"], 2)
 

@@ -1216,7 +1216,9 @@ validation, role with reason.
   prices.
 - **Buys:** the only honest form of the fourth claim. Three derived results survive an unidentified demand function:
   an ad-valorem fee is **neutral** for the optimum, a per-unit fee is not and acts as marginal cost, and the cap is
-  proportional so the band is scale-free and does not constrain the organiser's price at all. Plus the sharp
+  proportional so the band is scale-free and does not constrain the organiser's price at all. **[MARKED
+  2026-11-07T15:00Z — true and incomplete: the cap fixes the split of the resale price, `1 : c`, and the
+  reseller's margin is not the organiser's revenue (`11-cap-capture-check.md` §5, §9).]** Plus the sharp
   observation that with `ε ≤ 1` near the observed price and `c** ≥ 0`, the recommendation is "raise", with the size
   set by the boundary: a defensible, evidence-backed statement available today.
 - **Failure:** (i) it cannot produce a point optimum, because its demand input is not identified and selection on

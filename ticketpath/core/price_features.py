@@ -127,12 +127,23 @@ def _marks_for(
 
 
 def _exposure_ticket_days(
-    rows: Sequence[Mapping], tickets: Sequence[Mapping], tier_id: str, as_of: datetime
+    rows: Sequence[Mapping],
+    tickets: Sequence[Mapping],
+    tier_id: str,
+    as_of: datetime,
+    ends_at: datetime | None,
 ) -> tuple[float, int]:
-    """Sum of min(as_of, redeem) - issue over the tier's tickets, in days.
+    """Sum of min(as_of, event end, redeem) - issue over the tier's tickets, in days.
 
     Reads the `issue` and `redeem` rows only. `Ticket.redeemedAt` is on the forbidden
     list; the row is the same fact with a timestamp the cut can act on.
+
+    Exposure is time at risk, and a ticket is not at risk after the event it admits to is
+    over. The denominator therefore stops at `endsAt` as well as at the cut and at the
+    redeem row: without that floor a cut moved past the event grew the denominator on a
+    record that had not changed, and the measured rate fell with the clock (4.3 against
+    16.3 per 1,000 ticket-days for the same 9 sales). An event with no recorded end has no
+    such floor, and the cut is the only stop.
     """
     by_ticket: dict[str, list[dict]] = {}
     for row in rows:
@@ -149,8 +160,12 @@ def _exposure_ticket_days(
             continue
         issued_at = parse(issue["occurredAt"])
         redeem = next((entry for entry in entries if entry["kind"] == "redeem"), None)
-        end = min(as_of, parse(redeem["occurredAt"])) if redeem is not None else as_of
-        days = (end - issued_at).total_seconds() / SECONDS_PER_DAY
+        stops = [as_of]
+        if ends_at is not None:
+            stops.append(ends_at)
+        if redeem is not None:
+            stops.append(parse(redeem["occurredAt"]))
+        days = (min(stops) - issued_at).total_seconds() / SECONDS_PER_DAY
         total += max(0.0, days)
     return total, not_issued
 
@@ -186,6 +201,9 @@ def build(
     if event is None:
         raise KeyError(f"unknown event {event_id!r}")
     starts_at = parse(event["startsAt"])
+    # The end of the event is the last instant a ticket can be at risk; an event with no
+    # recorded end has none, and the cut alone stops the denominator (N3, 10-final-review).
+    ends_at = parse(event["endsAt"]) if event.get("endsAt") else None
     cap_bps = event.get("resalePriceCapBps")
     event_tickets = [
         ticket for ticket in tickets if ticket["eventId"] == event_id
@@ -200,7 +218,7 @@ def build(
     tiers: list[dict] = []
     for tier in event["tiers"]:
         marks = _marks_for(rows, event_tickets, tier["id"], tier_faces, starts_at, cap_bps)
-        exposure, not_issued = _exposure_ticket_days(rows, event_tickets, tier["id"], as_of)
+        exposure, not_issued = _exposure_ticket_days(rows, event_tickets, tier["id"], as_of, ends_at)
         at_ceiling = sum(1 for mark in marks if mark["atCeiling"])
         face = int(tier["faceValueLamports"])
         tier_tickets = [ticket for ticket in event_tickets if ticket["tierId"] == tier["id"]]

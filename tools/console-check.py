@@ -26,6 +26,9 @@ CASES = [
     ("cold-start evt_syn_03", "/?event=evt_syn_03", "GET", 200),
     ("default page", "/", "GET", 200),
     ("uncapped evt_syn_04", "/?event=evt_syn_04", "GET", 200),
+    ("uncapped event with a typed cap", "/?event=evt_syn_04&capBps=1700", "GET", 200),
+    ("band under a typed cap", "/?event=evt_syn_01&capBps=298", "GET", 200),
+    ("post-end cut", "/?event=evt_syn_02&asOf=2027-06-01T00:00:00Z", "GET", 200),
     ("evt_syn_07", "/?event=evt_syn_07", "GET", 200),
     ("capBps=0", "/?event=evt_syn_02&capBps=0", "GET", 200),
     ("cut before issue", "/?event=evt_syn_02&asOf=2026-09-01T00:00:00Z", "GET", 200),
@@ -117,6 +120,28 @@ check("cut before issue: 0 tickets", "[FIXTURE] 0 tickets" in cu)
 check("cut before issue: the no-denominator sentence is the true one",
       "No ticket had been issued at this instant" in cu)
 
+# The cap this page prices against, in the three places that used to read the recorded cap.
+uc = text(body_of("/?event=evt_syn_04&capBps=1700"))
+check("uncapped event with a typed cap: the strip names the cap in force",
+      "this page prices against a cap of [DECLARED] 1700 bps" in uc
+      and "no resale cap, so no ceiling" not in uc)
+check("uncapped event with a typed cap: no sentence denies the ceiling",
+      "no ceiling to count against" not in uc and "no ceiling enters the bound" not in uc)
+check("uncapped event with a typed cap: A2 names the page's ceiling",
+      "the cap this page prices against gives a ceiling" in uc)
+
+# The band's upper end, against the ceiling the page's own cap puts on the tier.
+band = text(body_of("/?event=evt_syn_01&capBps=298"))
+range298 = re.search(r"Band ([\d.]+) \u2013 ([\d.]+) SOL", band)
+check("cap 298: the band stops at the ceiling in force",
+      bool(range298) and float(range298.group(2)) <= 1.03 and "at 1.0298 SOL" in band)
+
+# The denominator stops at the event end, so a static record's rate stops falling.
+post = text(body_of("/?event=evt_syn_02&asOf=2027-06-01T00:00:00Z"))
+check("post-end cut: the denominator is the event, not the clock",
+      "exposure [FIXTURE] 551.8 ticket-days at risk" in post
+      and "sale rate in this tier: [FIXTURE] 16.3 per 1,000 ticket-days" in post)
+
 ci = text(body_of("/?event=evt_syn_02&asOf=2026-09-11T11:00:00Z"))
 check("cut on the first issue: the strip and the sentence agree",
       "[FIXTURE] 1 ticket" in ci
@@ -136,8 +161,20 @@ check("negative net: refused as a state",
 
 b = text(body_of("/?event=evt_syn_02&mode=before_on_sale"))
 check("before: mode label", "Decision mode: BEFORE-ON-SALE" in b)
-check("before: own record excluded",
-      "[FIXTURE] 0 resales on this event" in b and "[FIXTURE] 0 tickets" in b)
+# This assertion used to read the opposite way: it required `[FIXTURE] 0 resales on this event`
+# and `[FIXTURE] 0 tickets`, which are false on a store holding 12 of each. The mode excludes
+# the rows; it does not unrecord them. It now fails on those sentences and requires the count
+# of what was excluded, so the checker cannot pin the defect back in place.
+check("before: the excluded record is counted as excluded, not as absent",
+      "[FIXTURE] 0 resales on this event" not in b
+      and re.search(r"\[FIXTURE\] 0 tickets (?!enter)", b) is None
+      and "No ticket had been issued at this instant" not in b)
+check("before: both excluded counts are printed",
+      "[FIXTURE] 0 resales enter this decision; [FIXTURE] 12 recorded on this event are excluded by the mode" in b
+      and "[FIXTURE] 0 tickets enter it; [FIXTURE] 12 recorded on this event are excluded by the mode" in b)
+check("before: the no-denominator refusal names the excluded tickets",
+      "[FIXTURE] 12 tickets are recorded on this event at this instant, and the BEFORE-ON-SALE "
+      "decision mode excludes every one of them" in b)
 check("before: no primary price", "Recommended primary price" not in b)
 check("before: pooled other events named",
       "pooled mean log price-to-face over 4 other events with resale" in b)

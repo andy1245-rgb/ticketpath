@@ -58,8 +58,15 @@ def build(
     sim: Sequence[Mapping],
     canonical_url: str,
     decision_mode: str = "counterfactual",
+    excluded: Mapping | None = None,
 ) -> dict:
-    """The whole console payload. Shape is the spec's; every leaf is labelled."""
+    """The whole console payload. Shape is the spec's; every leaf is labelled.
+
+    `excluded` is what the before-on-sale mode left out of the features: this event's own
+    ticket rows and priced sale rows at the cut, counted from the store. It is a count, not
+    an input -- the estimator never sees it -- and it exists so the page can say the rows are
+    excluded instead of saying there are none.
+    """
     sales = features["event"]["sales"]
     at_ceiling = features["event"]["atCeiling"]
     events_with_resale = int(pooled.get("eventsWithResale", 0))
@@ -154,13 +161,18 @@ def build(
                 "lamports",
             ),
         },
-        "decisionMode": _decision_mode(event, as_of, decision_mode, events_with_resale, events_completed),
+        "decisionMode": _decision_mode(event, as_of, decision_mode, events_with_resale, events_completed, excluded),
         "evidence": {
             "resales": county(sales, sales, at_ceiling, events_with_resale, "A1"),
             "tickets": num(
                 features["event"]["tickets"],
                 "FIXTURE",
-                f"tickets with an issue row at or before the cut; {features['event']['storeTickets']} ticket rows exist in the store",
+                (
+                    f"tickets with an issue row at or before the cut; {excluded['tickets']} ticket rows "
+                    "exist in the store and the decision mode excludes them"
+                    if excluded is not None
+                    else f"tickets with an issue row at or before the cut; {features['event']['storeTickets']} ticket rows exist in the store"
+                ),
                 "A1",
             ),
             "atCeiling": county(at_ceiling, sales, at_ceiling, events_with_resale, "A16"),
@@ -206,15 +218,22 @@ def build(
 
 
 def _decision_mode(
-    event: Mapping, as_of: str, mode: str, events_with_resale: int, events_completed: int
+    event: Mapping,
+    as_of: str,
+    mode: str,
+    events_with_resale: int,
+    events_completed: int,
+    excluded: Mapping | None = None,
 ) -> dict:
     """The decision instant, on the payload so the page cannot print a number without it.
 
     Two modes and no third: the real before-on-sale decision, and the labelled recomputation
     from the event's own record. The event's status and dates travel with it, because a
-    hindsight number beside a completed event is a different object from a decision.
+    hindsight number beside a completed event is a different object from a decision. What
+    the mode excluded travels with it too, in the same two nouns the strip prints, so `0
+    resales enter this decision` can never be read as `this event has no resales`.
     """
-    return {
+    out = {
         "mode": mode,
         "labelId": "P_MODE_COUNTERFACTUAL" if mode == "counterfactual" else "P_MODE_BEFORE",
         "usesOwnRecord": mode == "counterfactual",
@@ -228,7 +247,23 @@ def _decision_mode(
         "eventStartsAt": event["startsAt"],
         "eventEndsAt": event.get("endsAt"),
         "asOf": as_of,
+        "excludedResales": None,
+        "excludedTickets": None,
     }
+    if excluded is not None:
+        out["excludedResales"] = num(
+            excluded["resales"],
+            "FIXTURE",
+            f"{excluded['resales']} priced sale rows on this event at or before the cut, excluded by the before-on-sale mode",
+            "A1",
+        )
+        out["excludedTickets"] = num(
+            excluded["tickets"],
+            "FIXTURE",
+            f"{excluded['tickets']} ticket rows on this event with an issue row at or before the cut, excluded by the before-on-sale mode",
+            "A1",
+        )
+    return out
 
 
 def _band(band: Mapping, tier: Mapping, sales: int, at_ceiling: int, events: int) -> dict:
@@ -250,6 +285,19 @@ def _band(band: Mapping, tier: Mapping, sales: int, at_ceiling: int, events: int
         ),
         "noUpperBound": band["band"]["noUpperBound"],
         "topIsCeiling": band["band"]["topIsCeiling"],
+        # The ceiling the band's upper end was actually stopped at, and the cap that put it
+        # there. The page prints it wherever the band's top is a ceiling rather than a width,
+        # so the reader is told which limit the band stops at instead of meeting a number
+        # with no stated source.
+        "boundCeilingLamports": None
+        if band["band"].get("boundCeilingLamports") is None
+        else num(
+            band["band"]["boundCeilingLamports"],
+            "EXACT",
+            f"face {tier['faceValueLamports']} x (10,000 + {band['band'].get('boundCeilingCapBps')}) / 10,000, integer arithmetic",
+            None,
+            "lamports",
+        ),
         "widenedToFloor": band["band"]["widenedToFloor"],
         "tau": num(band["band"]["tau"], "DECLARED", "the declared width; it enters the width only", "A8"),
         "widthSource": band["band"]["widthSource"],
