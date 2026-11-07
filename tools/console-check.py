@@ -1,12 +1,13 @@
 """Re-check every URL the review names, against the live server on 8788."""
 
 import html as html_module
+import os
 import re
 import sys
 import urllib.error
 import urllib.request
 
-BASE = "http://127.0.0.1:8788"
+BASE = os.environ.get("TP_BASE", "http://127.0.0.1:8788")
 
 
 def get(path, method="GET"):

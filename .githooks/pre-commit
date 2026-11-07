@@ -1,0 +1,106 @@
+#!/bin/sh
+# .githooks/pre-commit -- refuse anything that may not be published, then run the gate.
+#
+# Three jobs, in this order:
+#
+#   1. Refuse a staged file that public_safety.py says may not be published: a handover
+#      sheet, an absolute path under a home directory, a scratch path, a pid, a key. It
+#      runs first because it is the widest net and the cheapest, and because the classes
+#      it knows about are the ones a commit must never carry in the first place. The
+#      rules are in `.public-denylist`; `docs/PUBLIC-SAFETY.md` says what each one means.
+#   2. Refuse a staged file that looks like a credential. This is the narrower, older
+#      check and it stays: it reads the staged blob's content for key and token shapes,
+#      and it prints the path and the *class* of match, never the matched text -- a hook
+#      that echoes the secret into the terminal is a second leak.
+#   3. If a staged path is code -- ticketpath/, tests/ or tools/ -- run
+#      `python3 tools/tp.py gate --quick` (unit tests only, no server, under 60s).
+#
+# Anything else staged (docs, records, fixtures, the console page's own notes) commits on
+# its own. A docs-only commit that waits 20s for the suite is a hook people learn to
+# bypass, and a bypassed hook is worse than a narrow one.
+#
+# Bypass policy: never `git commit --no-verify`. The only person who may bypass this hook
+# is the operator, deliberately, and `docs/CLI.md` says so.
+set -u
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    echo "pre-commit: not inside a git work tree" >&2
+    exit 1
+}
+cd "$root" || exit 1
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+# -- 1. public safety -----------------------------------------------------------
+#
+# The index, not the worktree: a file staged and then deleted from disk is still what
+# the commit would publish. This is the exact line `docs/PUBLIC-SAFETY.md` says a
+# pre-commit hook may call, and it is the whole wiring. Exit 1 is a hit, printed one per
+# line as `path:line: class: what`. Exit 2 means the denylist itself could not be read,
+# and a gate that cannot read its rules is shut, so the line refuses that too.
+#
+# When it fires: the hits above say where. The classes and their reasons are in
+# `.public-denylist`, `docs/PUBLIC-SAFETY.md` is the account, and records/ is the run's
+# evidence, so a hit in one of those is the operator's call and not a cleanup.
+python3 tools/public_safety.py check --staged || exit 1
+
+# -- 2. credentials -------------------------------------------------------------
+#
+# File names first. A `.env` is refused whatever it contains, because the rule is that
+# the value lives in the environment or the vault and never in the tree.
+named=""
+for file in $staged; do
+    case "$file" in
+        .env|.env.*|*.env|id_rsa|*id_rsa|id_ed25519|*id_ed25519|*.pem|*.key|*.p12|*.keystore|*credentials.json|*service-account*.json)
+            named="$named $file" ;;
+    esac
+done
+
+# Then staged content. `git grep --cached` searches what would be committed, not the
+# working tree, and -I skips binaries. Patterns are tight on purpose: the fixtures carry
+# base58 wallet and mint addresses that look like keys to a lazy pattern, and a hook that
+# refuses the fixture store would be trained away in one evening.
+patterns='-----BEGIN [A-Z ]*PRIVATE KEY-----'
+patterns="$patterns"'|sk-ant-[A-Za-z0-9_-]{16,}'
+patterns="$patterns"'|(ghp|gho|ghs|ghu)_[A-Za-z0-9]{20,}'
+patterns="$patterns"'|github_pat_[A-Za-z0-9_]{20,}'
+patterns="$patterns"'|xox[baprs]-[A-Za-z0-9-]{10,}'
+patterns="$patterns"'|AKIA[0-9A-Z]{16}'
+patterns="$patterns"'|AIza[0-9A-Za-z_-]{35}'
+patterns="$patterns"'|CLAUDE_CODE_OAUTH_TOKEN[[:space:]]*='
+patterns="$patterns"'|ANTHROPIC_API_KEY[[:space:]]*='
+
+matched=$(git grep --cached -I -l -E -e "$patterns" -- $staged 2>/dev/null)
+
+if [ -n "$named" ] || [ -n "$matched" ]; then
+    echo "pre-commit: refusing this commit -- a staged file looks like a credential." >&2
+    for file in $named; do
+        echo "  $file: refused by name (environment variables, or the vault)" >&2
+    done
+    for file in $matched; do
+        echo "  $file: refused by content (a key block or a token pattern matched)" >&2
+    done
+    echo "  Nothing was printed from the match itself; open the file and read it yourself." >&2
+    echo "  docs/CLI.md has the list of patterns and where the value belongs instead." >&2
+    exit 1
+fi
+
+# -- 3. the quick gate ----------------------------------------------------------
+code=""
+for file in $staged; do
+    case "$file" in
+        ticketpath/*|tests/*|tools/*) code="$file"; break ;;
+    esac
+done
+
+if [ -n "$code" ]; then
+    echo "pre-commit: code staged ($code) -- running the quick gate" >&2
+    if ! python3 tools/tp.py gate --quick; then
+        echo "pre-commit: the quick gate failed; the commit is refused." >&2
+        echo "pre-commit: fix the failure. Do not pass --no-verify -- docs/CLI.md on why." >&2
+        exit 1
+    fi
+fi
+
+exit 0

@@ -56,7 +56,7 @@ a rule cannot be lost by a typo.
 | `private-key` | `-----BEGIN ... PRIVATE KEY-----` |
 | `token-shape` | `ghp_`, `github_pat_`, `sk-`, `AKIA`, `xox*`, OAuth token assignments |
 | `env-content` | a line assigning a literal to a secret-shaped variable name |
-| `contact-email` | a third party's address (GitHub's own addresses are excluded) |
+| `contact-email` | a third party's address (GitHub's own addresses, and the names reserved for documentation -- `example.*`, `*.invalid`, `*.test`, `*.example` -- are excluded) |
 | `personal-name` | the licence holder's full name outside `LICENSE` and the README line |
 
 Two narrowings are deliberate and were made on evidence rather than taste. `sk-` requires
@@ -100,8 +100,12 @@ must call:
 python3 tools/public_safety.py check --staged || exit 1
 ```
 
-That is the whole wiring. `.githooks/` and the CLI are built by another pass; when the
-hook is added, it takes that line and nothing else.
+That is the whole wiring. `.githooks/pre-commit` calls that line as its first step, before
+the narrow credential scan and before the quick gate, and `.githooks/` is a test in
+`tests/test_cli.py` from the other side: it plants a handover file and a file holding an
+absolute home path in a scratch clone, reads the exit code git returned, and then removes
+that one line and shows the same handover file committing. A refusal whose test survives
+the wiring being taken out is not a test of the wiring.
 
 **Before a push**, `~/ticketpath-push.sh` runs the range check after the "anything to
 push" guard and before anything leaves the machine. If it fails, the script logs
