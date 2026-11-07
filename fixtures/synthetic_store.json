@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "synthetic": true,
+    "label": "SYNTHETIC FIXTURE DATA. Hand-authored for tests, not real ticket data.",
+    "provenance": "Written by hand in this repository on 2026-11-07. Not scraped, not generated, not derived from ticketing-frontend/lib/mock.",
+    "notFor": "Must not be used to estimate, validate or report any result. Every response carrying it also carries dataSource.synthetic = true.",
+    "keyConvention": "Every wallet and mint starts with FXTURE. Base58 by shape only; no account exists on any cluster.",
+    "computedFields": "Ledger rows carry priceLamports only. markupBps is computed by ticketpath.core.markup from each ticket's own tier face value.",
+    "missingOnChain": "signature and slot are null on every row because no program is deployed and no transaction exists."
+  },
+  "cluster": "devnet",
+  "organizers": [
+    {
+      "id": "org_fixture_1",
+      "name": "Fixture Promotions (synthetic)",
+      "walletAddress": "FXTUREorg1111111111111111111111111111111111",
+      "verified": false
+    }
+  ],
+  "events": [
+    {
+      "id": "evt_fixture_1",
+      "slug": "fixture-hall-session",
+      "name": "Synthetic Hall Session",
+      "description": "Fixture event. Exists so the backend has something internally consistent to compute over. Not a real show.",
+      "venue": "Fixture Hall",
+      "city": "Toronto",
+      "startsAt": "2026-12-01T00:30:00.000Z",
+      "endsAt": null,
+      "imageUrl": null,
+      "organizerId": "org_fixture_1",
+      "status": "on_sale",
+      "resaleEnabled": true,
+      "resalePriceCapBps": 2500,
+      "requiresVerifiedWallet": true,
+      "totalSupply": 150,
+      "tiers": [
+        {
+          "id": "tier_floor",
+          "name": "Floor",
+          "faceValueLamports": 1000000000,
+          "totalSupply": 100,
+          "issuedCount": 2
+        },
+        {
+          "id": "tier_balcony",
+          "name": "Balcony",
+          "faceValueLamports": 2000000000,
+          "totalSupply": 50,
+          "issuedCount": 2
+        }
+      ]
+    },
+    {
+      "id": "evt_fixture_2",
+      "slug": "fixture-annex-showcase",
+      "name": "Synthetic Annex Showcase",
+      "description": "Fixture event, already completed, so a redeemed ticket and an empty resale record both exist.",
+      "venue": "Annex Room",
+      "city": "Toronto",
+      "startsAt": "2026-10-01T23:00:00.000Z",
+      "endsAt": "2026-10-02T02:00:00.000Z",
+      "imageUrl": null,
+      "organizerId": "org_fixture_1",
+      "status": "completed",
+      "resaleEnabled": true,
+      "resalePriceCapBps": null,
+      "requiresVerifiedWallet": false,
+      "totalSupply": 20,
+      "tiers": [
+        {
+          "id": "tier_stand",
+          "name": "Standing",
+          "faceValueLamports": 500000000,
+          "totalSupply": 20,
+          "issuedCount": 1
+        }
+      ]
+    }
+  ],
+  "tickets": [
+    {
+      "id": "tkt_fixture_0001",
+      "eventId": "evt_fixture_1",
+      "tierId": "tier_floor",
+      "mintAddress": "FXTUREmint111111111111111111111111111111111",
+      "serial": "FX-0001",
+      "issuedToWallet": "FXTUREacct111111111111111111111111111111111",
+      "ownerWallet": "FXTUREacct411111111111111111111111111111111",
+      "status": "valid",
+      "redeemedAt": null
+    },
+    {
+      "id": "tkt_fixture_0002",
+      "eventId": "evt_fixture_1",
+      "tierId": "tier_floor",
+      "mintAddress": "FXTUREmint211111111111111111111111111111111",
+      "serial": "FX-0002",
+      "issuedToWallet": "FXTUREacct211111111111111111111111111111111",
+      "ownerWallet": "FXTUREacct511111111111111111111111111111111",
+      "status": "valid",
+      "redeemedAt": null
+    },
+    {
+      "id": "tkt_fixture_0003",
+      "eventId": "evt_fixture_1",
+      "tierId": "tier_balcony",
+      "mintAddress": "FXTUREmint311111111111111111111111111111111",
+      "serial": "FX-0003",
+      "issuedToWallet": "FXTUREacct511111111111111111111111111111111",
+      "ownerWallet": "FXTUREacct611111111111111111111111111111111",
+      "status": "valid",
+      "redeemedAt": null
+    },
+    {
+      "id": "tkt_fixture_0004",
+      "eventId": "evt_fixture_2",
+      "tierId": "tier_stand",
+      "mintAddress": "FXTUREmint411111111111111111111111111111111",
+      "serial": "FX-0004",
+      "issuedToWallet": "FXTUREacct711111111111111111111111111111111",
+      "ownerWallet": "FXTUREacct711111111111111111111111111111111",
+      "status": "redeemed",
+      "redeemedAt": "2026-10-02T00:10:00.000Z"
+    },
+    {
+      "id": "tkt_fixture_0005",
+      "eventId": "evt_fixture_1",
+      "tierId": "tier_balcony",
+      "mintAddress": "FXTUREmint511111111111111111111111111111111",
+      "serial": "FX-0005",
+      "issuedToWallet": "FXTUREacct811111111111111111111111111111111",
+      "ownerWallet": "FXTUREacct811111111111111111111111111111111",
+      "status": "valid",
+      "redeemedAt": null
+    }
+  ],
+  "ledger": [
+    {
+      "id": "led_0001",
+      "ticketId": "tkt_fixture_0001",
+      "kind": "issue",
+      "fromWallet": null,
+      "toWallet": "FXTUREacct111111111111111111111111111111111",
+      "priceLamports": null,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-11-01T10:00:00.000Z"
+    },
+    {
+      "id": "led_0002",
+      "ticketId": "tkt_fixture_0001",
+      "kind": "sale",
+      "fromWallet": "FXTUREacct111111111111111111111111111111111",
+      "toWallet": "FXTUREacct211111111111111111111111111111111",
+      "priceLamports": 1250000000,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-11-02T12:00:00.000Z"
+    },
+    {
+      "id": "led_0003",
+      "ticketId": "tkt_fixture_0001",
+      "kind": "transfer",
+      "fromWallet": "FXTUREacct211111111111111111111111111111111",
+      "toWallet": "FXTUREacct311111111111111111111111111111111",
+      "priceLamports": null,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-11-03T09:30:00.000Z"
+    },
+    {
+      "id": "led_0004",
+      "ticketId": "tkt_fixture_0001",
+      "kind": "sale",
+      "fromWallet": "FXTUREacct311111111111111111111111111111111",
+      "toWallet": "FXTUREacct411111111111111111111111111111111",
+      "priceLamports": 900000000,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-11-04T18:15:00.000Z"
+    },
+    {
+      "id": "led_0005",
+      "ticketId": "tkt_fixture_0002",
+      "kind": "issue",
+      "fromWallet": null,
+      "toWallet": "FXTUREacct211111111111111111111111111111111",
+      "priceLamports": null,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-11-01T10:05:00.000Z"
+    },
+    {
+      "id": "led_0006",
+      "ticketId": "tkt_fixture_0002",
+      "kind": "sale",
+      "fromWallet": "FXTUREacct211111111111111111111111111111111",
+      "toWallet": "FXTUREacct511111111111111111111111111111111",
+      "priceLamports": 1050000000,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-11-02T16:00:00.000Z"
+    },
+    {
+      "id": "led_0007",
+      "ticketId": "tkt_fixture_0003",
+      "kind": "issue",
+      "fromWallet": null,
+      "toWallet": "FXTUREacct511111111111111111111111111111111",
+      "priceLamports": null,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-11-01T10:10:00.000Z"
+    },
+    {
+      "id": "led_0008",
+      "ticketId": "tkt_fixture_0003",
+      "kind": "sale",
+      "fromWallet": "FXTUREacct511111111111111111111111111111111",
+      "toWallet": "FXTUREacct611111111111111111111111111111111",
+      "priceLamports": 2050000000,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-11-03T20:00:00.000Z"
+    },
+    {
+      "id": "led_0009",
+      "ticketId": "tkt_fixture_0004",
+      "kind": "issue",
+      "fromWallet": null,
+      "toWallet": "FXTUREacct711111111111111111111111111111111",
+      "priceLamports": null,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-09-20T12:00:00.000Z"
+    },
+    {
+      "id": "led_0010",
+      "ticketId": "tkt_fixture_0004",
+      "kind": "redeem",
+      "fromWallet": "FXTUREacct711111111111111111111111111111111",
+      "toWallet": null,
+      "priceLamports": null,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-10-02T00:10:00.000Z"
+    },
+    {
+      "id": "led_0011",
+      "ticketId": "tkt_fixture_0005",
+      "kind": "issue",
+      "fromWallet": null,
+      "toWallet": "FXTUREacct811111111111111111111111111111111",
+      "priceLamports": null,
+      "signature": null,
+      "slot": null,
+      "occurredAt": "2026-11-01T10:15:00.000Z"
+    }
+  ],
+  "walletRegions": {}
+}
