@@ -197,7 +197,7 @@ def _cold(payload: Mapping, tier: Mapping) -> str:
     band = tier["band"]
     lo, hi = band["loLamports"], band["hiLamports"]
     cap_bps = value_of(payload["event"]["capBps"])
-    out = [f'<p class="headline">[REFUSED] {esc(labels.render("no_resale_record"))}</p>']
+    out = [f'<p class="headline">[REFUSED] {esc(_cold_refusal(payload))}</p>']
     if band.get("refusalCode") == "before_on_sale_no_pool":
         out.append(f'<p class="warning">[REFUSED] {esc(labels.render("before_on_sale_no_pool"))}</p>')
     elif lo is not None and hi is not None:
@@ -217,11 +217,37 @@ def _cold(payload: Mapping, tier: Mapping) -> str:
     return "".join(out)
 
 
+def _cold_refusal(payload: Mapping) -> str:
+    """The refusal for a tier with no record of its own, said in the mode that is in force.
+
+    `no_resale_record` is true only when this event has no rows at or before the cut. In the
+    before-on-sale mode the rows are in the store and the decision mode excludes them, so
+    that sentence is false there; the sentence that replaces it says the exclusion and takes
+    its count from `_pool_events`, the same count the band label prints. The typed reason
+    code is unchanged (`no_resale_record`): only the sentence differs, by mode.
+    """
+    if (payload.get("decisionMode") or {}).get("usesOwnRecord") is not False:
+        return labels.render("no_resale_record")
+    n_events = _pool_events(payload)
+    if n_events:
+        return labels.render("no_resale_record_excluded", n_events=n_events)
+    return labels.render("no_resale_record_excluded_no_pool")
+
+
 def _band_prior_label(payload: Mapping, tier: Mapping) -> str:
     """The sentence for the band that is actually on the page, with its real source."""
     label_id = tier["band"]["labelId"]
-    n_events = value_of(payload["pooled"]["eventsWithResale"])
-    return labels.render(label_id, n_events=n_events)
+    return labels.render(label_id, n_events=_pool_events(payload))
+
+
+def _pool_events(payload: Mapping):
+    """Other events with a resale record at the cut: one number for every clause that names it.
+
+    The band label and the cold refusal are two sentences about the same pool, so they read
+    the one count. In the before-on-sale mode this event's own record is already out of the
+    pool, which is what makes the count the number of *other* events.
+    """
+    return value_of(payload["pooled"]["eventsWithResale"])
 
 
 def _fitted_label(payload: Mapping) -> str:

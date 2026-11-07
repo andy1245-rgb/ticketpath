@@ -116,3 +116,54 @@ Appended, never rewritten: `findings/01-b-identifiability.md` (3 corrections), `
 plus the "Corrections applied" block). Written new: this file.
 
 Nothing was committed. Nothing was pushed. No file outside `records/` was edited.
+
+---
+
+## 5. Records tidy-up — 2026-11-07T12:55Z
+
+**Trigger.** A records tidy-up pass over four defects a reader meets in the first ten minutes. **Scope.** Four
+items, `records/` only. Nothing was committed or pushed, and no file outside `records/` was read for evidence or
+edited.
+
+**Rules this pass worked under.** Append-only in every finding; in place only in the index files
+(`A-research-ledger.md`, `00-data-situation.md`, `F-decision-log.md`, `DELIVERABLE.md`), where a stale
+pointer is the defect. No finding's conclusion was rewritten. Every quoted sentence below is copied from the
+file as it stands; nothing is paraphrased into quotation marks. No source was invented: the one bibliographic
+check made in this pass was a Crossref query whose returned record is printed in full.
+
+### 5.1 The four defects
+
+| # | Defect | File | What was wrong | What changed |
+|---|---|---|---|---|
+| 1 | P1.C stale in the ledger | `A-research-ledger.md` | The row read `dispatched`, finding "No finding yet … 28-byte placeholder reading `# Phase 1-C — placeholder`", class `—`, while `findings/01-c-methods.md` had been complete on disk since 11:09Z (1,558 lines, mtime 12:03Z). The row was true at 10:59Z and stale by 11:09Z. | Row now `answered`, with the conclusion taken from `01-c`'s own §1 and §1.3: **"Three of the eight families ship code for a quantity this observation set actually identifies, two ship the decision structure and no number, and three ship reasons not to build; no family converts an unidentifiable target into an identifiable one — 'a method is not a substitute for an observation'."** Class cell now records that the file states no single class and is per-family A/B/C/D (A only where inherited from `01-a`/`01-b`), with §1.1 and §1.2 unclassed — the same convention the P1.D row already uses. File cell is the path. Header re-dated. A dated line below the table says the V1 row's "three rows said `dispatched` while their files were on disk" is history, not the current state. |
+| 1b | The rest of the ledger, checked row by row | `A-research-ledger.md` | Nine other rows. Seven were right as printed. | **No correction needed and none made.** P0.1–P0.5 cite `00-data-situation.md` §1–§5, all of which exist and say what the rows say. P1.A, P1.B and P1.D were already `answered`/`answered-partial` with a conclusion and a path, and their one-liners match §"What I concluded" in `01-a`, `01-b` and `01-d`. V1 cites `00-ledger-verification.md`, which exists. **One observation recorded rather than fixed:** the ledger indexes none of the thirteen files under `findings/` that are not one of its own rows — `00-adversarial-review-phase1`, `00-verification-round1`, `02-a-price-paths`, `02-ai-ml-decision`, `02-b-cap-truncation`, `02-c-sale-hazard`, `02-d-elasticity-fees-optimum`, `02-e-cold-start`, `02-rubric-and-scoring`, `03-a-interactions`, `03-b-temporal-correctness`, `06-validation-protocol`, `07-engine-review`. Ten of those are Phase 2 and Phase 3 findings that landed after 10:59Z. That is a missing-row defect, not a wrong row, and closing it means writing a conclusion for each of ten files, which is a different job from this one. See §5.4. |
+| 2 | "Gap 5" cited and defined nowhere | `00-data-situation.md` §4 (definition), plus the two files that called it open, `A-research-ledger.md` and `DELIVERABLE.md` | Eight sentences in three files referred to a "Gap 5" that no file numbered, and four other files reported the dangling reference. `00-data-situation.md` numbered Gaps 1–4 and then listed "Two smaller ones, recorded for completeness" unnumbered. | **Defined, not replaced.** A fifth gap now sits in §4 in the same style as Gaps 1–4: **Gap 5 — no primary inventory time series, therefore no sell-through velocity** — `totalSupply`/`issuedCount` are a snapshot with no capture time, `Event.status` has no transition timestamps, so the sell-through *level* is observable and the *path* is not. It states what the gap does **not** do (it does not delete the demand bracket, which `01-b` §5 identifies at the level) and its minimal fix (a timestamped per-tier series plus the four status transition times, explicitly **not** among Gap 1's four listing fields). All eight citations were read for referent first: all eight mean this and nothing else, so no forward reference was rewritten — defining the label once is the smaller change than rewriting eight. They are tabulated in `00-data-situation.md` §4 with the sentence at each site: `01-a` §7; `01-c` §1.4(3), §2 ("Data"), §3.6, §9.3 ("Data"); `B-mathematical-kb.md` §6.4, §6.5, §9 diagram. No citation in `docs/`: a grep over `docs/*.md` finds "Gap 2" once (`ON-CHAIN-DESIGN.md:71`) and no "Gap 5". |
+| 3 | He & Lin against "no peer-reviewed cap study" | `findings/01-a-market-structure.md` (NOTE appended), `C-variable-registry.md` C-3 (one-paragraph dated NOTE) | `01-a` §3 cites He & Lin for a cap proposition labelled class C; `01-b` §4.5 says "I found no peer-reviewed econometric study of resale price caps in ticket markets" and forbids any class-A cap claim; `C-variable-registry.md` C-3 restated that more broadly as "no peer-reviewed study". The contradiction had been noticed twice and resolved neither time. | **Both files are right about different objects, so neither got a correction; `01-a` got the note the brief asks for.** `01-a` NOTE 2026-11-07T12:55Z quotes both passages verbatim and shows the two claims are about different predicates: a peer-reviewed **model** of price caps with a class-C label does not contradict the absence of a peer-reviewed **econometric study**, and `01-a` nowhere claims an empirical measurement exists. The rule "no class-A claim about caps may appear in the deliverable" is therefore unaffected. One sentence in the records *is* falsified by this: `C-variable-registry.md` C-3's broader "no peer-reviewed study … was found", which now carries a dated note narrowing it to `01-b`'s wording. The Crossref record for `10.1287/mksc.2023.0623` was re-queried and printed in the note: type `journal-article`, "Price Caps by Matching Platforms: The Case of Ticket Resales", Da He & Song Lin, *Marketing Science* 45(3):515–533, issued 2026-05, abstract "analyzing their adoption incentives and effects on prices, sales, profitability, and welfare". **The abstract does not say whether the analysis is econometric or a model, so nothing about the paper's method is asserted.** |
+| 4 | `F` D3 recorded Gap 1's diagnosis as settled | `F-decision-log.md` D3 | D3's Evidence line carried the Phase 0 audit's reading — "the sale count is a numerator with no exposure denominator" — as settled, while `01-b` §5.1 and `02-c` §2.1 refine it and `A-research-ledger.md` already said F carried the audit's version as "the failure `records/README.md` forbids". | **A dated note appended under D3, and nothing resolved.** The note quotes all three positions verbatim — audit: a numerator with no denominator; `01-b`: "The denominator is present — every ticket has an `issue` row and a known life. The unobserved object is the ask of the risk set"; `02-c`: "the intensity of a **composite process — offered, then bought** — marginalised over the unrecorded offering state", and "'a numerator with no denominator' is the wrong diagnosis of the same defect — the denominator exists, it is the denominator of the wrong process." It records that **the data request is unchanged by the dispute** (the four fields, quoted from D3, stand as printed), that only the diagnosis and therefore the severity of the baseline-intensity claim are contested, and that this file does not pick a reading. D3's **Decision** line is untouched. |
+
+### 5.2 Counts
+
+**Four defects, plus one extension (1b) and one stale-pointer cleanup in `DELIVERABLE.md`.** Files edited:
+**6**, all under `records/` — `A-research-ledger.md`, `00-data-situation.md`, `findings/01-a-market-structure.md`,
+`C-variable-registry.md`, `F-decision-log.md`, `DELIVERABLE.md` — plus this file.
+
+### 5.3 Where each Gap 5 citation lives
+
+`01-a-market-structure.md` §7 (1); `01-c-methods.md` §1.4(3), §2, §3.6, §9.3 (4); `B-mathematical-kb.md` §6.4,
+§6.5, §9 diagram (3). Total 8 forward references, all meaning the primary inventory time series. In addition,
+7 sites *report* the dangling label rather than use it and keep their histories unchanged:
+`A-research-ledger.md` (2, both now carrying dated resolution lines), `00-ledger-verification.md` §3,
+`00-verification-round1.md` §3 and item C5, `00-adversarial-review-phase1.md` (3), this file §3 and §4,
+`DELIVERABLE.md` §20.5.
+
+### 5.4 What this pass could not settle
+
+1. **Whether He & Lin is an econometric study.** The one question that decides whether `01-b` §4.5's first
+   sentence is true of that paper. Needs the full text; not read here, and nothing was asserted about it.
+2. **Thirteen files under `findings/` are still unindexed in `A-research-ledger.md`**, ten of them Phase 2 and Phase 3 findings written after the ledger's last update. The ledger's own
+   header says it indexes every research question and its rows number 10, all Phase 0/1 plus the verification
+   pass. Adding rows is writing a conclusion per file, which is out of scope for a tidy-up and was left alone
+   rather than half-done.
+3. **`records/README.md` describes `DELIVERABLE.md` as "a stub … it is not written yet".** The file is 199KB and
+   written through §21. That is a stale index pointer of the same kind as defect 1, found while working here and
+   not part of the four, so it is recorded and not changed.

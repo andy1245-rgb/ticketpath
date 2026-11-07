@@ -1,6 +1,6 @@
 # Phase 0 — Data situation audit (verified)
 
-**Status:** complete. **Last updated:** 2026-11-07T08:40Z. **Author:** orchestrator.
+**Status:** complete. **Last updated:** 2026-11-07T08:40Z; §4 gained Gap 5 at 2026-11-07T12:55Z, appended, nothing withdrawn. **Author:** orchestrator.
 **Purpose:** gate. No estimator in this programme may be committed to a data source
 before this file says what that source actually is. `AGENTS.md` makes two claims about
 the platform that change the research starting point; both were checked here rather than
@@ -139,6 +139,51 @@ Two smaller ones, recorded for completeness: primary inventory is a snapshot
 (`totalSupply`, `issuedCount`) with no time series, so primary sell-through *velocity*
 is not observable; and `Event.status` transitions are not timestamped, so on-sale start,
 sell-out and holdback-release times are unknown.
+
+**Gap 5 — no primary inventory time series, therefore no sell-through velocity.** *Numbered
+2026-11-07T12:55Z. The label was already in use in three files (`01-a`, `01-c`, `B-mathematical-kb`) before
+this paragraph existed; the table at the end of this section lists every citation and what each one means.* The
+first of the two unnumbered absences above,
+promoted to the same standing as Gaps 1–4 because three later findings build on it and the programme has
+never made it a data request.
+
+`TicketTier` carries `totalSupply` and `issuedCount` as a *snapshot with no capture time*, and
+`Event.status` is a state with no transition timestamps. So the tier's sell-through **level** is observable at
+the moment of extraction and its **path** is not: no booking curve, no on-sale time, no sell-out time, no
+holdback-release time, no rate at all. This is the gap that makes `issuedCount` a temporal-correctness hazard
+rather than a covariate (`01-c` §3.6): used as a predictor at time *t* it carries information from after *t*
+unless the snapshot's capture time is recorded, and the contract cannot identify the value at prediction time.
+
+What it does **not** do, stated because it is easy to overread: it does not delete the demand bracket. The
+level of primary sell-through is the one place in the schema where a demand object is identified (`01-b` §5,
+closing paragraph), and that sentence is about the level, not the velocity. Gap 5 narrows the bracket's
+dynamics; it leaves the level standing.
+
+*Minimal fix, if the operator wants it:* a timestamped series per tier — `{tierId, capturedAt,
+totalSupply, issuedCount, eventStatus}` — plus the four `Event.status` transition times (on-sale, sell-out,
+holdback release, close). This is **not** among the four listing fields of Gap 1, which is the point `01-c`
+§2 flags: revenue management's demand side is blocked by a data gap the programme has not yet requested. It
+is the fourth item of the ranked data-requirements list in `DELIVERABLE.md` §14.3.
+
+*Where the label is used, and what it means at each site* (checked 2026-11-07T12:55Z, all eight mean the
+primary inventory time series above and nothing else):
+
+| Site | The sentence | Meaning |
+|---|---|---|
+| `findings/01-a-market-structure.md` §7 ("Still have") | "Primary sell-through velocity: inventory is a snapshot only (Gap 5)." | verbatim this gap |
+| `findings/01-c-methods.md` §1.4(3) | "must either get a timestamped series (Gap 5) or restrict itself to the value at prediction time" | this gap, as the alternative to the look-ahead restriction |
+| `findings/01-c-methods.md` §2 ("Data") | "The booking curve needs a primary inventory time series, which is Gap 5 and is **not** among the four fields" | this gap, and explicitly not Gap 1's four fields |
+| `findings/01-c-methods.md` §3.6 | "Either the operator supplies a timestamped inventory series (Gap 5)" | this gap |
+| `findings/01-c-methods.md` §9.3 ("Data") | "a primary inventory time series (Gap 5) for the coupled system" | this gap |
+| `B-mathematical-kb.md` §6.4 (F14 "Data") | "a primary inventory time series (Gap 5) for the coupled system" | this gap |
+| `B-mathematical-kb.md` §6.5 (F14 gate) | "gated on Gap 5 + delistReason" | this gap, plus Gap 1's `delistReason` |
+| `B-mathematical-kb.md` §9 relationships diagram (F14 box) | "F14 needs Gap 5 + delistReason" | this gap, plus Gap 1's `delistReason` |
+
+No citation was replaced, because all eight agree on the referent and defining it once is the smaller
+change than rewriting eight forward references. Files that *report* the label rather than use it
+(`A-research-ledger.md`, `findings/00-ledger-verification.md`, `findings/00-verification-round1.md`,
+`findings/00-adversarial-review-phase1.md`, `CORRECTIONS-APPLIED.md`, `DELIVERABLE.md` §20.5) keep their
+histories; `A-research-ledger.md` carries a dated line saying the label is now defined.
 
 ## 5. Effects on the programme
 

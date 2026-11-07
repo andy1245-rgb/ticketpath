@@ -159,10 +159,10 @@ ALLOWED: Mapping[str, str] = {
         "checked against a single sale here."
     ),
     "A13_POOLED": (
-        "Not a prediction: this event has no resale record of its own, so the band's centre "
-        "is the pooled mean log price-to-face over {n_events} other events with resale, and "
-        "its width is the declared τ on each side. It has not been checked against what "
-        "this event sold for."
+        "Not a prediction: this decision excludes this event's own resale rows, so the "
+        "band's centre is the pooled mean log price-to-face over {n_events} other events "
+        "with resale, and its width is the declared τ on each side. It has not been checked "
+        "against what this event sold for."
     ),
     "A14": (
         "Recommended primary price: {P} SOL per ticket. This is a bound, not an optimum. It "
@@ -309,6 +309,21 @@ PAGE: Mapping[str, str] = {
 REFUSAL_TEXT: Mapping[str, str] = {
     "no_ledger": "No ledger exists. Nothing was invented to fill it.",
     "no_resale_record": "No resale has been recorded on this event, so we will not state a primary price.",
+    # The same refusal where the rows exist and the mode declines to use them. `no_resale_record`
+    # is true only of an event with no rows at or before the cut; on the before-on-sale page the
+    # event's rows are in the store and excluded, so that sentence was false there. The count is
+    # the same pooled count the band label prints, interpolated rather than assumed.
+    "no_resale_record_excluded": (
+        "This event's own resale rows are excluded by the BEFORE-ON-SALE decision mode, so "
+        "its record supplies no price here; the band on this page is the pooled record of "
+        "{n_events} other events on this platform, and a pooled band is not a price for this "
+        "ticket, so no primary price is stated."
+    ),
+    "no_resale_record_excluded_no_pool": (
+        "This event's own resale rows are excluded by the BEFORE-ON-SALE decision mode, and "
+        "no other event on this platform has a resale record, so there is nothing to pool "
+        "and no primary price is stated."
+    ),
     "no_upper_bound": "We do not state an upper bound from this record.",
     # No flat path is drawn anywhere in the console, so the sentence may not promise one.
     "insufficient_marks": "{n} sales is too few to fit a path, so no path is quoted.",

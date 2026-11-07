@@ -4,8 +4,15 @@ Curated index of every research question. The raw reports live in `findings/` an
 primary record; this file indexes them and does not replace them. A row is only as good as
 the file in its File column.
 
-**Last updated:** 2026-11-07T10:59Z
+**Last updated:** 2026-11-07T12:55Z
 **Rows:** 10 (nine carried forward, one added — the verification pass).
+
+**Refresh, 2026-11-07T12:55Z.** Every row was re-checked against the file in its File column. One row was
+wrong: P1.C still read `dispatched` with a placeholder finding after `01-c-methods.md` had landed complete
+(1,558 lines, written 10:57Z–11:09Z, mtime 12:03Z). It now carries its own conclusion, its class and its
+path. The other nine rows match their files; P1.A, P1.B and P1.D were already `answered`/
+`answered-partial` with a finding and a path, and the Phase 0 and V1 rows cite files that exist and say what
+the rows say they say. No conclusion in any row was rewritten.
 
 ---
 
@@ -46,12 +53,17 @@ the file in its File column.
 |---|---|---|---|---|---|---|
 | P1.A | What is the actual market structure and economic mechanism of primary and secondary live-event ticketing, and what does the evidence say about time-to-event price paths, resale caps, and platform economics? | forge `p1-market` (tier claimed `default`; no run id in the file) | answered | Primary tickets are systematically priced below secondary clearing value but the prize is modest (≈41% markup on the ~5% of tickets that resell, worth 1.4% of primary revenue), secondary prices near the event overwhelmingly fall, and on a capped on-chain ledger the recorded markup is a biased-down lower bound exactly where value is highest. | A (empirical core), C (truncation argument), D (three new mechanisms) — its own §6 | `records/findings/01-a-market-structure.md` |
 | P1.B | Given a completed-transaction ledger with no asks and no exposure, what is identifiable? Which quantities (value, path, sale probability, elasticity) survive, which do not, and what is the minimal extra observation that fixes each? | forge `p1-ident` (tier claimed `best`; no run id in the file) | answered-partial | Of six targets, one is buildable today, two are set-identified with computable bounds and three are not identified; the missing object is the ask of the risk set rather than the at-risk denominator, and four fields per listing convert the sale hazard from unidentifiable to estimable. The file labels itself a first pass. | C (identification arguments), B (demand bracket), A where cited; §3 statuses themselves unclassed | `records/findings/01-b-identifiability.md` |
-| P1.C | Which methods from other fields (revenue management, survival, hedonic pricing, auction theory, online learning, Bayesian partial pooling, conformal prediction, stochastic control) genuinely buy something here, and for which subproblem? | forge `p1-methods` (tier `default`; re-dispatched 2026-11-07T10:53Z as run `dmw6a4s92aum0`; the duplicate `dmw6a5ghzhhl8` was killed) | dispatched | No finding yet: the file on disk at 10:59Z is a 28-byte placeholder reading `# Phase 1-C — placeholder`, and the previous run died after "Now writing the report." | — | `records/findings/01-c-methods.md` — placeholder, no content |
+| P1.C | Which methods from other fields (revenue management, survival, hedonic pricing, auction theory, online learning, Bayesian partial pooling, conformal prediction, stochastic control) genuinely buy something here, and for which subproblem? | forge `p1-methods` (tier `default`; re-dispatched 2026-11-07T10:53Z as run `dmw6a4s92aum0`; the duplicate `dmw6a5ghzhhl8` was killed) | answered | Three of the eight families ship code for a quantity this observation set actually identifies, two ship the decision structure and no number, and three ship reasons not to build; no family converts an unidentifiable target into an identifiable one — "a method is not a substitute for an observation". Build order: censored hedonic on log markup, repeat-sales check, competing-risks hazard with a cure component, hierarchical layer, reserve-price surface; nothing past the second needs an external field, everything from the third needs the operator's four fields, money, or both. | per-family A/B/C/D throughout (A only where inherited from `01-a`/`01-b`); the file states no single class, and §1.1 and §1.2 are unclassed | `records/findings/01-c-methods.md` |
 | P1.D | Which external signals have a plausible mechanism and are actually obtainable and licensable, and what is each one's collection cost and leakage risk? | forge `p1-external` (tier claimed `default`; no run id in the file) | answered | 17 variables admitted with a class and a priority and 11 rejected on licence, mechanism or legal grounds; only Ticketmaster Discovery, a venue capacity table and NOAA weather are worth collecting, and the two highest-value variables (listing depth and seat coordinates) are not in the contract at all. Its head-line counts (19 examined, 11 survive) do not reconcile with its own tables (17 admitted rows, 11 rejected). | per-variable A/B/C/D in Table C-1; §4–§5 prose and the head-line counts unclassed | `records/findings/01-d-external.md` |
 
 Dispatch metadata: no finding file states a run id or a tier, so the tier in the Who column
 is what was claimed at dispatch, not a fact the deliverable evidences
 (`00-ledger-verification.md` §1.2).
+
+**Superseded, kept as history:** the V1 row below records that at 11:22Z three Phase 1 rows said
+`dispatched` with files on disk and P1.C had no file at all. That was true of the tree at that moment. The
+Phase 1 rows above are the tree as it stands at 12:55Z, and P1.C is `answered` on a complete file, not on the
+run that was re-dispatched at 10:53Z — the placeholder it replaced is gone.
 
 ---
 
@@ -112,7 +124,10 @@ From `records/findings/00-ledger-verification.md` §2 and §3, restated here onl
 - `01-b` §4.1 and §4.3 read 90 `sale` rows as 90 sold tickets and 14 `redeem` rows as 14
   redeemed tickets; on the audit's figures 49 of 128 tickets sell and 79 never do. The same
   file uses the correct 79-of-128 at §4.6.
-- `01-a` §7 cites a "Gap 5" that `00-data-situation.md` never numbers.
+- `01-a` §7 cites a "Gap 5" that `00-data-situation.md` never numbers. **Resolved 2026-11-07T12:55Z:**
+  Gap 5 is now defined in `00-data-situation.md` §4 — the missing primary inventory time series, hence no
+  sell-through velocity — and all eight forward references agree on that referent. See the correction block
+  at the end of this file.
 
 ---
 
@@ -167,3 +182,23 @@ reported that this pass did not touch, is `records/CORRECTIONS-APPLIED.md`.
 mtime, and the undefined "Gap 5" label, are recorded in `CORRECTIONS-APPLIED.md` with the reason each was
 left alone. Neither is a statement this pass can correct without inventing a fact (a true write time, or a
 definition of a gap nobody defined).
+
+---
+
+## CORRECTION (2026-11-07T12:55Z) — "Gap 5" is defined, and P1.C is answered
+
+Two of the defects this file listed as open are closed, in the files that carried them. Nothing above is
+withdrawn; the text that said these were open was true when it was written.
+
+1. **"Gap 5" is now numbered.** `00-data-situation.md` §4 carries a fifth gap in the same style as Gaps 1–4:
+   *no primary inventory time series, therefore no sell-through velocity* — `totalSupply` and `issuedCount`
+   are a snapshot with no capture time and `Event.status` has no transition timestamps. This is the first of
+   the two absences that section previously listed unnumbered, and it is what all eight forward references
+   mean: `01-a` §7, `01-c` §1.4(3)/§2/§3.6/§9.3, and `B-mathematical-kb.md` §6.4/§6.5/§9. The full site
+   table is in `00-data-situation.md` §4. No citation was rewritten, because none of the eight meant
+   anything other than the inventory series; defining the label once was the smaller change.
+2. **P1.C's row above now carries its finding.** The row was `dispatched` with a placeholder finding because
+   that is what the tree held at 10:59Z. `01-c-methods.md` landed complete at 11:09Z. The row is now
+   `answered`, with the conclusion from that file's own §1 and §1.3, its per-family classes and its path.
+
+Both are recorded in the 2026-11-07T12:55Z entry of `records/CORRECTIONS-APPLIED.md`.

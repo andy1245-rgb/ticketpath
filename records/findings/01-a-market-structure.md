@@ -388,3 +388,53 @@ of exactly that subject, and this file already cites it. Whether it counts again
 whether it is an econometric study or a model of matching, which I did not read and do not assert. The
 question is recorded in `records/CORRECTIONS-APPLIED.md` as noticed and not resolved; no conclusion is
 changed here.
+
+---
+
+## NOTE (2026-11-07T12:55Z) — He & Lin against `01-b`'s "no peer-reviewed econometric study": both are right about different things
+
+Appended, not a correction. Neither this file nor `01-b` is wrong on this point, and neither conclusion
+changes.
+
+**The two passages, quoted.**
+
+This file, §3, as printed (the year is superseded by CORRECTION 3 above; the proposition is not):
+
+> "He & Lin (*Marketing Science*, 2025) add the non-obvious corollary: a stringent cap can push high-price
+> sellers out, reduce seller-side competition, and *raise* average transaction price (class C)."
+
+`01-b-identifiability.md` §4.5, as printed:
+
+> "A gap to record: I found **no peer-reviewed econometric study of resale price caps in ticket markets.** The
+> ticket literature covers resale's allocative and rent-seeking effects … and price dynamics … not caps. The
+> cap component is therefore class B borrowed from rent control plus class C theory, and **no class-A claim
+> about caps may appear in the deliverable.**"
+
+**Why they do not contradict.** They are claims about two different objects.
+
+- This file uses He & Lin for a **theoretical proposition** and labels it **class C** — "a model result, not a
+  measurement of this market" (CORRECTION 3). It nowhere asserts that He & Lin is, or that any economist has
+  published, an *empirical measurement* of a resale cap in a ticket market.
+- `01-b` §4.5 asserts the absence of a **peer-reviewed econometric study** — that is, of class-A evidence,
+  which is the class its closing sentence is about. That sentence therefore stands whatever kind of paper
+  He & Lin is, unless He & Lin is itself econometric.
+
+Both labels are consistent with the same world: a peer-reviewed *model* of price caps in ticket resale, and no
+peer-reviewed *measurement* of one. That combination is exactly what a class-C citation plus a no-class-A
+finding describes.
+
+**What would falsify `01-b`, and what I did not do.** If He & Lin is an econometric study, `01-b` §4.5's first
+sentence is false as printed and needs a correction it has not had. I did not read the paper in this pass and
+therefore assert nothing about its method. What I could check without the full text: Crossref for
+`10.1287/mksc.2023.0623` returns type `journal-article`, "Price Caps by Matching Platforms: The Case of Ticket
+Resales", Da He & Song Lin, *Marketing Science* **45(3):515–533**, issued 2026-05, with the abstract "This study
+examines ticket resale platforms' voluntary price caps, analyzing their adoption incentives and effects on
+prices, sales, profitability, and welfare." The abstract does not say whether the analysis is empirical or a
+model, so the one question that settles it is still the full text. That question stays open and is recorded in
+`records/CORRECTIONS-APPLIED.md` §4.
+
+**The one sentence in the records that this note does falsify** is not in either finding: `C-variable-registry.md`
+C-3 closes "**no class-A claim about caps may appear in the deliverable**, because no peer-reviewed study of
+resale price caps in ticket markets was found", which is broader than `01-b`'s claim and is contradicted by a
+paper cited in this file. A dated note there narrows it to `01-b`'s wording; the no-class-A rule itself is
+unaffected and unchanged.

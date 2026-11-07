@@ -4,7 +4,7 @@ Decisions with their evidence, rejected approaches, conflicting findings, and qu
 Nothing is deleted from here; a question that is no longer worth pursuing is marked
 closed with the reason, not removed.
 
-**Last updated:** 2026-11-07T11:22Z
+**Last updated:** 2026-11-07T12:55Z (D3 note appended; nothing else in this file changed).
 
 ---
 
@@ -59,6 +59,38 @@ ledger or to a sibling listing table: `listPriceLamports`, `listedAt`, `delisted
 (null while live), `delistReason ∈ {sold, withdrawn, expired, cap_blocked}`. The last
 enum value matters: `cap_blocked` is how a binding resale ceiling shows up as an
 unfilled attempt rather than a low price.
+
+**Note appended 2026-11-07T12:55Z — the diagnosis in the Evidence line above is contested three ways. The decision and the data request are not.**
+
+D3's Evidence line states the Phase 0 audit's version: "`Ticket.status = "listed"` is a state, not a history;
+there is no listing start, ask, revision or withdrawal, so the sale count is a numerator with no exposure
+denominator." That is one of three readings of the same absence on record, and this file stated it as settled
+while the other two are in `findings/`. Quoted, as printed:
+
+- **Audit** (`00-data-situation.md` §4, Gap 1): "Without exposure, the observed sale count is a numerator with
+  no denominator."
+- **`01-b` §5.1:** "Gap 1 is misdiagnosed; the fix is right. The audit calls the sale count "a numerator with
+  no denominator". The denominator is present — every ticket has an `issue` row and a known life. The
+  unobserved object is the ask of the risk set."
+- **`02-c` §2.1:** "The ticket-time denominator is observed (every ticket has an `issue` row and a known life),
+  so *something* is identified. But that something is not a sale hazard. It is the intensity of a **composite
+  process — offered, then bought** — marginalised over the unrecorded offering state:" And at the end of
+  §2.1:
+  "`00-data-situation.md`'s 'a numerator with no denominator' is the wrong diagnosis of the same defect — the
+  denominator exists, it is the denominator of the wrong process."
+
+**The dispute is about the diagnosis, not the fix.** All three readings agree the contract records no ask and
+no offering state, and all three land on the same four fields. Quoted from D3 above, unchanged: "Add to the
+ledger or to a sibling listing table: `listPriceLamports`, `listedAt`, `delistedAt` (null while live),
+`delistReason ∈ {sold, withdrawn, expired, cap_blocked}`." **The data request is unchanged by the dispute,
+and the operator is not asked to choose between the three readings.** What changes is how the component is
+described: under `01-b` and `02-c` the baseline intensity is identified and buildable, so D3's severity is too
+high for it and correct only for the price response.
+
+**Not resolved here, deliberately.** This file does not pick a reading. The contradiction is carried as C1 in
+`A-research-ledger.md`, stated in all three versions in `DELIVERABLE.md` §14.2, and treated as the wrong-process
+denominator in the code path `02-c` defines. D3's decision line stands as written; only its Evidence line should
+now be read as the audit's reading rather than the settled one.
 
 ## D4 — Fees enter the optimiser as a parameter, not an assumption (2026-11-07)
 

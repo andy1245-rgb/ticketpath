@@ -413,3 +413,164 @@ and every label check passes. Three malformed stores over a socket: 422 with
 - **Review C8, the store validator vs the core.** The console now refuses the three rows
   cleanly, but `LedgerAdapter._validate` still accepts them; making the loader reject them
   would take the server down at load instead of on the page, so it needs its own pass.
+
+## 2026-11-07T13:08Z — the four defects left by `08-fix-verification.md`
+
+**Writer:** fix pass, not the verifier and not the engine reviewer. **Scope:** the four items
+named in the brief and nothing else — one refusal sentence, three tests. No number, no
+threshold, no refusal code and no arithmetic changed. Nothing committed, nothing pushed, no
+dependency added, `../ticketing-frontend` and `:3000` untouched, 8787 untouched, and the
+fleet trees were not read or written. The store on disk is unchanged:
+`fixtures/synthetic_store.json` still hashes `15e6f6611652ae43`.
+
+Files touched, and only these: `ticketpath/core/labels.py`, `ticketpath/console/blocks.py`,
+`tests/test_console_fixes.py`.
+
+### 1. The before-on-sale refusal said the event had no resale record
+
+The event has 12 recorded sales. The mode excludes them; it does not unrecord them.
+
+**before**, `http://127.0.0.1:8788/?event=evt_syn_02&mode=before_on_sale`:
+
+> `[REFUSED] No resale has been recorded on this event, so we will not state a primary price.`
+
+**after**, same URL:
+
+> `[REFUSED] This event's own resale rows are excluded by the BEFORE-ON-SALE decision mode, so
+> its record supplies no price here; the band on this page is the pooled record of 4 other
+> events on this platform, and a pooled band is not a price for this ticket, so no primary
+> price is stated.`
+
+How it is true by construction, not by wording:
+
+- `blocks._cold_refusal` reads `decisionMode.usesOwnRecord` from the payload. The plain
+  `no_resale_record` sentence is still what prints in the counterfactual mode, where the
+  engine does use this event's rows and the count really is zero (`?event=evt_syn_03`, and
+  `?event=evt_syn_02&asOf=2026-09-01T00:00:00Z`, both unchanged).
+- The count is not typed into the sentence. It comes from `blocks._pool_events(payload)`, the
+  same function that feeds the band label `A13_POOLED`, so the two sentences on the page
+  cannot disagree about how many other events there are. `TestTheDecisionInstantIsExplicit`
+  now asserts that the refusal's number equals the band label's number.
+- The no-pool case has its own sentence (`no_resale_record_excluded_no_pool`): with zero other
+  events there is no band on the page, so the pooled-band clause would be false there. It is
+  selected on the same count.
+- The typed reason code is unchanged: `no_resale_record` is still what the payload carries;
+  only the sentence differs by mode.
+- One adjacent sentence was saying the same untrue thing and had to move with it, or the page
+  would still have told the reader the event's own record does not exist: `A13_POOLED` read
+  `this event has no resale record of its own`, and now reads `this decision excludes this
+  event's own resale rows`. `A13_POOLED` prints only in the before-on-sale pooled case. No
+  number in it changed; `pooled mean log price-to-face over {n_events} other events with
+  resale` is preserved word for word.
+
+Held by `TestTheDecisionInstantIsExplicit.test_no_sentence_says_this_event_has_no_resale_record`
+(item 4) and `…test_before_on_sale_is_reachable_and_uses_only_other_events`.
+
+### 2. The integer-arithmetic test did not pin integer arithmetic
+
+**before:** the test compared `netRevenue.perTicket` to `gross - fee` at a per-ticket fee of
+50,000,000. With no ad-valorem part, a float and an integer give the same answer, so the test
+passed with float arithmetic restored. The verifier said so and was right.
+
+**after:** the page assertion stays (type plus `gross - fee`), and the two cases that separate
+the arithmetic are asserted on `primary_optimum.recommend` directly, because the console's fee
+control cannot reach the ad-valorem half of the money path:
+
+| price | ad valorem | integer half-up | what a float gives |
+|---|---|---|---|
+| 930,549,431 | 5000 bps | 465,274,716 | 465,274,715 (truncation of x.5) |
+| 2^53 + 1 | 5000 bps | 4,503,599,627,370,497 | 4,503,599,627,370,496 (product not exact in a float) |
+
+The implementation was not touched. Reverting it and watching the test fail:
+
+```
+gross = int(recommended * (10000 - ad_valorem) / 10000)
+  FAIL … AssertionError: 465274715 != 465274716
+  FAIL … AssertionError: 4503599627370496 != 4503599627370497
+gross = int(round(recommended * (10000 - ad_valorem) / 10000))
+  FAIL … AssertionError: 4503599627370496 != 4503599627370497
+restored: sha256 0d4550b02386aee6… , test OK
+```
+
+The second case is there so rounding cannot rescue a float: beyond 2^53 the product is not
+representable, so every float form, `round()` included, lands one lamport low.
+
+### 3. `assertLessEqual(value, value)` was a tautology
+
+**before:** `test_a_later_cut_counts_the_tickets_issued_by_then` counted the tickets at the
+default cut, asserted the count was above zero, then compared the count to itself.
+
+**after:** it hand-counts the store's own `issue` rows at three cuts (2026-09-01, the first
+issue instant, the last issue instant), compares the page's count to the hand count at each,
+and asserts the count strictly rises across them. A count that ignores the cut fails on the
+first and a count that ignores issue rows fails on all three.
+
+Reverting the cut-awareness (`issued = len(tier_tickets)`) and watching it fail:
+
+```
+FAIL … AssertionError: 12 != 0 : count at 2026-09-01T00:00:00Z
+restored: sha256 6f465ce418e2c10d… , tests OK
+```
+
+### 4. The before-on-sale test asserted the false sentences were present
+
+**before:** it required `[FIXTURE] 0 resales on this event`, `[FIXTURE] 0 tickets` and
+`No resale has been recorded on this event` to be on the page, so it locked the untrue sentence
+in and any repair to item 1 would have failed it.
+
+**after:** `test_no_sentence_says_this_event_has_no_resale_record` asserts the premise from the
+store first (this event has sale rows), then asserts that no sentence matching the claim class
+is on the page — `no resale has been recorded on this event`, `this event has no resale record`,
+`this event has no resales`, `there are no resales on this event`, `no resale rows exist for
+this event`, `this event sold nothing` — and that the page says what is true instead: the mode
+excludes the rows, and the pool is named as the source. The claim class, not one string,
+because a repair to one phrasing would have left the others.
+
+Reverting the sentence and the band label and watching it fail:
+
+```
+FAIL … the page says 'this event has no resale record' while 12 sale rows exist on this event
+FAIL … 'excluded by the BEFORE-ON-SALE decision mode' not found in "…"
+restored: sha256 c7ff447ed9fdaab2… (labels) 974e429e98c01549… (blocks), tests OK
+```
+
+Why the two strip assertions were dropped rather than inverted: `page.evidence` prints
+`[FIXTURE] 0 resales on this event · [FIXTURE] 0 tickets` in this mode from the mode-scoped
+counts in the payload. Those are counts, not sentences, and changing them is a change to a
+number, which this pass was told not to make. They are the remaining half of R1 in
+`08-fix-verification.md` and are named below, not silently accepted.
+
+### Verified after the change
+
+- `python3 -m unittest discover -s tests -t .` → **Ran 353 tests, OK** (352 before; one test
+  became two, so `tests/test_console_fixes.py` holds 44).
+- `python3 tools/console-check.py` against the live server → `FAILURES: 0`.
+- Server restarted on 8788 (`python3 -m ticketpath.server`, log
+  `~/.pi/jobs/jmw6f4vpul87b.log`); 8787 was not touched.
+- The four URLs `08-fix-verification.md` names:
+
+| URL | status | what it renders now |
+|---|---|---|
+| `/?event=evt_syn_02&mode=before_on_sale` | 200 | the exclusion sentence above; `Decision mode: BEFORE-ON-SALE`; `pooled mean log price-to-face over 4 other events with resale`; no sentence of the denial class |
+| `/?event=evt_syn_02&asOf=2026-09-11T11:00:00Z` | 200 | unchanged: `[FIXTURE] 1 ticket` beside `No ticket had been issued at this instant` (R2) |
+| `PUT /` | 501 | unchanged: Python's default error page, no banner (R3) |
+| `/?event=evt_syn_03` | 200 | unchanged: the counterfactual cold page, `That is a transaction rate…` twice (R4) |
+
+- Also re-rendered and unchanged on the same server: `/?event=evt_syn_03` (counterfactual
+  refusal, still `No resale has been recorded on this event…`, true there),
+  `/?event=evt_syn_02` (default), `/?event=evt_syn_04`, `/?event=evt_syn_07`, `capBps=0`,
+  `feeLamports=50000000`, `feeLamports=5000000000`, `mode=nonsense` (400), and the one-event
+  store in before-on-sale (the no-pool sentence).
+
+### What this pass did not touch, and why
+
+- **R1's counts.** `[FIXTURE] 0 resales on this event`, `[FIXTURE] 0 tickets` and the basis
+  `0 ticket rows exist in the store` still print in before-on-sale mode. They are mode-scoped
+  counts presented under an event-level noun; making them true means either changing a number
+  or re-scoping the strip's nouns, and the brief for this pass is wording in the refusal only.
+  Named here so it is a known residue, not a fix I claim.
+- **R2** `No ticket had been issued at this instant` at a cut exactly on the first issue
+  instant, **R3** `PUT /` returning Python's 501 page, **R4** the duplicated A1/T4 sentence,
+  **R5** the doubled `[REFUSED]` badge on 422 pages. All four are in the verifier's list and
+  none of them is one of the four items this pass was given.
+- The engine, the arithmetic, the payload, the thresholds and the page's other blocks.

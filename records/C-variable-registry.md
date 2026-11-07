@@ -879,6 +879,16 @@ caps in ticket resale. Whether it is an econometric study, which is the narrower
 not read and do not assert. The question is recorded in `records/CORRECTIONS-APPLIED.md`; no conclusion is
 changed here.
 
+**NOTE (2026-11-07T12:55Z) — C-3's closing clause is narrowed to `01-b`'s wording.** C-3 above ends "because
+**no peer-reviewed study** of resale price caps in ticket markets was found". `01-b` §4.5 claims the narrower
+thing, "no peer-reviewed **econometric** study", and `01-a` §3 cites He & Lin, *Marketing Science* 45(3):515–533
+(2026), for a class-C theoretical proposition about caps. A peer-reviewed *model* of price caps in ticket resale
+plus no peer-reviewed *measurement* of one satisfies both files. So read C-3's evidence clause as `01-b`'s:
+**no peer-reviewed econometric study**, not no study. The rule it supports — "no class-A claim about caps may
+appear in the deliverable" — is unaffected, is still correct, and is unchanged. The full distinction, with both
+passages quoted and the one open question (is He & Lin econometric?), is `01-a-market-structure.md`'s NOTE of the
+same timestamp. Nothing else in C-3 or in this file rests on the broader wording.
+
 ---
 
 ## 8. Revision 2 — the Phase 2 and Phase 3 inventory, with a decision-time verdict on every row

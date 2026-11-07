@@ -19,7 +19,7 @@ Marking: `[x]` done and verified on disk · `[~]` dispatched, unverified · `[ ]
 
 - [~] 02-rubric-and-scoring (running since 10:53Z)
 - [~] 02-a price paths: dispatched dmw6a6rtwd7ks
-- [~] 02-b cap truncation: dispatched dmw6a6rsw3nux
+- [~] 02-b cap truncation: first run died on provider stream errors after 35m; re-dispatched dmw6bgfuhsqjj
 - [x] 02-c sale hazard: records/findings/02-c-sale-hazard.md (83.8 KB, 33 sources)
 - [~] 02-d elasticity/fees/optimum: dispatched dmw6a8cx1vkil
 - [x] 02-e cold start: records/findings/02-e-cold-start.md (76.5 KB)
@@ -27,7 +27,7 @@ Marking: `[x]` done and verified on disk · `[~]` dispatched, unverified · `[ ]
 
 ## R3 — Phase 3, then build
 
-- [ ] 03-a interaction registry and causal-vs-predictive per relationship
+- [ ] 03-a interactions (after the cap file)
 - [ ] 03-b temporal correctness of every feature
 - [ ] BUILD-SPEC-NIGHT.md
 - [~] backend scaffold: ticketpath/ tree + tests building (dmw6a80la3zxh); CONTRACT-MAP.md 27.8 KB already on disk
@@ -52,3 +52,27 @@ Marking: `[x]` done and verified on disk · `[~]` dispatched, unverified · `[ ]
 - **`running` is not `returned nothing`.** Re-dispatch only a run whose status is
   `failed`/`lost`, or one that answered empty. Never re-dispatch a run that is still
   `running` — that is how the first five duplicates were created.
+
+## Handoff — state at 13:05Z, 2026-11-07
+
+**Closed and verified on disk**
+- Phase 1: 01-a, 01-b, 01-c, 01-d, plus the ledger verification, the adversarial review and the corrections pass. A-research-ledger is true against its files.
+- Phase 2: 02-a price paths, 02-b cap truncation, 02-c sale hazard, 02-d fees/elasticity/optimum, 02-e cold start, 02-rubric, 02-ai-ml (D5).
+- Phase 3: 03-a interactions, 03-b temporal correctness.
+- Phase 6: 06-validation-protocol. Phase 8: DELIVERABLE.md (22 sections, disagreements left visible).
+- Records: B, C, D, E filled. On-chain design + reconciliation (D6).
+- Backend: stdlib, adapters at every edge, console at 8788/, 352 tests. Contract conformance: 8/9 routes conformant, drift closed. Independent engine review failed honesty and code; both fixed and re-verified (6 of 8 outright, 2 partial, then four more defects fixed).
+- Fixtures: 8 events, 3 regimes, generator + --check.
+- Frontend: copy at ~/ticketpath-demo on :3001 proven against our backend; honesty patch prepared for the live tree (not applied).
+
+**Only the operator can do**
+1. Push to the public repo — its main still predates every file of the product. Blocks submission.
+2. Decide console reachability for judges: record only, tunnel, or deploy.
+3. Q1 seat coordinates, Q2 anything deployed anywhere, Q3 cap enforcement locus.
+4. Apply docs/frontend-honesty.patch to the live frontend, then set NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788 and restart :3000 (NEXT_PUBLIC_* is inlined at build time, so a restart is required, not optional).
+5. Fill the licence holder line. Record the two-minute video from the script in records/SUBMISSION-PACK.md.
+
+**Still worth doing tonight**
+- Re-run the adversarial review on any surface changed after 07-engine-review.
+- The three items the honesty fix left: badge placement inside prose, the candidate cap not passed to the optimum, the loader accepting rows the core refuses.
+- A SIM study per 06-validation-protocol (estimator recovery), labelled SIM.

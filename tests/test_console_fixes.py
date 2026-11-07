@@ -38,7 +38,7 @@ from ticketpath.adapters.ledger_adapter import LedgerAdapter
 from ticketpath.adapters.pricing_model_adapter import PricingModelAdapter
 from ticketpath.adapters.rpc_adapter import RpcAdapter
 from ticketpath.console import blocks
-from ticketpath.core import labels
+from ticketpath.core import labels, primary_optimum
 from ticketpath.core.timeutil import parse
 from ticketpath.orchestrator import Orchestrator
 from ticketpath.server import console_index, make_server
@@ -47,6 +47,21 @@ UTC = dt.timezone.utc
 CLOCK = dt.datetime(2026, 11, 7, 12, 0, 0, tzinfo=UTC)
 FIXTURE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "fixtures", "synthetic_store.json")
 COUNTERFACTUAL_SENTENCE = "this is not a price you could have set; it is what the record implies in hindsight"
+
+# The sentences that deny an event's own record rather than say the decision mode excludes it.
+# Patterns, not one string: the before-on-sale page said it three ways, and a fix to one of them
+# would leave the others. Written against the claim, so the old wording is inside the set.
+SENTENCES_THAT_DENY_THE_OWN_RECORD = tuple(
+    re.compile(pattern)
+    for pattern in (
+        r"no resale has been recorded on this event",
+        r"this event has no resale record",
+        r"this event has no resales",
+        r"there are no resales on this event",
+        r"no resale rows? exist for this event",
+        r"this event sold nothing",
+    )
+)
 
 
 # -- harness --------------------------------------------------------------
@@ -395,13 +410,38 @@ class TestTheDecisionInstantIsExplicit(unittest.TestCase):
         text = visible(html)
         self.assertIn("Decision mode: BEFORE-ON-SALE", text)
         self.assertIn("this event's own ledger rows are excluded", text)
-        # this event's own record contributes nothing: no resales, no tickets, no issued count
-        self.assertIn("[FIXTURE] 0 resales on this event", text)
-        self.assertIn("[FIXTURE] 0 tickets", text)
         self.assertNotIn("Recommended primary price", text)
-        self.assertIn("No resale has been recorded on this event", text)
         # and the band that is shown is the pooled record of the other events, named as such
         self.assertIn("pooled mean log price-to-face over 4 other events with resale", text)
+        # the count in the refusal is the count in the band label: one pool, one number
+        refusal = re.search(r"pooled record of (\d+) other events on this platform", text)
+        band = re.search(r"pooled mean log price-to-face over (\d+) other events with resale", text)
+        self.assertIsNotNone(refusal, text[:2000])
+        self.assertEqual(refusal.group(1), band.group(1))
+
+    def test_no_sentence_says_this_event_has_no_resale_record(self) -> None:
+        """The event has rows; the mode excludes them, and no sentence may say otherwise.
+
+        The claim class, not one string: anything that tells the reader this event's own
+        resales do not exist is false while the store holds them. The premise is asserted
+        first, so the test cannot pass by the rows having gone away.
+        """
+        store = fixture_store()
+        own_tickets = {ticket["id"] for ticket in store["tickets"] if ticket["eventId"] == "evt_syn_02"}
+        own_sales = [
+            row for row in store["ledger"] if row["ticketId"] in own_tickets and row["kind"] == "sale"
+        ]
+        self.assertGreater(len(own_sales), 0, "the premise: this event does have recorded sales")
+        text = visible(page_for(event="evt_syn_02", mode="before_on_sale")[1])
+        for claim in SENTENCES_THAT_DENY_THE_OWN_RECORD:
+            with self.subTest(claim=claim.pattern):
+                self.assertIsNone(
+                    claim.search(text),
+                    f"the page says {claim.pattern!r} while {len(own_sales)} sale rows exist on this event",
+                )
+        # what it says instead: the mode excludes the rows, and the pool is named as the source
+        self.assertIn("excluded by the BEFORE-ON-SALE decision mode", text)
+        self.assertIn("pooled record of 4 other events on this platform", text)
 
     def test_before_on_sale_refuses_the_value_block_when_there_is_nothing_to_pool(self) -> None:
         store = fixture_store()
@@ -482,9 +522,28 @@ class TestTheTicketCountIsCutAware(unittest.TestCase):
         self.assertEqual(payload["evidence"]["tickets"]["value"], 0)
 
     def test_a_later_cut_counts_the_tickets_issued_by_then(self) -> None:
-        payload = orchestrator().price_guidance(event_id="evt_syn_02")
-        self.assertGreater(payload["evidence"]["tickets"]["value"], 0)
-        self.assertLessEqual(payload["evidence"]["tickets"]["value"], payload["evidence"]["tickets"]["value"])
+        """The count is the issue rows at or before the cut, and it moves with the cut.
+
+        The assertion it replaces compared the count to itself. The hand count is taken
+        from the store's own issue rows, so a count that ignores the cut (12 at every
+        instant) fails on the first cut and a count that ignores issue rows fails on both.
+        """
+        store = fixture_store()
+        own_tickets = {ticket["id"] for ticket in store["tickets"] if ticket["eventId"] == "evt_syn_02"}
+        issues = [
+            row for row in store["ledger"] if row["ticketId"] in own_tickets and row["kind"] == "issue"
+        ]
+        instants = sorted(row["occurredAt"] for row in issues)
+        self.assertGreater(len(instants), 1, "the store must issue at more than one instant")
+        engine = orchestrator()
+        counts = []
+        for cut in ("2026-09-01T00:00:00Z", instants[0], instants[-1]):
+            expected = sum(1 for row in issues if parse(row["occurredAt"]) <= parse(cut))
+            count = engine.price_guidance(event_id="evt_syn_02", as_of=cut)["evidence"]["tickets"]["value"]
+            self.assertEqual(count, expected, f"count at {cut}")
+            counts.append(count)
+        self.assertLess(counts[0], counts[1])
+        self.assertLess(counts[1], counts[2])
 
 
 # -- item 7: fee arithmetic ------------------------------------------------
@@ -492,11 +551,56 @@ class TestTheTicketCountIsCutAware(unittest.TestCase):
 
 class TestTheFeeArithmetic(unittest.TestCase):
     def test_the_net_line_is_integer_arithmetic(self) -> None:
+        """A float anywhere in this path changes a lamport, and one lamport is a wrong number.
+
+        The page's own fee control carries a per-ticket fee only, so `gross - fee` is the
+        same answer in a float and in an integer there: the earlier version of this test
+        compared the payload to `gross - fee` and passed with float arithmetic restored. The
+        money path's other half -- the half-up rounding of
+        `(price * (10000 - ad_valorem) + 5000) // 10000` -- is where the two differ, so that
+        is asserted directly on the function that owns it, with values only integer
+        arithmetic produces.
+        """
         payload = orchestrator().price_guidance(event_id="evt_syn_02", fee_lamports="50000000")
         recommendation = blocks.selected_tier(payload)["recommendation"]
         gross = recommendation["recommendedLamports"]["value"]
-        self.assertEqual(recommendation["netRevenue"]["perTicket"]["value"], gross - 50_000_000)
-        self.assertIsInstance(recommendation["netRevenue"]["perTicket"]["value"], int)
+        net = recommendation["netRevenue"]["perTicket"]["value"]
+        self.assertIsInstance(net, int)
+        self.assertEqual(net, gross - 50_000_000)
+
+        for price, ad_valorem, expected in (
+            # 930,549,431 x 5000 / 10000 is x.5: rounding up gives ...716, truncating ...715
+            (930_549_431, 5000, 465_274_716),
+            # beyond 2**53 a float cannot hold the product: every float form gives ...496
+            (2**53 + 1, 5000, 4_503_599_627_370_497),
+        ):
+            with self.subTest(price=price, ad_valorem=ad_valorem):
+                out = primary_optimum.recommend(
+                    features={
+                        "tiers": [
+                            {
+                                "tierId": "t",
+                                "faceValueLamports": 1_000_000_000,
+                                "sellThrough": 0.5,
+                                "issuedCount": 2,
+                                "marks": [],
+                            }
+                        ]
+                    },
+                    tier_id="t",
+                    band={
+                        "regime": "uncapped",
+                        "floorLamports": None,
+                        "level": {"available": True, "lamports": price, "basis": "level"},
+                        "band": {"loLamports": price, "hiLamports": price},
+                    },
+                    intensity={},
+                    fee={"perTicketLamports": 0, "adValoremBps": ad_valorem},
+                    sell_through_floor=None,
+                    candidates=[price],
+                )
+                self.assertEqual(out["netRevenue"]["perTicket"], expected)
+                self.assertIsInstance(out["netRevenue"]["perTicket"], int)
 
     def test_a_fee_past_the_maximum_is_refused_before_it_is_computed(self) -> None:
         status, html = page_for(event="evt_syn_02", feeLamports="999999999999999999999")
