@@ -58,6 +58,7 @@ def build(
     sim: Sequence[Mapping],
     canonical_url: str,
     decision_mode: str = "counterfactual",
+    record_state: str = "ended_with_resales",
     excluded: Mapping | None = None,
     held_back: Mapping | None = None,
 ) -> dict:
@@ -67,6 +68,13 @@ def build(
     ticket rows and priced sale rows at the cut, counted from the store. It is a count, not
     an input -- the estimator never sees it -- and it exists so the page can say the rows are
     excluded instead of saying there are none.
+
+    `record_state` is which record the decision instant actually has, measured by the
+    orchestrator from the store at the cut: `before_first_ticket`, `issued_no_resale`,
+    `issued_no_resale_yet`, `in_market`, `ended_no_resale`, `ended_no_ticket`,
+    `ended_with_resales` or `cancelled`. It selects the mode sentence, so `completed record`
+    and `hindsight` are printed only where the event's run has ended at the instant
+    (12-final-audit, property (d)).
 
     `held_back` is what the loader refused to serve at all, by event id, each with its typed
     reason. The served count and the store's own count differ by exactly this, so both travel
@@ -185,6 +193,7 @@ def build(
             excluded,
             selected_tier,
             next((tier["name"] for tier in tiers if tier["tierId"] == selected_tier), None),
+            record_state,
         ),
         "evidence": {
             "resales": county(sales, sales, at_ceiling, events_with_resale, "A1"),
@@ -257,6 +266,37 @@ def build(
     }
 
 
+# The mode sentence is chosen by the record the decision instant has, not by a fixed word.
+# `P_MODE_COUNTERFACTUAL` keeps the `completed record` wording, and it is reachable only from
+# `ended_with_resales`; every other state gets a sentence that is true of it. The two
+# before-on-sale maps below do the same for the premise sentence: `P_MODE_BEFORE` claims the
+# decision is taken before this event's first ticket, so it may only be printed where no
+# ticket has been issued at or before the instant.
+_COUNTERFACTUAL_BY_STATE: Mapping[str, str] = {
+    "cancelled": "P_MODE_COUNTERFACTUAL_CANCELLED",
+    "ended_with_resales": "P_MODE_COUNTERFACTUAL",
+    "ended_no_resale": "P_MODE_COUNTERFACTUAL_ENDED_EMPTY",
+    "ended_no_ticket": "P_MODE_COUNTERFACTUAL_ENDED_EMPTY",
+    "in_market": "P_MODE_COUNTERFACTUAL_OPEN",
+    "before_first_ticket": "P_MODE_COUNTERFACTUAL_NOT_STARTED",
+    "issued_no_resale": "P_MODE_COUNTERFACTUAL_NO_RESALE_AT_ALL",
+    "issued_no_resale_yet": "P_MODE_COUNTERFACTUAL_NO_SALE_YET",
+}
+
+_BEFORE_BY_STATE: Mapping[str, str] = {
+    "cancelled": "P_MODE_BEFORE_CANCELLED",
+    "before_first_ticket": "P_MODE_BEFORE",
+    "ended_no_ticket": "P_MODE_BEFORE_NOTHING",
+    # tickets on the record, no resale at or before the instant: the issued sentence may not
+    # claim a resale the record does not hold
+    "issued_no_resale": "P_MODE_BEFORE_NO_RESALE",
+    "issued_no_resale_yet": "P_MODE_BEFORE_NO_RESALE",
+    "ended_no_resale": "P_MODE_BEFORE_NO_RESALE",
+}
+# in_market and ended_with_resales: tickets and resales on the record at the instant.
+_BEFORE_DEFAULT = "P_MODE_BEFORE_ISSUED"
+
+
 def _decision_mode(
     event: Mapping,
     as_of: str,
@@ -266,6 +306,7 @@ def _decision_mode(
     excluded: Mapping | None = None,
     selected_tier: str | None = None,
     tier_name: str | None = None,
+    record_state: str = "ended_with_resales",
 ) -> dict:
     """The decision instant, on the payload so the page cannot print a number without it.
 
@@ -277,7 +318,14 @@ def _decision_mode(
     """
     out = {
         "mode": mode,
-        "labelId": "P_MODE_COUNTERFACTUAL" if mode == "counterfactual" else "P_MODE_BEFORE",
+        "labelId": (
+            _COUNTERFACTUAL_BY_STATE.get(record_state, "P_MODE_COUNTERFACTUAL")
+            if mode == "counterfactual"
+            else _BEFORE_BY_STATE.get(record_state, _BEFORE_DEFAULT)
+        ),
+        # The state travels with the label so a reader of the payload can check the sentence
+        # against the fact that chose it, and so the console does not have to re-derive it.
+        "recordState": record_state,
         "usesOwnRecord": mode == "counterfactual",
         "pooledOtherEvents": num(
             events_with_resale, "FIXTURE", f"{events_with_resale} events with a resale record at the cut", "A13_POOLED"

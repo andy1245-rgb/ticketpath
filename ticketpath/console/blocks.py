@@ -72,7 +72,7 @@ def decision(payload: Mapping) -> str:
                 },
             )
         out.append(f'<p class="label-sentence">[DECLARED] {in_force}</p>')
-    out.append(tier_name_line(tier))
+    out.append(tier_name_line(payload, tier))
     if tier["regime"] == "capped_and_binding":
         out.append(_binding(payload, tier))
     elif tier["regime"] == "no_resale":
@@ -101,14 +101,17 @@ def decision(payload: Mapping) -> str:
 def decision_mode(payload: Mapping) -> list[str]:
     """The decision instant, unmissable: which record this number came from.
 
-    Two modes and no third. The counterfactual carries the required sentence verbatim, and
-    both modes carry the event's status and dates, so a hindsight recomputation can never be
-    read as a price that was set.
+    Two modes and no third. The sentence is the registry's, chosen by the record state the
+    orchestrator measured at the instant (`before_first_ticket`, `in_market`,
+    `ended_with_resales`, ...), so `completed record` and `hindsight` are printed only where the
+    event's run has ended at the instant, and the before-on-sale premise only where no ticket
+    has been issued yet. Both modes carry the event's status and dates, so a hindsight
+    recomputation can never be read as a price that was set.
 
     The status is the store's *current* field and cannot follow the instant, so where the two
     disagree the line says so instead of printing the field as the cut's, and the mode whose
     premise is "before the first issue" says when the instant is too late for that premise
-    (N8, 10-final-review).
+    (N8, 10-final-review; 12-final-audit section 3).
     """
     mode = payload.get("decisionMode") or {}
     sentence = labels.render(mode.get("labelId") or "P_MODE_COUNTERFACTUAL")
@@ -117,18 +120,44 @@ def decision_mode(payload: Mapping) -> list[str]:
         f'<p class="mode">{badge} <strong>{esc(sentence)}</strong></p>',
         f'<p class="mode-detail">{esc(_mode_event_line(payload, mode))}</p>',
     ]
-    late_premise = mode.get("usesOwnRecord") is False and _ended_before(
-        mode.get("eventStatus"),
-        _ends_at(payload, mode),
-        mode.get("asOf") or payload["asOf"],
-    )
-    if late_premise:
+    # The qualifier is about the clock, so the clock decides it: an instant after the recorded
+    # end is after the end whatever the status field says. It used to be skipped for a
+    # `completed` event, which left those before-on-sale states with no qualifier at all.
+    if mode.get("usesOwnRecord") is False and _after_end(
+        _ends_at(payload, mode), mode.get("asOf") or payload["asOf"]
+    ):
         out.append(f'<p class="mode-detail">{esc(labels.render("P_MODE_BEFORE_LATE"))}</p>')
     return out
 
 
 def _ends_at(payload: Mapping, mode: Mapping) -> str | None:
     return mode.get("eventEndsAt") or payload["event"].get("endsAt")
+
+
+def _after_end(ends_at: str | None, as_of: str | None) -> bool:
+    """True when the instant is after the recorded end. Only the dates decide this."""
+    if not ends_at or not as_of:
+        return False
+    try:
+        return parse(as_of) > parse(ends_at)
+    except TimestampError:
+        return False
+
+
+def _field_ahead_of_the_instant(status: str | None, ends_at: str | None, as_of: str | None) -> bool:
+    """True when the field says the run is over and the dates say it is not over yet.
+
+    `completed` is the one status that asserts an end, so it is the one that can be ahead of a
+    mid-run instant. The page then prints the field as the store's current one, which is what
+    it already does for `on_sale` at a post-end instant (12-final-audit section 3, evt_syn_06
+    at mid-event).
+    """
+    if status != "completed" or not ends_at or not as_of:
+        return False
+    try:
+        return parse(as_of) < parse(ends_at)
+    except TimestampError:
+        return False
 
 
 def _ended_before(status: str | None, ends_at: str | None, as_of: str | None) -> bool:
@@ -152,11 +181,12 @@ def _mode_event_line(payload: Mapping, mode: Mapping) -> str:
     starts_at = mode.get("eventStartsAt") or event["startsAt"]
     ends_at = _ends_at(payload, mode)
     as_of = mode.get("asOf") or payload["asOf"]
-    label_id = (
-        "P_MODE_EVENT_ENDED"
-        if _ended_before(status, ends_at, as_of)
-        else "P_MODE_EVENT"
-    )
+    if _ended_before(status, ends_at, as_of):
+        label_id = "P_MODE_EVENT_ENDED"
+    elif _field_ahead_of_the_instant(status, ends_at, as_of):
+        label_id = "P_MODE_EVENT_FIELD_AHEAD"
+    else:
+        label_id = "P_MODE_EVENT"
     return labels.render(
         label_id,
         name=event["name"],
@@ -167,11 +197,24 @@ def _mode_event_line(payload: Mapping, mode: Mapping) -> str:
     )
 
 
-def tier_name_line(tier: Mapping) -> str:
+def tier_name_line(payload: Mapping, tier: Mapping) -> str:
+    """The tier line, with its regime said in the mode that is in force.
+
+    The regime is computed from what enters the decision, so in the before-on-sale mode every
+    tier's book is empty and the chip printed `no resale` on a tier whose rows the same page
+    counted as excluded. The count was scoped and the chip was not, and a judge sees `no
+    resale` and `9 recorded sales in this tier` on one screen (12-final-audit section 4.3).
+    Where the mode excluded this tier's rows the chip says so, and nowhere else changes.
+    """
+    mode = payload.get("decisionMode") or {}
+    regime = tier["regime"].replace("_", " ")
+    excluded_here = value_of(mode.get("excludedTierResales"))
+    if mode.get("usesOwnRecord") is False and regime == "no resale" and excluded_here:
+        regime = "no sale in this decision"
     return (
         f'<p class="tier">[FIXTURE] tier: <strong>{esc(tier["name"])}</strong> · '
         f'face {money(tier["faceValueLamports"])} · regime '
-        f'<span class="chip">[FIXTURE] {esc(tier["regime"].replace("_", " "))}</span></p>'
+        f'<span class="chip">[FIXTURE] {esc(regime)}</span></p>'
     )
 
 
@@ -643,9 +686,12 @@ def market(payload: Mapping) -> str:
         ceiling_clause = esc(labels.render("P_STRIP_EXCLUDED_CEILING"))
     else:
         # The count is against the record's own ceiling, and the noun says so when the page
-        # prices against a different one.
+        # prices against a different one. A16 describes a sale sitting on the ceiling, so it is
+        # printed only where one does; over a measured zero it described a rationing point on a
+        # tier that has no sale at all (12-final-audit section 4.2, item 6).
         noun = "at the recorded ceiling " if in_force != recorded else "at the ceiling "
-        ceiling_clause = f'{noun}{num(market["atCeilingCount"])} — {esc(labels.render("A16"))}'
+        gloss = labels.render("A16") if value_of(market["atCeilingCount"]) else labels.render("A16_NONE")
+        ceiling_clause = f'{noun}{num(market["atCeilingCount"])} — {esc(gloss)}'
     out.append(
         f'<p>{_tier_sales_scope(market, payload)} · '
         f'median markup {bps_text(market["medianMarkupBps"], trim=False)} · '
@@ -733,8 +779,17 @@ def refusals(payload: Mapping) -> str:
         fields = _refusal_fields(entry, payload, tier)
         if label_id == "insufficient_marks" and tier is not None:
             # One sale is not one sale's worth of plural: the singular sentence exists.
-            label_id = "insufficient_marks_one" if value_of(tier["market"]["sales"]) == 1 else "insufficient_marks"
-            if label_id == "insufficient_marks_one":
+            singular = value_of(tier["market"]["sales"]) == 1
+            # In the before-on-sale mode the count is the entering count, and the tier's own
+            # rows are in the store excluded. The sentence says which zero it is counting.
+            scoped = (payload.get("decisionMode") or {}).get("usesOwnRecord") is False and bool(
+                value_of((payload.get("decisionMode") or {}).get("excludedResales"))
+            )
+            if scoped:
+                label_id = "insufficient_marks_decision_one" if singular else "insufficient_marks_decision"
+            else:
+                label_id = "insufficient_marks_one" if singular else "insufficient_marks"
+            if singular:
                 lines.append(f'<li>[REFUSED] {esc(code)}: {esc(labels.render(label_id))}</li>')
                 continue
             lines.append(

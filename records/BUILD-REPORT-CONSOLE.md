@@ -1652,3 +1652,217 @@ on `:8796` and was stopped.
 Nothing is committed and nothing is pushed. `git status` carries the files named at the top of this
 section plus `tests/test_final_proof_2_fixes.py` (untracked), and `NIGHT-LOG.md`, whose new line is the
 orchestrator's dispatch note for this run, not this run's write.
+
+## 2026-11-07T17:25Z — property (d): the mode sentence is a function of the record the instant has
+
+**Status:** complete. Code, tests, this section. No number moved, no test weakened, no new
+dependency, no commit, no push, no frontend touched, `8787` not bound and not contacted, no state
+file, nothing read or written in the fleet trees.
+
+**Scope.** `records/findings/12-final-audit.md` measured 360 page states and found the first three
+properties clean (0 (a), 0 (b), 0 (c)) and the fourth, its own, at **60 violations**. All 60 were the
+same claim: the before-on-sale sentence said the decision is taken before this event's first ticket
+is issued, at instants when the same page counted 12 to 16 tickets and resales as excluded by the
+mode. The audit also recorded, as an observation, the counterfactual sentence calling the record
+"completed" in hindsight on the default page (event starts 2026-11-21, instant 2026-11-07) and on the
+cold-start page (which prints `No resale has been recorded on this event` four lines below it), and
+it named three labels beside the excluded counts that denied the rows the same page counted. This
+pass fixes those at the source: the mode sentence is chosen from the record the instant actually has,
+and the three labels say what they are counting.
+
+**Files.** `core/labels.py` (the mode sentences and three labels), `api/guidance.py` (state to
+sentence), `orchestrator.py` (the state is measured from the store at the cut), `console/blocks.py`
+(which sentence prints, the late qualifier, the status line, the three labels),
+`tests/test_decision_mode_states.py` (new, 12 tests), three tests changed in
+`tests/test_console_fixes.py`, one in `tests/test_last_mile_fixes.py`, six assertions in
+`tools/console-check.py`, and this section.
+
+### What decides the sentence
+
+`orchestrator._record_state` measures, from `fixtures/synthetic_store.json` at the cut and from
+nothing else: the number of this event's priced sale rows at or before the instant, the number of
+distinct tickets with an issue row at or before it, whether the record holds a priced sale at any
+instant, the recorded `endsAt`, and the store's `status` field. It returns one of eight names:
+
+| state | measured condition | mode sentence |
+|---|---|---|
+| `before_first_ticket` | no issue row at or before the instant | `P_MODE_COUNTERFACTUAL_NOT_STARTED` / `P_MODE_BEFORE` |
+| `issued_no_resale` | tickets issued, no sale at the instant, none at any instant | `..._NO_RESALE_AT_ALL` / `P_MODE_BEFORE_NO_RESALE` |
+| `issued_no_resale_yet` | tickets issued, no sale at the instant, one later | `..._NO_SALE_YET` / `P_MODE_BEFORE_NO_RESALE` |
+| `in_market` | sales at the instant, run not ended | `..._OPEN` / `P_MODE_BEFORE_ISSUED` |
+| `ended_no_resale` | run ended, no sale at the instant | `..._ENDED_EMPTY` / `P_MODE_BEFORE_NO_RESALE` |
+| `ended_no_ticket` | run ended, no ticket issued at the instant | `..._ENDED_EMPTY` / `P_MODE_BEFORE_NOTHING` |
+| `ended_with_resales` | run ended with priced sales on the record | `P_MODE_COUNTERFACTUAL` (unchanged) / `P_MODE_BEFORE_ISSUED` |
+| `cancelled` | the store's status says the event was called off | `..._CANCELLED` / `P_MODE_BEFORE_CANCELLED` |
+
+The dates decide "has ended at this instant", not the status field: a store that still says
+`on_sale` past its end is finished as of the cut, and a store that says `completed` inside its dates
+is not. `cancelled` is the one status that decides on its own, because a cancelled run will not
+produce a completed record at any instant. The state travels on the payload as
+`decisionMode.recordState`, and the sentence id is chosen from it in `guidance._decision_mode`.
+
+**No number moved.** The state is a classification of rows the store already holds; the only added
+measurement is `resalesInStore`, a row count used by a sentence and by nothing else. The proof: every
+numeric leaf of the payload was dumped for 8 events x 4 instants x 2 modes x 3 cap states, from the
+tree the audit measured (`dd07282`, extracted to `/tmp/fix12/old`) and from this tree, and compared:
+**27,262 values, 0 changed, no key added or lost.**
+
+### Before and after, state by state
+
+The 360-state grid is 8 events x 2 modes x 4 cap states x 3 cuts (192), plus every other tier at the
+same states (168). The old text is the same in all 360 counterfactual states and in all 180
+before-on-sale states; the new text is per state.
+
+**Before (`dd07282`), every counterfactual state, whatever the record:**
+
+> `[UNVALIDATED] Decision mode: COUNTERFACTUAL. This page recomputes the value from this event's own
+> completed record: this is not a price you could have set; it is what the record implies in
+> hindsight.`
+
+**Before (`dd07282`), every before-on-sale state, whatever the instant:**
+
+> `[DECLARED] Decision mode: BEFORE-ON-SALE. This is the decision as it is taken before this event's
+> first ticket is issued: only other events' completed resale records and this event's own metadata
+> enter it, and this event's own ledger rows are excluded.`
+
+| state class | page | after, as served |
+|---|---|---|
+| before its on-sale, no record | `/?event=evt_syn_08`, `/?event=evt_syn_02&asOf=2026-07-01T00:00:00.000Z` | `Decision mode: COUNTERFACTUAL. This event's first ticket has not been issued at or before this decision instant, so there is no record of this event's own prices to recompute: the band below is the declared prior, not a reading of a record. It is not a price you could have set.` |
+| in market, some resales | `/` (evt_syn_02, instant 2026-11-07) | `Decision mode: COUNTERFACTUAL. This page recomputes the value from this event's own record as it stands at this decision instant. The event has not ended at this instant, so the record read here is the record up to this instant and not a finished one: this page is not hindsight, it is what the record in hand implies now, and it is not a price you could have set.` |
+| completed with resales | `/?event=evt_syn_06` | unchanged: `Decision mode: COUNTERFACTUAL. This page recomputes the value from this event's own completed record: this is not a price you could have set; it is what the record implies in hindsight.` |
+| no resale at any instant | `/?event=evt_syn_03` | `Decision mode: COUNTERFACTUAL. This event's record holds no resale at any instant, so there is nothing to recompute: the band below is the declared prior, not a reading of a record. It is not a price you could have set.` |
+| cancelled (schema status; no row in the shipped fixture) | a store with `evt_syn_02.status = "cancelled"`, exercised by the test | `Decision mode: COUNTERFACTUAL. The store records this event as cancelled, so its run will not complete and there is no future primary decision to take for it. What follows is computed from the record that exists, and it is not a price you could have set.` |
+| before-on-sale, tickets issued | `/?event=evt_syn_02&mode=before_on_sale` (12 tickets, 12 resales excluded) | `Decision mode: BEFORE-ON-SALE. This is the before-on-sale decision priced at an instant when this event already has tickets and resales on its record: this event's own ledger rows are excluded by the mode, so only other events' completed resale records and this event's own metadata enter it, and those other events are read at this instant rather than at the first issue. It is not the price the organizer could have charged before the first issue.` |
+| before-on-sale, tickets but no resale | `/?event=evt_syn_03&mode=before_on_sale` | `...priced at an instant when this event already has tickets on its record but no resale at or before it: this event's own ledger rows are excluded by the mode, ... It is not the price the organizer could have charged before the first issue.` |
+| before-on-sale, ended, nothing issued | `/?event=evt_syn_08&mode=before_on_sale&asOf=2027-03-02T00:00:00.000Z` | `Decision mode: BEFORE-ON-SALE. This event has ended and no ticket of it had been issued at or before this decision instant, so its own record holds no row for the mode to exclude: only other events' completed resale records and this event's own metadata enter it. It is not a price the organizer could have set.` |
+
+The two distinctions the earlier review required survive every variant: each counterfactual still
+says the number is not a price the organizer could have set (or, in the before mode, not the price
+they could have charged before the first issue), and each before-on-sale sentence still says the
+event's own ledger rows are excluded and only other events' records and this event's own metadata
+enter. A test asserts both on all 64 states of the grid, in both modes.
+
+Two smaller premises were false at an instant and are fixed with the same mechanism. The late
+qualifier was skipped for a `completed` event, because its gate read the status field rather than the
+clock; it now fires whenever the instant is after the recorded end, in both of `evt_syn_06`'s
+after-end states. And `evt_syn_06`'s mid-event states printed `status completed` as if it were the
+status at an instant 90 minutes before the recorded end; the line now says:
+
+> `Event Demonstration Annex: Completed Run · status completed is the store's current field, not the
+> status at this decision instant · starts 2026-10-03T23:30:00.000Z · ends 2026-10-04T02:00:00.000Z
+> · decision instant 2026-10-04T00:30:00.000Z. The instant is before the recorded end, so at that
+> instant the event had not ended, whatever the field now says.`
+
+### The three labels beside the excluded counts
+
+Each is a wording change; the count beside it is the count that was already printed.
+
+| label | before | after |
+|---|---|---|
+| tier regime chip, `/?event=evt_syn_02&mode=before_on_sale` (9 rows excluded in that tier) | `regime [FIXTURE] no resale` | `regime [FIXTURE] no sale in this decision` |
+| `insufficient_marks` refusal, same page | `[FIXTURE] 0 sales is too few to fit a path, so no path is quoted.` | `[FIXTURE] 0 sales enter this decision, which is too few to fit a path, so no path is quoted.` |
+| market block, `/?event=evt_syn_01` Floor (a measured zero at the ceiling) | `at the ceiling [FIXTURE] 0 — At the cap — a rationing point, not a market-clearing price.` | `at the ceiling [FIXTURE] 0 — No sale in this tier sits at the ceiling, so there is no rationing point here to describe.` |
+
+`A16` is unchanged and still printed where a sale does sit on the ceiling (`evt_syn_02` General: `at
+the ceiling [FIXTURE] 8 — At the cap — a rationing point, not a market-clearing price.`), which is the
+condition the engine's own `extraLabelIds` already used to require it.
+
+### The sweep, before and after, on the same grid and the same instrument
+
+The audit's own instrument, unmodified (`/tmp/audit12/sweep.py`, 360 states;
+`/tmp/audit12/capgrid.py`, 1,500 states), against this tree's server on `8788`.
+
+| | before (`dd07282`, on 8788 before this pass) | after (this tree, on 8788) |
+|---|---|---|
+| grid states | 360 | 360 |
+| **(d) violations** | **60** | **0** |
+| states with a (d) violation | 60 | 0 |
+| (a) / (b) / (c) | 0 / 0 / 0 | 0 / 0 / 0 |
+| observation `d_obs_completed_record` | 120 states | **0** |
+| observation `c_label_regime_no_resale` | 80 states | **0** |
+| observation `b_disclosed_prior_extent` | 165 states | 165 (unchanged, not this pass) |
+| cap grid, 1,500 states, (a)/(b)/(c) | 0 | 0 |
+
+No state needs an explanation: the count is zero, and the count is measured by the instrument that
+counted 60 on the tree before this pass. The 60 were the before-on-sale premise (`d4_premise`); it is
+gone because the premise sentence is no longer printed where a ticket has been issued, not because
+the parser stopped looking: the same rule still fires on `dd07282` in the scratch tree, and the new
+tests below assert the claim class directly.
+
+### Tests: 441 before, 453 after, all OK
+
+`tests/test_decision_mode_states.py` (new, 12 tests):
+
+- one test per state class above, each asserting the sentence's claim and the claim it may not make:
+  before-the-first-ticket, in market, completed, no-resale-at-all, cancelled (with a store written for
+  it), before-on-sale after the first issue (and the premise kept where it is true), the status field
+  ahead of the instant;
+- `TestEveryStateKeepsBothGuarantees`: 8 events x 4 instants x 2 modes = 64 states. On each it
+  asserts the counterfactual's not-a-price guarantee or the before mode's exclusion guarantee, that no
+  completed-record claim appears before the run has ended, that the first-issue premise appears only
+  where no ticket has been issued, that no sentence claims resales the record does not hold at the
+  instant or tickets where none were issued, and that `recordState` equals the state derived
+  independently from `fixtures/synthetic_store.json`;
+- three tests for the scoped labels (regime chip, refusal, A16).
+
+**Tests changed, and why each change is stronger, not weaker.** Five assertions pinned the defect or
+the fixed word; all five are listed so a reviewer can check the direction.
+
+| test | was | is |
+|---|---|---|
+| `test_the_default_page_is_a_labelled_counterfactual` | required the completed-record/hindsight sentence on an event 14 days from its start | requires the not-a-price guarantee **and forbids** the completed-record and hindsight claims on that page |
+| `test_the_label_is_unmissable` | required the same old sentence inside the mode block | requires the guarantee clause inside the mode block |
+| `test_a_completed_event_is_shown_as_a_hindsight_recomputation` | required the sentence on `evt_syn_06` | unchanged behaviour, same sentence, now named by two halves so the true case is still pinned verbatim |
+| `test_the_before_on_sale_premise_stops_claiming_a_premise_it_cannot_have` | required `P_MODE_BEFORE` on a post-end page with 12 excluded tickets | requires the **absence** of the premise sentence there, the presence of the exclusion clause, and the late qualifier; and still requires the qualifier's absence on the plain page |
+| `test_a_capped_page_still_says_both` | required `At the cap` on a tier with a measured zero at the ceiling | requires `A16` where a sale sits on the ceiling, and `A16_NONE` **and not** `A16` on the zero tier |
+
+`tools/console-check.py` gained six assertions of the same direction (the default page's guarantee and
+its forbidden halves, the cold page, the completed page's verbatim sentence, the before page's absent
+premise), and its one inverted assertion is documented in the file as the last two were.
+
+### Revert, demonstrated
+
+`git archive HEAD | tar -x -C /tmp/fix12/old` (`dd07282`), with only
+`tests/test_decision_mode_states.py` copied in:
+
+```
+Ran 12 tests   FAILED (failures=55, errors=22)
+```
+
+All 12 fail, and they fail on the sentences a reader sees, for example:
+
+```
+AssertionError: this event's own completed record unexpectedly found in "Decision mode:
+COUNTERFACTUAL. This page recomputes the value from this event's own completed record: ..."
+AssertionError: before this event's first ticket is issued unexpectedly found in "... [DECLARED]
+Decision mode: BEFORE-ON-SALE. This is the decision as it is taken before this event's first ticket
+is issued: ..."
+```
+
+In this tree the same file is 12 tests, OK.
+
+### Tools, and the server on 8788
+
+- `python3 -m unittest discover -s tests -t .` -> **453 tests, OK** (441 before, plus the 12 new).
+- `python3 -m unittest tests.test_contract_conformance` -> 22, OK.
+- `python3 tools/console-check.py` against 8788 -> **FAILURES: 0**, 113 `ok` lines.
+- `python3 tools/console-check-stores.py` -> **FAILURES: 0**.
+- `python3 tools/build_fixture_store.py --check` -> 18 of 18, fixture byte-identical.
+- 8788 restarted on this code: `python3 -m ticketpath.server --port 8788`, pid 375243, started
+  2026-11-07T17:10Z, `LISTEN 127.0.0.1:8788`, `dataSource=synthetic-fixture synthetic=True
+  routes=10`, banner `SYNTHETIC FIXTURE DATA`. Its log is `/tmp/fix12/server-8788.log`, outside the
+  tree. `8787` (`node server.mjs`) was not bound, read or contacted; `:8797` was already listening
+  when this run started and was left alone; `:3000` and `:3001` were not touched.
+
+### What this pass did not do
+
+- The audit's reader items 4, 5, 8 are untouched: the patch prose around the truncated prior band,
+  the declared prior's uncut extent above the printed ceiling, "the most this record can support"
+  beside "Range: ... and up", the no-op cap helper, and "capped no mass point"/"tau" in the
+  controls. They are wording problems the audit listed separately from property (d), and none of
+  them is a claim about the record at the instant.
+- The shipped fixture has no event with status `cancelled`, so that sentence is exercised by a test
+  that writes one, not by a page in the demo.
+- Nothing committed, nothing pushed. `git status` carries the five source files, the four test files
+  (`tests/test_decision_mode_states.py` untracked), `tools/console-check.py`, this report, and
+  `NIGHT-LOG.md`, whose line is the orchestrator's dispatch note and not this run's write.

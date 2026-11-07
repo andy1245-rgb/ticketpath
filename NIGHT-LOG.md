@@ -97,3 +97,11 @@ Three line shapes: dispatched / returned / verified. UTC, ISO-8601. Nothing else
 ## 16:52Z · note            8788 was left serving the cancelled run's partial code, which made tools/console-check.py report a phantom 1 failure. Restarted 8788 from main's tree.
 ## 16:56Z · verified        on main 8dfb2c3 with a fresh 8788: 441 unittest OK in 17.7s, console-check FAILURES: 0, :3000 still 200.
 ## 16:57Z · handover        NIGHT-CONTINUE.md written; the night is re-dispatched to a Claude orchestrator in a new herdr pane. Re-dispatch queue: 1 run (MODE-sentences, task text reproduced verbatim in the brief).
+## 16:58Z · dispatched    MODE-sentences     tier default  property (d) fix, task text verbatim from NIGHT-CONTINUE §4; wip branch not referenced
+## 17:00Z · dispatched    MODE-sentences     runId dmw6nakc2zmxr tier default (prior run dmw6mou3ertm6 is lost, cancelled at handover)
+## 17:00Z · note          LICENSE line 3 still has the operator placeholder; not mine to fill, flagged for the operator.
+## 17:04Z · verified  operator  LICENSE placeholder replaced with "Andrew Radu" (he supplied the name); committed and pushed alone so it would not sweep MODE-sentences in-flight edits
+## 17:14Z · returned      MODE-sentences     rc=0 runId dmw6nakc2zmxr; uncommitted edits on main tree (8 files + tests/test_decision_mode_states.py). CLAIMED, not yet verified: 453 tests, (d) 60->0 on 360 grid, 5 old assertions rewritten, no number moved.
+## 17:15Z · dispatched    VERIFY-mode-d      runId dmw6nxgubs6jn tier best, independent verification of the uncommitted (d) fix
+## 17:20Z · dispatched    FIX3-prose-scratch tier default, works in /tmp/fix3-work on :8799, delivers /tmp/fix3.patch; parallel to VERIFY-mode-d, no shared files
+## 17:26Z · verified      VERIFY-mode-d      runId dmw6nxgubs6jn: 453 tests OK, (d) 60->0 on audit grid, 0 numeric leaves moved (144 cases x196), new tests fail on old code (55F/22E), 1 of 5 rewritten assertions narrower but guarded by console-check. VERDICT COMMITTABLE. Residuals: event-selector "no resale" label on before page; "completed resale records" wording; fix3 items (running).

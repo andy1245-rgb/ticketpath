@@ -67,21 +67,79 @@ def _excluded_own_counts(tickets, ledger, event_id: str, cut: datetime) -> dict:
     the two zeros are the mode's, and the rows that produce them are in this tier (11-final,
     item 5). The per-tier counts are read off the same ticket rows, so the tier figure can
     never disagree with the tier's own `sales` count about which rows exist.
+
+    `resalesInStore` is the same count with no cut: whether this event's record holds a priced
+    sale at any instant. It separates "no resale yet" from "no resale at all", which are two
+    different statements about the record and were one sentence on the cold-start page
+    (12-final-audit section 4.2).
     """
     tier_of = {ticket["id"]: ticket["tierId"] for ticket in tickets if ticket["eventId"] == event_id}
     own = set(tier_of)
-    at_cut = [row for row in ledger if row["ticketId"] in own and parse(row["occurredAt"]) <= cut]
+    rows = [row for row in ledger if row["ticketId"] in own]
+    at_cut = [row for row in rows if parse(row["occurredAt"]) <= cut]
     by_tier: dict[str, dict[str, int]] = {}
     for row in at_cut:
         if row["kind"] != "sale" or row["priceLamports"] is None:
             continue
         bucket = by_tier.setdefault(tier_of[row["ticketId"]], {"resales": 0})
         bucket["resales"] += 1
+    priced = [row for row in rows if row["kind"] == "sale" and row["priceLamports"] is not None]
     return {
         "resales": sum(1 for row in at_cut if row["kind"] == "sale" and row["priceLamports"] is not None),
         "tickets": len({row["ticketId"] for row in at_cut if row["kind"] == "issue"}),
+        "resalesInStore": len(priced),
         "byTier": by_tier,
     }
+
+
+# The record states a decision instant can have, as measured from the store at that instant.
+# The mode sentence is chosen from this vocabulary, so no page describes a record the event
+# does not have at the instant it is printed for (12-final-audit, property (d)).
+RECORD_STATES: tuple[str, ...] = (
+    "before_first_ticket",   # no issue row at or before the instant: nothing to read yet
+    "issued_no_resale",      # tickets issued, no priced sale at the instant, and none later
+    "issued_no_resale_yet",  # tickets issued, no priced sale at the instant, but one later
+    "in_market",             # priced sales at the instant, the run has not ended
+    "ended_no_resale",       # the run has ended and holds no priced sale at the instant
+    "ended_no_ticket",       # the run has ended and no ticket was ever issued at the instant
+    "ended_with_resales",    # the run has ended with priced sales on the record
+    "cancelled",             # the store's own status says the event was called off
+)
+
+
+def _record_state(event, own: dict, cut: datetime) -> str:
+    """Which record the decision instant actually has, from the store's rows at the cut.
+
+    `own` is `_excluded_own_counts` for this event, measured whether or not the mode reads it,
+    so the state is a fact about the store and not about the decision mode. The dates decide
+    "has ended at this instant", not the status field: the schema carries no instant at which a
+    status changed, so a store that still says `on_sale` for an event past its end is finished
+    as of the cut (the page says the field and the instant disagree), and a store that says
+    `completed` for an event still inside its dates is not finished yet (the page says the
+    field is the store's current one). `cancelled` is the one status that decides the sentence
+    on its own, because a cancelled run will not produce a completed record at any instant.
+    """
+    status = event.get("status")
+    if status == "cancelled":
+        return "cancelled"
+    ends_at = event.get("endsAt") or event.get("startsAt")
+    try:
+        ended = bool(ends_at) and parse(ends_at) <= cut
+    except (TypeError, ValueError):
+        ended = False
+    resales = own.get("resales") or 0
+    tickets = own.get("tickets") or 0
+    if ended and resales:
+        return "ended_with_resales"
+    if ended and tickets:
+        return "ended_no_resale"
+    if ended:
+        return "ended_no_ticket"
+    if resales:
+        return "in_market"
+    if tickets:
+        return "issued_no_resale_yet" if own.get("resalesInStore") else "issued_no_resale"
+    return "before_first_ticket"
 
 
 class Orchestrator:
@@ -439,6 +497,7 @@ class Orchestrator:
             intensities[tier["tierId"]] = rate
             recommendations[tier["tierId"]] = recommendation
 
+        own_counts = _excluded_own_counts(tickets, ledger, event_id, cut)
         payload = guidance.build(
             event=event,
             tiers=features["tiers"],
@@ -465,8 +524,14 @@ class Orchestrator:
             # The before-on-sale mode withholds this event's own rows from the features. The rows
             # are still in the store, so the page may not print them as absent ones: what the
             # mode excluded is measured here, at the same cut, from the same store, and travels
-            # beside the zero that enters the decision.
-            excluded=_excluded_own_counts(tickets, ledger, event_id, cut) if not own_rows else None,
+            # beside the zero that enters the decision. The same count decides the mode
+            # sentence in both modes, so it is measured always, not only when it is printed.
+            excluded=own_counts if not own_rows else None,
+            # Which record this instant has: no ticket yet, tickets and no resale, resales in a
+            # run still open, a run that has ended, or an event the store calls cancelled. The
+            # mode sentence is chosen by this, so no page claims a completed record it does not
+            # have (12-final-audit, property (d)).
+            record_state=_record_state(event, own_counts, cut),
             # The loader's own record of what it would not serve. The served list is what every
             # number above is computed from, so the store's total can only be printed beside it
             # by carrying both (N6, 10-final-review).

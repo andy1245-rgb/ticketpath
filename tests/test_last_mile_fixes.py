@@ -272,11 +272,22 @@ class TestTheStatusIsNotPrintedAsTheStatussAtTheDecisionInstant(unittest.TestCas
         self.assertNotIn("the field and the instant disagree", text)
 
     def test_the_before_on_sale_premise_stops_claiming_a_premise_it_cannot_have(self) -> None:
+        """The premise sentence is printed only where the premise is true.
+
+        `P_MODE_BEFORE` claims the decision is taken before this event's first ticket. At a
+        post-end instant on `evt_syn_02` tickets were issued in 2026-09, so that claim is
+        false and the sentence that replaces it says what the mode actually does: it excludes
+        the event's own rows and reads the other events at this instant. The late qualifier is
+        printed beside it, because the instant is after the end as well (12-final-audit,
+        property (d)).
+        """
         _, html, _ = page_for(
             event_id="evt_syn_02", as_of="2027-06-01T00:00:00Z", mode="before_on_sale"
         )
         text = visible(html)
-        self.assertIn(labels.render("P_MODE_BEFORE"), text)
+        self.assertIn("Decision mode: BEFORE-ON-SALE", text)
+        self.assertNotIn(labels.render("P_MODE_BEFORE"), text)
+        self.assertIn("this event's own ledger rows are excluded by the mode", text)
         self.assertIn(
             "This decision instant is after the event ended, so this is what the before-on-sale "
             "decision would price on the record that exists today, not a decision that could "

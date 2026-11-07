@@ -185,6 +185,13 @@ ALLOWED: Mapping[str, str] = {
         "ticket sells at a specific price. What is shown is what actually happened."
     ),
     "A16": "At the cap — a rationing point, not a market-clearing price.",
+    # A16 describes a sale sitting on the ceiling, so it is true only when the count above it
+    # is at least one. Printed over a zero it described a rationing point on a tier that has
+    # no sale at all (12-final-audit section 4.2, item 6). The count itself is unchanged.
+    "A16_NONE": (
+        "No sale in this tier sits at the ceiling, so there is no rationing point here to "
+        "describe."
+    ),
     "A17": (
         "The model is not fitted. {n_events} events have completed in the observation window "
         "and {m} have any resale activity, so the between-event dispersion cannot be "
@@ -294,15 +301,105 @@ PAGE: Mapping[str, str] = {
         "A recorded price is a fact about the past; the cap is a rule about the future."
     ),
     "P_NO_TIER": "This event has no tier to price, so there is nothing to show.",
+    # The mode sentence is a function of the record the decision instant actually has, not a
+    # fixed word. This one is true only of an event whose run has ended at the instant: `own
+    # completed record` and `hindsight` printed on an event that has not started, or that has
+    # no resale at all, is a false description of the record, and 12-final-audit section 4.1
+    # and 4.2 read it on the default page and on the cold-start page. Every variant below keeps
+    # the guarantee the sentence exists for: a counterfactual is never a price the organizer
+    # could have set.
     "P_MODE_COUNTERFACTUAL": (
         "Decision mode: COUNTERFACTUAL. This page recomputes the value from this event's own "
         "completed record: this is not a price you could have set; it is what the record "
         "implies in hindsight."
     ),
+    # In market: resales are recorded at the instant, the run has not ended.
+    "P_MODE_COUNTERFACTUAL_OPEN": (
+        "Decision mode: COUNTERFACTUAL. This page recomputes the value from this event's own "
+        "record as it stands at this decision instant. The event has not ended at this "
+        "instant, so the record read here is the record up to this instant and not a finished "
+        "one: this page is not hindsight, it is what the record in hand implies now, and it is "
+        "not a price you could have set."
+    ),
+    # Before the first ticket: there is no record of this event's prices at the instant.
+    "P_MODE_COUNTERFACTUAL_NOT_STARTED": (
+        "Decision mode: COUNTERFACTUAL. This event's first ticket has not been issued at or "
+        "before this decision instant, so there is no record of this event's own prices to "
+        "recompute: the band below is the declared prior, not a reading of a record. It is "
+        "not a price you could have set."
+    ),
+    # Tickets issued, no resale yet.
+    "P_MODE_COUNTERFACTUAL_NO_SALE_YET": (
+        "Decision mode: COUNTERFACTUAL. This event has issued tickets but has no resale at or "
+        "before this decision instant, so there is no sale here to recompute and the band "
+        "below is the declared prior, not a reading of a record. It is not a price you could "
+        "have set."
+    ),
+    # The record is empty at every instant, not empty so far: the cold-start page said
+    # `completed record` four lines above `No resale has been recorded on this event`
+    # (12-final-audit section 4.2).
+    "P_MODE_COUNTERFACTUAL_NO_RESALE_AT_ALL": (
+        "Decision mode: COUNTERFACTUAL. This event's record holds no resale at any instant, so "
+        "there is nothing to recompute: the band below is the declared prior, not a reading of "
+        "a record. It is not a price you could have set."
+    ),
+    # The run has ended and no resale was ever recorded on it.
+    "P_MODE_COUNTERFACTUAL_ENDED_EMPTY": (
+        "Decision mode: COUNTERFACTUAL. This event has ended and its record holds no resale at "
+        "or before this decision instant, so there is no record to recompute and the band "
+        "below is the declared prior, not a reading of a record. It is not a price you could "
+        "have set."
+    ),
+    # The store records the event as called off: there is no future primary decision for it.
+    "P_MODE_COUNTERFACTUAL_CANCELLED": (
+        "Decision mode: COUNTERFACTUAL. The store records this event as cancelled, so its run "
+        "will not complete and there is no future primary decision to take for it. What "
+        "follows is computed from the record that exists, and it is not a price you could "
+        "have set."
+    ),
+    # The premise sentence above is true at an instant before the first issue and false at any
+    # instant after it. The three below keep the mode's actual guarantee (the event's own rows
+    # never enter) without claiming a premise the instant contradicts. 12-final-audit counted
+    # the old claim on 60 grid states.
     "P_MODE_BEFORE": (
         "Decision mode: BEFORE-ON-SALE. This is the decision as it is taken before this "
         "event's first ticket is issued: only other events' completed resale records and "
         "this event's own metadata enter it, and this event's own ledger rows are excluded."
+    ),
+    # A ticket has been issued at or before the instant, so the page cannot claim the decision
+    # is taken before the first one. The exclusion is unchanged; the clock is not.
+    "P_MODE_BEFORE_ISSUED": (
+        "Decision mode: BEFORE-ON-SALE. This is the before-on-sale decision priced at an "
+        "instant when this event already has tickets and resales on its record: this event's "
+        "own ledger rows are excluded by the mode, so only other events' completed resale "
+        "records and this event's own metadata enter it, and those other events are read at "
+        "this instant rather than at the first issue. It is not the price the organizer could "
+        "have charged before the first issue."
+    ),
+    # The run has ended and no ticket was issued on it at or before the instant: the mode has
+    # no row of this event's own to exclude, and it may not claim one.
+    "P_MODE_BEFORE_NOTHING": (
+        "Decision mode: BEFORE-ON-SALE. This event has ended and no ticket of it had been "
+        "issued at or before this decision instant, so its own record holds no row for the "
+        "mode to exclude: only other events' completed resale records and this event's own "
+        "metadata enter it. It is not a price the organizer could have set."
+    ),
+    # Tickets on the event, no resale at or before the instant. The issued sentence above
+    # claims both, which is false where every sale is later than the cut or absent altogether.
+    "P_MODE_BEFORE_NO_RESALE": (
+        "Decision mode: BEFORE-ON-SALE. This is the before-on-sale decision priced at an "
+        "instant when this event already has tickets on its record but no resale at or before "
+        "it: this event's own ledger rows are excluded by the mode, so only other events' "
+        "completed resale records and this event's own metadata enter it, and those other "
+        "events are read at this instant rather than at the first issue. It is not the price "
+        "the organizer could have charged before the first issue."
+    ),
+    "P_MODE_BEFORE_CANCELLED": (
+        "Decision mode: BEFORE-ON-SALE. The store records this event as cancelled. This mode "
+        "never reads this event's own ledger rows: only other events' completed resale "
+        "records and this event's own metadata enter it, and a cancelled event has no future "
+        "primary price, so this is a recomputation and not a price the organizer could have "
+        "charged."
     ),
     "P_MODE_EVENT": (
         "Event {name} · status {status} · starts {startsAt} · ends {endsAt} · decision "
@@ -318,6 +415,15 @@ PAGE: Mapping[str, str] = {
         "decision instant · starts {startsAt} · ends {endsAt} · decision instant {asOf}. The "
         "instant is after the end, so as of it the event had already ended: the field and "
         "the instant disagree."
+    ),
+    # The same disagreement in the other direction: the field says the run is over and the
+    # recorded end is after the instant. The page may not print `status completed` as if it
+    # were the status at a mid-run instant (12-final-audit section 3, evt_syn_06 at mid-event).
+    "P_MODE_EVENT_FIELD_AHEAD": (
+        "Event {name} · status {status} is the store's current field, not the status at this "
+        "decision instant · starts {startsAt} · ends {endsAt} · decision instant {asOf}. The "
+        "instant is before the recorded end, so at that instant the event had not ended, "
+        "whatever the field now says."
     ),
     # The mode's premise is about an instant before the first issue. On a cut after the end it
     # would be a false claim about when the decision is taken, so it is said separately.
@@ -513,6 +619,15 @@ REFUSAL_TEXT: Mapping[str, str] = {
     # No flat path is drawn anywhere in the console, so the sentence may not promise one.
     "insufficient_marks": "{n} sales is too few to fit a path, so no path is quoted.",
     "insufficient_marks_one": "One sale is too few to fit a path, so no path is quoted.",
+    # The same refusal in the before-on-sale mode, where the entering count is the mode's and
+    # not the tier's: `0 sales` beside `9 recorded sales in this tier are excluded by the mode`
+    # leaves the reader to guess whose zero it is (12-final-audit section 4.3).
+    "insufficient_marks_decision": (
+        "{n} sales enter this decision, which is too few to fit a path, so no path is quoted."
+    ),
+    "insufficient_marks_decision_one": (
+        "One sale enters this decision, which is too few to fit a path, so no path is quoted."
+    ),
     "before_on_sale_no_pool": (
         "No other event on this platform has a resale record, so there is nothing to pool "
         "for a before-on-sale value and we will not state one."

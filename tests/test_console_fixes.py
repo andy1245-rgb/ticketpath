@@ -46,7 +46,15 @@ from ticketpath.server import console_index, make_server
 UTC = dt.timezone.utc
 CLOCK = dt.datetime(2026, 11, 7, 12, 0, 0, tzinfo=UTC)
 FIXTURE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "fixtures", "synthetic_store.json")
-COUNTERFACTUAL_SENTENCE = "this is not a price you could have set; it is what the record implies in hindsight"
+# The guarantee every counterfactual sentence carries, whatever record the instant has: a
+# recomputation is never a price the organizer could have set. Asserted on every state.
+NOT_A_PRICE_CLAUSE = "not a price you could have set"
+# The completed-record reading, which is true only where the event's run has ended at the
+# instant. `evt_syn_02` on the default page starts in 14 days and still has 12 resales on its
+# record, and `evt_syn_03` has no resale at all; the old constant was required on both
+# (12-final-audit section 4.1, 4.2, property (d)).
+COMPLETED_RECORD_CLAIM = "this event's own completed record"
+HINDSIGHT_CLAIM = "it is what the record implies in hindsight"
 
 # The sentences that deny an event's own record rather than say the decision mode excludes it.
 # Patterns, not one string: the before-on-sale page said it three ways, and a fix to one of them
@@ -359,9 +367,25 @@ class TestACapIsOnlyMentionedWhereOneExists(unittest.TestCase):
         self.assertNotIn("the cap is a rule about the future", text)
 
     def test_a_capped_page_still_says_both(self) -> None:
-        text = visible(page_for(event="evt_syn_01")[1])
-        self.assertIn("the resale cap gives a ceiling", text)
-        self.assertIn("At the cap", text)
+        """The cap sentence and the rationing sentence, where each is true.
+
+        `At the cap — a rationing point` describes a sale sitting on the ceiling, so it is
+        printed only on a tier that has one. `evt_syn_01`'s Floor tier records no sale at its
+        ceiling, and the old assertion required the sentence there anyway (12-final-audit
+        section 4.2, item 6). The two branches are asserted separately now: the event with a
+        sale on the ceiling carries A16, and the tier with a zero at the ceiling carries the
+        sentence that is true of a zero and not A16.
+        """
+        capped = visible(page_for(event="evt_syn_01")[1])
+        self.assertIn("the resale cap gives a ceiling", capped)
+        # this tier's ceiling count is a measured zero, so the rationing sentence is not true
+        self.assertIn("at the ceiling [FIXTURE] 0", capped)
+        self.assertIn(labels.render("A16_NONE"), capped)
+        self.assertNotIn("At the cap", capped)
+        # and where a sale does sit on the ceiling, A16 is printed, as before
+        on_the_ceiling = visible(page_for(event="evt_syn_02")[1])
+        self.assertIn("at the ceiling [FIXTURE] 8", on_the_ceiling)
+        self.assertIn("At the cap", on_the_ceiling)
 
     def test_the_uncapped_page_does_not_say_a_cap_hides_the_top_of_the_distribution(self) -> None:
         """R4: the decision block's cap line was printed on every page.
@@ -434,9 +458,17 @@ class TestTheFeeControlIsHonest(unittest.TestCase):
 
 class TestTheDecisionInstantIsExplicit(unittest.TestCase):
     def test_the_default_page_is_a_labelled_counterfactual(self) -> None:
+        """The default event is in market, so the page may not call its record completed.
+
+        `evt_syn_02` starts 2026-11-21 and the default instant is 2026-11-07: the record the
+        page reads is the record up to the instant, and the sentence says so. The not-a-price
+        guarantee is required here; the completed-record reading is not allowed here.
+        """
         text = visible(page_for()[1])
         self.assertIn("Decision mode: COUNTERFACTUAL", text)
-        self.assertIn(COUNTERFACTUAL_SENTENCE, text)
+        self.assertIn(NOT_A_PRICE_CLAUSE, text)
+        self.assertNotIn(COMPLETED_RECORD_CLAIM, text)
+        self.assertNotIn(HINDSIGHT_CLAIM, text)
         # the event's status and date are beside it
         self.assertIn("status on_sale", text)
         self.assertIn("starts 2026-11-21T23:00:00.000Z", text)
@@ -447,7 +479,8 @@ class TestTheDecisionInstantIsExplicit(unittest.TestCase):
         self.assertEqual(status, 200)
         text = visible(html)
         self.assertIn("Decision mode: COUNTERFACTUAL", text)
-        self.assertIn(COUNTERFACTUAL_SENTENCE, text)
+        self.assertIn(COMPLETED_RECORD_CLAIM, text)
+        self.assertIn(HINDSIGHT_CLAIM, text)
         self.assertIn("status completed", text)
         self.assertIn("starts 2026-10-03T23:30:00.000Z", text)
 
@@ -455,7 +488,7 @@ class TestTheDecisionInstantIsExplicit(unittest.TestCase):
         _, html = page_for()
         block = re.search(r'<p class="mode">(.*?)</p>', html, flags=re.S)
         self.assertIsNotNone(block)
-        self.assertIn(COUNTERFACTUAL_SENTENCE, html_module.unescape(block.group(1)))
+        self.assertIn(NOT_A_PRICE_CLAUSE, html_module.unescape(block.group(1)))
         self.assertIn('class="mode"', html)
         self.assertIn("border-left: 8px", html)
 

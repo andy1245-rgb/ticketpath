@@ -81,8 +81,16 @@ def check(name, cond, detail=""):
 
 d = text(body_of("/"))
 check("default: mode label", "Decision mode: COUNTERFACTUAL" in d)
-check("default: required sentence verbatim",
-      "this is not a price you could have set; it is what the record implies in hindsight" in d)
+# This assertion used to require the completed-record sentence verbatim on the default page.
+# The default event, `evt_syn_02`, starts 2026-11-21 and the page's instant is 2026-11-07, so
+# "this event's own completed record ... in hindsight" was a false description of the record
+# the page was reading (12-final-audit section 4.1, property (d)). The guarantee the sentence
+# exists for is still required here, the false half is now forbidden here, and the full
+# sentence is required where it is true: on the completed event's page, checked below.
+check("default: the not-a-price guarantee is printed",
+      "not a price you could have set" in d)
+check("default: no completed-record claim on an event in market",
+      "this event's own completed record" not in d and "implies in hindsight" not in d)
 check("default: status and date beside it", "status on_sale" in d and "starts 2026-11-21T23:00:00.000Z" in d)
 strip = re.search(r"\[FIXTURE\] (\d+) resales on this event", d)
 market = re.search(r"in this tier \[FIXTURE\] (\d+) sales of \[FIXTURE\] (\d+) on this event", d)
@@ -97,6 +105,8 @@ check("default: the cap line is printed where a cap exists",
       "A cap does not hide the price" in d and "No cap applies to this event" not in d)
 
 c = text(body_of("/?event=evt_syn_03"))
+check("cold: the record is described as empty, not as completed",
+      "holds no resale at any instant" in c and "completed record" not in c and "hindsight" not in c)
 check("cold: zero-sale rate carries DECLARED", "[DECLARED] 7.5" in c or "[DECLARED] 7.6" in c)
 check("cold: prior named beside it", "posterior mean of the declared Gamma(1, 1) prior" in c)
 check("cold: A13 states the prior it uses",
@@ -104,6 +114,11 @@ check("cold: A13 states the prior it uses",
 check("cold: one completed count", c.count("event has completed") == 2 or c.count("events have completed") == 2,
       str(c.count("event has completed")))
 check("cold: no measured-rate claim", "not measured from the record" in c)
+
+cf = text(body_of("/?event=evt_syn_06"))
+check("completed: the completed-record sentence verbatim", 
+      "this event's own completed record: this is not a price you could have set; it is what the "
+      "record implies in hindsight" in cf and "Decision mode: COUNTERFACTUAL" in cf)
 
 u = text(body_of("/?event=evt_syn_04"))
 check("uncapped: no ceiling anywhere",
@@ -200,6 +215,11 @@ check("negative net: refused as a state",
 
 b = text(body_of("/?event=evt_syn_02&mode=before_on_sale"))
 check("before: mode label", "Decision mode: BEFORE-ON-SALE" in b)
+# The premise sentence claims the decision is taken before this event's first ticket, and this
+# page prints 12 tickets issued in 2026-09 as excluded by the mode. It may not be here.
+check("before: the premise is not claimed where tickets have been issued",
+      "before this event's first ticket is issued" not in b
+      and "this event's own ledger rows are excluded by the mode" in b)
 # This assertion used to read the opposite way: it required `[FIXTURE] 0 resales on this event`
 # and `[FIXTURE] 0 tickets`, which are false on a store holding 12 of each. The mode excludes
 # the rows; it does not unrecord them. It now fails on those sentences and requires the count
