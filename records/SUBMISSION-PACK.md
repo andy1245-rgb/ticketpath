@@ -64,10 +64,18 @@ this one is the later reading.
    "nothing is deployed".
 8. **Registration and check-in are machine-checked, and the form fields are §3 items 12 and 20.** Run
    the submit path once early on Sunday rather than at 09:55; the event page shows three steps, register,
-   check in, submit, and a registered-but-not-checked-in account may not be able to submit at all.
-9. **Two answers are his alone and are written as questions in §2.8:** whether the code is his sole
-   property, and whether the pre-event research corpus may be quoted. Neither is answered anywhere in
-   this file.
+   check in, submit, and a registered-but-not-checked-in account may not be able to submit at all. **The
+   team is two people, the operator and one teammate, and both accounts must be registered on MLH *and*
+   checked in**, not just the one doing the pasting: an unregistered or unchecked-in second member is a team
+   of one on paper and an eligibility question on the form. Emails and the state of both accounts are his.
+9. **The two answers §2.8 used to leave open are decided and recorded.** Ownership: a two-person team,
+   with the code written by AI agents the team directed, disclosed in both required AI fields (§2.7).
+   Corpus: `../research/mlh-solana-2026/` is not published, stays local, and is quoted nowhere beyond the
+   attributed citations already in `records/00-prior-direction-index.md`. Both are written out in §2.8,
+   and `records/F-decision-log.md` D8 is the decision of record. **[CORRECTED 2026-11-07T18:55Z: this item
+   called the corpus "pre-event" and said neither answer existed. The fifteen documents were written
+   17:39–18:49Z on 2026-11-06, inside the window and not before it — `records/findings/19-corpus-citations.md`
+   §5 measures it, and `records/findings/17-hackathon-rules-recheck.md`'s closing CORRECTION states it.]**
 10. **After the submission:** capture the confirmation id, freeze the tree, change nothing until a judge
     asks. The pack's own rule still holds: no push happens without his explicit yes.
 
@@ -584,10 +592,13 @@ fill.
 
 ---
 
-### 2.8 Provenance, prior work, and the two questions only he can answer
+### 2.8 Provenance, prior work, and the two answers recorded on 2026-11-07
 
 **Added 2026-11-07T18:50Z**, from `records/findings/17-hackathon-rules-recheck.md` §3.4, §3.9, §6 (R1, R5,
-R6) and §7. Nothing here is a decision; the two questions at the end are deliberately unanswered.
+R6) and §7. **Amended 2026-11-07T18:55Z:** the two questions at the end were open when this section was
+written and both are now decided by the operator — the team two names, the corpus unpublished and
+unquoted beyond attribution — so the section states the answers and the provenance sentence the answers
+allow. `records/F-decision-log.md` D8 is the decision of record.
 
 **The provenance sentence, for the description and for the video.** The largest prior-work exposure in this
 entry is not code, it is a claim about who built what: the demo UI is a copy of the company's own platform
@@ -609,21 +620,64 @@ steps, so it is not one blob at the start and not one blob at the end; nothing i
 The two published questions, answered from the repository rather than from memory: "Did they start before
 the event?" — no. "Is it one big commit at the beginning of the event?" — no.
 
-**Question 1, ownership, and it collides with the public-repo rule.** MLH's contest terms require that "An
-Eligible Participant (or team) must be the sole owner of the Application submitted". Rules 12–13 and the
-cheating-response page require the code to be public and to remain public, and name "making the repository
-private after the event ends" as disqualifying. Is the ticketPricing code his alone, or company work? If it
-is company IP, those two cannot both be satisfied and the entry needs reframing before Sunday. **Not
-answered here. Only he can answer it, and it must not be guessed at paste time.**
+**The provenance of the background reading, in two forms, and the sentence the submission pastes.** The
+reading is fifteen documents in `../research/mlh-solana-2026/`, written between 17:39:04Z and 18:48:55Z on
+2026-11-06. Hacking began at 17:00Z that day, so the reading sits **inside** the window: 39 minutes to 1 h
+49 min after it opened, not before it. This file used to call that corpus "pre-event" and "written the day
+before hacking began" in three places; all three are corrected here, and the correction is the stronger
+position, because notes taken inside the window are permitted by rules 6 and 9 and notes taken before it
+are the thing the prior-work rule exists to exclude.
 
-**Question 2, the pre-event research corpus.** `../research/mlh-solana-2026/` was written 2026-11-06, the
-day before hacking began, and is not in this repository: leaving it out is the whole mitigation, because a
-prior *idea* is allowed and prior *materials* are not. Does that corpus draw on company or private data,
-and may it be quoted in the submission text at all? **Not answered here.** The records that stayed in the
-tree are dated and were written this weekend; quoting anything from the pre-event corpus is a different
-question and it is his. A parallel pass wrote `records/findings/19-corpus-citations.md` at 18:55Z, which
-audits every place in this repository that names, cites or reproduces that corpus and is uncommitted as of
-this note: read it on disk before quoting anything from there.
+Long form, for the description field and the video description. Paste as written:
+
+> **Provenance.** Background reading for this entry was done between 17:39 and 18:49 UTC on 6 November
+> 2026, inside the first two hours of the hackathon window and not before it. Those fifteen documents are
+> not in this repository and are not published. No code and no submitted artefact derives from them. What
+> the research record does is cite them, with attribution on the line that cites them, including the short
+> passages it quotes where it records a decision they settled. The code and every committed artefact were
+> written from 08:29 UTC on 7 November 2026, fifteen and a half hours after hacking began, and every commit
+> in this repository post-dates the opening ceremony.
+
+Short form, for a form field with a character limit:
+
+> All code in this repository was written inside the hackathon window, from 08:29 UTC on 7 November 2026.
+> Background reading done in the first two hours of the window is not published and is not part of the
+> submission; the research record cites it with attribution.
+
+Both rest on two measurements anyone can re-run: `stat` on the fifteen files (first `03-what-wins-solana.md`
+at 17:39:04Z, last `p1b-tech-feasibility.md` at 18:48:55Z) and `git log` (first commit `744a2c2` at
+2026-11-07T08:29:57Z). **Do not say**, in any field or frame: that the research was done before the event;
+that those documents were written the day before hacking began; or that no text from them appears in this
+repository. The first two are false against the file times, and the third is false because
+`records/00-prior-direction-index.md` quotes them with attribution on every line that quotes, 17 of its
+lines carrying verbatim text. That index is deliberately **not** trimmed: the quotations are attributed
+citations, and removing them would buy a sentence nobody needs at the cost of the record's evidence.
+
+**Question 1, ownership — answered 2026-11-07, and the collision is dissolved rather than argued.** MLH's
+contest terms require that "An Eligible Participant (or team) must be the sole owner of the Application
+submitted". The Application is a **two-person team entry, the operator and one teammate**, so "or team" is
+the clause that applies and the team owns what it submitted; rules 12–13's public-for-ever requirement is
+satisfied by the same two people keeping the repository public. The code in it was written by AI agents
+that the team directed and released, which is disclosed in both required fields (§2.7) and is not a claim
+of human authorship by either member. What this answer does not reach: if the pricing work is also company
+work, company ownership and "sole owner" still collide and the team needs the company's written
+permission before Sunday. That is the one part of question 1 that is still his, and it is recorded as open
+in `records/findings/17-hackathon-rules-recheck.md` §7 item 1.
+
+**Question 2, the research corpus — answered 2026-11-07: not published, and not quoted beyond attribution.**
+`../research/mlh-solana-2026/` is fifteen documents written between 17:39:04Z and 18:48:55Z on 2026-11-06,
+inside the hackathon window, not the day before it. The decision is that the corpus is **not published and
+stays local**, and that nothing in it is quoted in the submission text or the video beyond the attributed
+citations that are already committed. Leaving it out of the repository is still the mitigation, because a
+prior *idea* is allowed and prior *materials* are not; it was never in the tree, and it stays out. So the
+honest formulation is not "no text from those notes appears in this repository" but the one in the
+provenance block above: the code and every committed artefact were written from 08:29Z on 2026-11-07, and
+the research record cites the background reading with attribution. Whether the corpus drew on company or
+private data is the one part still his to confirm, and it is the only fact that would change the answer:
+`records/findings/19-corpus-citations.md` §4 measured it for credentials, keypairs, personal detail and
+third-party non-public material and found none, which is absence of those shapes and not proof of clean
+provenance. That file is the audit of every place in this repository that names, cites or reproduces the
+corpus, and it is committed with this note.
 
 ---
 
@@ -645,7 +699,7 @@ means the text is in this document and needs no decision. "TBD" means only he ca
 | 9 | What is not done | §2.5, verbatim | set |
 | 10 | Inspiration / challenges / accomplishments / what we learned / what's next | accomplished: 546 tests, real signature verification, a labelling patch that makes an inherited UI tell the truth. Learned: the asking price is the missing observation, and no model fixes a missing column. Next: one write on devnet, then a real ledger | set |
 | 11 | Built with / technologies | §2.6 | set |
-| 12 | Team members, names, emails, MLH accounts | your team | **T4** |
+| 12 | Team members, names, emails, MLH accounts | **Two people: the operator and one teammate.** Both must be registered on MLH and **checked in**, or the second account may not be able to submit at all (§0 item 8). Both names are on the team field and in `LICENSE`, not in this file (see the note below); emails and account state are his | **T4, names set** |
 | 13 | Track: Top 3 Overall | select, knowing the score. The criterion is applied by looking for four things, and the repo has none of them: no account that belongs to the project (`chain.programId: null`, and every mint is a `SYN*` placeholder: measured 17:47Z, devnet `getAccountInfo` on `SYNfivkiJSwcrAgDeKA2bynB9SAuH7Y8Gg1ZrNV4agm` returns `value: null`), no transaction signature with a block time (every ledger row is `signature: null`, `slot: null`), no program the team did not write doing work the product depends on (Token-2022 exists on devnet and nothing here calls it), and no read of chain state back into the app (`ticketpath/adapters/rpc_adapter.py` opens no socket). **0 of 4.** Measured in `13-submission-readiness.md` §4. Top 3 Overall is unlikely on the chain criterion; the realistic path is MLH's own four-part rubric (Technology, Design, Completion, Learning), where the console is now the interface the build did not have | set |
 | 14 | Track: Best Beginner | eligible only if more than half the team are first-time hackers | **T5** |
 | 15 | Track: AI, DeFi, Gaming | recommend none. There is no AI component in the build, no payment or lending surface, and no game | set (your veto) |
@@ -660,7 +714,7 @@ means the text is in this document and needs no decision. "TBD" means only he ca
 - **T1 Push the current tree to the public repo.** **CLOSED, measured 17:36Z.** Remote `main` is `375126f`, which is local HEAD, 148 tracked files, carrying the backend (41 files under `ticketpath/`), the fixture store, the console and the research records. Nothing is outstanding. What remains is not a push: the working tree holds an uncommitted `NIGHT-LOG.md` and the untracked `records/findings/13-submission-readiness.md`, and neither belongs in a submission commit. No push happens without your explicit yes.
 - **T2 The video URL.** Does not exist. Must be recorded this weekend from §1 and must stay public.
 - **T3 The demo URL field.** No hosted demo. Either blank, or the repo with a plain note that it runs locally. The console does not change this: it is served on `127.0.0.1:8788`, which is his machine and not a judge's (T11).
-- **T4 Team.** Names, emails, MLH registration state.
+- **T4 Team.** **Names closed 2026-11-07: two people, the operator and one teammate**, named on the MLH team field and in `LICENSE` rather than here. Open on the accounts: both need an MLH registration *and* a check-in, and the emails on the two accounts are his to confirm. One member registered and one not is a one-person team on the form.
 - **T5 First-time-hacker status**, which decides Best Beginner eligibility (>50% of the team).
 - **T6 Licence.** **CLOSED, measured 17:36Z.** `LICENSE` is on `main` and is MIT; line 3 names the copyright holder. There is nothing to decide. Confirm the name is the one he wants on a public repo, and the README line matches the file.
 - **T7 AI tool names** for the disclosure in §2.7.
@@ -946,3 +1000,49 @@ validation or about what is not deployed was touched: the claims are the same cl
 §5 answer 9 now read **546** with the command beside each, and the 17:36Z reading of **453** is kept where it
 was recorded in the 17:45Z correction note rather than overwritten. The count is still a moving number; the
 command's own last line is the one that counts.
+
+---
+
+### Provenance note — 2026-11-07T18:55Z
+
+**Scope:** the timeline of the background reading, and the two questions this file used to hand back.
+Nothing else in the pack was re-argued, and no measured claim was touched except where it was wrong.
+
+**1. Six sentences said the research corpus was pre-event. All six were false, and all six are fixed.**
+Hacking began 2026-11-06T17:00:00Z (`records/findings/17-hackathon-rules-recheck.md` §1.1, the event's own
+calendar payload `20261106T170000Z/20261108T180000Z`). `stat` on the fifteen documents in
+`../research/mlh-solana-2026/` puts the first at 17:39:04Z and the last at 18:48:55Z the same day: inside
+the window by 39 minutes to 1 h 49 min, not before it. Three sites in this file carried the error, and
+the two later sites inherited it from the same paragraph:
+
+| site | what it said | what it says now |
+|---|---|---|
+| §2.8 question 2 | "was written 2026-11-06, the day before hacking began" | written 17:39:04Z–18:48:55Z on 2026-11-06, inside the window, not the day before |
+| §2.8 question 2 | "quoting anything from the pre-event corpus" | quoting the corpus beyond the attributed citations already committed |
+| §0 item 9 (refreshed list) | "whether the pre-event research corpus may be quoted" | the corpus is not published and not quoted beyond attribution; the answer is recorded |
+
+The three in `records/findings/17-hackathon-rules-recheck.md` are corrected by an appended CORRECTION in
+that file, because records are append-only and its text is not rewritten in place.
+
+**2. The provenance sentence the submission pastes is in §2.8, long form and short form.** It states the
+measured times, says the documents are not published and were never in the tree, and does **not** claim
+that no text from them appears in the repository, because `records/00-prior-direction-index.md` quotes them
+with attribution on 17 of its lines and the operator's decision is to keep those quotations.
+
+**3. Both open questions are answered, and D8 is the record.** The team is the operator and one teammate;
+the code was written by AI agents the team directed and released, disclosed in both required AI fields; the
+corpus is not published and stays local. `records/F-decision-log.md` D8 carries the decision, its evidence
+and what would reverse it.
+
+**4. One operator action added, and it is a Sunday-morning click, not a wording problem:** both team
+members must be registered on MLH *and* checked in (§0 item 8, §3 item 12, T4). A registered-but-unchecked
+second member is a one-person team on the form.
+
+**5. The two names are deliberately not in this file.** The decision names both team members. This
+repository's public-safety rule (`.public-denylist`, class `personal-name`) denies the operator's full name
+anywhere except `LICENSE` and the `README.md` line that restates the licence, and the check refused this
+commit on eight hits across four files for exactly that reason. Rather than add a per-file exception to
+that denylist, which is a publication decision and not a wording one, the names were replaced here
+and in the three records that carried them with "the operator and one teammate". The names are on the MLH
+team field and in `LICENSE`, which is where they are published on purpose. Nothing else about the decision
+was softened: the team size, both registrations, the disclosure and the corpus answer are all stated.

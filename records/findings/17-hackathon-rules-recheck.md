@@ -647,3 +647,66 @@ Not fetched, and why: the Discord announcement channels (login required); the su
     **15.** Is there an hour and a laptop for one devnet write before 10:00 ET?
 
 **Nothing was committed. One file was written: this one.**
+
+---
+
+## CORRECTION (2026-11-07T18:55Z) — "pre-event" is the wrong word for the research corpus, in three places
+
+**What this corrects, and why it is appended rather than edited.** Three sentences in this file call
+`../research/mlh-solana-2026/` "pre-event" or treat it as material that predates the hackathon window. The
+file's own text is not rewritten: records are append-only, so each old sentence is quoted here and the
+measurement that corrects it is stated beside it. Nothing else in the file changes, and no other claim in
+it depended on the wording being right.
+
+**The measurement.** Hacking began 2026-11-06T17:00:00Z (§1.1 above, from the event page's own calendar
+payload `20261106T170000Z/20261108T180000Z`). `stat` on the fifteen documents gives a first write at
+**2026-11-06 17:39:04Z** (`03-what-wins-solana.md`) and a last at **2026-11-06 18:48:55Z**
+(`p1b-tech-feasibility.md`). The corpus is therefore **inside** the window by 39 minutes to 1 h 49 min, and
+"pre-event" is false by that margin. The first commit in this repository, `744a2c2`, is
+2026-11-07T08:29:57Z, which is 15 h 29 min 57 s after hacking began; that part of §5.3 item 1 was and is
+correct, and it is the claim the cheat-check actually tests.
+
+**Correction 1 — §5.3 item 3.** It said:
+
+> **The one place this becomes a real exposure is where pre-event material did get in**: this repo's
+> own `records/` and `RESEARCH-PROGRAM.md` describe a research programme that was planned before the
+> event.
+
+It now reads, as a statement: the one place this becomes a real exposure is where **in-window** material
+did get in — this repository's own `records/` quote the background reading with attribution, 17 lines of
+`records/00-prior-direction-index.md` carrying verbatim text — and that is a documentary question, not a
+code violation. Material written inside the window is what rules 6 and 9 permit, so the exposure is
+narrower than this file stated, not wider. The programme was planned inside the window, the notes are
+timestamped inside the window, and every commit is inside the window.
+
+**Correction 2 — §7 item 5.** It said:
+
+> **Was the pre-event research corpus (`mlh-solana-2026`, 2026-11-06) drawn from company or private
+> data?**
+
+The corpus is not pre-event: it is `mlh-solana-2026`, written 17:39–18:49Z on 2026-11-06, inside the window.
+**The question is answered as of 2026-11-07 in two parts** (operator decision, `records/F-decision-log.md`
+D8). *Publishing:* it is not published, it was never in this tree, and it stays out — the decision is made
+and it is not being revisited. *Quoting:* it is not quoted in the submission text or the video beyond the
+attributed citations already committed. *Provenance:* whether it drew on company or private data is still
+his to confirm, and it remains the one open part; `records/findings/19-corpus-citations.md` §4 looked for
+the shapes of it (credential, keypair, personal detail, third-party non-public material) and found none,
+which is absence of those shapes and not proof of clean provenance.
+
+**Correction 3 — the 15 lines, item 14.** It said:
+
+> **Question:** is the code his alone? **14.** Is the pre-event research corpus his to quote?
+
+Not pre-event, for the reason above. And both halves are now answered. Item 13, ownership: the Application
+is a two-person team entry, **the operator and one teammate**, so the terms' "Eligible Participant (or
+team)" clause is satisfied by the team and rules 12–13's public-for-ever requirement by the same two people
+keeping the repository public; the code was written by AI agents the team directed and released, disclosed
+in both required AI fields. What is still open is whether the pricing work is also company work: if it is,
+company ownership and "sole owner of the Application" still collide, and that is §7 item 1 unchanged. Item
+14, quoting: not quoted beyond attribution. **And item 6 in §7 gains a named team:** both members must be
+registered on MLH *and* checked in, not just the one who submits.
+
+**Where this correction is carried.** `records/SUBMISSION-PACK.md` §2.8 states the provenance sentence the
+submission pastes, long form and short form, with the measured times in it; §0 item 9, §3 item 12 and T4
+carry the team and both registrations; the pack's closing "Provenance note — 2026-11-07T18:55Z" lists the
+three sentences it corrected in place. `records/F-decision-log.md` D8 is the decision of record.

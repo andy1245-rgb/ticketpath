@@ -4,7 +4,7 @@ Decisions with their evidence, rejected approaches, conflicting findings, and qu
 Nothing is deleted from here; a question that is no longer worth pursuing is marked
 closed with the reason, not removed.
 
-**Last updated:** 2026-11-07T15:00Z (**D7 appended**; nothing else in this file changed).
+**Last updated:** 2026-11-07T18:55Z (**D8 appended**; nothing else in this file changed).
 
 ---
 
@@ -294,3 +294,76 @@ a reader repeats, and the check found that the objective-level result does not n
 that the engine runs on is untouched, so the sentence can go without costing the mathematics anything. Also
 rejected: rewriting `02-d` item 3 in place. The record is append-only; the old wording stays, quoted, with the
 correction beside it (`11` §9).
+
+## D8 — Team, corpus and provenance (2026-11-07)
+
+**Decision.** Three things, taken together because the submission states them in one breath.
+
+**(1) Team.** The entry is a two-person team: the operator and one teammate. Both accounts must be
+registered on MLH *and* both checked in before submission. The event page splits registration, check-in and
+submission into three steps and a registered-but-not-checked-in account may not be able to submit at all, so
+an unchecked second member is a one-person team on the form and an eligibility question in the record. The
+two names are not written here: this repository's public-safety rule denies the operator's full name outside
+`LICENSE`, the check refused them at commit time, and they live on the MLH team field and in `LICENSE`
+instead. Redacting the strings changed no part of the decision.
+
+**(2) Authorship.** The code and the documents were written by AI coding agents that the team directed and
+released. That is disclosed in both required AI fields in the operator's own name, in the wording §2.7 of
+the pack carries, and no part of the submission is presented as human authorship.
+
+**(3) Corpus.** `../research/mlh-solana-2026/`, fifteen documents written between 17:39:04Z and 18:48:55Z
+on 2026-11-06, is **not published**, stays local, and is **not quoted** beyond the attributed citations
+already committed in `records/00-prior-direction-index.md`. That index is **not trimmed**: every line that
+quotes a document names the document and the section on the same line, and the operator's decision is to
+keep them. The consequence is a wording rule the repository may not break: it may **not** say that no
+corpus text appears in it. What it says instead is that the code and every committed artefact were written
+from 08:29Z on 2026-11-07, and that the research record cites the background reading with attribution. The
+word **"pre-event" is retired** for this corpus: hacking began 2026-11-06T17:00:00Z, so the corpus sits
+inside the window by 39 minutes to 1 h 49 min, and in-window reading is what rules 6 and 9 permit.
+
+**Evidence.** `records/findings/19-corpus-citations.md` in full. Measured: 91 lines across 7 files name,
+cite or reproduce the corpus, 18 of them verbatim; `records/00-prior-direction-index.md` carries 413 of
+5,192 eight-word sequences in common with the corpus's own prose (8.0%), longest unbroken run 40 words,
+every one of them attributed on the line that quotes; the other tracked files are citations, and their
+overlap is third-party text both documents quote. Nothing sensitive is in the reproduced passages: no
+credential, no keypair, no personal data, no third-party non-public material, the only contact detail being
+MLH's own published reporting address, already allow-listed. The timeline is `stat` on the fifteen files
+(first `03-what-wins-solana.md` 17:39:04Z, last `p1b-tech-feasibility.md` 18:48:55Z) against the event's
+own calendar payload `20261106T170000Z/20261108T180000Z`, and `git log` (first commit `744a2c2`,
+2026-11-07T08:29:57Z, 15 h 29 min 57 s after hacking began). The rules the three parts answer to: contest
+terms "An Eligible Participant (or team) must be the sole owner of the Application submitted"; rules 6 and
+9 on work done inside the window; rules 12–13 on the repository staying public for ever
+(`records/findings/17-hackathon-rules-recheck.md` §3.4, §3.9, §5.3, §7).
+
+**Consequence.** `records/SUBMISSION-PACK.md` §2.8 now states the provenance sentence in a long form for
+the description and a short form for a character-limited field, both carrying the measured times, and both
+answering the two questions the section used to hand back. §0 item 9 (refreshed list), §3 item 12 and T4
+carry the two names and the two registrations; the pack's closing note lists the three sentences it
+corrected in place. The three "pre-event" sentences in
+`records/findings/17-hackathon-rules-recheck.md` (§5.3 item 3, §7 item 5, the 15 lines item 14) are
+corrected by an appended CORRECTION, because that file is append-only; `records/findings/19` carries an
+appended correction of its own stale commit reference. No code, no engine arithmetic and no console sentence
+changed, so `ticketpath/` was not touched. What is still open, and it is his alone: whether the pricing work
+is also company work, because company ownership and "sole owner of the Application" cannot both hold, and
+whether the corpus drew on company or private data, which the audit could bound but not settle.
+
+**What would reverse it.** (1) A company claim on the pricing work: "sole owner" and public-for-ever then
+collide and the entry needs the company's written permission or a reframing, and the team statement alone
+does not fix it. (2) The second member not registered and checked in by Sunday morning: the entry is then a
+single-person team, which changes the team field, the "> 50% first-time hackers" answer behind the Best
+Beginner track, and any sentence in the pack that says "the team". (3) Evidence that the corpus carries
+company or private data: the quoting question reopens, and the answer stops being "not published" and
+becomes "not retained", which is a bigger action than the one taken here. (4) A judge or an organiser
+reading the index's attributed quotations as reproduced prior material: the response is to cite the audit's
+measurement, not to trim the file after the fact.
+
+**Rejected alternative.** (a) Publishing the corpus, or any part of it: there is no scoring upside, and it
+turns reading into prior materials on a public remote. (b) Trimming `records/00-prior-direction-index.md`
+to citations with no quoted text, which would make "no corpus text appears in the repository" literally
+true: rejected because the quotations are attributed on every line, so the sentence they would buy is one
+nobody needs, and the record loses the evidence that the decisions were settled by something. (c) Keeping
+the "pre-event" wording: false against the file times, and it claims the riskier of the two facts, since
+notes inside the window are permitted and notes before it are what the prior-work rule excludes. (d) Saying
+nothing about provenance and letting the git history speak: the history only answers "did they start before
+the event", and the one wording that can cost this entry is a claim about inherited material, so the
+sentence is free and belongs in the submission.
