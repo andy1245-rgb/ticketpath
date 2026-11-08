@@ -413,22 +413,23 @@ def load_dataset(path: Path) -> Dataset:
 
 
 def _find_dataset(name: str, hint: str | None, extra: dict[str, Path]) -> Path | None:
-    """Locate a dataset named by an asset, without ever reading an absolute path from it."""
+    """Locate a dataset named by an asset, without ever reading an absolute path from it.
+
+    The name and the hint come out of the asset's own provenance block, which is the part of
+    an SVG a hand edit rewrites first, so both branches resolve the path and then refuse it
+    unless it is inside this repository. A name with `..` in it is a name, not a way out.
+    """
     if name in extra:
         return extra[name]
     if hint:
         candidate = (REPO_ROOT / hint / name).resolve()
-        try:
-            candidate.relative_to(REPO_ROOT)  # a recorded hint never leaves the repo
-        except ValueError:
-            return None
-        if candidate.is_file():
-            return candidate
     else:
-        candidate = REPO_ROOT / name
-        if candidate.is_file():
-            return candidate
-    return None
+        candidate = (REPO_ROOT / name).resolve()
+    try:
+        candidate.relative_to(REPO_ROOT)  # a recorded hint never leaves the repo
+    except ValueError:
+        return None
+    return candidate if candidate.is_file() else None
 
 
 def _base(rel: Path) -> str:

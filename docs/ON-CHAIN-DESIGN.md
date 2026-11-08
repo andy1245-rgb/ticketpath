@@ -2286,7 +2286,8 @@ behind every row is `records/findings/33-a-region-cap-law.md`.
 ### 14.1 The record, and the one instruction §3.12 does not have
 
 `programs/region_gate/` is a **separate, local-validator-only crate, and it is parked**: built,
-compiled once, not deployed, not in the transaction path, kept in the tree as the design record of
+compiled once, run once on a disposable local validator and deployed nowhere else, not in the
+transaction path, kept in the tree as the design record of
 where the check could move if the table ever has to be enforced by something the platform cannot
 rewrite (`programs/region_gate/README.md`). It is not `cap_hook`, and the proven devnet program
 `5EJ1GU3M4vn…` is untouched by it. Its record is §2's record with three fields added:

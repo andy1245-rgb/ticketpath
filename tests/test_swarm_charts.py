@@ -17,6 +17,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -585,6 +586,41 @@ class TestLabel(ChartTestCase):
             and box[1] <= float(node.get("cy")) <= box[3]
         ]
         self.assertEqual(len(dots), len(counts), "one mark per distinct point, not per row")
+
+
+class TestDatasetLookupStaysInsideTheRepository(unittest.TestCase):
+    """A doctored asset must not point the verifier at a file outside the repository.
+
+    The provenance block is the part of an SVG a hand edit rewrites first, and it names its
+    dataset with or without a recorded `dir`. Both branches have to apply the same guard:
+    the no-hint branch used to build the path and check only that a file was there.
+    """
+
+    def setUp(self) -> None:
+        holder = tempfile.TemporaryDirectory(prefix="charts-outside-")
+        self.addCleanup(holder.cleanup)
+        self.outside = Path(holder.name) / "dataset.json"
+        self.outside.write_text("{}\n", encoding="utf-8")
+        if swarm_charts.REPO_ROOT in self.outside.resolve().parents:
+            # With TMPDIR inside the repository there is no outside for the guard to refuse,
+            # so the two tests below would pass without testing anything.
+            self.skipTest("the temporary directory is inside the repository")
+        self.escape = os.path.relpath(self.outside, swarm_charts.REPO_ROOT)
+
+    def test_a_name_with_no_hint_cannot_reach_a_file_outside_the_repo(self) -> None:
+        self.assertTrue(self.outside.is_file())
+        self.assertIsNone(swarm_charts._find_dataset(self.escape, None, {}))
+
+    def test_a_recorded_hint_cannot_reach_a_file_outside_the_repo_either(self) -> None:
+        self.assertIsNone(
+            swarm_charts._find_dataset(self.outside.name, os.path.dirname(self.escape), {})
+        )
+
+    def test_a_dataset_inside_the_repo_is_still_found_both_ways(self) -> None:
+        # The control: a guard that refused every path would satisfy the two tests above.
+        here = (swarm_charts.REPO_ROOT / "tools" / "swarm_charts.py").resolve()
+        self.assertEqual(swarm_charts._find_dataset("tools/swarm_charts.py", None, {}), here)
+        self.assertEqual(swarm_charts._find_dataset("swarm_charts.py", "tools", {}), here)
 
 
 class TestVerifier(ChartTestCase):

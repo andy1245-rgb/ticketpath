@@ -19,7 +19,8 @@ a test parse the same thing.
 The seven checks, each one a claim that can be false:
 
   1. paths           every repo path a tracked .md names, in backticks or as a link
-                     target, exists on disk.
+                     target, exists on disk -- unless git says `.gitignore` keeps it out
+                     of the tree on purpose, which is not a claim about the tree.
   2. cross-refs      `records/findings/NN…` resolves to a file; every `§N.M` in
                      docs/ON-CHAIN-DESIGN.md resolves to a heading in that same file;
                      every `D<n>`/`Q<n>` has a `## D<n>`/`## Q<n>` heading in
@@ -37,7 +38,8 @@ The seven checks, each one a claim that can be false:
                      of rows present (records/C-, D-, E-…).
   6. feature-table   every row of the feature table in records/STATE-OF-PROJECT.md names
                      an existing file, and carries a status from the closed set. A row
-                     claiming `tested` names an existing test file.
+                     claiming `tested` names an existing test file. A git-ignored path is
+                     not a violation here either, and cannot be the test file either.
   7. findings-unique a reference to `records/findings/NN` (or `NN-a`) that lands on more
                      than one file is a violation, because the reader follows it into the
                      wrong one. A number with several claimants is reported as a warning on
@@ -49,13 +51,26 @@ The seven checks, each one a claim that can be false:
 
 Some of the record names files that are deliberately not in the tree: a planning document
 calls a script by the name it had before it shipped, a finding number was assigned and the
-file never written, a handover sheet is kept out of git on purpose. `ALLOWED_ABSENCES`, below
-`check_paths`, is where those are written down: one entry per path, each with a reason. An
-entry with no reason (or one under four words) is itself a violation and suppresses nothing;
-an entry suppresses only the absence of that exact path -- never an id, a cross-reference, a
-registry count or a feature row; and every run reports how many absences it allowed, naming
-them under `--verbose`. The discipline is `.public-denylist`'s, for the same reason: an
-exception that is not written beside its argument is a rule nobody can review.
+file never written, a handover sheet is kept out of git on purpose. Two mechanisms cover
+them, and the difference between them is who owns the decision.
+
+`ALLOWED_ABSENCES`, below `check_paths`, is for a path the tree will never have: one entry
+per path, each with a reason. An entry with no reason (or one under four words) is itself a
+violation and suppresses nothing; an entry suppresses only the absence of that exact path --
+never an id, a cross-reference, a registry count or a feature row; and every run reports how
+many absences it allowed, naming them under `--verbose`. The discipline is
+`.public-denylist`'s, for the same reason: an exception that is not written beside its
+argument is a rule nobody can review.
+
+`.gitignore` is for a path the tree has on purpose and does not carry. The record cites a
+local-validator artefact, a morning report page, a program's build output: they exist in the
+checkout that produced them and in no clone, and `.gitignore` is the file that owns that
+decision, so this checker asks it rather than keeping a second copy of the answer. One
+`git check-ignore` covers every absent path a run finds; a hit means the document is naming
+something the repository deliberately does not carry, which is not a claim about the tree.
+Where git cannot answer -- no git on PATH, no work tree, a refused command -- every absent
+path is judged by `exists()` as before, so a machine without git reports more violations
+than one with it and never fewer.
 
 ## The two tables this checker reads, and their exact format
 
@@ -124,8 +139,8 @@ The status of a row is one of, exactly:
     exist"), and a `§`/`D`/`Q` reference whose paragraph names another document
     (`03-b` Q6 is 03-b's question, not this log's). Both are honest statements this
     checker would otherwise call lies.
-  * The network, git history, and anything written. It reads files and one
-    `git ls-files`, and it writes nothing, so it is safe inside a commit hook.
+  * The network, git history, and anything written. It reads files, one `git ls-files`
+    and one `git check-ignore`, and it writes nothing, so it is safe inside a commit hook.
 
 Standard library only, no dependency, and no network module is imported anywhere below.
 """
@@ -538,12 +553,58 @@ def allowances(root: Path) -> list[Allowance]:
     return out
 
 
+def git_ignored(root: Path, candidates: list[str]) -> set[str] | None:
+    """Which of these paths `.gitignore` keeps out of the tree, or None if git cannot say.
+
+    A document is checked against the repository, and the repository is the tracked tree. A
+    path the checkout produced and no clone carries -- a local-validator artefact, a build
+    output, a report page -- is not a claim about that tree, and re-deciding which paths
+    those are here would be a second copy of `.gitignore` to keep in step with the first.
+    So the question goes to the file that owns it, in one call for the whole run: forty
+    absent paths cost one subprocess, not forty.
+
+    `--no-index` because the ignore rules are the question, not the index: a path this
+    checkout happens to have indexed and then deleted is still ignored by the rules, and
+    the caller only asks about paths absent from disk anyway.
+
+    None means git could not answer: no git on PATH, not a work tree, a return code that
+    is neither "some are ignored" nor "none is". The caller then judges every path by
+    `exists()` exactly as it did before this existed, so the degraded run reports more
+    violations than a working one, never fewer, and a quiet gate never means a gate that
+    silently stopped asking.
+    """
+    if not candidates:
+        return set()
+    try:
+        done = subprocess.run(
+            ["git", "-C", str(root), "check-ignore", "--no-index", "--stdin", "-z"],
+            input=b"\0".join(name.encode("utf-8") for name in candidates),
+            capture_output=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    # 0 is "at least one of these is ignored" and 1 is "none is": both are answers. Any
+    # other code is a refusal, and a refusal must not read as "nothing is ignored".
+    if done.returncode not in (0, 1):
+        return None
+    return {part for part in done.stdout.decode("utf-8", "replace").split("\0") if part}
+
+
 def check_paths(root: Path, files: list[str], notes: dict | None = None) -> list[Violation]:
     """Every repo path a tracked document names exists, unless its absence is allowed.
 
-    `notes["allowed"]` collects the absences the table suppressed, so the run can report how
-    many there were and, under `--verbose`, which. A suppressed absence is not silent: it is
-    counted, and the entry that silenced it carries a reason a reader can check.
+    An absence is allowed two ways: written down in `ALLOWED_ABSENCES` with a reason, or
+    kept out of the tree by `.gitignore`, which is the repository's own statement that the
+    file is real and deliberately not carried. The second is asked in one batch after the
+    walk, because it is a question for git and not for this file.
+
+    `notes["allowed"]` collects the absences the table suppressed and `notes["ignored"]`
+    the paths git excused, each with the document and line that named it, so the run can
+    report how many there were and, under `--verbose`, which. A suppressed absence is not
+    silent: it is counted, and either the entry that silenced it carries a reason a reader
+    can check or `.gitignore` does.
     """
     out: list[Violation] = []
     allowed = {entry.path: entry for entry in allowances(root)}
@@ -562,6 +623,7 @@ def check_paths(root: Path, files: list[str], notes: dict | None = None) -> list
             )
 
     suppressed: list[Allowance] = []
+    absent: list[tuple[str, int, str]] = []
     for relative in files:
         for number, line in enumerate(read_lines(root, relative), start=1):
             candidates = [match.group(1) for match in INLINE_CODE.finditer(line)]
@@ -585,10 +647,21 @@ def check_paths(root: Path, files: list[str], notes: dict | None = None) -> list
                 if entry is not None and entry.checkable:
                     suppressed.append(entry)
                     continue
-                out.append(Violation("paths", relative, number, f"{text} does not exist"))
+                absent.append((relative, number, text))
+
+    ignored: list[tuple[str, str, int]] = []
+    ignored_paths = git_ignored(root, sorted({text for _relative, _number, text in absent})) or set()
+    for relative, number, text in absent:
+        if text in ignored_paths:
+            # `.gitignore` keeps this out of every clone on purpose, so a document naming it
+            # describes the run that produced it and not a file the tree is missing.
+            ignored.append((text, relative, number))
+            continue
+        out.append(Violation("paths", relative, number, f"{text} does not exist"))
 
     if notes is not None:
         notes["allowed"] = suppressed
+        notes["ignored"] = ignored
     return out
 
 
@@ -1623,6 +1696,24 @@ def feature_table(lines: list[str]) -> Table | None:
     return None
 
 
+def cited_paths(evidence: str) -> list[str]:
+    """The repo paths one feature row names, deduplicated, in the order it names them.
+
+    Two patterns because a row writes a path two ways, in backticks and bare inside a
+    sentence, and one report per path because a row often quotes the same file twice.
+    """
+    found = [text for text in re.findall(r"`([^`\n]+)`", evidence) if looks_like_repo_path(text.strip())]
+    found += [
+        match
+        for match in re.findall(
+            r"\b(?:tests|tools|records|docs|ticketpath|programs|market_swarm)/[A-Za-z0-9._/-]+",
+            evidence,
+        )
+        if looks_like_repo_path(match)
+    ]
+    return list(dict.fromkeys(found))
+
+
 def check_feature_table(root: Path) -> list[Violation]:
     """Every feature row names a file that exists and a status from the closed set."""
     out: list[Violation] = []
@@ -1652,23 +1743,32 @@ def check_feature_table(root: Path) -> list[Violation]:
     if None in (status_column, name_column, evidence_column):
         return out
 
+    # The same rule as check 1, for the same reason: a row may cite the local artefact its
+    # numbers came from, and a path `.gitignore` keeps out of the tree is not a claim about
+    # the tree. Asked once for the whole table rather than once per row.
+    cited = {
+        text
+        for _number, cells in table.rows
+        for text in cited_paths(" ".join(cells + [""] * (len(table.header) - len(cells))))
+    }
+    ignored = git_ignored(root, sorted(text for text in cited if not (root / text).exists())) or set()
+
     for number, cells in table.rows:
         cells = cells + [""] * (len(table.header) - len(cells))
         name = re.sub(r"[`*]", "", cells[name_column]).strip() or "(unnamed)"
         status = re.sub(r"[`*]", "", cells[status_column]).strip().lower()
         status = re.sub(r"[-_]+", " ", status)
         status = " ".join(status.split())
-        evidence = " ".join(cells)
-        found = [text for text in re.findall(r"`([^`\n]+)`", evidence) if looks_like_repo_path(text.strip())]
-        found += [match for match in re.findall(r"\b(?:tests|tools|records|docs|ticketpath|programs|market_swarm)/[A-Za-z0-9._/-]+", evidence) if looks_like_repo_path(match)]
-        found = list(dict.fromkeys(found))  # one path, one report: a row quotes it twice
+        found = cited_paths(" ".join(cells))
         existing = [text for text in found if (root / text).exists()]
 
         # A path a row names must exist whatever the status is; the difference between
         # the statuses is what a row owes: a `built` or `tested` row owes a file, and
-        # `unverified` / `not built` may honestly say it has none to name.
+        # `unverified` / `not built` may honestly say it has none to name. An ignored path
+        # counts for neither: it is not a violation to cite it, and it cannot stand as the
+        # existing test file a `tested` row owes, because a clone does not have it.
         for text in found:
-            if (root / text).exists():
+            if (root / text).exists() or text in ignored:
                 continue
             out.append(
                 Violation("feature-table", STATE_DOC, number,
@@ -1708,7 +1808,8 @@ def check_tree(
     """Run the checks over one tree, in check order, and return every violation.
 
     `notes` is how a check reports something that is not a violation but is not nothing
-    either: today only `paths` writes to it, listing the absences an allowance suppressed.
+    either: `paths` lists the absences an allowance suppressed and the paths `.gitignore`
+    keeps out of the tree, and `findings-unique` lists the numbers with several claimants.
     """
     root = Path(root)
     files = tracked_markdown(root)
@@ -1773,6 +1874,16 @@ def main(argv: list[str] | None = None) -> int:
             named.add(entry.path)
             print(f"allowed: {entry.path}: {entry.reason}", file=sys.stderr)
 
+    # A path `.gitignore` excused is counted the same way an allowance is, and named the same
+    # way under `--verbose`, because the two are the same promise to a reader: nothing was
+    # quietly dropped, and the record says which file decided it.
+    ignored = notes.get("ignored") or []
+    ignored_names = list(dict.fromkeys(text for text, _relative, _number in ignored))
+    if args.verbose:
+        for text, relative, number in ignored:
+            print(f"ignored: {text}: named by {relative}:{number}, kept out by .gitignore",
+                  file=sys.stderr)
+
     # Warnings are not violations: they are what a reader needs to know that the run is
     # still telling them about. A shared finding number is the one that matters here, and
     # it prints on every run, quiet or not, because the number stays shared until somebody
@@ -1786,6 +1897,9 @@ def main(argv: list[str] | None = None) -> int:
     allowance_text = (
         f"; {len(allowed)} allowed absence(s) suppressed by ALLOWED_ABSENCES" if allowed else ""
     )
+    ignored_text = (
+        f"; {len(ignored_names)} git-ignored path(s) not claimed of the tree" if ignored_names else ""
+    )
     if violations:
         files = len({violation.path for violation in violations})
         counted: dict[str, int] = {}
@@ -1794,13 +1908,13 @@ def main(argv: list[str] | None = None) -> int:
         breakdown = ", ".join(f"{name} {counted[name]}" for name in CHECKS if name in counted)
         print(
             f"doc_check: {len(violations)} violation(s) in {files} file(s) of the tracked tree"
-            f" ({breakdown}); the documents disagree with the code{allowance_text}",
+            f" ({breakdown}); the documents disagree with the code{allowance_text}{ignored_text}",
             file=sys.stderr,
         )
         return 1
     if not args.quiet:
         print(
-            f"doc_check: clean, {len(checks)} check(s), {root}{allowance_text}",
+            f"doc_check: clean, {len(checks)} check(s), {root}{allowance_text}{ignored_text}",
             file=sys.stderr,
         )
     return 0

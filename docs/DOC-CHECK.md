@@ -65,10 +65,36 @@ that omits either one gets one line naming the missing table, not a crash and no
 
 Some of the record legitimately names files that are not in the tree: a planning document
 calls a script by the name it had before it shipped, a finding number was assigned and the
-file was never written, a handover sheet is kept out of git on purpose. Twenty-one of those
-would otherwise be a permanently red gate, and a permanently red gate gets switched off.
+file was never written, a handover sheet is kept out of git on purpose. Each of those would
+otherwise be a permanently red gate, and a permanently red gate gets switched off.
 
-So `tools/doc_check.py` carries an `ALLOWED_ABSENCES` table: one entry per path, each with a
+There are two mechanisms, and the difference between them is who owns the decision.
+`.gitignore` owns the paths the repository deliberately has on purpose and does not carry,
+and `ALLOWED_ABSENCES` owns the paths the tree will never have.
+
+### `.gitignore`: the tree has it, the repository does not carry it
+
+The record cites a local-validator artefact, a report page, a program's build output. They
+exist in the checkout that produced them and in no clone, and `.gitignore` already says so,
+because that is the file whose job it is. A path an ignore rule matches is not a claim about
+the tree: it is a document describing the run, and the run wrote a local file.
+
+So the checker asks git, in one batch for the whole run, with
+`git check-ignore --no-index --stdin -z` over the absent paths it collected. Forty absent
+paths cost one subprocess. `--no-index` because the ignore rules are the question and the
+index is not. The run counts what it skipped and `--verbose` names each one beside the
+document and line that named it.
+
+Where git cannot answer -- no git on `PATH`, no work tree, a return code that is neither
+"some are ignored" nor "none is" -- every absent path is judged by whether it is on disk,
+exactly as before. That is the safe way round on purpose: a machine without git reports
+more violations than one with it, never fewer, so a green run never means a check that
+stopped asking. It also means the pass has to be earned: a document naming a path that is
+neither present nor ignored is still red.
+
+### `ALLOWED_ABSENCES`: the path will never be in the tree
+
+`tools/doc_check.py` carries an `ALLOWED_ABSENCES` table: one entry per path, each with a
 reason a reader can check against the tree in a minute. The rules are the ones
 `.public-denylist` already uses for its exceptions, because a second dialect for the same
 idea is how a tree ends up with two ideas:
@@ -80,13 +106,15 @@ idea is how a tree ends up with two ideas:
   cross-reference, a registry count or a feature row. Those are other claims with other
   evidence, and a path allowance that also covered a stale id would be a lie by proxy.
 - **The number is reported.** Every run says `N allowed absence(s) suppressed by
-  ALLOWED_ABSENCES`, and `--verbose` names each one with its reason, so the quiet part is on
-  the record and not in somebody's memory.
-- **Everything else still fails.** A document naming a path that is neither present nor in the
-  table is a violation, and the fix is a document that says the file is local, or a file.
+  ALLOWED_ABSENCES` and `N git-ignored path(s) not claimed of the tree`, and `--verbose`
+  names each one, so the quiet part is on the record and not in somebody's memory.
+- **Everything else still fails.** A document naming a path that is present, ignored and
+  written down in neither place is a violation, and the fix is a document that says the file
+  is local, or a file.
 
 Adding an entry is a decision about what the record is allowed to claim, so it goes in a
-commit with its reason, where a reviewer reads it beside the diff.
+commit with its reason, where a reviewer reads it beside the diff. Do not add an entry for a
+path `.gitignore` already covers: two mechanisms for one fact is how one of them goes stale.
 
 ## What it deliberately does not check
 

@@ -76,10 +76,13 @@ CAP_BASES = (
 )
 BASES = ("face", "face_plus_fees", "face_plus_fees_capped")
 
-#: How tight a base is when two candidates tie on basis points at a zero fee. A cap over the
-#: face admits less than a cap over face + fees, and a fee-capped base sits between them. The
-#: lamport decision is `effective_ceiling`'s, with the real face and fee; this ordering exists
-#: so `resolve()` never picks a rule that is looser merely because its number looks smaller.
+#: How tight a base is, for a caller that has the face and the fee and wants to order two
+#: rules in price space: a cap over the face admits less than a cap over face + fees, and a
+#: fee-capped base sits between them. `resolve()` does not use it and cannot: it is handed
+#: neither the face nor the fee, so it has no way to put two bases on one scale, and it
+#: returns `unresolved` with `REASON_BASE_DISAGREEMENT` instead of guessing. Two bases meet
+#: in `effective_ceiling`'s lamport arithmetic, which is the only place the comparison can
+#: be made, so this table is for a caller doing that arithmetic rather than for the resolver.
 BASE_TIGHTNESS = {"face": 0, "face_plus_fees_capped": 1, "face_plus_fees": 2}
 CONFIDENCES = ("A", "B", "C", "D", "E")
 
@@ -103,6 +106,10 @@ REASON_NO_INSTRUMENT = "no_instrument_identified"
 REASON_UNKNOWN_LAW = "law_status_unknown"
 REASON_ABSOLUTE_NEEDS_FX = "absolute_needs_fx"
 REASON_MIXED = "mixed_strictest_wins"
+#: Two caps apply over bases that are not comparable without the face and the fee. Not in
+#: `REASON_PRIORITY`: that order answers "which of several non-caps to report", and this is a
+#: cap that `resolve` can state but not rank.
+REASON_BASE_DISAGREEMENT = "cap_base_disagreement"
 
 #: Which single reason a policy reports when several instruments contributed none. The order
 #: is by how much the fact tells a reader, not by severity: "a cap exists but this event is not
@@ -536,6 +543,14 @@ def resolve(
     `unresolved`, not to `monitored`. The difference is the whole point: the designation
     registers are not machine-readable here, so "undeclared" is an absence of information,
     and treating it as permission would let an operator opt out of a cap by saying nothing.
+
+    Two jurisdictions that cap over different bases resolve to `unresolved` with
+    `REASON_BASE_DISAGREEMENT`, not to the smaller of the two basis-point numbers. The bases
+    are comparable only in lamports, which needs the face and the fee, and this function is
+    given neither: with a fee under a tenth of the face, 0 bps over face + fees admits less
+    than 1000 bps over face, and with a fee over a tenth it admits more. Naming one would be
+    a coin toss the caller could not see, so the caller holding the price decides, in
+    `effective_ceiling`'s arithmetic.
     """
     if isinstance(jurisdictions, str):
         jurisdictions = [jurisdictions]
@@ -636,12 +651,21 @@ def resolve(
         )
 
     if capped:
-        # Basis points are only comparable within one base. At a zero fee every base reduces to
-        # the face, so the bps ordering is exact; ties are broken by the tighter base
-        # (`BASE_TIGHTNESS`), which holds for every fee, not just zero.
-        cap_bps, base, row = min(
-            capped, key=lambda item: (item[0], BASE_TIGHTNESS[item[1]], item[2].jurisdiction)
-        )
+        # Basis points are only comparable within one base, and this function is given neither
+        # the face nor the fee, so it cannot put two bases on one scale. With a fee under a
+        # tenth of the face, 0 bps over face + fees admits less than 1000 bps over face; with
+        # a fee over a tenth it admits more. Picking the smaller number either way would
+        # admit an event above a cap that binds it. One base is a cap; two bases are a
+        # question this function cannot answer, and `unresolved` is the answer that does not
+        # admit anything wrongly.
+        if len({base for _cap_bps, base, _row in capped}) > 1:
+            return CapPolicy(
+                kind="unresolved", cap_bps=None, base="face", fee_cap_bps=None,
+                binding_jurisdiction=None, jurisdictions=codes,
+                table_version=active.version, table_sha256=active.sha256,
+                basis=tuple(basis), reason=REASON_BASE_DISAGREEMENT, as_of=as_of,
+            )
+        cap_bps, base, row = min(capped, key=lambda item: (item[0], item[2].jurisdiction))
         fee_cap = (
             int(row.cap_value["bps"])
             if base == "face_plus_fees_capped" and row.cap_value is not None
@@ -754,8 +778,11 @@ def to_lamports(amount_minor: int, fx: Mapping[str, Any]) -> int:
 def compare(issued: CapPolicy, current: CapPolicy) -> str:
     """How the law moved for an already-issued ticket (§6).
 
-    `unchanged`, `tightened`, `relaxed` or `relabelled`. `tighten_allows` on chain accepts
-    `tightened`; `relaxed` is refused there by design and recorded off chain instead.
+    `tightened`, `relaxed`, `unchanged`, `relabelled` or `changed_base`. `tightened` is the
+    one `tighten_allows` on chain accepts; `relaxed` is refused there by design and recorded
+    off chain instead. `changed_base` is the fifth answer and not a synonym for the other
+    four: two policies can both be caps, over different bases, where no basis-point order
+    exists, so a caller must re-derive the ceiling rather than keep the old one.
     """
     def rank(policy: CapPolicy) -> tuple[int, int]:
         if policy.kind == "capped":
@@ -795,6 +822,14 @@ def describe(policy: CapPolicy) -> dict:
     if policy.kind == "monitored":
         return (
             f"monitored: no resale price cap in force ({where}, {policy.reason}); "
+            f"table {policy.table_version}, checked {policy.as_of}"
+        )
+    if policy.reason == REASON_BASE_DISAGREEMENT:
+        # Not "the law could not be established": two laws were established and cannot be
+        # ranked without a face and a fee this function was never given.
+        return (
+            f"unresolved: the caps that apply are over different bases, so no single ceiling "
+            f"can be stated ({where}, {policy.reason}); "
             f"table {policy.table_version}, checked {policy.as_of}"
         )
     return (

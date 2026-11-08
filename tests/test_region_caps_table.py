@@ -266,11 +266,36 @@ class TestMultiVenueOnTheRealTable(unittest.TestCase):
         policy = rc.resolve(["CA-ON", "US-TX"], on_date=AS_OF, table=self.table)
         self.assertEqual(policy.kind, "unresolved")
 
-    def test_face_only_beats_an_all_in_base_at_the_same_margin(self):
-        # WA is +10% over face + fees, VIC is +10% over face. Same number, different base:
-        # the face-only rule is the stricter one and must be the one reported.
-        policy = rc.resolve(["AU-WA", "AU-VIC"], on_date=AS_OF, table=self.table, declared_event=True)
-        self.assertEqual(policy.binding_jurisdiction, "AU-VIC")
+    def test_a_same_margin_over_two_bases_names_neither_of_them(self):
+        # WA is +10% over face + fees, VIC is +10% over face. Same number, different base: at
+        # a zero fee they are the same ceiling, above it VIC is tighter, and `resolve` is
+        # given neither the fee nor the face. It states no cap rather than the smaller
+        # number, and the caller holding the price ranks them in lamports.
+        policy = rc.resolve(
+            ["AU-WA", "AU-VIC"], on_date=AS_OF, table=self.table, declared_event=True
+        )
+        self.assertEqual(policy.kind, "unresolved")
+        self.assertEqual(policy.reason, rc.REASON_BASE_DISAGREEMENT)
+        self.assertIsNone(policy.contract_cap())
+
+    def test_a_multi_venue_event_is_not_admitted_above_one_of_its_caps(self):
+        # The release review's reproducer. BE caps 0 bps over face + fees and AU-SA 1000 bps
+        # over face. At face 1,000,000,000 and a fee of 150,000,000 the Belgian cap is
+        # 1,150,000,000 and the Australian one is 1,100,000,000, so ordering the two by basis
+        # points admitted the event 50,000,000 lamports above a cap that bound it.
+        both = rc.resolve(["BE", "AU-SA"], on_date=AS_OF, table=self.table, declared_event=True)
+        alone = rc.resolve(["AU-SA"], on_date=AS_OF, table=self.table, declared_event=True)
+        self.assertEqual((alone.cap_bps, alone.base), (1000, "face"))
+        single = rc.effective_ceiling(
+            face_lamports=1_000_000_000, fee_lamports=150_000_000, law=alone
+        )
+        self.assertEqual(single.ceiling_lamports, 1_100_000_000)
+        self.assertEqual(both.kind, "unresolved")
+        self.assertEqual(both.reason, rc.REASON_BASE_DISAGREEMENT)
+        self.assertIsNone(
+            rc.effective_ceiling(face_lamports=1_000_000_000, fee_lamports=150_000_000, law=both),
+            "two bases the resolver cannot rank have no ceiling to put on chain",
+        )
 
 
 if __name__ == "__main__":

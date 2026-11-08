@@ -281,6 +281,120 @@ class PathsTest(CheckerTestCase):
         self.assertEqual(self.run_check("paths", **{"README.md": readme}), [])
 
 
+class GitIgnoredPathTest(CheckerTestCase):
+    """Check 1 against a repository: `.gitignore` owns which absences are deliberate.
+
+    Seven paths the record names in backticks exist in the checkout that produced them and
+    in no clone -- the local-validator artefact, the morning report page, a program's build
+    output -- so a check that asks the filesystem refuses every commit made anywhere else.
+    The fixture here is a real git work tree because the question is put to git: a stand-in
+    for `check-ignore` would test the stand-in, and the point is that the repository's own
+    ignore file is the answer.
+    """
+
+    LOCAL_ARTEFACT = "records/onchain-v2.local.json"
+
+    def make_repo(self, *ignored: str) -> None:
+        """The shared fixture, inside a work tree whose `.gitignore` carries these lines."""
+        build_tree(self.root)
+        (self.root / ".gitignore").write_text("\n".join(ignored) + "\n", encoding="utf-8")
+        subprocess.run(
+            ["git", "init", "-q", str(self.root)], check=True, capture_output=True, timeout=120
+        )
+
+    def check(self, document: str) -> tuple[list[doc_check.Violation], dict]:
+        """Run check 1 over one document, collecting the notes it keeps."""
+        (self.root / "README.md").write_text(document, encoding="utf-8")
+        notes: dict = {}
+        violations = doc_check.check_paths(self.root, ["README.md"], notes)
+        return violations, notes
+
+    def test_a_path_gitignore_keeps_out_is_not_a_claim_about_the_tree(self) -> None:
+        self.make_repo(self.LOCAL_ARTEFACT)
+        self.assertFalse(
+            (self.root / self.LOCAL_ARTEFACT).exists(),
+            "the fixture has the file, so a pass would prove nothing",
+        )
+        violations, notes = self.check(
+            f"# Fixture\n\nThe proof is `{self.LOCAL_ARTEFACT}`, written by the run.\n"
+        )
+        self.assertEqual([item.render() for item in violations], [])
+        self.assertEqual(
+            [text for text, _relative, _number in notes["ignored"]],
+            [self.LOCAL_ARTEFACT],
+            "the skip is counted, not silent",
+        )
+
+    def test_a_path_the_tree_neither_has_nor_ignores_is_still_a_violation(self) -> None:
+        self.make_repo(self.LOCAL_ARTEFACT)
+        violations, notes = self.check(
+            f"# Fixture\n\n`{self.LOCAL_ARTEFACT}` is local; `tools/never_planned.py` was not."
+        )
+        self.assertOnly(violations, "paths", "tools/never_planned.py")
+        self.assertEqual(len(notes["ignored"]), 1, "only the ignored path was excused")
+
+    def test_without_git_every_absent_path_is_judged_by_the_filesystem(self) -> None:
+        # The degradation has to be the safe way round: no git means more reported, never
+        # fewer, so a machine that cannot ask the question cannot pass by not asking.
+        self.make_repo(self.LOCAL_ARTEFACT)
+        real = doc_check.subprocess.run
+
+        def no_git(*args, **kwargs):
+            raise OSError("git: No such file or directory")
+
+        doc_check.subprocess.run = no_git
+        self.addCleanup(setattr, doc_check.subprocess, "run", real)
+        violations, notes = self.check(f"# Fixture\n\nThe proof is `{self.LOCAL_ARTEFACT}`.\n")
+        self.assertOnly(violations, "paths", self.LOCAL_ARTEFACT)
+        self.assertEqual(notes["ignored"], [], "nothing was excused by a git that did not run")
+
+    def test_a_tree_that_is_not_a_work_tree_is_none_and_not_an_empty_answer(self) -> None:
+        # A `.gitignore` beside no repository decides nothing: git answers 128, and 128 has
+        # to read as "cannot say" rather than as "nothing here is ignored".
+        build_tree(self.root)
+        self.assertIsNone(doc_check.git_ignored(self.root, [self.LOCAL_ARTEFACT]))
+        violations, notes = self.check(f"# Fixture\n\nThe proof is `{self.LOCAL_ARTEFACT}`.\n")
+        self.assertOnly(violations, "paths", self.LOCAL_ARTEFACT)
+
+    def test_the_whole_run_asks_git_once(self) -> None:
+        self.make_repo(self.LOCAL_ARTEFACT, "records/local-*.json")
+        calls: list[list[str]] = []
+        real = doc_check.subprocess.run
+
+        def record(command, *args, **kwargs):
+            calls.append(list(command))
+            return real(command, *args, **kwargs)
+
+        doc_check.subprocess.run = record
+        self.addCleanup(setattr, doc_check.subprocess, "run", real)
+        document = "# Fixture\n\n" + " ".join(f"`records/local-{n}.json`" for n in range(5)) + "\n"
+        violations, notes = self.check(document)
+        self.assertEqual([item.render() for item in violations], [])
+        self.assertEqual(len(notes["ignored"]), 5, "five ignored paths, five counted")
+        asked = [call for call in calls if "check-ignore" in call]
+        self.assertEqual(len(asked), 1, calls)
+
+    def test_a_feature_row_may_cite_a_local_artefact_as_its_evidence(self) -> None:
+        # The feature table is the second place a document names a file, and the state table
+        # cites the local-validator artefact the same way a prose paragraph does. The row is
+        # still `tested` on the test file; the ignored path is not a claim about the tree.
+        self.make_repo(self.LOCAL_ARTEFACT)
+        table = (
+            "# State\n\n## Feature table\n\n| feature | status | file |\n|---|---|---|\n"
+            f"| the floor | tested | `tests/test_doc_check.py`, proof in `{self.LOCAL_ARTEFACT}` |\n"
+        )
+        state = self.root / "records" / "STATE-OF-PROJECT.md"
+        state.write_text(table, encoding="utf-8")
+        self.assertEqual([item.render() for item in doc_check.check_feature_table(self.root)], [])
+
+        # Without the test file the same row is refused: an ignored path cannot stand as the
+        # evidence a `tested` row owes, because no clone has it.
+        state.write_text(table.replace("`tests/test_doc_check.py`, ", ""), encoding="utf-8")
+        violations = doc_check.check_feature_table(self.root)
+        self.assertEqual(len(violations), 1, [item.render() for item in violations])
+        self.assertIn("names no existing", violations[0].detail)
+
+
 class AllowanceTest(CheckerTestCase):
     """Check 1's stated allowances: a path whose absence is written down and argued.
 

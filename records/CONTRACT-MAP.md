@@ -391,8 +391,12 @@ the exact-shape check stays exact rather than being loosened.
 **The one thing a reader must not miss.** `Event.resalePriceCapBps` keeps its contract meaning — the
 organiser's configured cap. The number the chain enforces is `enforcedCap.enforcedCapBps`, and the two
 differ exactly when a law is stricter. `bindingRule` says which rule produced the ceiling, so a screen
-never attributes a product decision to a law. The comparison is made in lamports, not in basis points:
-500 bps over face + fees is looser than 1000 bps over face.
+never attributes a product decision to a law. Two ceilings are compared in lamports, in
+`effective_ceiling`, never by their basis points: 500 bps over face + fees admits more than 1000 bps
+over face once the fee is large enough and less when it is small, so a basis-point comparison is
+wrong in one direction or the other. The same limit binds the resolver, which is given neither the
+face nor the fee: a set of codes that cap over different bases resolves to `unresolved` with
+`cap_base_disagreement`, not to the smaller of two numbers.
 
 ## 8. Acceptance test map
 

@@ -215,19 +215,31 @@ class TestResolution(unittest.TestCase):
         self.assertEqual(both.cap_bps, 500)
         self.assertEqual(both.binding_jurisdiction, "AU-NSW")
 
-    def test_basis_points_are_never_compared_across_bases(self):
-        # MM is +50% over face + fees; NN is +10% over face. A bps-only comparison picks MM
-        # (5000 > 1000 is false, so it picks NN)... the real test is the reverse: a smaller
-        # number over a looser base must not win.
-        policy = self.resolve(["MM", "NN"])
-        self.assertEqual(policy.binding_jurisdiction, "NN")
-        self.assertEqual(policy.base, "face")
-        # and a looser base with a smaller number: face_plus_fees at 0 vs face at 1000
-        loose = self.resolve("EE")          # 0 bps over face + fees
-        tight = self.resolve("AA")          # 1000 bps over face
-        self.assertEqual(self.resolve(["EE", "AA"]).binding_jurisdiction, "EE")
-        self.assertEqual(loose.cap_bps, 0)
-        self.assertEqual(tight.cap_bps, 1000)
+    def test_a_base_disagreement_is_unresolved_rather_than_compared(self):
+        # MM is 5000 bps over face + fees; NN is 1000 bps over face. Which ceiling is lower
+        # depends on the fee, which `resolve` is not given, so it states neither. Same for EE
+        # (0 bps over face + fees) against AA (1000 bps over face): the smaller number is not
+        # the tighter rule. Before this rule the smaller number won, which admitted an event
+        # above a cap that bound it.
+        for codes in (["MM", "NN"], ["EE", "AA"]):
+            with self.subTest(codes=codes):
+                policy = self.resolve(codes)
+                self.assertEqual(policy.kind, "unresolved")
+                self.assertEqual(policy.reason, rc.REASON_BASE_DISAGREEMENT)
+                self.assertIsNone(policy.cap_bps)
+                self.assertIsNone(policy.binding_jurisdiction)
+        # And each on its own is still a cap, so the refusal is about the pair and not the rule.
+        self.assertEqual(self.resolve("MM").base, "face_plus_fees")
+        self.assertEqual(self.resolve("NN").base, "face")
+
+    def test_one_base_still_picks_the_strictest_number(self):
+        # Within one base the smaller number is the tighter rule at every fee, which is what
+        # makes the ordinary multi-jurisdiction case answerable and unchanged.
+        policy = self.resolve(["AA", "AU-NSW"])
+        self.assertEqual((policy.kind, policy.cap_bps), ("capped", 500))
+        self.assertEqual(policy.binding_jurisdiction, "AU-NSW")
+        inherited = self.resolve(["AU", "AU-NSW"])  # a country and its subdivision, both face
+        self.assertEqual((inherited.kind, inherited.cap_bps), ("capped", 500))
 
     def test_one_unresolved_member_makes_the_event_unresolved(self):
         policy = self.resolve(["AA", "XX"])
@@ -360,6 +372,16 @@ class TestCompare(unittest.TestCase):
         self.assertEqual(rc.compare(monitored, capped), "tightened")
         self.assertEqual(rc.compare(monitored, announced), "unchanged")
 
+    def test_a_move_to_another_base_is_its_own_answer(self):
+        # AA is 1000 bps over face, EE is 0 bps over face + fees: both caps, no basis-point
+        # order between them. Calling that `tightened` or `relaxed` would keep a ceiling the
+        # new rule does not support, so it is named for what changed.
+        face = self.policy("AA")
+        all_in = self.policy("EE")
+        self.assertEqual((face.base, all_in.base), ("face", "face_plus_fees"))
+        self.assertEqual(rc.compare(face, all_in), "changed_base")
+        self.assertEqual(rc.compare(all_in, face), "changed_base")
+
 
 class TestDescriptions(unittest.TestCase):
     @classmethod
@@ -382,6 +404,19 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(monitored.as_dict()["resalePolicy"], "monitored")
         self.assertIsNone(monitored.contract_cap())
         self.assertIsNone(monitored.as_dict()["resaleCapBps"])
+
+    def test_a_base_disagreement_reaches_the_wire_and_the_sentence(self):
+        # What a screen prints comes from here, so the reason has to survive both renderings
+        # and the cap has to be null: a caller that sees `unresolved` must not read a number.
+        policy = rc.resolve(["MM", "NN"], on_date="2026-11-08", table=self.table)
+        wire = policy.as_dict()
+        self.assertEqual(wire["resalePolicy"], "unresolved")
+        self.assertEqual(wire["lawReason"], rc.REASON_BASE_DISAGREEMENT)
+        self.assertIsNone(wire["resaleCapBps"])
+        self.assertIsNone(policy.contract_cap())
+        text = rc.describe(policy)
+        self.assertIn(rc.REASON_BASE_DISAGREEMENT, text)
+        self.assertIn("different bases", text)
 
 
 class TestTableValidation(unittest.TestCase):

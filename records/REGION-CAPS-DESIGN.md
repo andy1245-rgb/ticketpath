@@ -5,8 +5,9 @@ notes: an earlier pass moved them to `tmp/abandoned-region-caps/` while another 
 and they were restored. See §12 for the collision record.
 
 **Status:** design, written 2026-11-08 during the region-caps build. Code: `ticketpath/core/region_caps.py`,
-`ticketpath/data/region-caps.json`. `programs/region_gate/` is parked: built, not deployed, not in the
-transaction path (§13). Legal basis: `records/findings/33-a-region-cap-law.md`.
+`ticketpath/data/region-caps.json`. `programs/region_gate/` is parked: built, never on devnet or mainnet, run
+once on a disposable local validator, and not in the transaction path (§13). Legal basis:
+`records/findings/33-a-region-cap-law.md`.
 This file is not legal advice and makes no claim that any jurisdiction's law is what the table says; the table
 is the claim, and every row carries its instrument, its date and its confidence.
 
@@ -57,7 +58,11 @@ parameter. That is the whole reason the table is JSON: a reviewer can diff it.
 
 ## 3. Resolution, in order
 
-`resolve(jurisdictions, on_date=..., table=..., fx=None, accept_unresolved=False) -> CapPolicy`
+`resolve(jurisdictions, *, on_date, table=None, declared_event=None) -> CapPolicy`
+
+`on_date` is required and keyword-only. `table` defaults to the shipped table. `declared_event` is
+the organiser's answer about designation and has three states, described in step 4. There is no FX
+parameter: see step 7.
 
 1. Normalise each code (uppercase, trim). An empty set or an unknown code yields `unresolved`.
 2. For each code, take the row. Missing row → `unresolved`, reason `unknown_jurisdiction`.
@@ -73,26 +78,39 @@ parameter. That is the whole reason the table is JSON: a reviewer can diff it.
    out of a cap by saying nothing. `applies_to == enumerated_events` (Florida's four statutory
    transaction classes) binds without any flag.
 5. Turn a binding row into a candidate: `face` → cap 0 bps with base `face`; `face_plus_fees` → cap
-   0 bps with base `face_plus_fees`; `pct_above_face` → the row's bps with base `face`;
+   0 bps with base `face_plus_fees`; `face_plus_fees_capped` → cap 0 bps with base
+   `face_plus_fees_capped`, and the row's `bps` becomes `fee_cap_bps`, the most of the fee the law
+   counts (the New South Wales shape, §4); `pct_above_face` → the row's bps with base `face`;
    `no_price_cap` → `monitored`.
-6. **Strictest wins.** Among candidates, the minimum `cap_bps`; a capped candidate beats a
-   monitored one; any member that is `unresolved` makes the whole event `unresolved`, because a
-   multi-venue event cannot be shown lawful on the strength of its easiest venue.
+6. **Strictest wins, within one base.** Among candidates over the same base, the minimum
+   `cap_bps`; a capped candidate beats a monitored one; any member that is `unresolved` makes the
+   whole event `unresolved`, because a multi-venue event cannot be shown lawful on the strength of
+   its easiest venue. Candidates over **different** bases are not ordered by their basis points at
+   all: with a fee under a tenth of the face, 0 bps over face + fees admits less than 1000 bps
+   over face, and with a fee over a tenth it admits more, and `resolve` is given neither the face
+   nor the fee. Two bases therefore resolve to `unresolved` with reason `cap_base_disagreement`,
+   and no ceiling is stated. The comparison belongs to the caller that holds the price, who runs
+   `effective_ceiling` over each policy in turn.
 7. `absolute` never resolves silently. A fixed money amount needs a currency conversion, and a
-   rate captured at issue time is only true at that instant; the resolver returns `unresolved`
-   with reason `absolute_needs_fx` unless the caller passes an FX snapshot *and* `accept_unresolved`.
-   `to_lamports()` implements the exact integer conversion for the day the operator decides to use
-   it, and is tested, but no row in the table resolves through it today.
+   rate captured at issue time is only true at that instant, so a binding row with an absolute
+   basis produces `unresolved` with reason `absolute_needs_fx`. `resolve` has no FX parameter and
+   no caller can hand it a rate: `to_lamports()` implements the exact integer conversion and is
+   tested, but nothing in this tree calls it, and no row in the table resolves through it today.
+   A caller that decides to sell into such a jurisdiction does so by acknowledging `unresolved` in
+   its own creation path, which is a decision it makes and states, not one the resolver makes for
+   it; `tools/region_harness.py`'s `--accept-unresolved` is that acknowledgement.
 8. Output, immutable:
 
 ```
-CapPolicy(kind, cap_bps, base, binding_jurisdiction, jurisdictions, table_version,
+CapPolicy(kind, cap_bps, base, fee_cap_bps, binding_jurisdiction, jurisdictions, table_version,
           table_sha256, basis, reason, as_of)
 ```
 
-`reason` is a machine code (`law_caps_bps`, `no_cap_in_force`, `announced_only`,
-`not_yet_in_force`, `repealed`, `not_a_designated_event`, `unknown_jurisdiction`,
-`no_instrument_identified`, `absolute_needs_fx`), so a screen can say *why* without prose.
+`reason` is a machine code, so a screen can say *why* without prose: `law_caps_bps`,
+`mixed_strictest_wins`, `no_cap_in_force`, `announced_only`, `not_yet_in_force`, `repealed`,
+`not_a_designated_event`, `designation_not_stated`, `not_a_resale_rule`,
+`other_restriction_only`, `unknown_jurisdiction`, `no_instrument_identified`,
+`law_status_unknown`, `absolute_needs_fx`, `cap_base_disagreement`.
 
 ## 4. Which number the cap multiplies — the base, not always the face
 
@@ -155,6 +173,11 @@ and `bindingJurisdiction` names which member produced the number, so the screen 
 +10% because of NSW" instead of "capped". A tour with one capped stop and three monitored ones is
 capped for the whole event. That is deliberately conservative: the platform has one price per
 tier, and a tier's tickets may be used at any stop.
+
+"Strictest" is a number only where the capped stops share a base. A stop capping over face and a
+stop capping over face + fees are not ordered by their basis points at all (§3.6), so the event
+resolves `unresolved` with `cap_base_disagreement` and names no binding member. There is no
+ceiling to state, and inventing one would admit the event above a cap that binds it.
 
 ## 8. What the design deliberately does not decide
 
@@ -285,11 +308,19 @@ number is what the event carries as `enforcedCap.enforcedCapBps` and what the re
 all.
 
 `programs/region_gate/` is parked. It was built on 2026-11-08 as §9's on-chain half, it compiled
-once (the `.so` hash and the one local-validator run are in
-`records/findings/38-region-caps-local-validator.md`), it is not deployed, and nothing in
-`ticketpath/` imports or calls it. It stays in the tree for one reason: it is the written record of
-where the check could move if the table ever has to be enforced by something the platform cannot
-rewrite. Its `README.md` says what that would cost and what would have to change first.
+once, and it was run once on a disposable local validator that the proof tool started and killed
+inside its own run: the `.so` hash and the eleven recorded transactions are in
+`records/findings/38-region-caps-local-validator.md`. It has never been on devnet or on mainnet,
+and nothing in `ticketpath/` imports or calls it. It stays in the tree for one reason: it is the
+written record of where the check could move if the table ever has to be enforced by something the
+platform cannot rewrite. Its `README.md` says what that would cost and what would have to change
+first.
+
+The proof is a record and not a step a reader can re-run. `programs/region_gate/target/` is
+git-ignored (`.gitignore`:91) and absent from a clone, so the `.so` whose sha256 that finding
+records is gone; rebuilding it to the same hash needs the same toolchain and the same run, and the
+hash is evidence of what was built, not a checksum anyone can check today. `SO_PATH` in
+`tools/region_local_proof.py` points at that absent path for the same reason.
 
 What the park settles, and what it does not:
 
