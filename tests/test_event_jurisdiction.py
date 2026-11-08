@@ -33,8 +33,13 @@ class TestAdditiveKeys(unittest.TestCase):
     def build(self, **over):
         return event_records.build({**self.event, **over}, self.organizer)
 
-    def test_every_event_in_the_fixture_declares_ontario(self):
-        self.assertEqual(self.event["jurisdiction"], "CA-ON")
+    def test_every_event_in_the_fixture_declares_great_britain(self):
+        # The fixture moved from CA-ON to GB so the platform cap is the binding rule. Under
+        # Ontario's 0% ceiling, 54 of the store's 61 recorded sales sat above the ceiling the
+        # app printed; under GB the law is `monitored` and every sale is legal against the
+        # cap the screen shows. The decision is records/F-decision-log.md D28.
+        self.assertEqual(self.event["jurisdiction"], "GB")
+        self.assertEqual(self.build()["resalePolicy"], "monitored")
 
     def test_the_keys_are_present_even_when_unknown(self):
         event = dict(self.event)
@@ -55,11 +60,13 @@ class TestAdditiveKeys(unittest.TestCase):
         self.assertEqual(payload["lawBasis"], [])
         self.assertIsNone(payload["enforcedCap"])
 
-    def test_ontario_caps_a_2026_12_event_and_the_law_is_stricter_than_the_platform(self):
+    def test_gb_is_monitored_so_the_platform_cap_is_the_binding_rule(self):
         payload = self.build()
-        self.assertEqual(payload["jurisdiction"], "CA-ON")
-        self.assertEqual(payload["resalePolicy"], "capped")
-        self.assertEqual(payload["resalePolicyReason"], region_caps.REASON_LAW_CAPS)
+        self.assertEqual(payload["jurisdiction"], "GB")
+        self.assertEqual(payload["resalePolicy"], "monitored")
+        # The disclosure law is in force and the announced cap never binds, so the reason is
+        # the absence of a price cap rather than a missing instrument.
+        self.assertEqual(payload["resalePolicyReason"], region_caps.REASON_NO_CAP)
         self.assertEqual(payload["lawTableVersion"], region_caps.load_table().version)
         # the organiser's own configured cap is still what the contract field says
         self.assertEqual(payload["resalePriceCapBps"], self.event["resalePriceCapBps"])
@@ -68,6 +75,22 @@ class TestAdditiveKeys(unittest.TestCase):
         # and the per-tier list is the honest shape.
         self.assertIsNone(payload["enforcedCap"])
         self.assertEqual(len(payload["enforcedCapByTier"]), len(self.event["tiers"]))
+        faces = {tier["id"]: tier["faceValueLamports"] for tier in self.event["tiers"]}
+        cap = self.event["resalePriceCapBps"]
+        for row in payload["enforcedCapByTier"]:
+            with self.subTest(tier=row["tierId"]):
+                self.assertEqual(row["bindingRule"], "platform")
+                self.assertEqual(row["enforcedCapBps"], cap)
+                self.assertEqual(row["enforcedBaseLamports"], faces[row["tierId"]])
+                self.assertEqual(row["enforcedCeilingLamports"], faces[row["tierId"]] * (10_000 + cap) // 10_000)
+                self.assertEqual(row["platformCapBps"], cap)
+
+    def test_a_capping_law_is_still_stricter_than_the_platform_where_it_applies(self):
+        # The fixture no longer exercises this, and the property must not go untested with it:
+        # an Ontario event resolves to the law's 0% ceiling, below the organiser's +25%.
+        payload = self.build(jurisdiction="CA-ON")
+        self.assertEqual(payload["resalePolicy"], "capped")
+        self.assertEqual(payload["resalePolicyReason"], region_caps.REASON_LAW_CAPS)
         faces = {tier["id"]: tier["faceValueLamports"] for tier in self.event["tiers"]}
         for row in payload["enforcedCapByTier"]:
             with self.subTest(tier=row["tierId"]):
@@ -164,16 +187,23 @@ class TestAdditiveKeys(unittest.TestCase):
         payload = self.build()
         self.assertTrue(payload["lawBasis"])
         row = payload["lawBasis"][0]
-        self.assertEqual(row["jurisdiction"], "CA-ON")
+        self.assertEqual(row["jurisdiction"], "GB")
         self.assertTrue(row["url"].startswith("https://"))
-        self.assertIn("Ticket Sales Act", row["citation"])
+        self.assertIn("Consumer Rights Act 2015", row["citation"])
+        self.assertEqual(row["status"], "in_force")
         self.assertIn(row["confidence"], ("A", "B", "C", "D", "E"))
+        # The announced cap is a basis row too, and it must not be the one that decided.
+        announced = [basis for basis in payload["lawBasis"] if basis["status"] == "announced"]
+        self.assertTrue(announced)
+        self.assertEqual(payload["resalePolicyReason"], region_caps.REASON_NO_CAP)
 
     def test_the_resolution_uses_the_event_start_date_not_today(self):
         # The same row before and after Ontario's 2026-04-24 commencement must differ, and
-        # nothing about the machine's clock may change that.
-        before = self.build(startsAt="2026-04-23T00:30:00.000Z")
-        after = self.build(startsAt="2026-04-24T00:30:00.000Z")
+        # nothing about the machine's clock may change that. The fixture is GB now, so the
+        # rule is proved on an explicitly Ontario event rather than on the store.
+        event = {**self.event, "jurisdiction": "CA-ON"}
+        before = event_records.build({**event, "startsAt": "2026-04-23T00:30:00.000Z"}, self.organizer)
+        after = event_records.build({**event, "startsAt": "2026-04-24T00:30:00.000Z"}, self.organizer)
         self.assertNotEqual(before["resalePolicy"], "capped")
         self.assertEqual(after["resalePolicy"], "capped")
 
