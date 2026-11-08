@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ApiError, getGuidance, getHealth } from "@/lib/api";
 import type { Guidance, Health } from "@/lib/types";
 import run from "@/data/sim-run.json";
+import artefact from "@/data/devnet-artefacts.json";
 import { Chip, DataSourceNote } from "@/components/ui";
+import { RecordedOrLive } from "@/components/proof/RecordedOrLive";
+import { SwarmRunPanel } from "@/components/proof/SwarmRunPanel";
 
 export const metadata: Metadata = {
   title: "Pricing and data",
@@ -104,6 +108,12 @@ function RunPanel(): React.ReactElement {
         {run.agentCount} agents on scripted policies, {run.modes[0]?.rounds ?? 0} rounds: one event
         with the cap in force, one monitored event with no cap. {run.chain}
       </p>
+      <p className="t-body mt-2 text-muted">
+        This is the nine-agent scripted dry run whose charts are below, and it is not the six-agent
+        run on a validator that the next panel prints. Two runs, two labels: the numbers under a
+        chart belong to the run the chart came from, and the six-agent numbers are never paired with
+        these charts.
+      </p>
 
       <dl className="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2">
         <Field label="run" value={run.runId} />
@@ -144,18 +154,30 @@ function RunPanel(): React.ReactElement {
             {/* A static SVG out of `public/charts`, copied there from
                 `docs/charts` by the same tool that wrote the JSON. next/image
                 cannot optimise an SVG without a flag and would inline it as a
-                data URL, so this is a plain image. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={mode.chart}
-              alt={`Price path for the ${mode.mode} run: every recorded sale against its ceiling`}
-              className="mt-4 w-full rounded-card border border-line bg-surface"
-            />
+                data URL, so this is a plain image, linked to the file itself so
+                a reader can open the chart the note names. */}
+            <a href={mode.chart} target="_blank" rel="noopener noreferrer" className="block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={mode.chart}
+                alt={`Price path for the ${mode.mode} run: every recorded sale against its ceiling`}
+                className="mt-4 w-full rounded-card border border-line bg-surface"
+              />
+            </a>
           </div>
         ))}
       </div>
 
       <p className="t-micro mt-4 text-muted">{run.sourceNote}</p>
+      <p className="t-micro mt-2 text-muted">
+        The panel&rsquo;s figures are the ones on disk: {" "}
+        <span className="figure">frontend/data/sim-run.json</span> for this run, {" "}
+        <span className="figure">frontend/data/swarm-live-onchain.json</span> for the six-agent
+        run, {" "}
+        <span className="figure">frontend/data/swarm-totals.json</span> for the sweep totals. Each
+        is a byte copy of the record it names, so a reader can open the file and check the number
+        against it.
+      </p>
     </section>
   );
 }
@@ -269,7 +291,8 @@ function ComputedPanel({ health }: { health: Health }): React.ReactElement {
           <p className="t-micro-caps text-muted">Computed</p>
           <p className="t-body mt-2 text-ink">
             A price bound from this event&rsquo;s own resale record, and the cap comparison in whole
-            lamports. Both are arithmetic, and both are reproducible from the rows on screen.
+            lamports. Both are arithmetic, and both are reproducible from the rows on screen, which
+            are fixture rows and not a market record.
           </p>
         </div>
         <div className="rounded-panel border border-line bg-surface p-6">
@@ -339,7 +362,10 @@ async function HealthReport(): Promise<React.ReactElement> {
       </section>
 
       <section className="mt-16">
-        <h2 className="h-section text-ink">The chain</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="h-section text-ink">The chain</h2>
+          <RecordedOrLive askedCluster={chain.askedCluster} verifiedAt={artefact.checkedAt} />
+        </div>
         <p className="t-body mt-2 text-muted">
           What the server was told, what it asked, and what a verified artefact records. These are
           three different things and they are printed as three different fields.
@@ -356,6 +382,26 @@ async function HealthReport(): Promise<React.ReactElement> {
           {chain.askedCluster
             ? "The server queried a cluster, so programDeployed is a read of that cluster."
             : "The server queried no cluster, so programDeployed is the absence of a check rather than the result of one."}
+        </p>
+        <p className="t-body mt-4 text-muted">
+          The deployment a verified run recorded is on the rules page, with both transfers against
+          it:{" "}
+          <Link
+            href="/rules#enforcement-today"
+            className="u-transition text-accent underline underline-offset-2 hover:text-accent-press"
+          >
+            the recorded devnet proof
+          </Link>
+          . The program itself is {" "}
+          <a
+            href={artefact.explorer.program}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="u-transition text-accent underline underline-offset-2 hover:text-accent-press"
+          >
+            on the Solana explorer
+          </a>{" "}
+          at {artefact.programId.slice(0, 8)}…, verified {artefact.checkedAt.slice(0, 10)}.
         </p>
       </section>
 
@@ -419,6 +465,8 @@ export default async function PricingPage(): Promise<React.ReactElement> {
         {refusals}
 
         <RunPanel />
+
+        <SwarmRunPanel />
 
         {/* The deep link lands here, above the section that follows, because an
             id inside an async child is not in the first HTML the browser parses

@@ -1,0 +1,973 @@
+{
+  "arguments": {
+    "bandLowLamports": 900000000,
+    "capBps": 2500,
+    "ceilingLamports": 1250000000,
+    "faceLamports": 1000000000,
+    "jurisdiction": "ZZ",
+    "policy": 0
+  },
+  "authority": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+  "balances": {
+    "authorityEnd": 8942696760,
+    "authorityStart": 11538710280,
+    "basis": "the authority's balance when this run lineage first looked, against its balance now; a resumed run reports the whole lineage, not one process's share",
+    "spentLamports": 2596013520
+  },
+  "buyer": "GdFmKMVhQoZkZcqGcS65Ck6GgFM2N73h4og9HUHBSpM7",
+  "buyerAta": "ESZ45z91RgGQyhfBFi4dHx1USGVbQ285ZSb4EJ1hRfag",
+  "checkerVersion": "onchain-v2-devnet-2026-11-08",
+  "cluster": "devnet",
+  "clusterFacts": {
+    "frozenArtefact": "records/devnet-artefacts.json",
+    "frozenProgramId": "5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva",
+    "frozenProgramIsDeployTarget": false,
+    "funding": "the operator's funded authority; no faucet, no airdrop",
+    "token2022": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+  },
+  "deploy": {
+    "blockTime": 1794128505,
+    "error": null,
+    "errorCode": null,
+    "logs": [],
+    "note": "already executable when this run started; no deploy was sent",
+    "ok": true,
+    "signature": "67fwxdRp3eekxDW8kSUeYYeRswRNfpzPn3LdxRpFGa9gihwXkifnDKmv8kzuEDaUrEs1bfFHrvqcoMQTkGpbs4zb",
+    "slot": 519969104,
+    "wallClock": "2026-11-08T09:01:55.419Z"
+  },
+  "deployAddress": "Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF",
+  "elapsedBasis": "this process; every step carries the block time it landed at",
+  "elapsedSeconds": 1.5,
+  "errorCodes": {
+    "missing": {},
+    "observed": {
+      "6010": 1,
+      "6021": 1,
+      "6022": 2,
+      "6023": 1,
+      "6024": 1,
+      "6025": 1,
+      "6026": 3,
+      "6029": 1,
+      "6030": 1,
+      "6032": 1,
+      "6033": 1
+    },
+    "required": {
+      "6010": "E_CAP_EXCEEDED",
+      "6021": "E_BELOW_FLOOR",
+      "6022": "E_BAND_UNSATISFIABLE",
+      "6023": "E_POLICY_INVALID",
+      "6024": "E_FORECAST_EXISTS",
+      "6025": "E_ALREADY_SCORED",
+      "6026": "E_NOT_AUTHORITY",
+      "6029": "E_FORECAST_BACKDATED",
+      "6030": "E_SCORE_BELOW_WIDTH",
+      "6032": "E_BAND_EMPTY",
+      "6033": "E_AS_OF_AHEAD"
+    }
+  },
+  "explorer": {
+    "deploy": "https://explorer.solana.com/tx/67fwxdRp3eekxDW8kSUeYYeRswRNfpzPn3LdxRpFGa9gihwXkifnDKmv8kzuEDaUrEs1bfFHrvqcoMQTkGpbs4zb?cluster=devnet",
+    "mint": "https://explorer.solana.com/address/3xWUpfwdwAJXu4V9qH6ZdBbrTKZD61v2PamZV8GtemTr?cluster=devnet",
+    "program": "https://explorer.solana.com/address/Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF?cluster=devnet"
+  },
+  "extraMetas": "9C31YibqHCMfRvKExjn22uzf7qYCiKqaFspSyxjo4NoA",
+  "firstTransactionAt": "2026-11-08T09:01:45Z",
+  "localOnly": false,
+  "mints": {
+    "phase1": "3xWUpfwdwAJXu4V9qH6ZdBbrTKZD61v2PamZV8GtemTr",
+    "phase2": "5qnsRz9b644mhm3YHLmjh1T7XuHeXuJiP9BMkQbFtiPS"
+  },
+  "pdas": {
+    "band": "EMjUwS5VegsyAv476TbVAtL25qpq9GWpr1eMfUa7gXp8",
+    "extra-account-metas": "9C31YibqHCMfRvKExjn22uzf7qYCiKqaFspSyxjo4NoA",
+    "fee-authority": "8vruAGzh9WNN4xkfW5QQbm3bitAdrZvGq4Fu2cxvrfTg",
+    "forecast": "3kMLi9FyaPJ4DAb1brapfYKYySrMjsb32RkgeWYcJ387",
+    "rebate-pool": "4mquKNWxm5AXobrYr3fvcX3bQXdRnRsPCSFnsbADGHx3",
+    "record": "E2R3QC7uP3rfsHxeEVJNoTY5TQpiyhzjmwXi23iv67VB",
+    "score": "2MdKS5jmN7ohBbHxYNKjs7Xd9kPzWwL1aFHQm78B1NUT"
+  },
+  "phase2": {
+    "asOfUnix": 1794128725,
+    "band": "BghoaWLYn9XSSsjGVRnYv7HVxxazJEzfjVnQrHM17Zg9",
+    "bandHighLamports": 1100000000,
+    "bandLowLamports": 900000000,
+    "extraMetas": "9MmvhyHg7sezESszmnPqAZtXRP1Y8wv88ag2a2frVSBF",
+    "forecast": "ECCqxT3cupbmTjfwdK3fZhXYXpFKPX96aHX8QR6PcMmB",
+    "mint": "5qnsRz9b644mhm3YHLmjh1T7XuHeXuJiP9BMkQbFtiPS",
+    "missAsOfUnix": 1794128845,
+    "missForecast": "7zE7Cmsthx8kq6bRMVhX5qLeAVZB87U5Jz7xN9bPdoTD",
+    "missScore": "JCYemKnHYhVBWGmX7kEjrWDZS3VBSLNtdnyWnEBUC3AQ",
+    "modelHash": "AcYSQSk5GLsFNm3DZqadhmejR1PUMsoVgoRoeRp7HqLR",
+    "program": {
+      "bytes": 111504,
+      "path": "programs/cap_hook/target/deploy/cap_hook.so",
+      "sha256": "de89af3cf0831bc6bad181ee7762c83e6486c4b9d0facb6f99cd7cfa6e949cac"
+    },
+    "programId": "Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF",
+    "realisedLamports": 1000000000,
+    "record": "8XqbhXofAapJpBsp9PhcNgC49y5q3wsYW3zA2T2md36j",
+    "score": "59mnEms7UMZerp3cRVjmVdSibVB4QLhKexDwKskqiuss",
+    "scoringRule": "ticketpath-forecast-score-v1: Winkler interval score, alpha=1/5 (80% central interval); y=realised lamports, [l,u]=forecast band lamports; S=(u-l)+(2/alpha)*(l-y)*1{y<l}+(2/alpha)*(y-u)*1{y>u}; interval_score_micro=floor(S*1_000_000), stored as u64 micro-lamports; covered=1 iff l<=y<=u",
+    "scoringRuleHash": "bb9ddc66af224f68c63b16fe1a728205823ea3c73192ee843d7b059b4fa35063"
+  },
+  "program": {
+    "bytes": 111504,
+    "path": "programs/cap_hook/target/deploy/cap_hook.so",
+    "sha256": "de89af3cf0831bc6bad181ee7762c83e6486c4b9d0facb6f99cd7cfa6e949cac",
+    "sha256MatchesBuildOnDisk": true,
+    "sha256Source": "the bytes this run lineage deployed, taken from the build that sent them"
+  },
+  "programId": "Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF",
+  "proofs": {
+    "a": {
+      "authorityIsMintAuthority": true,
+      "authorityIsPayer": true,
+      "blockTime": 1794128542,
+      "decoded": {
+        "authority": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+        "band_low_lamports": 900000000,
+        "cap_bps": 2500,
+        "face_value_lamports": 1000000000,
+        "held_since_unix": 0,
+        "jurisdiction": "ZZ",
+        "pending_price_lamports": 0,
+        "policy": 0,
+        "status": 1
+      },
+      "heldSinceIsZero": true,
+      "mintAuthority": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+      "readSlot": 519969259,
+      "record": "E2R3QC7uP3rfsHxeEVJNoTY5TQpiyhzjmwXi23iv67VB",
+      "signature": "5yPfKgfeBau5M9iMBZfzvUUg51fdXMQYXaB6QHf1wSqw1knQG5xz2dMQu2tmMDwoiLg88tikWYJ9vSrmzLW2TkGL",
+      "slot": 519969257
+    },
+    "b": {
+      "admitted": true,
+      "blockTime": 1794128556,
+      "jurisdictionInLog": true,
+      "logLines": [
+        "Program log: ticketpath: cap admitted price=900000000 face=1000000000 cap_bps=2500 band_low=900000000 jurisdiction=ZZ"
+      ],
+      "priceLamports": 900000000,
+      "signature": "4p41qMzzdFQPCT3nt2Eq7KCKy69b4VcbHXoPYnZZwzhfoPf4d3952bBWS4mPRyZYYBUBn3ufsyZwB26TCxcdAciE",
+      "slot": 519969316,
+      "stagedSignature": "2EsyJNirbtWird2iB4PZFwAyFbHRZ8ZF7kNDZYLUSeZ4VweKjUW8NhBD2FakQgZfiYWi1XuJK9Zj1uXZQHqqgQF8"
+    },
+    "c": {
+      "admitted": false,
+      "bandLowLamports": 900000000,
+      "blockTime": 1794128558,
+      "error": "custom program error: 0x1785 (6021 E_BELOW_FLOOR)",
+      "errorCode": 6021,
+      "logLines": [
+        "Program log: ticketpath: below floor price=899999999 band_low=900000000 face=1000000000 jurisdiction=ZZ"
+      ],
+      "priceLamports": 899999999,
+      "signature": "3bYXjuM2Xx6VL1xnv1rnhfSE8anLiTxzv7WPYbQ6CvAKipFixEHHthdatdMRkiUX8VVsp3ymX2t8tuXjCyz7E4A9",
+      "slot": 519969326
+    },
+    "d": {
+      "atCap": {
+        "admitted": true,
+        "blockTime": 1794128561,
+        "heldSinceUnix": 1794128560,
+        "logLines": [
+          "Program log: ticketpath: cap admitted price=1250000000 face=1000000000 cap_bps=2500 band_low=900000000 jurisdiction=ZZ"
+        ],
+        "priceLamports": 1250000000,
+        "readSlot": 519969349,
+        "signature": "3BFRPmCphny76AN2hmgWvFut7QBjJZAiv7sEU158rYrz6vGuVnbMRySCP5YCYNigDDPATHq8nZHkodwRnYPKByik",
+        "slot": 519969336
+      },
+      "ceilingLamports": 1250000000,
+      "overCap": {
+        "admitted": false,
+        "blockTime": 1794128570,
+        "error": "custom program error: 0x177a (6010 E_CAP_EXCEEDED)",
+        "errorCode": 6010,
+        "logLines": [
+          "Program log: ticketpath: cap exceeded price=1250000001 face=1000000000 cap_bps=2500 jurisdiction=ZZ"
+        ],
+        "priceLamports": 1250000001,
+        "signature": "4G95YU5yES6Mku5SfBrJP5nEDDzywVyUsCNMkmu2J2Zjp6SbP7ad9vsnWZKZ19K57MLGMbb5NYPCJcJeRE7YRuJh",
+        "slot": 519969373
+      }
+    },
+    "e": {
+      "bandUnsatisfiable": {
+        "admitted": false,
+        "bandLowLamports": 1250000001,
+        "blockTime": 1794128588,
+        "ceilingLamports": 1250000000,
+        "error": "custom program error: 0x1786 (6022 E_BAND_UNSATISFIABLE)",
+        "errorCode": 6022,
+        "logLines": [],
+        "signature": "5i2R1NsmxHK7LRaN85BwLEwkrq7SiJhgDB9ogeE56MWnNGdeLSEs6AwGBW8y4nynWyM8H4qhuFftFTYKMVZsD1mE",
+        "slot": 519969448
+      },
+      "extraMetas": "FTuSvMgKLyLj8As9qqhXmA6EGPvik8GZiiHTd2dFSeSt",
+      "mint": "4yRntMKB8QKd3LrdLgQQVnRh9ExjHvc8SHcttudq5j9n",
+      "policy2": {
+        "admitted": false,
+        "blockTime": 1794128586,
+        "error": "custom program error: 0x1787 (6023 E_POLICY_INVALID)",
+        "errorCode": 6023,
+        "logLines": [],
+        "policy": 2,
+        "signature": "5rPWGswPB8wqPsCmkLdRZPkeSuaqWuN3FvUmoegNf4TPxJu37QTgmRQEWAwWASPn7ip4BdWW2Xrs8Tgnqgiv9R8Y",
+        "slot": 519969443
+      },
+      "record": "BdeSaZozFCXUnLvMbkBdX12aLt5Bjjpxuzf6G1JbvYRw",
+      "recordCreated": false
+    },
+    "f": {
+      "heldSinceIsZero": false,
+      "heldSinceUnix": 1794128555,
+      "pendingPriceAfterAdmission": 0,
+      "readSlot": 519969317,
+      "signature": "4p41qMzzdFQPCT3nt2Eq7KCKy69b4VcbHXoPYnZZwzhfoPf4d3952bBWS4mPRyZYYBUBn3ufsyZwB26TCxcdAciE",
+      "slot": 519969316,
+      "stagingConsumed": true
+    },
+    "g": {
+      "address": "E2R3QC7uP3rfsHxeEVJNoTY5TQpiyhzjmwXi23iv67VB",
+      "authority": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+      "nonAuthority": "o852p3AZ7fxQcUMxdDPHLeDMvWw5N1Q6ufrVU5eud9t",
+      "readSlotAfter": 519969516,
+      "readSlotBefore": 519969475,
+      "recordSha256AfterStage": "f69130feaf603a2f756e5c523ee616772c2910513acf24e7c17dd1ef93bbb203",
+      "recordSha256AfterStatus": "f69130feaf603a2f756e5c523ee616772c2910513acf24e7c17dd1ef93bbb203",
+      "recordSha256Before": "f69130feaf603a2f756e5c523ee616772c2910513acf24e7c17dd1ef93bbb203",
+      "recordUnchanged": true,
+      "setStatus": {
+        "blockTime": 1794128600,
+        "error": "custom program error: 0x178a (6026 E_NOT_AUTHORITY)",
+        "errorCode": 6026,
+        "ok": false,
+        "signature": "65Ta8BWHLfoAR6AtZDZz5NyQZfV2sKDEvAca5Sq2BBkfchWPTVMEuQwEttruBecERwxZNeftzSU71rHvgsic17ng",
+        "slot": 519969499
+      },
+      "stage": {
+        "blockTime": 1794128595,
+        "error": "custom program error: 0x178a (6026 E_NOT_AUTHORITY)",
+        "errorCode": 6026,
+        "ok": false,
+        "signature": "4r7fa2J4WFV8EyznUkpCh3Fu99UowkgT3yrEhHrCdYFrr7Dw4J85tCbdMtyPekvBy3mK5gxNgJQs9Wurr2FGsttN",
+        "slot": 519969480
+      },
+      "stageReadSlot": 519969495,
+      "statusAfter": 1
+    }
+  },
+  "proofs_v2": {
+    "alreadyScored": {
+      "address": "59mnEms7UMZerp3cRVjmVdSibVB4QLhKexDwKskqiuss",
+      "blockTime": 1794128652,
+      "error": "custom program error: 0x1789 (6025 E_ALREADY_SCORED)",
+      "errorCode": 6025,
+      "ok": false,
+      "readSlot": 519969731,
+      "scoreSha256After": "22851b4d430834434ecdadd078a55166327e791e17f4775a9386a8a53034b1eb",
+      "scoreSha256Before": "22851b4d430834434ecdadd078a55166327e791e17f4775a9386a8a53034b1eb",
+      "scoreUnchanged": true,
+      "signature": "3PJBqHgeSGkLGSMVsYRc4tFn4nxicmLduE5M6KNErzfyHzVvHna7mwknUhj5oE1eWB9bQZSPDXF5PgvvdX8wzeau",
+      "slot": 519969718
+    },
+    "asOfAhead": {
+      "address": "BghoaWLYn9XSSsjGVRnYv7HVxxazJEzfjVnQrHM17Zg9",
+      "asOfSlot": 519970851,
+      "bandSha256After": "2c10009ae5f6a2c6b93f1c03f37bf803c0aabf2ef86126cccce65e923ddb0a2e",
+      "bandSha256Before": "2c10009ae5f6a2c6b93f1c03f37bf803c0aabf2ef86126cccce65e923ddb0a2e",
+      "bandUnchanged": true,
+      "blockTime": 1794128685,
+      "error": "custom program error: 0x1791 (6033 E_AS_OF_AHEAD)",
+      "errorCode": 6033,
+      "ok": false,
+      "publishedSlotBefore": 519969851,
+      "readSlot": 519969859,
+      "signature": "55VWy2qaohTMS8BDo8HxTTkCb8YpnCenBeugGfoo9V4o4sgGjZxLsoPabgEfHXTTMh17Fz5ydDwVUWmg59kZdjf7",
+      "slot": 519969856
+    },
+    "backdatedForecast": {
+      "address": "Bbt2t71cGE1E1mmoee9U8MaD8gSqkk4baTuCYx1zAQTJ",
+      "asOfUnix": 1762592670,
+      "backdatedBySeconds": 31536000,
+      "blockTime": 1794128670,
+      "error": "custom program error: 0x178d (6029 E_FORECAST_BACKDATED)",
+      "errorCode": 6029,
+      "forecastCreated": false,
+      "ok": false,
+      "signature": "4nWYNFmddJdKw18v193UcawSkLMoKWAFShKmWE6QaRZwwhpLH1hAFVQVbPg5ZVy8nFKBQHXZj6KF6z6GRKp7hocc",
+      "slot": 519969792
+    },
+    "band": {
+      "address": "BghoaWLYn9XSSsjGVRnYv7HVxxazJEzfjVnQrHM17Zg9",
+      "asOfSlot": 519969632,
+      "band": {
+        "as_of_slot": 519969632,
+        "authority": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+        "high": 1100000000,
+        "low": 900000000,
+        "model_hash": "AcYSQSk5GLsFNm3DZqadhmejR1PUMsoVgoRoeRp7HqLR",
+        "published_slot": 519969638,
+        "refused": 0,
+        "sample_n": 42,
+        "version": 1
+      },
+      "blockTime": 1794128633,
+      "error": null,
+      "errorCode": null,
+      "ok": true,
+      "publishedSlotAtLeastAsOf": true,
+      "readSlot": 519969641,
+      "signature": "3Mze1eKZXDz7Qg3bx4pXtpt2vSEJJHX9wPYqHS2VRSYA82wpKXByXYciQXVYdem53zmp2H9NfdjDWRgjRRrkLXCF",
+      "slot": 519969638
+    },
+    "bandRefusedNormalised": {
+      "address": "BghoaWLYn9XSSsjGVRnYv7HVxxazJEzfjVnQrHM17Zg9",
+      "band": {
+        "as_of_slot": 519969859,
+        "authority": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+        "high": 1100000000,
+        "low": 900000000,
+        "model_hash": "AcYSQSk5GLsFNm3DZqadhmejR1PUMsoVgoRoeRp7HqLR",
+        "published_slot": 519969864,
+        "refused": 1,
+        "sample_n": 42,
+        "version": 1
+      },
+      "blockTime": 1794128687,
+      "error": null,
+      "errorCode": null,
+      "headRewritten": true,
+      "ok": true,
+      "readSlot": 519969865,
+      "refusedNormalised": true,
+      "sentRefused": 7,
+      "signature": "38xe8eQFUuniPW7b8Fyrjp1pcTPRV42KVwz3ArjMENEtxJveWJHETUsVVyiXqS3GgCoUSffMXSnyUFNX4GHAPnse",
+      "slot": 519969864,
+      "storedRefused": 1
+    },
+    "emptyBand": {
+      "address": "BghoaWLYn9XSSsjGVRnYv7HVxxazJEzfjVnQrHM17Zg9",
+      "bandSha256After": "2c10009ae5f6a2c6b93f1c03f37bf803c0aabf2ef86126cccce65e923ddb0a2e",
+      "bandSha256Before": "2c10009ae5f6a2c6b93f1c03f37bf803c0aabf2ef86126cccce65e923ddb0a2e",
+      "bandUnchanged": true,
+      "blockTime": 1794128683,
+      "error": "custom program error: 0x1790 (6032 E_BAND_EMPTY)",
+      "errorCode": 6032,
+      "ok": false,
+      "readSlot": 519969851,
+      "refused": 0,
+      "sampleN": 0,
+      "signature": "o41Zhi7C7qcvfXDKG6JpPWQqCJWZ4Abq6q5vwjzj9ji1ns3ZG8SgF6Y6rbpmeQ32LEwM1qizXFtDVLXkgT7StEZ",
+      "slot": 519969848
+    },
+    "forecast": {
+      "address": "ECCqxT3cupbmTjfwdK3fZhXYXpFKPX96aHX8QR6PcMmB",
+      "blockTime": 1794128635,
+      "createdSlot": 519969644,
+      "error": null,
+      "errorCode": null,
+      "forecast": {
+        "as_of_unix": 1794128725,
+        "authority": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+        "created_slot": 519969644,
+        "high": 1100000000,
+        "low": 900000000,
+        "mint": "5qnsRz9b644mhm3YHLmjh1T7XuHeXuJiP9BMkQbFtiPS",
+        "model_hash": "AcYSQSk5GLsFNm3DZqadhmejR1PUMsoVgoRoeRp7HqLR",
+        "sample_n": 42,
+        "scoring_rule_hash": "DdNrSohetNVNg4yyUWh64fFXiN6LXDNyfHg8HLVQ4Zb8",
+        "version": 1
+      },
+      "ok": true,
+      "readSlot": 519969700,
+      "scoringRuleHash": "bb9ddc66af224f68c63b16fe1a728205823ea3c73192ee843d7b059b4fa35063",
+      "signature": "ZvjnAtAwD4TXsny4qkViuVZ9KoRPK1gxwT4Mj2MNTCAbDtr5KDWP4mVPaaxQTUEcsiA9bxXz7RzAHsf6Nf94rWM",
+      "slot": 519969644
+    },
+    "forecastExists": {
+      "address": "ECCqxT3cupbmTjfwdK3fZhXYXpFKPX96aHX8QR6PcMmB",
+      "blockTime": 1794128649,
+      "error": "custom program error: 0x1788 (6024 E_FORECAST_EXISTS)",
+      "errorCode": 6024,
+      "forecastSha256After": "b6ff86f41bcfe929f71742f6f9c41b1d28997fbee2d456cffb3cf702c718d855",
+      "forecastSha256Before": "b6ff86f41bcfe929f71742f6f9c41b1d28997fbee2d456cffb3cf702c718d855",
+      "forecastUnchanged": true,
+      "ok": false,
+      "readSlot": 519969705,
+      "signature": "3v9SERyk7eWCsBGzc76ts1Fy4Nw7QQmkg9vUtWPZaby4A5VhWkMonN3pZhqtNEwjHZy4hmd1TAe7hYcoq7L3sMT9",
+      "slot": 519969704
+    },
+    "nonAuthority": {
+      "address": "BghoaWLYn9XSSsjGVRnYv7HVxxazJEzfjVnQrHM17Zg9",
+      "authority": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+      "bandSha256After": "2c10009ae5f6a2c6b93f1c03f37bf803c0aabf2ef86126cccce65e923ddb0a2e",
+      "bandSha256Before": "2c10009ae5f6a2c6b93f1c03f37bf803c0aabf2ef86126cccce65e923ddb0a2e",
+      "bandUnchanged": true,
+      "blockTime": 1794128661,
+      "error": "custom program error: 0x178a (6026 E_NOT_AUTHORITY)",
+      "errorCode": 6026,
+      "nonAuthority": "4ojv3i3gDP9FjqHqqKpnJrD4aVbKgn1uSHSBHZdChubG",
+      "ok": false,
+      "readSlot": 519969768,
+      "signature": "431fxGE2MJkLbj7JYsQmT9AZGtwESRAwnxW76zVZtFag2Z5P6R6A2kUCFY4VgXVNfNc3ZbTtdPUSJqhpz5BNhP3t",
+      "slot": 519969755
+    },
+    "score": {
+      "address": "59mnEms7UMZerp3cRVjmVdSibVB4QLhKexDwKskqiuss",
+      "blockTime": 1794128650,
+      "error": null,
+      "errorCode": null,
+      "expectedCovered": true,
+      "expectedIntervalScoreMicro": 200000000000000,
+      "forecastAddress": "ECCqxT3cupbmTjfwdK3fZhXYXpFKPX96aHX8QR6PcMmB",
+      "forecastSha256After": "b6ff86f41bcfe929f71742f6f9c41b1d28997fbee2d456cffb3cf702c718d855",
+      "forecastSha256Before": "b6ff86f41bcfe929f71742f6f9c41b1d28997fbee2d456cffb3cf702c718d855",
+      "forecastUnchanged": true,
+      "ok": true,
+      "readSlot": 519969712,
+      "score": {
+        "covered": 1,
+        "interval_score_micro": 200000000000000,
+        "realised_lamports": 1000000000,
+        "scored_slot": 519969710,
+        "scorer": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+        "version": 1
+      },
+      "signature": "4CPUbuVqTDyRpB3byWL7vjjZtiwc5pS2g7Y5CPapz3AHWxr6CeBrBLHqmQg9E3iuCfGfRrxAoJEHvQsF1xcVGD3r",
+      "slot": 519969710
+    },
+    "scoreBelowWidth": {
+      "address": "JCYemKnHYhVBWGmX7kEjrWDZS3VBSLNtdnyWnEBUC3AQ",
+      "blockTime": 1794128678,
+      "error": "custom program error: 0x178e (6030 E_SCORE_BELOW_WIDTH)",
+      "errorCode": 6030,
+      "forecast": "7zE7Cmsthx8kq6bRMVhX5qLeAVZB87U5Jz7xN9bPdoTD",
+      "forecastSignature": "3N6t3tXrwtViBd6nbEFPHwMnebu3cGpoEw14wvCmi1nt6iGQYAnXeYcQGHYEkGrhs7NDWFUboShWywLyC61ZLhMZ",
+      "ok": false,
+      "scoreCreated": false,
+      "signature": "owtiw2b7E4CxmP9dixuPBzujz1tqWVFdzdduTsYz4azSgixsLPTT8r2h8jJZarcjTrMdrLdwYEHXwiF6tDZqxmJ",
+      "slot": 519969824,
+      "underscoredBy": 199999999999999,
+      "widthMicro": 200000000000000
+    },
+    "scoreMiss": {
+      "address": "JCYemKnHYhVBWGmX7kEjrWDZS3VBSLNtdnyWnEBUC3AQ",
+      "blockTime": 1794128689,
+      "covered": false,
+      "error": null,
+      "errorCode": null,
+      "expectedIntervalScoreMicro": 200000010000000,
+      "forecastAddress": "7zE7Cmsthx8kq6bRMVhX5qLeAVZB87U5Jz7xN9bPdoTD",
+      "ok": true,
+      "readSlot": 519969887,
+      "realisedOutsideBand": true,
+      "score": {
+        "covered": 0,
+        "interval_score_micro": 200000010000000,
+        "realised_lamports": 1100000001,
+        "scored_slot": 519969870,
+        "scorer": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+        "version": 1
+      },
+      "signature": "5ZG5tWvSQKRFL7BorNTiJeZno1DpJp3JkUgMdmTQCRyKTQ3fc5tpyJK3vJof83NgTugVvnAKu8LkjsFJRLAx257h",
+      "slot": 519969870
+    },
+    "unsatisfiableBand": {
+      "address": "BghoaWLYn9XSSsjGVRnYv7HVxxazJEzfjVnQrHM17Zg9",
+      "bandSha256After": "2c10009ae5f6a2c6b93f1c03f37bf803c0aabf2ef86126cccce65e923ddb0a2e",
+      "bandSha256Before": "2c10009ae5f6a2c6b93f1c03f37bf803c0aabf2ef86126cccce65e923ddb0a2e",
+      "bandUnchanged": true,
+      "blockTime": 1794128665,
+      "error": "custom program error: 0x1786 (6022 E_BAND_UNSATISFIABLE)",
+      "errorCode": 6022,
+      "high": 900000000,
+      "low": 1100000001,
+      "ok": false,
+      "readSlot": 519969789,
+      "signature": "EScdcDoo91BJqqsVXLKxVYf3v8FuAwvJbJxSGHKBTotRHgLAU1LfPzm9HtPBESjFcT4JDYF7U534hV3iBo17KSb",
+      "slot": 519969773
+    }
+  },
+  "record": "E2R3QC7uP3rfsHxeEVJNoTY5TQpiyhzjmwXi23iv67VB",
+  "recordAtEnd": {
+    "authority": "75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy",
+    "band_low_lamports": 900000000,
+    "cap_bps": 2500,
+    "face_value_lamports": 1000000000,
+    "held_since_unix": 1794128560,
+    "jurisdiction": "ZZ",
+    "pending_price_lamports": 1250000001,
+    "policy": 0,
+    "status": 1
+  },
+  "recordAtEndSlot": 519976017,
+  "refusals": [
+    {
+      "error": "custom program error: 0x177a (6010 E_CAP_EXCEEDED)",
+      "errorCode": 6010,
+      "errorName": "E_CAP_EXCEEDED",
+      "explorer": "https://explorer.solana.com/tx/4G95YU5yES6Mku5SfBrJP5nEDDzywVyUsCNMkmu2J2Zjp6SbP7ad9vsnWZKZ19K57MLGMbb5NYPCJcJeRE7YRuJh?cluster=devnet",
+      "phase": 1,
+      "signature": "4G95YU5yES6Mku5SfBrJP5nEDDzywVyUsCNMkmu2J2Zjp6SbP7ad9vsnWZKZ19K57MLGMbb5NYPCJcJeRE7YRuJh",
+      "slot": 519969373,
+      "step": "transferOverCap"
+    },
+    {
+      "error": "custom program error: 0x1785 (6021 E_BELOW_FLOOR)",
+      "errorCode": 6021,
+      "errorName": "E_BELOW_FLOOR",
+      "explorer": "https://explorer.solana.com/tx/3bYXjuM2Xx6VL1xnv1rnhfSE8anLiTxzv7WPYbQ6CvAKipFixEHHthdatdMRkiUX8VVsp3ymX2t8tuXjCyz7E4A9?cluster=devnet",
+      "phase": 1,
+      "signature": "3bYXjuM2Xx6VL1xnv1rnhfSE8anLiTxzv7WPYbQ6CvAKipFixEHHthdatdMRkiUX8VVsp3ymX2t8tuXjCyz7E4A9",
+      "slot": 519969326,
+      "step": "transferBelowFloor"
+    },
+    {
+      "error": "custom program error: 0x1786 (6022 E_BAND_UNSATISFIABLE)",
+      "errorCode": 6022,
+      "errorName": "E_BAND_UNSATISFIABLE",
+      "explorer": "https://explorer.solana.com/tx/5i2R1NsmxHK7LRaN85BwLEwkrq7SiJhgDB9ogeE56MWnNGdeLSEs6AwGBW8y4nynWyM8H4qhuFftFTYKMVZsD1mE?cluster=devnet",
+      "phase": 1,
+      "signature": "5i2R1NsmxHK7LRaN85BwLEwkrq7SiJhgDB9ogeE56MWnNGdeLSEs6AwGBW8y4nynWyM8H4qhuFftFTYKMVZsD1mE",
+      "slot": 519969448,
+      "step": "initRecordUnsatisfiable"
+    },
+    {
+      "error": "custom program error: 0x1786 (6022 E_BAND_UNSATISFIABLE)",
+      "errorCode": 6022,
+      "errorName": "E_BAND_UNSATISFIABLE",
+      "explorer": "https://explorer.solana.com/tx/EScdcDoo91BJqqsVXLKxVYf3v8FuAwvJbJxSGHKBTotRHgLAU1LfPzm9HtPBESjFcT4JDYF7U534hV3iBo17KSb?cluster=devnet",
+      "phase": 2,
+      "signature": "EScdcDoo91BJqqsVXLKxVYf3v8FuAwvJbJxSGHKBTotRHgLAU1LfPzm9HtPBESjFcT4JDYF7U534hV3iBo17KSb",
+      "slot": 519969773,
+      "step": "v2PublishBandUnsatisfiable"
+    },
+    {
+      "error": "custom program error: 0x1787 (6023 E_POLICY_INVALID)",
+      "errorCode": 6023,
+      "errorName": "E_POLICY_INVALID",
+      "explorer": "https://explorer.solana.com/tx/5rPWGswPB8wqPsCmkLdRZPkeSuaqWuN3FvUmoegNf4TPxJu37QTgmRQEWAwWASPn7ip4BdWW2Xrs8Tgnqgiv9R8Y?cluster=devnet",
+      "phase": 1,
+      "signature": "5rPWGswPB8wqPsCmkLdRZPkeSuaqWuN3FvUmoegNf4TPxJu37QTgmRQEWAwWASPn7ip4BdWW2Xrs8Tgnqgiv9R8Y",
+      "slot": 519969443,
+      "step": "initRecordPolicy2"
+    },
+    {
+      "error": "custom program error: 0x1788 (6024 E_FORECAST_EXISTS)",
+      "errorCode": 6024,
+      "errorName": "E_FORECAST_EXISTS",
+      "explorer": "https://explorer.solana.com/tx/3v9SERyk7eWCsBGzc76ts1Fy4Nw7QQmkg9vUtWPZaby4A5VhWkMonN3pZhqtNEwjHZy4hmd1TAe7hYcoq7L3sMT9?cluster=devnet",
+      "phase": 2,
+      "signature": "3v9SERyk7eWCsBGzc76ts1Fy4Nw7QQmkg9vUtWPZaby4A5VhWkMonN3pZhqtNEwjHZy4hmd1TAe7hYcoq7L3sMT9",
+      "slot": 519969704,
+      "step": "v2LogForecastAgain"
+    },
+    {
+      "error": "custom program error: 0x1789 (6025 E_ALREADY_SCORED)",
+      "errorCode": 6025,
+      "errorName": "E_ALREADY_SCORED",
+      "explorer": "https://explorer.solana.com/tx/3PJBqHgeSGkLGSMVsYRc4tFn4nxicmLduE5M6KNErzfyHzVvHna7mwknUhj5oE1eWB9bQZSPDXF5PgvvdX8wzeau?cluster=devnet",
+      "phase": 2,
+      "signature": "3PJBqHgeSGkLGSMVsYRc4tFn4nxicmLduE5M6KNErzfyHzVvHna7mwknUhj5oE1eWB9bQZSPDXF5PgvvdX8wzeau",
+      "slot": 519969718,
+      "step": "v2ScoreForecastAgain"
+    },
+    {
+      "error": "custom program error: 0x178a (6026 E_NOT_AUTHORITY)",
+      "errorCode": 6026,
+      "errorName": "E_NOT_AUTHORITY",
+      "explorer": "https://explorer.solana.com/tx/4r7fa2J4WFV8EyznUkpCh3Fu99UowkgT3yrEhHrCdYFrr7Dw4J85tCbdMtyPekvBy3mK5gxNgJQs9Wurr2FGsttN?cluster=devnet",
+      "phase": 1,
+      "signature": "4r7fa2J4WFV8EyznUkpCh3Fu99UowkgT3yrEhHrCdYFrr7Dw4J85tCbdMtyPekvBy3mK5gxNgJQs9Wurr2FGsttN",
+      "slot": 519969480,
+      "step": "v2SetPendingPriceNonAuthority"
+    },
+    {
+      "error": "custom program error: 0x178a (6026 E_NOT_AUTHORITY)",
+      "errorCode": 6026,
+      "errorName": "E_NOT_AUTHORITY",
+      "explorer": "https://explorer.solana.com/tx/65Ta8BWHLfoAR6AtZDZz5NyQZfV2sKDEvAca5Sq2BBkfchWPTVMEuQwEttruBecERwxZNeftzSU71rHvgsic17ng?cluster=devnet",
+      "phase": 1,
+      "signature": "65Ta8BWHLfoAR6AtZDZz5NyQZfV2sKDEvAca5Sq2BBkfchWPTVMEuQwEttruBecERwxZNeftzSU71rHvgsic17ng",
+      "slot": 519969499,
+      "step": "v2SetStatusNonAuthority"
+    },
+    {
+      "error": "custom program error: 0x178a (6026 E_NOT_AUTHORITY)",
+      "errorCode": 6026,
+      "errorName": "E_NOT_AUTHORITY",
+      "explorer": "https://explorer.solana.com/tx/431fxGE2MJkLbj7JYsQmT9AZGtwESRAwnxW76zVZtFag2Z5P6R6A2kUCFY4VgXVNfNc3ZbTtdPUSJqhpz5BNhP3t?cluster=devnet",
+      "phase": 2,
+      "signature": "431fxGE2MJkLbj7JYsQmT9AZGtwESRAwnxW76zVZtFag2Z5P6R6A2kUCFY4VgXVNfNc3ZbTtdPUSJqhpz5BNhP3t",
+      "slot": 519969755,
+      "step": "v2PublishBandNonAuthority"
+    },
+    {
+      "error": "custom program error: 0x178d (6029 E_FORECAST_BACKDATED)",
+      "errorCode": 6029,
+      "errorName": "E_FORECAST_BACKDATED",
+      "explorer": "https://explorer.solana.com/tx/4nWYNFmddJdKw18v193UcawSkLMoKWAFShKmWE6QaRZwwhpLH1hAFVQVbPg5ZVy8nFKBQHXZj6KF6z6GRKp7hocc?cluster=devnet",
+      "phase": 2,
+      "signature": "4nWYNFmddJdKw18v193UcawSkLMoKWAFShKmWE6QaRZwwhpLH1hAFVQVbPg5ZVy8nFKBQHXZj6KF6z6GRKp7hocc",
+      "slot": 519969792,
+      "step": "v2LogForecastBackdated"
+    },
+    {
+      "error": "custom program error: 0x178e (6030 E_SCORE_BELOW_WIDTH)",
+      "errorCode": 6030,
+      "errorName": "E_SCORE_BELOW_WIDTH",
+      "explorer": "https://explorer.solana.com/tx/owtiw2b7E4CxmP9dixuPBzujz1tqWVFdzdduTsYz4azSgixsLPTT8r2h8jJZarcjTrMdrLdwYEHXwiF6tDZqxmJ?cluster=devnet",
+      "phase": 2,
+      "signature": "owtiw2b7E4CxmP9dixuPBzujz1tqWVFdzdduTsYz4azSgixsLPTT8r2h8jJZarcjTrMdrLdwYEHXwiF6tDZqxmJ",
+      "slot": 519969824,
+      "step": "v2ScoreBelowWidth"
+    },
+    {
+      "error": "custom program error: 0x1790 (6032 E_BAND_EMPTY)",
+      "errorCode": 6032,
+      "errorName": "E_BAND_EMPTY",
+      "explorer": "https://explorer.solana.com/tx/o41Zhi7C7qcvfXDKG6JpPWQqCJWZ4Abq6q5vwjzj9ji1ns3ZG8SgF6Y6rbpmeQ32LEwM1qizXFtDVLXkgT7StEZ?cluster=devnet",
+      "phase": 2,
+      "signature": "o41Zhi7C7qcvfXDKG6JpPWQqCJWZ4Abq6q5vwjzj9ji1ns3ZG8SgF6Y6rbpmeQ32LEwM1qizXFtDVLXkgT7StEZ",
+      "slot": 519969848,
+      "step": "v2PublishBandEmpty"
+    },
+    {
+      "error": "custom program error: 0x1791 (6033 E_AS_OF_AHEAD)",
+      "errorCode": 6033,
+      "errorName": "E_AS_OF_AHEAD",
+      "explorer": "https://explorer.solana.com/tx/55VWy2qaohTMS8BDo8HxTTkCb8YpnCenBeugGfoo9V4o4sgGjZxLsoPabgEfHXTTMh17Fz5ydDwVUWmg59kZdjf7?cluster=devnet",
+      "phase": 2,
+      "signature": "55VWy2qaohTMS8BDo8HxTTkCb8YpnCenBeugGfoo9V4o4sgGjZxLsoPabgEfHXTTMh17Fz5ydDwVUWmg59kZdjf7",
+      "slot": 519969856,
+      "step": "v2PublishBandAsOfAhead"
+    }
+  ],
+  "resume": {
+    "note": "a local run's bookkeeping, git-ignored, not part of this record",
+    "path": ".swarm-runs/v2-devnet/resume.json"
+  },
+  "resumedSteps": [
+    "1:extraMetas",
+    "2:extraMetas",
+    "mint:1:main",
+    "mint:2:main",
+    "proof:1:a",
+    "proof:1:b",
+    "proof:1:c",
+    "proof:1:d",
+    "proof:1:e",
+    "proof:1:f",
+    "proof:1:g",
+    "proof:2:a",
+    "proof:2:v2.alreadyScored",
+    "proof:2:v2.asOfAhead",
+    "proof:2:v2.backdatedForecast",
+    "proof:2:v2.band",
+    "proof:2:v2.bandRefusedNormalised",
+    "proof:2:v2.emptyBand",
+    "proof:2:v2.forecast",
+    "proof:2:v2.forecastExists",
+    "proof:2:v2.nonAuthority",
+    "proof:2:v2.score",
+    "proof:2:v2.scoreBelowWidth",
+    "proof:2:v2.scoreMiss",
+    "proof:2:v2.unsatisfiable",
+    "tickets:1"
+  ],
+  "rpcUrl": "https://api.devnet.solana.com",
+  "seller": "RMGwJbLW4Vp6RjoMgFrvxPoAxq2vHxGQggw19tEQCQt",
+  "startedAt": "2026-11-08T09:29:17.651Z",
+  "steps": {
+    "deploy": {
+      "blockTime": 1794128505,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/67fwxdRp3eekxDW8kSUeYYeRswRNfpzPn3LdxRpFGa9gihwXkifnDKmv8kzuEDaUrEs1bfFHrvqcoMQTkGpbs4zb?cluster=devnet",
+      "signature": "67fwxdRp3eekxDW8kSUeYYeRswRNfpzPn3LdxRpFGa9gihwXkifnDKmv8kzuEDaUrEs1bfFHrvqcoMQTkGpbs4zb",
+      "slot": 519969104
+    },
+    "extraMetas": {
+      "blockTime": 1794128540,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/2jsQ7yhGhvDhwcGETrjtmwmoH7vTRw8wL8zXPv7fbHfAjmxsTCM4rnLCRjrfmGdpjz89hW4md2eXNY7REj1SxrcJ?cluster=devnet",
+      "signature": "2jsQ7yhGhvDhwcGETrjtmwmoH7vTRw8wL8zXPv7fbHfAjmxsTCM4rnLCRjrfmGdpjz89hW4md2eXNY7REj1SxrcJ",
+      "slot": 519969250
+    },
+    "initRecord": {
+      "blockTime": 1794128542,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/5yPfKgfeBau5M9iMBZfzvUUg51fdXMQYXaB6QHf1wSqw1knQG5xz2dMQu2tmMDwoiLg88tikWYJ9vSrmzLW2TkGL?cluster=devnet",
+      "signature": "5yPfKgfeBau5M9iMBZfzvUUg51fdXMQYXaB6QHf1wSqw1knQG5xz2dMQu2tmMDwoiLg88tikWYJ9vSrmzLW2TkGL",
+      "slot": 519969257
+    },
+    "initRecordPolicy2": {
+      "blockTime": 1794128586,
+      "error": "custom program error: 0x1787 (6023 E_POLICY_INVALID)",
+      "errorCode": 6023,
+      "explorer": "https://explorer.solana.com/tx/5rPWGswPB8wqPsCmkLdRZPkeSuaqWuN3FvUmoegNf4TPxJu37QTgmRQEWAwWASPn7ip4BdWW2Xrs8Tgnqgiv9R8Y?cluster=devnet",
+      "signature": "5rPWGswPB8wqPsCmkLdRZPkeSuaqWuN3FvUmoegNf4TPxJu37QTgmRQEWAwWASPn7ip4BdWW2Xrs8Tgnqgiv9R8Y",
+      "slot": 519969443
+    },
+    "initRecordUnsatisfiable": {
+      "blockTime": 1794128588,
+      "error": "custom program error: 0x1786 (6022 E_BAND_UNSATISFIABLE)",
+      "errorCode": 6022,
+      "explorer": "https://explorer.solana.com/tx/5i2R1NsmxHK7LRaN85BwLEwkrq7SiJhgDB9ogeE56MWnNGdeLSEs6AwGBW8y4nynWyM8H4qhuFftFTYKMVZsD1mE?cluster=devnet",
+      "signature": "5i2R1NsmxHK7LRaN85BwLEwkrq7SiJhgDB9ogeE56MWnNGdeLSEs6AwGBW8y4nynWyM8H4qhuFftFTYKMVZsD1mE",
+      "slot": 519969448
+    },
+    "refusalMintMetas": {
+      "blockTime": 1794128585,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/5vCZiWBzYXe2NB76VCfPBDEuyb8FKmmBN7qDrtP6x9veprVpXXWNWsUVi3Ma1eCVrWt5Pbd8pNfMoYSyvV5HRioH?cluster=devnet",
+      "signature": "5vCZiWBzYXe2NB76VCfPBDEuyb8FKmmBN7qDrtP6x9veprVpXXWNWsUVi3Ma1eCVrWt5Pbd8pNfMoYSyvV5HRioH",
+      "slot": 519969436
+    },
+    "stage-transferAtCap": {
+      "blockTime": 1794128559,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/5gsaH8ZyKRXaQNpqUNZT866wvbwWMc3K1C3iM35Xnss6ueAnqC6WzVA7sDEcdQ1srv73BC9MP9AdPQrQddXr7sUg?cluster=devnet",
+      "signature": "5gsaH8ZyKRXaQNpqUNZT866wvbwWMc3K1C3iM35Xnss6ueAnqC6WzVA7sDEcdQ1srv73BC9MP9AdPQrQddXr7sUg",
+      "slot": 519969332
+    },
+    "stage-transferAtFloor": {
+      "blockTime": 1794128555,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/2EsyJNirbtWird2iB4PZFwAyFbHRZ8ZF7kNDZYLUSeZ4VweKjUW8NhBD2FakQgZfiYWi1XuJK9Zj1uXZQHqqgQF8?cluster=devnet",
+      "signature": "2EsyJNirbtWird2iB4PZFwAyFbHRZ8ZF7kNDZYLUSeZ4VweKjUW8NhBD2FakQgZfiYWi1XuJK9Zj1uXZQHqqgQF8",
+      "slot": 519969312
+    },
+    "stage-transferBelowFloor": {
+      "blockTime": 1794128557,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/2MisHUCokJtm3tTYLVT7fQpUN7zyUVQmcKituYqgooTxdC79qodz2M7XKrR7dvUY3hrfiyBnEBqznMqC6dT61UU9?cluster=devnet",
+      "signature": "2MisHUCokJtm3tTYLVT7fQpUN7zyUVQmcKituYqgooTxdC79qodz2M7XKrR7dvUY3hrfiyBnEBqznMqC6dT61UU9",
+      "slot": 519969321
+    },
+    "stage-transferOverCap": {
+      "blockTime": 1794128565,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/2Jdf1ZWiKtxQ2JCj3ziCoGMCg5eMUdbweF8s2V91k9FhDSRFQH9NaVxTPGqngmfCYe1oAUuyXwXuBqUFzUXsFqqX?cluster=devnet",
+      "signature": "2Jdf1ZWiKtxQ2JCj3ziCoGMCg5eMUdbweF8s2V91k9FhDSRFQH9NaVxTPGqngmfCYe1oAUuyXwXuBqUFzUXsFqqX",
+      "slot": 519969354
+    },
+    "transferAtCap": {
+      "blockTime": 1794128561,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/3BFRPmCphny76AN2hmgWvFut7QBjJZAiv7sEU158rYrz6vGuVnbMRySCP5YCYNigDDPATHq8nZHkodwRnYPKByik?cluster=devnet",
+      "signature": "3BFRPmCphny76AN2hmgWvFut7QBjJZAiv7sEU158rYrz6vGuVnbMRySCP5YCYNigDDPATHq8nZHkodwRnYPKByik",
+      "slot": 519969336
+    },
+    "transferAtFloor": {
+      "blockTime": 1794128556,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/4p41qMzzdFQPCT3nt2Eq7KCKy69b4VcbHXoPYnZZwzhfoPf4d3952bBWS4mPRyZYYBUBn3ufsyZwB26TCxcdAciE?cluster=devnet",
+      "signature": "4p41qMzzdFQPCT3nt2Eq7KCKy69b4VcbHXoPYnZZwzhfoPf4d3952bBWS4mPRyZYYBUBn3ufsyZwB26TCxcdAciE",
+      "slot": 519969316
+    },
+    "transferBelowFloor": {
+      "blockTime": 1794128558,
+      "error": "custom program error: 0x1785 (6021 E_BELOW_FLOOR)",
+      "errorCode": 6021,
+      "explorer": "https://explorer.solana.com/tx/3bYXjuM2Xx6VL1xnv1rnhfSE8anLiTxzv7WPYbQ6CvAKipFixEHHthdatdMRkiUX8VVsp3ymX2t8tuXjCyz7E4A9?cluster=devnet",
+      "signature": "3bYXjuM2Xx6VL1xnv1rnhfSE8anLiTxzv7WPYbQ6CvAKipFixEHHthdatdMRkiUX8VVsp3ymX2t8tuXjCyz7E4A9",
+      "slot": 519969326
+    },
+    "transferOverCap": {
+      "blockTime": 1794128570,
+      "error": "custom program error: 0x177a (6010 E_CAP_EXCEEDED)",
+      "errorCode": 6010,
+      "explorer": "https://explorer.solana.com/tx/4G95YU5yES6Mku5SfBrJP5nEDDzywVyUsCNMkmu2J2Zjp6SbP7ad9vsnWZKZ19K57MLGMbb5NYPCJcJeRE7YRuJh?cluster=devnet",
+      "signature": "4G95YU5yES6Mku5SfBrJP5nEDDzywVyUsCNMkmu2J2Zjp6SbP7ad9vsnWZKZ19K57MLGMbb5NYPCJcJeRE7YRuJh",
+      "slot": 519969373
+    },
+    "v2FundNonAuthority": {
+      "blockTime": 1794128590,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/2KsWH1o3QAH2j5st6LKpQWBuRrno54ArQzeqnbUE2BxdRjVyAYxm9ehvQqhsTao2kcv4aVSauu7BmJRdBkJjjseN?cluster=devnet",
+      "signature": "2KsWH1o3QAH2j5st6LKpQWBuRrno54ArQzeqnbUE2BxdRjVyAYxm9ehvQqhsTao2kcv4aVSauu7BmJRdBkJjjseN",
+      "slot": 519969459
+    },
+    "v2SetPendingPriceNonAuthority": {
+      "blockTime": 1794128595,
+      "error": "custom program error: 0x178a (6026 E_NOT_AUTHORITY)",
+      "errorCode": 6026,
+      "explorer": "https://explorer.solana.com/tx/4r7fa2J4WFV8EyznUkpCh3Fu99UowkgT3yrEhHrCdYFrr7Dw4J85tCbdMtyPekvBy3mK5gxNgJQs9Wurr2FGsttN?cluster=devnet",
+      "signature": "4r7fa2J4WFV8EyznUkpCh3Fu99UowkgT3yrEhHrCdYFrr7Dw4J85tCbdMtyPekvBy3mK5gxNgJQs9Wurr2FGsttN",
+      "slot": 519969480
+    },
+    "v2SetStatusNonAuthority": {
+      "blockTime": 1794128600,
+      "error": "custom program error: 0x178a (6026 E_NOT_AUTHORITY)",
+      "errorCode": 6026,
+      "explorer": "https://explorer.solana.com/tx/65Ta8BWHLfoAR6AtZDZz5NyQZfV2sKDEvAca5Sq2BBkfchWPTVMEuQwEttruBecERwxZNeftzSU71rHvgsic17ng?cluster=devnet",
+      "signature": "65Ta8BWHLfoAR6AtZDZz5NyQZfV2sKDEvAca5Sq2BBkfchWPTVMEuQwEttruBecERwxZNeftzSU71rHvgsic17ng",
+      "slot": 519969499
+    }
+  },
+  "steps_v2": {
+    "deploy": {
+      "blockTime": 1794128505,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/67fwxdRp3eekxDW8kSUeYYeRswRNfpzPn3LdxRpFGa9gihwXkifnDKmv8kzuEDaUrEs1bfFHrvqcoMQTkGpbs4zb?cluster=devnet",
+      "signature": "67fwxdRp3eekxDW8kSUeYYeRswRNfpzPn3LdxRpFGa9gihwXkifnDKmv8kzuEDaUrEs1bfFHrvqcoMQTkGpbs4zb",
+      "slot": 519969104
+    },
+    "extraMetas": {
+      "blockTime": 1794128630,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/4yuuSgYYuC9j5nedrt7tJW2GuBSBsLSvcLJaW5rqjNqbZMZQcwvTcvizHQG2fiSFdgtkRTaUbYNUNyqDvxmyPyLj?cluster=devnet",
+      "signature": "4yuuSgYYuC9j5nedrt7tJW2GuBSBsLSvcLJaW5rqjNqbZMZQcwvTcvizHQG2fiSFdgtkRTaUbYNUNyqDvxmyPyLj",
+      "slot": 519969627
+    },
+    "initRecord": {
+      "blockTime": 1794128632,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/4nRmtV5674GsUToN167fG1MnHg7nqq69YHNQGFjRaEL4tfQNrCNTUdK4G1kN7bk4scjWVBUyrSvmXNXMsVqtSTAw?cluster=devnet",
+      "signature": "4nRmtV5674GsUToN167fG1MnHg7nqq69YHNQGFjRaEL4tfQNrCNTUdK4G1kN7bk4scjWVBUyrSvmXNXMsVqtSTAw",
+      "slot": 519969633
+    },
+    "v2FundNonAuthority": {
+      "blockTime": 1794128656,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/BdoC5ZS9FzkJPzgkTBTHqVsZK2z6BNU3bt6GTMTVN4LZMpKraPPAPWm6rRVWm7rEfW25sJdSzNpZmC652QRbdCJ?cluster=devnet",
+      "signature": "BdoC5ZS9FzkJPzgkTBTHqVsZK2z6BNU3bt6GTMTVN4LZMpKraPPAPWm6rRVWm7rEfW25sJdSzNpZmC652QRbdCJ",
+      "slot": 519969736
+    },
+    "v2LogForecast": {
+      "blockTime": 1794128635,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/ZvjnAtAwD4TXsny4qkViuVZ9KoRPK1gxwT4Mj2MNTCAbDtr5KDWP4mVPaaxQTUEcsiA9bxXz7RzAHsf6Nf94rWM?cluster=devnet",
+      "signature": "ZvjnAtAwD4TXsny4qkViuVZ9KoRPK1gxwT4Mj2MNTCAbDtr5KDWP4mVPaaxQTUEcsiA9bxXz7RzAHsf6Nf94rWM",
+      "slot": 519969644
+    },
+    "v2LogForecastAgain": {
+      "blockTime": 1794128649,
+      "error": "custom program error: 0x1788 (6024 E_FORECAST_EXISTS)",
+      "errorCode": 6024,
+      "explorer": "https://explorer.solana.com/tx/3v9SERyk7eWCsBGzc76ts1Fy4Nw7QQmkg9vUtWPZaby4A5VhWkMonN3pZhqtNEwjHZy4hmd1TAe7hYcoq7L3sMT9?cluster=devnet",
+      "signature": "3v9SERyk7eWCsBGzc76ts1Fy4Nw7QQmkg9vUtWPZaby4A5VhWkMonN3pZhqtNEwjHZy4hmd1TAe7hYcoq7L3sMT9",
+      "slot": 519969704
+    },
+    "v2LogForecastBackdated": {
+      "blockTime": 1794128670,
+      "error": "custom program error: 0x178d (6029 E_FORECAST_BACKDATED)",
+      "errorCode": 6029,
+      "explorer": "https://explorer.solana.com/tx/4nWYNFmddJdKw18v193UcawSkLMoKWAFShKmWE6QaRZwwhpLH1hAFVQVbPg5ZVy8nFKBQHXZj6KF6z6GRKp7hocc?cluster=devnet",
+      "signature": "4nWYNFmddJdKw18v193UcawSkLMoKWAFShKmWE6QaRZwwhpLH1hAFVQVbPg5ZVy8nFKBQHXZj6KF6z6GRKp7hocc",
+      "slot": 519969792
+    },
+    "v2LogForecastMiss": {
+      "blockTime": 1794128676,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/3N6t3tXrwtViBd6nbEFPHwMnebu3cGpoEw14wvCmi1nt6iGQYAnXeYcQGHYEkGrhs7NDWFUboShWywLyC61ZLhMZ?cluster=devnet",
+      "signature": "3N6t3tXrwtViBd6nbEFPHwMnebu3cGpoEw14wvCmi1nt6iGQYAnXeYcQGHYEkGrhs7NDWFUboShWywLyC61ZLhMZ",
+      "slot": 519969818
+    },
+    "v2PublishBand": {
+      "blockTime": 1794128633,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/3Mze1eKZXDz7Qg3bx4pXtpt2vSEJJHX9wPYqHS2VRSYA82wpKXByXYciQXVYdem53zmp2H9NfdjDWRgjRRrkLXCF?cluster=devnet",
+      "signature": "3Mze1eKZXDz7Qg3bx4pXtpt2vSEJJHX9wPYqHS2VRSYA82wpKXByXYciQXVYdem53zmp2H9NfdjDWRgjRRrkLXCF",
+      "slot": 519969638
+    },
+    "v2PublishBandAsOfAhead": {
+      "blockTime": 1794128685,
+      "error": "custom program error: 0x1791 (6033 E_AS_OF_AHEAD)",
+      "errorCode": 6033,
+      "explorer": "https://explorer.solana.com/tx/55VWy2qaohTMS8BDo8HxTTkCb8YpnCenBeugGfoo9V4o4sgGjZxLsoPabgEfHXTTMh17Fz5ydDwVUWmg59kZdjf7?cluster=devnet",
+      "signature": "55VWy2qaohTMS8BDo8HxTTkCb8YpnCenBeugGfoo9V4o4sgGjZxLsoPabgEfHXTTMh17Fz5ydDwVUWmg59kZdjf7",
+      "slot": 519969856
+    },
+    "v2PublishBandEmpty": {
+      "blockTime": 1794128683,
+      "error": "custom program error: 0x1790 (6032 E_BAND_EMPTY)",
+      "errorCode": 6032,
+      "explorer": "https://explorer.solana.com/tx/o41Zhi7C7qcvfXDKG6JpPWQqCJWZ4Abq6q5vwjzj9ji1ns3ZG8SgF6Y6rbpmeQ32LEwM1qizXFtDVLXkgT7StEZ?cluster=devnet",
+      "signature": "o41Zhi7C7qcvfXDKG6JpPWQqCJWZ4Abq6q5vwjzj9ji1ns3ZG8SgF6Y6rbpmeQ32LEwM1qizXFtDVLXkgT7StEZ",
+      "slot": 519969848
+    },
+    "v2PublishBandNonAuthority": {
+      "blockTime": 1794128661,
+      "error": "custom program error: 0x178a (6026 E_NOT_AUTHORITY)",
+      "errorCode": 6026,
+      "explorer": "https://explorer.solana.com/tx/431fxGE2MJkLbj7JYsQmT9AZGtwESRAwnxW76zVZtFag2Z5P6R6A2kUCFY4VgXVNfNc3ZbTtdPUSJqhpz5BNhP3t?cluster=devnet",
+      "signature": "431fxGE2MJkLbj7JYsQmT9AZGtwESRAwnxW76zVZtFag2Z5P6R6A2kUCFY4VgXVNfNc3ZbTtdPUSJqhpz5BNhP3t",
+      "slot": 519969755
+    },
+    "v2PublishBandRefusedNormalised": {
+      "blockTime": 1794128687,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/38xe8eQFUuniPW7b8Fyrjp1pcTPRV42KVwz3ArjMENEtxJveWJHETUsVVyiXqS3GgCoUSffMXSnyUFNX4GHAPnse?cluster=devnet",
+      "signature": "38xe8eQFUuniPW7b8Fyrjp1pcTPRV42KVwz3ArjMENEtxJveWJHETUsVVyiXqS3GgCoUSffMXSnyUFNX4GHAPnse",
+      "slot": 519969864
+    },
+    "v2PublishBandUnsatisfiable": {
+      "blockTime": 1794128665,
+      "error": "custom program error: 0x1786 (6022 E_BAND_UNSATISFIABLE)",
+      "errorCode": 6022,
+      "explorer": "https://explorer.solana.com/tx/EScdcDoo91BJqqsVXLKxVYf3v8FuAwvJbJxSGHKBTotRHgLAU1LfPzm9HtPBESjFcT4JDYF7U534hV3iBo17KSb?cluster=devnet",
+      "signature": "EScdcDoo91BJqqsVXLKxVYf3v8FuAwvJbJxSGHKBTotRHgLAU1LfPzm9HtPBESjFcT4JDYF7U534hV3iBo17KSb",
+      "slot": 519969773
+    },
+    "v2ScoreBelowWidth": {
+      "blockTime": 1794128678,
+      "error": "custom program error: 0x178e (6030 E_SCORE_BELOW_WIDTH)",
+      "errorCode": 6030,
+      "explorer": "https://explorer.solana.com/tx/owtiw2b7E4CxmP9dixuPBzujz1tqWVFdzdduTsYz4azSgixsLPTT8r2h8jJZarcjTrMdrLdwYEHXwiF6tDZqxmJ?cluster=devnet",
+      "signature": "owtiw2b7E4CxmP9dixuPBzujz1tqWVFdzdduTsYz4azSgixsLPTT8r2h8jJZarcjTrMdrLdwYEHXwiF6tDZqxmJ",
+      "slot": 519969824
+    },
+    "v2ScoreForecast": {
+      "blockTime": 1794128650,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/4CPUbuVqTDyRpB3byWL7vjjZtiwc5pS2g7Y5CPapz3AHWxr6CeBrBLHqmQg9E3iuCfGfRrxAoJEHvQsF1xcVGD3r?cluster=devnet",
+      "signature": "4CPUbuVqTDyRpB3byWL7vjjZtiwc5pS2g7Y5CPapz3AHWxr6CeBrBLHqmQg9E3iuCfGfRrxAoJEHvQsF1xcVGD3r",
+      "slot": 519969710
+    },
+    "v2ScoreForecastAgain": {
+      "blockTime": 1794128652,
+      "error": "custom program error: 0x1789 (6025 E_ALREADY_SCORED)",
+      "errorCode": 6025,
+      "explorer": "https://explorer.solana.com/tx/3PJBqHgeSGkLGSMVsYRc4tFn4nxicmLduE5M6KNErzfyHzVvHna7mwknUhj5oE1eWB9bQZSPDXF5PgvvdX8wzeau?cluster=devnet",
+      "signature": "3PJBqHgeSGkLGSMVsYRc4tFn4nxicmLduE5M6KNErzfyHzVvHna7mwknUhj5oE1eWB9bQZSPDXF5PgvvdX8wzeau",
+      "slot": 519969718
+    },
+    "v2ScoreMiss": {
+      "blockTime": 1794128689,
+      "error": null,
+      "errorCode": null,
+      "explorer": "https://explorer.solana.com/tx/5ZG5tWvSQKRFL7BorNTiJeZno1DpJp3JkUgMdmTQCRyKTQ3fc5tpyJK3vJof83NgTugVvnAKu8LkjsFJRLAx257h?cluster=devnet",
+      "signature": "5ZG5tWvSQKRFL7BorNTiJeZno1DpJp3JkUgMdmTQCRyKTQ3fc5tpyJK3vJof83NgTugVvnAKu8LkjsFJRLAx257h",
+      "slot": 519969870
+    }
+  },
+  "version": 1,
+  "writtenAt": "2026-11-08T09:29:19.200Z"
+}

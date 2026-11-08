@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { ApiError, getDevnetRecord, getHealth } from "@/lib/api";
-import type { DevnetRecord, Health } from "@/lib/types";
+import type { DevnetRecord, Health, SolanaCluster } from "@/lib/types";
 import { Chip, DataSourceNote } from "@/components/ui";
+import { AddressPill } from "@/components/AddressPill";
+import { RecordedOrLive } from "@/components/proof/RecordedOrLive";
 import { capCeilingLamports, isWithinCap } from "@/lib/cap";
-import { formatBpsPercent, formatDateTime, formatLamports } from "@/lib/format";
-import { verificationMessage } from "@/lib/solana";
+import { formatBpsPercent, formatDateTime, formatLamports, shortAddress } from "@/lib/format";
+import { explorerTxUrl, verificationMessage } from "@/lib/solana";
+import v2 from "@/data/devnet-v2.json";
 
 export const metadata: Metadata = {
   title: "How the cap works",
@@ -41,6 +44,15 @@ const ARITHMETIC = [
  * bytes the backend checks, not a description of them.
  */
 const MESSAGE_SLOTS = verificationMessage("<wallet>", "<nonce>");
+
+/**
+ * The record carries its cluster as free text off the wire, and the cluster is
+ * what an explorer link is built on. Unknown text falls back to devnet, which
+ * is the cluster the record was written against.
+ */
+function clusterOf(name: string | undefined): SolanaCluster {
+  return (name ?? "devnet") as SolanaCluster;
+}
 
 interface Failure {
   message: string;
@@ -135,15 +147,16 @@ export default async function RulesPage(): Promise<React.ReactElement> {
             refused.
           </p>
           <p className="t-body mt-2 text-muted">
-            The cap is the only thing in this product that carries the warning colour. That chip and
-            the dashed rule a price chart draws at the ceiling are the two places it appears.
+            The warning colour appears only where the cap is at issue: this chip, the dashed rule a
+            price chart draws at the ceiling, and the &ldquo;above the cap&rdquo; chip on a listing
+            form.
           </p>
         </section>
 
         <section className="mt-16">
           <h2 className="h-section text-ink">The boundary, in whole lamports</h2>
           <p className="t-body mt-2 text-muted">
-            One SOL of face value, capped at 2500 bps over it. The four lines are the comparison
+            One SOL of face value, capped at 2500 bps over it. The five lines are the comparison
             above with those numbers in it.
           </p>
           <pre className="figure t-meta mt-6 whitespace-pre-wrap break-words rounded-panel border border-line bg-inset p-6 text-ink">
@@ -170,13 +183,14 @@ export default async function RulesPage(): Promise<React.ReactElement> {
           <p className="t-body mt-2 text-muted">
             The cap is set once, at InitializeRecord. The instruction takes the face value and the
             cap in basis points as arguments, and there is no instruction that changes either one
-            afterwards. Nothing can raise the cap and nothing can lower it: an organiser who wanted a
-            different number would be initialising a different record.
+            afterwards. The cap in basis points is immutable: an organiser who wanted a different
+            number would be initialising a different record.
           </p>
           <p className="t-body mt-2 text-muted">
-            The jurisdiction gate sits above that and can only tighten it. It resolves the legal
-            ceiling for the region, compares it with the platform cap, and takes the lower of the
-            two. A jurisdiction can make the ceiling smaller. It can never make it larger.
+            The ceiling actually enforced is <span className="figure">min(cap, jurisdiction limit)</span>,
+            so it can only be lower than the cap. The gate resolves the legal ceiling for the region,
+            compares it with the platform cap, and takes the lower of the two. That is the one thing
+            that moves, and it moves one way.
           </p>
         </section>
 
@@ -186,14 +200,12 @@ export default async function RulesPage(): Promise<React.ReactElement> {
           {artefact ? (
             <>
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <Chip tone="neutral">Recorded on {artefact.cluster ?? "a cluster"}</Chip>
-                <span className="t-micro text-muted">
-                  verified {formatDateTime(artefact.checkedAt)}
-                </span>
+                <RecordedOrLive askedCluster={health?.chain.askedCluster ?? null} verifiedAt={artefact.checkedAt} />
+                <Chip tone="neutral">Program v1 · {artefact.cluster ?? "a cluster"}</Chip>
               </div>
               <p className="t-body mt-4 text-ink">
-                The cap program is deployed on Solana {artefact.cluster ?? "devnet"}. A verified run
-                recorded the program id, the mint it guards, and two transfers against it: one
+                The v1 cap program is deployed on Solana {artefact.cluster ?? "devnet"}. A verified
+                run recorded the program id, the mint it guards, and two transfers against it: one
                 priced exactly at the ceiling, which executed, and one lamport above it, which the
                 program refused. The panel below is that record, printed as it was written.
               </p>
@@ -201,15 +213,65 @@ export default async function RulesPage(): Promise<React.ReactElement> {
               <div className="mt-6 rounded-panel border border-line bg-surface p-6">
                 <p className="t-micro-caps text-muted">The recorded deployment</p>
                 <dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
-                  <Recorded label="program">{artefact.programId ?? "—"}</Recorded>
+                  <div>
+                    <dt className="figure t-micro text-muted">program v1</dt>
+                    <dd className="mt-1 break-words text-ink">
+                      {artefact.programId ? (
+                        <AddressPill address={artefact.programId} label="program address" />
+                      ) : (
+                        "—"
+                      )}
+                    </dd>
+                  </div>
                   <Recorded label="cluster">{artefact.cluster ?? "—"}</Recorded>
                   <Recorded label="verification instant">
                     {formatDateTime(artefact.checkedAt)}
                   </Recorded>
-                  <Recorded label="signature">{artefact.signature ?? "—"}</Recorded>
-                  <Recorded label="slot">{formatLamports(artefact.slot)}</Recorded>
+                  <Recorded label="quote signature">
+                    {artefact.signature ? (
+                      <a
+                        href={artefact.explorer?.transaction ?? "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={artefact.signature}
+                        className="u-transition underline-offset-4 hover:underline"
+                      >
+                        {shortAddress(artefact.signature, 8, 8)}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </Recorded>
+                  <Recorded label="slot">{artefact.slot?.toLocaleString("en-US") ?? "—"}</Recorded>
                   <Recorded label="block time">{blockTimeLabel(artefact.blockTime)}</Recorded>
                 </dl>
+                <p className="t-micro mt-4 text-muted">
+                  The record&rsquo;s three links:{" "}
+                  {[
+                    ["program", artefact.explorer?.program],
+                    ["mint", artefact.explorer?.mint],
+                    ["quote transaction", artefact.explorer?.transaction],
+                  ].map(([label, href], index) =>
+                    href ? (
+                      <span key={label}>
+                        {index > 0 && " · "}
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="u-transition text-accent underline underline-offset-2 hover:text-accent-press"
+                        >
+                          {label}
+                        </a>
+                      </span>
+                    ) : null,
+                  )}{" "}
+                  on the Solana explorer. The mint {" "}
+                  <span className="figure">
+                    {shortAddress(artefact.mint, 6, 6)}
+                  </span>{" "}
+                  is the token the program guards.
+                </p>
               </div>
 
               {(accepted || refused) && (
@@ -225,11 +287,18 @@ export default async function RulesPage(): Promise<React.ReactElement> {
                           </span>
                         </div>
                         <p className="mt-3 space-y-1">
-                          <span className="figure t-micro block break-words text-muted">
-                            {accepted.signature}
-                          </span>
+                          <a
+                            href={explorerTxUrl(accepted.signature ?? "", clusterOf(artefact.cluster))}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={accepted.signature}
+                            className="figure t-micro block break-words text-accent underline underline-offset-2 hover:text-accent-press"
+                          >
+                            {shortAddress(accepted.signature, 8, 8)}
+                          </a>
                           <span className="figure t-micro block text-muted">
-                            slot {formatLamports(accepted.slot)} · {blockTimeLabel(accepted.blockTime)}
+                            slot {accepted.slot?.toLocaleString("en-US") ?? "—"} ·{" "}
+                            {blockTimeLabel(accepted.blockTime)}
                           </span>
                         </p>
                       </div>
@@ -246,23 +315,63 @@ export default async function RulesPage(): Promise<React.ReactElement> {
                           <span className="figure t-micro block break-words text-ink">
                             {refused.error ?? "—"}
                           </span>
-                          <span className="figure t-micro block break-words text-muted">
-                            {refused.signature}
-                          </span>
+                          <a
+                            href={explorerTxUrl(refused.signature ?? "", clusterOf(artefact.cluster))}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={refused.signature}
+                            className="figure t-micro block break-words text-accent underline underline-offset-2 hover:text-accent-press"
+                          >
+                            {shortAddress(refused.signature, 8, 8)}
+                          </a>
                           <span className="figure t-micro block text-muted">
-                            slot {formatLamports(refused.slot)} · {blockTimeLabel(refused.blockTime)}
+                            slot {refused.slot?.toLocaleString("en-US") ?? "—"} ·{" "}
+                            {blockTimeLabel(refused.blockTime)}
                           </span>
                         </p>
                       </div>
                     )}
                   </div>
+                  <p className="t-micro mt-4 text-muted">
+                    Each signature is a link to its transaction, and each opens the
+                    transaction that carries the refusal or the execution itself.
+                  </p>
                 </div>
               )}
+
+              <div className="mt-6 rounded-panel border border-line bg-surface p-6">
+                <p className="t-micro-caps text-muted">The fee legs</p>
+                <p className="t-body mt-2 text-muted">
+                  The artist fee and the 15% flip tax are seller-paid lamport legs inside the same
+                  sale transaction, so the buyer pays the price and the seller carries both. They
+                  are measured by <span className="figure">tools/artist_fee_proof.py</span> and{" "}
+                  <span className="figure">tools/flip_tax_proof.py</span> on a throw-away local
+                  validator, not by the two transfers above: those were priced on an event with no
+                  fee turned on, so neither carries a fee leg. The tax is off unless an event
+                  enables it and runs from 15% under an hour toward zero at thirty days, and the
+                  program does not enforce it: a sale can move the ticket and pay nothing.
+                </p>
+              </div>
+
+              <p className="t-body mt-4 text-muted">
+                The current v2 program is {" "}
+                <a
+                  href={v2.explorer?.program ?? "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="u-transition text-accent underline underline-offset-2 hover:text-accent-press"
+                >
+                  {shortAddress(v2.programId, 8, 8)}
+                </a>{" "}
+                on Solana {v2.cluster}, written at {formatDateTime(v2.writtenAt)}. The frozen record
+                above predates it and names the program it was published against; the two are not
+                the same id and neither one is substituted for the other here.
+              </p>
 
               <p className="t-micro mt-3 text-muted">
                 Read from {devnet?.source || "the artefact file"} at build time. This build asked
                 no cluster, so this is the recorded verification and not a live re-read: the fields
-                below are what was asked, and they stay what was asked.
+                above are what a verified run wrote, and they stay what it wrote.
               </p>
             </>
           ) : (
@@ -334,10 +443,11 @@ export default async function RulesPage(): Promise<React.ReactElement> {
             in the message.
           </p>
           <p className="t-body mt-2 text-muted">
-            This deployment is a static export and calls no backend, so that check runs nowhere on
-            this site: /verify says so on the screen where a visitor would look for it. The check
-            described here is the one the backend implements, and the rest of this section is its
-            specification rather than a record of a verification.
+            This deployment is a static export: the reads on this page happened at build time and
+            nothing is asked at request time, so that check runs nowhere on this site. /verify says
+            so on the screen where a visitor would look for it. The check described here is the one
+            the backend implements, and the rest of this section is its specification rather than a
+            record of a verification.
           </p>
           <dl className="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2">
             <div>

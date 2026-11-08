@@ -1,0 +1,41 @@
+{
+  "source": "reports/swarm-llm/SUMMARY.md (written 2026-11-08T15:25Z), reports/swarm-llm-dry/measured.json (read 2026-11-08, file still being written), reports/swarm-val2/totals.json",
+  "label": "SYNTHETIC \u00b7 LIVE MODEL AND SCRIPTED \u00b7 MEASURED",
+  "liveModelDry": {
+    "runs": 3,
+    "agents": 18,
+    "decisions": 150,
+    "ledgerRows": 136,
+    "fills": 19,
+    "tokens": 170121,
+    "usd": 0.072318,
+    "fallbackDecisions": 49,
+    "chain": "simulated",
+    "note": "Three runs of live model children on the dry gateway; the local validator would not boot in that window. 49 of 150 decisions (32.7%) had no usable reply and fell back to the scripted policy of the same name. Zero chain refusals: no agent asked above the ceiling, so these runs did not test the ceiling."
+  },
+  "liveModelDrySecondBatch": {
+    "runEvents": 14,
+    "completeRunEvents": 7,
+    "decisions": 680,
+    "real": 607,
+    "fallback": 73,
+    "tokens": 791367,
+    "usd": 0.339608,
+    "chain": "simulated",
+    "note": "Snapshot of a file that was still being written; run events not marked complete are included in these totals. Dry: any 6010 rows are predictions, not validator refusals."
+  },
+  "scriptedSecondBatch": {
+    "runs": 8,
+    "runsDry": 4,
+    "runsValidator": 4,
+    "agents": 66,
+    "decisions": 1312,
+    "executed": 141,
+    "listings": 242,
+    "refused": 10,
+    "refusedOnChain": 10,
+    "usd": 0.0,
+    "note": "Scripted policies, no model spend. The source totals mix 4 dry and 4 validator runs and do not split the 10 refusals by kind; read them as dry-or-validator unsplit, not as 10 validator refusals."
+  },
+  "disclaimer": "Synthetic data only. None of it measures a real market."
+}

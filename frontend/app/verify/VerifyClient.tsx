@@ -17,6 +17,13 @@ import { Chip, DataSourceNote, Skeleton } from "@/components/ui";
 import { CLUSTER, toBase58, verificationMessage } from "@/lib/solana";
 import { formatDateTime } from "@/lib/format";
 
+/**
+ * A nonce of the right shape, for the preview only: 32 hex characters, single
+ * use, good for 300 seconds. The fixed lines and the cluster in the preview are
+ * the bytes the wallet is asked to sign.
+ */
+const PLACEHOLDER_NONCE = "0123456789abcdef0123456789abcdef";
+
 /** Anything that went wrong, reduced to what the panel prints. */
 interface Failure {
   message: string;
@@ -181,9 +188,10 @@ export function VerifyClient(): React.ReactElement {
       <div className="max-w-3xl">
         <h1 className="h-display text-ink">Verify your wallet</h1>
         <p className="t-deck mt-4 text-muted">
-          Events that require a verified wallet only issue to, and only accept transfers into,
-          wallets that have passed the signature check. The check proves you hold the key. It moves
-          no funds.
+          An event can require a verified wallet, and the contract only issues to, or accepts a
+          transfer into, a wallet that has passed the signature check. No issuance and no transfer
+          endpoint exists in this build, so nothing here is gated on it. The check, where it runs,
+          proves you hold the key and moves no funds.
         </p>
         {isMockMode && (
           <p className="t-meta mt-4 text-muted">
@@ -268,20 +276,39 @@ export function VerifyClient(): React.ReactElement {
                 </dl>
 
               <div className="mt-8">
+                {/* The exact bytes the wallet is asked to sign, printed before the
+                    wallet is asked. The nonce here is a stand-in of the right
+                    shape; the one the backend issues takes its place at the
+                    wallet, and the fixed lines and the cluster are the same. */}
+                <p className="t-micro-caps text-muted">The message you sign</p>
+                <pre className="figure t-meta mt-2 whitespace-pre-wrap break-words rounded-panel border border-line bg-inset p-6 text-ink">
+                  {verificationMessage(wallet, PLACEHOLDER_NONCE)}
+                </pre>
+                <p className="t-micro mt-2 text-muted">
+                  The nonce above is a stand-in of the right shape. The one this flow signs is the
+                  single-use value the backend issues for this wallet, and everything else in the
+                  message is fixed, including the cluster line.
+                </p>
                 <button
                   type="button"
                   onClick={() => {
                     void verify();
                   }}
-                  disabled={verifying}
-                  className="u-transition inline-flex h-12 items-center justify-center rounded-pill border border-accent bg-accent px-6 t-meta text-on-accent hover:border-accent-press hover:bg-accent-press disabled:opacity-60"
+                  disabled={verifying || isMockMode}
+                  aria-busy={verifying}
+                  className="mt-6 u-transition inline-flex h-12 items-center justify-center rounded-pill border border-accent bg-accent px-6 t-meta text-on-accent hover:border-accent-press hover:bg-accent-press disabled:opacity-60"
                 >
-                  {verifying
-                    ? "Waiting for the wallet"
-                    : verification.verified
-                      ? "Verify again"
-                      : "Sign to verify"}
+                  {isMockMode
+                    ? "Signing disabled: this deployment has no backend"
+                    : verifying
+                      ? "Waiting for the wallet"
+                      : verification.verified
+                        ? "Verify again"
+                        : "Sign to verify"}
                 </button>
+                <p role="status" aria-live="polite" className="t-micro mt-2 text-muted">
+                  {verifying ? "Waiting for the wallet to sign." : ""}
+                </p>
 
                 {verification.verified && !isMockMode && (
                   <p className="t-meta mt-4 text-ink">

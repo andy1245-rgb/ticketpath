@@ -1,0 +1,21 @@
+{
+  "source": "counted from the datasets the seeded sweep of market_swarm wrote; the summary is reports/swarm-data/SUMMARY.md and the counts are its totals.json",
+  "recordedOn": "2026-11-08",
+  "label": "SYNTHETIC · SCRIPTED POLICIES · MEASURED",
+  "runs": 144,
+  "runsDry": 124,
+  "runsValidator": 20,
+  "agents": 1351,
+  "rounds": 3741,
+  "decisions": 49684,
+  "executed": 3458,
+  "listings": 4634,
+  "refused": 967,
+  "refusedOnChain": 967,
+  "declinedByPolicy": 0,
+  "usd": 0.044776,
+  "validatorRuns": { "scripted": 17, "liveModel": 3 },
+  "dryRunNote": "A dry run touched no chain: the gateway builds nothing, signs nothing and sends nothing, and every row carries chain: \"simulated\". Its 6010 rows are the hook's predicted answer from the same integer predicate, not a refusal a validator returned.",
+  "validatorNote": "A validator run sent the instruction to a validator this machine started, funded at genesis. Nothing was rented and no public cluster was used.",
+  "disclaimer": "Synthetic data only. No real market price, markup or refusal rate is measured here, and none of it may be used to estimate one."
+}
