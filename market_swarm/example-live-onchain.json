@@ -1,0 +1,81 @@
+{
+  "run_id": "live-onchain-swarm",
+  "program": "v2",
+  "cluster": "local",
+  "seed": 7,
+  "dry_run": false,
+  "kill_after_seconds": 900,
+  "out_dir": ".swarm-runs/live-onchain",
+  "total_budget_lamports": 80000000000,
+  "total_budget_actions": 600,
+  "events": [
+    {
+      "event_id": "evt_capped",
+      "face_lamports": 1000000000,
+      "mode": "capped",
+      "cap_bps": 2500,
+      "tickets": 24,
+      "rounds": 10,
+      "round_seconds": 3600
+    },
+    {
+      "event_id": "evt_monitored",
+      "face_lamports": 1000000000,
+      "mode": "monitored",
+      "cap_bps": 2500,
+      "tickets": 24,
+      "rounds": 10,
+      "round_seconds": 3600
+    }
+  ],
+  "agents": [
+    {
+      "agent_id": "buyer-1",
+      "policy": "buyer",
+      "wallet_label": "buyer-1",
+      "seed": 11,
+      "budget_lamports": 4000000000,
+      "budget_actions": 60
+    },
+    {
+      "agent_id": "holder-1",
+      "policy": "holder",
+      "wallet_label": "holder-1",
+      "seed": 21,
+      "budget_lamports": 4000000000,
+      "budget_actions": 60
+    },
+    {
+      "agent_id": "flipper-1",
+      "policy": "flipper",
+      "wallet_label": "flipper-1",
+      "seed": 31,
+      "budget_lamports": 8000000000,
+      "budget_actions": 60
+    },
+    {
+      "agent_id": "scalper-1",
+      "policy": "scalper",
+      "wallet_label": "scalper-1",
+      "seed": 41,
+      "budget_lamports": 8000000000,
+      "budget_actions": 60
+    },
+    {
+      "agent_id": "sniper-1",
+      "policy": "sniper",
+      "wallet_label": "sniper-1",
+      "seed": 51,
+      "budget_lamports": 8000000000,
+      "budget_actions": 60
+    },
+    {
+      "agent_id": "panic-1",
+      "policy": "panic",
+      "wallet_label": "panic-1",
+      "seed": 61,
+      "budget_lamports": 8000000000,
+      "budget_actions": 60
+    }
+  ]
+}
