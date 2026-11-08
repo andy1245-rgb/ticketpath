@@ -4,7 +4,7 @@ import { Chip, DataSourceNote, Panel, Pill, Rule } from "@/components/ui";
 import { getDevnetRecord, getEvents, getResaleHistory, getTickets } from "@/lib/api";
 import { capCeilingLamports } from "@/lib/cap";
 import { HIDDEN_FEES, RESALES_BLOCKED_AT_CAP } from "@/lib/demo";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { formatDate, formatDateTime, formatLamports } from "@/lib/format";
 import { PROGRAM_ID, explorerProgramUrl } from "@/lib/solana";
 
 /*
@@ -434,10 +434,10 @@ export default async function HomePage() {
             )}
 
             {/* The chip is what the artefact records, never a configured id and
-                never the server's `programDeployed`, which is false because the
-                server asks no cluster: a `false` there means "not read". */}
+                never the build's `programDeployed`, which is false because the
+                build asks no cluster: a `false` there means "not read". */}
             <Chip tone="neutral">
-              {artefact ? `Recorded on ${artefact.cluster ?? "devnet"}` : "No record"}
+              {artefact ? `Deployed on ${artefact.cluster ?? "devnet"}` : "No record"}
             </Chip>
 
             {explorerUrl ? (
@@ -468,9 +468,11 @@ export default async function HomePage() {
           </div>
           {artefact && (
             <p className="t-micro pb-6 text-muted">
-              Verified {formatDateTime(artefact.checkedAt)}. Read from the artefact file, not from a
-              cluster: this server asked no cluster, so the strip prints what a verified run
-              recorded.
+              Deployed on {artefact.cluster ?? "devnet"}: a verified run recorded signature{" "}
+              <span className="figure">{artefact.signature ?? "—"}</span> at slot{" "}
+              {formatLamports(artefact.slot)} on {formatDateTime(artefact.checkedAt)}. Read from the
+              artefact file at build time, not from a cluster: this build asked no cluster, so the
+              strip prints what that run wrote.
             </p>
           )}
         </div>

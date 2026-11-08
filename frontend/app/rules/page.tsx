@@ -260,14 +260,14 @@ export default async function RulesPage(): Promise<React.ReactElement> {
               )}
 
               <p className="t-micro mt-3 text-muted">
-                Read from {devnet?.source || "the artefact file"} by this server. The server asked
+                Read from {devnet?.source || "the artefact file"} at build time. This build asked
                 no cluster, so this is the recorded verification and not a live re-read: the fields
                 below are what was asked, and they stay what was asked.
               </p>
             </>
           ) : (
             <p className="t-body mt-2 text-ink">
-              No verified artefact is available to this server, so this page prints no deployment.
+              No verified artefact is available to this build, so this page prints no deployment.
               {devnet?.reason ? ` ${devnet.reason}` : ""} The predicate and the arithmetic above
               are the program&rsquo;s own rules and stand whatever any cluster holds.
             </p>
@@ -300,8 +300,8 @@ export default async function RulesPage(): Promise<React.ReactElement> {
               <p className="t-body mt-4 text-muted">{health.chain.detail}</p>
               <p className="t-micro mt-3 text-muted">
                 {health.chain.askedCluster
-                  ? "The server queried a cluster, so this is a read of that cluster rather than a claim about it."
-                  : "The server queried no cluster, so programDeployed records that no check was made."}
+                  ? "This build queried a cluster, so this is a read of that cluster rather than a claim about it."
+                  : "This build queried no cluster, so programDeployed records that no check was made. It is not a statement that the program is absent: the recorded deployment above is what a verified run wrote."}
               </p>
               <div className="mt-4">
                 <DataSourceNote dataSource={health.dataSource} />
@@ -332,6 +332,12 @@ export default async function RulesPage(): Promise<React.ReactElement> {
             screen in this build is open. The one check the backend performs is the signature below,
             and it proves exactly one thing: that whoever asked holds the private key for the wallet
             in the message.
+          </p>
+          <p className="t-body mt-2 text-muted">
+            This deployment is a static export and calls no backend, so that check runs nowhere on
+            this site: /verify says so on the screen where a visitor would look for it. The check
+            described here is the one the backend implements, and the rest of this section is its
+            specification rather than a record of a verification.
           </p>
           <dl className="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2">
             <div>
