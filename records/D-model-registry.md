@@ -147,8 +147,14 @@ transfer is not implied; hypotheses are D; ideas recorded so they are not lost a
 | M54 | Neural network | any | many | REJECTED | n/a |
 | M55 | Hybrid statistical + ML | any | many | REJECTED | n/a |
 | M56 | Agent-based market simulation | any | many | REJECTED | n/a |
+| M57 | Winkler interval score (alpha = 1/5) | S6 | 1 (alpha) | **SHIP** | C by derivation, implemented |
 
 Counts by role: SHIP 13 · SHIP-BEHIND-ADAPTER 3 · SPECIFIED-NOT-IMPLEMENTED 14 · REJECTED 26. Total 56.
+
+**[Corrected 2026-11-08. The line above was true of the 56 rows it counted, and M57 is the 57th. It is
+a scoring rule rather than a price model, it is implemented in `ticketpath/core/forecast_score.py`,
+and it ships: SHIP 14 · Total 57. The original line is left in place because the count it states is
+the count it was written for.]**
 
 ---
 
@@ -1430,6 +1436,58 @@ validation, role with reason.
 - **Role:** **REJECTED** (`01-c` §10.8). Note what survives: the SIM study of estimator recovery, which is a build
   task for the implementation phase and not a research result. Nothing in this file is SIM today.
   Revival: never as a market model; as an estimator test bed, immediately.
+
+---
+
+### M57 · Winkler interval score (S6, added 2026-11-08)
+
+**Target.** S6, prediction uncertainty. This is not a model of a price and it does not forecast
+anything. It is the rule that turns "this band, and then this realised price" into one number, and it
+is registered here because a forecast log without a scoring rule is a set of assertions nobody can
+grade.
+
+**Form.** For realised `y`, committed band `[l, u]`, and `alpha = 1/5`:
+
+```text
+S = (u - l) + (2/alpha) * (l - y) * 1{y < l} + (2/alpha) * (y - u) * 1{y > u}
+interval_score_micro = floor(S * 1_000_000)
+```
+
+Integer arithmetic only, no float anywhere; `alpha` is parsed as the ratio 1/5 rather than as a binary
+float. The rule text is a string and its SHA-256 is `bb9ddc66af224f68c63b16fe1a728205823ea3c73192ee843d7b059b4fa35063`,
+which is the value `LogForecast` commits with the band before the outcome is known.
+
+**Parameters.** One, `alpha`, and it is fixed at 1/5 for every on-chain forecast: an 80% central
+interval. It is a parameter in the API only so a test can show the rule is not accidentally hardcoded.
+
+**Data.** One committed band and one realised price. It needs no training set, which is why it is the
+one row in this registry that can be implemented before any data exists.
+
+**Cost.** `O(1)` integer arithmetic. Implemented in `ticketpath/core/forecast_score.py`, standard
+library only.
+
+**What it buys.** A ranking of forecasts of the *same* event that punishes both error and width: a
+band that covers scores exactly its width, so a useless 0-to-infinity band is expensive, and a narrow
+band that misses is worse than a wide one that covers. It is the metric a future fit is judged on,
+and it is committed by hash before the result, so the rule cannot be chosen afterwards.
+
+**Failure mode.** A score computed under a different rule is not comparable to this one, and the
+account does not carry the rule text, only its hash. The on-chain program stores
+`interval_score_micro` as supplied and recomputes only `covered`, so a wrong score is a
+well-formed account rather than a refused one. And a refusal ("this event cannot be priced") has no
+interval to score: it raises `ForecastRefused` instead of returning a maximum score, because a
+missing forecast is not a bad forecast.
+
+**Evidence.** **C** by derivation: a published scoring rule with a stated alpha, integer arithmetic
+and unit tests (`tests/test_forecast_score.py`, 17 tests). The first scored forecasts exist only on a
+local validator, against a realised price the run supplied.
+
+**Validation.** None against a real market, and none is possible in this programme: there is no
+realised ticket price series here to score against.
+
+**Role.** **SHIP.** It is implemented, committed by hash on chain, and it is the only row in this file
+whose job is to judge the others. What it is **not**: not a price model, not a forecast, not evidence
+that any band is right, and not a substitute for the identifiability work in S1 to S5.
 
 ---
 

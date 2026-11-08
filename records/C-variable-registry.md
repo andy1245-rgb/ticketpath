@@ -7,6 +7,13 @@
 reason), 33 variable rows and the 12 interaction features of Phase 3 as composite variables, from
 `02-a`, `02-b`, `02-c`, `02-e`, `03-a` and `03-b` (§8).
 
+**Corrected 2026-11-08T08:30Z: the row count above is 28, not 33, and the numbering has a gap that
+this note explains.** Counted from the entry headings, the file has **28** `V` entries: V1 to V17 and
+V40 to V50. **V18 to V39 are absent with no note**, because the region-cap entries took numbers after
+the highest one in use rather than filling the gap, and no document in this tree claims the "fifty
+variables" of any earlier brief. The 33 in the header sentence is kept as what revision 2 said; the
+count a reader should carry is 28.
+
 **Revision 2 sources, and nothing else:** `records/findings/03-b-temporal-correctness.md` (the
 authority on every verdict below), `records/findings/03-a-interactions.md` (the 13 interactions and
 the 12 interaction features), and `records/findings/02-a-price-paths.md`,
@@ -1539,3 +1546,199 @@ Counted from the entries above, not estimated.
 promotes no evidence class. No number here comes from `lib/mock/`. `03-b` §10's warning applies to this
 section in full: no real ledger exists, so every verdict above is a specification of a check and not an
 observation of a failure.
+
+---
+
+## 9. Region-aware cap variables (added 2026-11-08)
+
+Six fields arrive with the region-aware resale caps (`records/REGION-CAPS-DESIGN.md`, `D11`). They are
+registered here because the registry is the place that says whether a thing is a feature, and the
+honest answer for most of them is **no: they are constraints and provenance, not predictors**. Three
+are inputs to a refusal, one is a conditioning variable, and two exist only so a decision can be
+reproduced.
+
+The distinction matters for the same reason §2-B's cap truncation matters: a price ceiling does not
+shift the distribution, it **truncates** it, and a model fitted on prices pooled across jurisdictions
+with different ceilings is fitted on a mixture of differently-truncated distributions. `jurisdiction`
+is therefore a variable that defines the sample before any regressor is chosen.
+
+### V40 `event.jurisdiction` — priority 1 (conditioning), class A
+
+- **Definition.** The jurisdiction code the event is sold into: ISO-3166-1 alpha-2, or a subdivision
+  (`AU-NSW`, `CA-ON`, `US-CA`, `GB-SCT`). Stored on the event, resolved to a policy per sale date.
+- **Mechanism (through transaction probability).** It selects which ceiling applies, and the ceiling
+  truncates the realised price and changes whether a given markup is even expressible. It is not a
+  driver of demand or supply; it is a driver of the support.
+- **Temporal verdict.** **P+R.** Structural and known before the on-sale, so admissible at both
+  decision times — provided it is set before the sale, which is the whole reason it is a stored field
+  rather than something inferred from the city.
+- **Availability.** On the event row in the store, and in the additive `Event.jurisdiction` key.
+- **Expected effect.** Not a slope. It partitions the sample and the admissible price set; a pooled fit
+  that ignores it will understate dispersion near a ceiling and overstate it where none applies.
+- **Evidence class and priority.** A for the field's existence and availability; the *values* are as
+  reliable as the table, which is A for the rows read and E for the rest.
+
+### V41 `event.resalePolicy` — priority 1 (conditioning), class A
+
+- **Definition.** `capped`, `monitored` or `unresolved`, from the rules table, against the event's
+  start date.
+- **Mechanism.** Same channel as V40, one level down: it says whether a ceiling exists at all, which
+  is the difference between a truncated and an untruncated price distribution.
+- **Temporal verdict.** **P+R**, with the caveat that a mid-event law change can move it (**R** only)
+  and the chain can tighten but never loosen, so the observed distribution is a mixture across the
+  event's life if the law moved.
+- **Expected effect.** A censoring indicator for the estimator in `02-b`. Not a regressor.
+- **Limitation.** `monitored` means a law in force establishes no price limit; `unresolved` means we do
+  not know. Pooling them is the mistake this registry exists to prevent: one is a finding and the
+  other is the absence of one.
+
+### V42 `event.enforcedCap.enforcedCapBps` and `enforcedBaseLamports` — priority 1, class A
+
+- **Definition.** The integer the chain holds: a cap in basis points over a base in lamports, where
+  the base is the tier face, face + recorded fees, or face + fees counted at a statutory share.
+- **Mechanism.** The truncation point of every realised resale price on that ticket. `02-b` already
+  treats the cap as the censoring threshold; this variable makes the threshold per-event and exact
+  rather than an assumed markup.
+- **Temporal verdict.** **P+R.** Known at issue and immutable except by a tightening.
+- **Expected effect.** The upper bound of the observable markup distribution. Its presence biases any
+  uncorrected mean markup downward, and its value is the censoring point a Tobit-style correction
+  needs.
+- **Limitation.** It is a constraint, never an outcome. Do not regress price on it.
+
+### V43 `event.enforcedCap.bindingRule` — provenance, class A
+
+- **Definition.** `law` or `platform`: which rule produced the ceiling.
+- **Verdict.** **N** as a feature. It exists so a fit can be told apart from a product decision: a
+  ceiling imposed by a platform at +25% and a ceiling imposed by a statute at face are identical in
+  the data and different in what they mean for the counterfactual.
+
+### V44 `lawTableVersion`, `lawAsOf` — provenance, class N
+
+- **Definition.** The rules-table generation and the date the law was checked against.
+- **Verdict.** **N.** Neither is a feature. Both are here so that a decision made in March can be
+  re-derived from the table that made it, and so a model trained on a later version cannot silently
+  be presented as if it were trained on the earlier one.
+
+### V45 `lawBasis[]` (citation, url, confidence, status) — provenance, class A as a record
+
+- **Definition.** One object per instrument consulted: what it is, where it was read, how well, and
+  whether it is in force, announced, repealed or unknown.
+- **Verdict.** **N** as a feature; **A** as evidence. It is the only place a reader can check that a
+  refusal had a source, and it is deliberately served next to the number it justifies rather than
+  filed somewhere else.
+
+**What this section does not claim.** It does not promote any of these to a predictor, and it does not
+estimate anything. The only empirical claim in it is structural: a ceiling truncates, and a table of
+ceilings partitions the sample.
+
+## 10. On-chain record fields, added 2026-11-08
+
+Five fields arrive with the v2 ticket record (`programs/cap_hook/src/state.rs`, decision D13) and the
+forecast log (decision D14). They are registered here for the same reason §9 registers the region-cap
+keys: the registry is the place that says whether a thing is a feature, and the honest answer for
+three of them is **no**. Two are constraints on the support of a price, one is a clock that nothing
+yet reads, and one is the observation a forecast is graded against.
+
+**These are not the wire fields.** §9's V40 and V41 are the *event's* jurisdiction and resolved
+policy, served as additive keys and derived per request. The entries below are the *record's* bytes on
+chain: a two-letter code and a `u8` the program stores and logs but does not interpret (D16). The two
+pairs are related by the issuer's choice and by nothing the chain enforces, and a fit must use the
+event-level pair because that is the one with a date and a table behind it.
+
+### V46 `record.bandLowLamports`: the floor, priority 1 as a constraint, class A
+
+- **Definition.** `TicketRecord.band_low_lamports`, a `u64` in lamports; `0` means no floor, and there
+  is no way to distinguish "no floor" from "a floor of zero".
+- **Mechanism (through supply and willingness to pay).** It is the lower truncation point of the
+  admissible price set: the hook refuses a staged price below it (`6021`), so no observed resale on
+  that record can sit below it. Like the cap it does not shift a distribution, it cuts one.
+- **Temporal verdict.** **P+R.** Written once at `InitializeRecord` and immutable; knowable at the
+  on-sale, so admissible at both decision times.
+- **Availability.** On chain, `["record", mint]`, offset 19, `u64`. Decoded by
+  `ticketpath/onchain/v2.py`. Not on the wire contract.
+- **Expected effect.** The lower bound of the observable markup distribution. A mean or a median taken
+  across records with and without a floor is taken across differently-censored samples.
+- **Limitation.** It is a constraint, never an outcome: do not regress price on it. `0` is ambiguous
+  by construction, so a fit must treat "no floor" as a separate state and not as a floor at zero.
+- **Evidence class and priority.** **A** for the field, its offset and the refusal (the local run's
+  artefact records `899,999,999` refused `6021` and `900,000,000` admitted); **C** for the truncation
+  argument. Priority 1 as a constraint.
+
+### V47 `record.jurisdiction`: priority 1 as a partition key, class A as a field / E as a mapping
+
+- **Definition.** `TicketRecord.jurisdiction`, two uppercase ASCII bytes, ISO-3166-1 alpha-2, with
+  `ZZ` for unspecified.
+- **Mechanism (through the support).** Same channel as V40: it selects which ceiling could apply, and
+  a ceiling truncates. The difference is that the record's field is an *issuer's statement*, not a
+  resolved row: the program neither validates the code nor maps it to a policy.
+- **Temporal verdict.** **P+R.** Written once at `InitializeRecord`.
+- **Availability.** On chain, offset 27, `[u8; 2]`. Not on the wire contract, and no instruction
+  changes it.
+- **Expected effect.** A partition variable, and only as good as the issuer's statement. An event whose
+  record says `ZZ` must not be pooled with one that names a country and then treated as if the
+  country's law applied.
+- **Limitation.** **E as a legal claim.** The bytes are a field; what a jurisdiction's law says is
+  `records/findings/33-a-region-cap-law.md`'s business, and that is `unresolved` for most of the world.
+  Nothing in this tree maps these two bytes to a policy on chain (D16, Q4 open).
+- **Evidence class and priority.** **A** for the field and its encoding (pinned by
+  `tests/test_onchain_v2.py`); **E** for any inference from the code to a law. Priority 1 as a
+  partition key.
+
+### V48 `record.policy`: priority 1 as a conditioning flag, class A
+
+- **Definition.** `TicketRecord.policy`, `u8`: `0` capped, `1` monitored. Any other value is refused at
+  `InitializeRecord` with `6023`.
+- **Mechanism.** It says whether the two price predicates run at all. On a monitored record the hook
+  admits any staged price and logs the jurisdiction, so the price distribution is untruncated and the
+  record still observes the sale.
+- **Temporal verdict.** **P+R**, with the caveat that a monitored record's observed prices are not
+  comparable with a capped record's without saying which is which.
+- **Availability.** On chain, offset 29, `u8`. The v1 record has no such byte, so a v1 record is
+  `capped` by construction and a decoder must not read one where it is absent.
+- **Expected effect.** A censoring indicator, exactly as §9's V41 is at event level. Not a regressor.
+- **Limitation.** It is not a legal finding. `0` means "the platform applies a cap", not "a law caps
+  resale here".
+- **Evidence class and priority.** **A** for the field and the `6023` refusal (measured on the local
+  validator). Priority 1 as a conditioning flag.
+
+### V49 `record.heldSinceUnix`: a clock with no consumer, class A as a field / N as a feature
+
+- **Definition.** `TicketRecord.held_since_unix`, an `i64`; `0` means unknown. Written by the hook on
+  every admitted transfer, so it is the instant the current holder acquired the ticket by the
+  cluster's own clock.
+- **Mechanism (intended, not built).** Holding duration is the input the flip-tax rebate curve would
+  divide by (`rebate_bps`, `rebate_lamports` in `state.rs`, unit-tested). No instruction pays a
+  rebate, so the field currently changes nothing.
+- **Temporal verdict.** **R** if it is ever used as a feature: it is knowable at a decision time inside
+  the trading window and not at the on-sale.
+- **Availability.** On chain, offset 30, `i64`. Not on the wire contract, and nothing off chain reads
+  it today.
+- **Expected effect.** None, today. If the rebate is ever built it is an input to a fee, not to a price,
+  and it would still be a mechanism variable rather than a predictor.
+- **Limitation.** A field with no consumer is not a feature. It is also written only on admitted
+  transfers, so a record that never moved carries `0`, which is not "held for zero seconds".
+- **Evidence class and priority.** **A** for the write (the local run reads `1794120514` back after an
+  admitted transfer and `0` before one); **N** as a feature until something consumes it. Priority 4,
+  as a control.
+
+### V50 `forecast.intervalScoreMicro`: the observation a forecast is graded by, class C
+
+- **Definition.** `Score.interval_score_micro`, an integer in micro-lamports, `floor(S * 1_000_000)`
+  where `S` is the Winkler interval score of the committed band against the realised price. The rule is
+  `ticketpath/core/forecast_score.py`, hashed as `bb9ddc66af224f68c63b16fe1a728205823ea3c73192ee843d7b059b4fa35063`,
+  and the hash is committed with the forecast before the outcome is known.
+- **Mechanism.** No channel: it does not enter a price. It is the loss a forecast is judged by, and its
+  only use is to compare forecasts and to refuse a model whose bands are wide or wrong.
+- **Temporal verdict.** **N** as a feature: it is only knowable after the realised price, so it can
+  never be an input to a decision. It is the label side of the forecast, not a covariate.
+- **Availability.** On chain, `["score", forecast]`, 58 bytes, created once. Off chain it is computed
+  by `forecast_score.scored_forecast`, and a refusal (`ForecastRefused`) is not a score.
+- **Expected effect.** A ranking of forecasters against each other on the same event, with the width
+  penalty built in: a band that covers scores its own width, and a miss scores `2/alpha` times the
+  distance outside.
+- **Limitation.** The program stores `interval_score_micro` as supplied and recomputes only `covered`
+  (`programs/cap_hook/src/lib.rs`), so the number is not independently checked on chain. A score whose
+  `scoring_rule_hash` is not the committed one is a different rule, and the account does not say so.
+- **Evidence class and priority.** **C** by derivation, from a stated rule with integer arithmetic and
+  unit tests; the score has never been computed against a real ticket market, because there is none in
+  this programme. Priority 0 as a feature, and it is the metric any future fit is judged on.

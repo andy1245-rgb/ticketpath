@@ -1508,7 +1508,10 @@ observation set and the four gaps are unaffected; the repo-state row is a snapsh
 ### 14.7 The on-chain design, and what it does and does not guarantee
 
 None of this is deployed. There is no program id, no compiled artefact, no cluster and no signature
-(`/health` reports `programDeployed: false`, `programId: null`). What exists is a design: a Token-2022
+(`/health` reports `programDeployed: false`, `programId: null`). **[STALE SINCE 2026-11-08T03:45Z: the
+program is deployed on devnet and the boundary pair is on chain. See the CORRECTION of that date at the
+end of this file. `/health` still reports those three values because its chain adapter never asks the
+cluster, which is a different statement.]** What exists is a design: a Token-2022
 mint per ticket carrying a transfer hook that points at the program, a per-ticket record account and an
 append-only record per custody change, with the resale cap checked in the program before the transfer
 (`F` D6; `docs/ON-CHAIN-DESIGN.md`).
@@ -1853,7 +1856,9 @@ Reported so the record is not a list of fixes:
 
 No program id, no compiled artefact, no cluster, no signature. `/health` reports `programDeployed: false`,
 `programId: null`, `rpcEnabled: false`, and the chain slot on the page renders its absent state until an
-artefact verifies. The design is in §14.7; the simulation is a Python mirror that proves the arithmetic and
+artefact verifies. **[STALE SINCE 2026-11-08T03:45Z: there is a program id, a compiled artefact and a
+cluster, the slot now verifies for the one state the artefact commits to, and a live `/health` still
+reports those three values by design. See the CORRECTION at the end of this file.]** The design is in §14.7; the simulation is a Python mirror that proves the arithmetic and
 the ordering of the state machine and nothing about a runtime. The page says exactly that.
 
 ---
@@ -1891,7 +1896,9 @@ headlessly, which the programme requires of anything a reviewer will use.
 ### 18.3 The test count, observed
 
 **Observed at 2026-11-07T12:45Z: `python3 -m unittest discover -s tests` reported `Ran 352 tests in
-12.157s`, `OK`.** That is the count this document states, and it is the third count observed in the same
+12.157s`, `OK`.** **[STALE SINCE 2026-11-08T03:45Z: the same command at 03:35Z reported `Ran 610 tests
+in 23.958s`, `OK`, and the swarm harness adds a separate 274. See the CORRECTION at the end of this
+file.]** That is the count this document states, and it is the third count observed in the same
 session, because the tree was being edited while the document was assembled: 293 tests at 12:00Z, 309 at
 12:15Z and 12:35Z, and 352 at 12:45Z. Between 12:33Z and 12:38Z the same command reported, in order, 2
 failures and 16 errors, then 63 errors, then 3 failures and 6 errors, then none, all from an in-flight change
@@ -2074,7 +2081,9 @@ engine's banned-sentence rule and the findings, and stated as prohibitions:
     They are excluded from the static on-sale decision, not from the in-market reprice and not from the
     ex-ante risk terms.
 11. **Not** that anything is deployed, verified on chain, or backed by a signature. There is no program, no
-    cluster and no transaction.
+    cluster and no transaction. **[STALE SINCE 2026-11-08T03:45Z: a program is deployed and the cap
+    boundary is proven on devnet; nothing else in this list is affected, and no ticket, price or custody
+    row in this repository is on chain. See the CORRECTION at the end of this file.]**
 12. **Not** that the engine's numbers are consistent with each other simply because they are on one page.
     They were not, in one review, and the review's verdict was that honesty failed. The specific defects
     and their current status are in §17.4 to §17.6.
@@ -2589,3 +2598,53 @@ tests`, then `console-check: 113 ok, 0 failed`, then `gate ok - tests=546 OK - c
 `records/findings/12-final-audit.md`: a file that cannot be staged cannot carry a correction. No number,
 no finding and no claim in this file changed, and `tools/public_safety.py` reports zero hits for it as of
 this note.
+
+---
+
+## CORRECTION (2026-11-08T03:45Z) — the program is deployed, and the suite is 610 tests
+
+**Measured:** 03:30Z–03:45Z, at `HEAD 33d95b3` (equal to `origin/main`; working tree dirty and the
+dirt is the subject of this correction). **Scope:** this file only. Appended, except for four
+in-place tags that point here.
+
+**The two claims this file got wrong, and why they were not wrong when written.**
+
+1. **§14.7, §17.7 and §11 item 11 say nothing is deployed, with no program id, no cluster and no
+   signature. That is now false.** `programs/cap_hook/` — a native Rust Token-2022 transfer hook, no
+   Anchor — is deployed on devnet at `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, with a hooked
+   mint at `6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV`. At face 1,000,000,000 lamports and cap
+   2,500 bps, a transfer at 1,250,000,000 landed (`err: null`, slot 519845933, blockTime 1794099006)
+   and one at 1,250,000,001 was refused by the cluster (`InstructionError [0, Custom 6010]`, slot
+   519846008, blockTime 1794099023, the program's own log line naming the three numbers). The record
+   is `records/devnet-artefacts.json`; this correction re-read all four facts from
+   `https://api.devnet.solana.com` rather than from the file, and the artefact's quote hash
+   recomputes under `chain_client.load_artefact`.
+   **What this does not change:** the engine, the fixture, the research, and every refusal in this
+   document. It also does not deliver the design's hop record, destination check or verified-wallet
+   gate — those are absent from the deployed program, as `programs/cap_hook/README.md` states.
+   `records/STATE-OF-PROJECT.md` §A2 is the measurement of record.
+2. **The test count is 610, not 546, and 546 was not 352.** `python3 -m unittest discover -s tests`
+   at 03:35Z printed `Ran 610 tests in 23.958s`, `OK`. The swarm harness carries a separate suite
+   that this command does not collect: `python3 -m unittest discover -s market_swarm/tests` →
+   `Ran 274 tests in 1.028s`, `OK`. §18.3's narrative and the 2026-11-07T18:55Z correction above are
+   left exactly as written: they are the history of the count, and each was true of its instant.
+
+   **Corrected 2026-11-08T08:30Z: the two counts above are history too.** Measured at 08:13Z:
+   `python3 -m unittest discover -s tests -t .` → `Ran 1076 tests`, `OK (skipped=26)`; the market_swarm
+   suite → `Ran 436 tests`, `OK (skipped=2)`. The sentence's point stands and becomes stronger: no
+   number should be pasted from a document, because 546, 610, 1058 and 1076 were each true on their own day.
+   This document's own §A2 reference is unaffected.
+
+**The in-place tags.** §14.7's opening paragraph, §17.7's first sentence, §11 item 11 and §18.3's
+"the count this document states" each carry a bracketed tag dated 2026-11-08T03:45Z pointing at this
+section. No other line of this file was edited by this pass, and no number was changed without the
+command that produced it.
+
+**What is still stale and deliberately untouched.** `records/DELIVERABLE.md` was assembled at 12:40Z
+and describes `ticketpath/` as it stood then. `ticketpath/core` has not changed since `375126f`
+(17:25Z), so the engine arithmetic in §15 to §18 still describes this code. What has moved underneath
+it is everything outside `core/`: the console grew a verified chain slot
+(`ticketpath/console/page.py`, `ticketpath/orchestrator.py`), the publisher gained a resume file and
+transport retries (`records/findings/28`), and two packages that did not exist at 12:40Z now do —
+`programs/cap_hook/` and `market_swarm/`. This file does not describe either, and this correction does
+not add that description; `records/STATE-OF-PROJECT.md` does.

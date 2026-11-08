@@ -21,6 +21,42 @@ different thing.]**
 
 ---
 
+## STATE AT 2026-11-08T03:45Z — the devnet write landed, and three numbers in this file moved
+
+Read this block before pasting anything below it. Every line has the command or the endpoint that
+produced it, and `records/STATE-OF-PROJECT.md` is the full measurement.
+
+1. **The program is deployed on devnet**, at `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, with a
+   Token-2022 mint at `6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV` carrying the transfer hook,
+   metadata pointer and token metadata. Re-read from the cluster in this pass: `getAccountInfo` →
+   `executable: true`; the mint → `decimals 0`, `supply 2`.
+2. **The boundary is proven on the cluster, not only in simulation.** 1,250,000,000 lamports admitted
+   (`err: null`, slot 519845933, blockTime 1794099006) and 1,250,000,001 refused with
+   `InstructionError [0, Custom 6010]` (slot 519846008, blockTime 1794099023), each with its own
+   signature, plus a quote memo at blockTime 1794099003. `records/devnet-artefacts.json` is the record.
+   At face 1.0 SOL and cap 2,500 bps, the admitted price is exactly `face × 12,500 // 10,000`.
+3. **The test count is 610, not 546** (`Ran 610 tests in 23.958s`, `OK`), and the swarm harness carries
+   a separate 274 (`Ran 274 tests in 1.028s`, `OK`). Every `546` below is history and any one of them
+   pasted into a form is a false statement about the tree.
+
+   **Corrected 2026-11-08T08:30Z: both counts above are stale, and 610 has the same problem the item
+   warns about for 546.** Measured on this tree at 08:13Z: `python3 -m unittest discover -s tests -t .`
+   → `Ran 1076 tests`, `OK (skipped=26)`; `python3 -m unittest discover -s market_swarm/tests -t .` →
+   `Ran 436 tests`, `OK (skipped=2)`. Neither number should be pasted: paste the command's output at
+   the moment you run it, or say "the suite the command prints". 610 and 274 were true at 03:35Z and
+   are kept as history beside 546; the count had moved again to 1076 by 08:13Z.
+4. **§2.5 item one and §2.6's Token-2022 bullet are corrected in place**; §2.4's dated 12:19Z snapshot is
+   left as written and marked false of the tree; §3 item 13 (the four-item materials test) and item 16
+   (the devnet field on the form) are re-measured, and item 16 now has three identifiers to paste.
+5. **T9 is closed.** What remains of it is a paste, not a decision, and nothing may be pasted that is not
+   in `records/devnet-artefacts.json`.
+6. **Still true and still the weak points:** no hosted demo and no URL; every price and custodian is a
+   synthetic fixture; the engine is unvalidated; there is no video; and the deployed program checks the
+   cap and nothing else — no hop record, no destination check, no verified-wallet gate, no escrow, no
+   nullifier (`programs/cap_hook/README.md`).
+
+---
+
 ## Operator actions before 15:00Z — refreshed 2026-11-07T18:55Z
 
 What is now known, in the order the clock forces it. Every line is his to do; none of them can be
@@ -62,6 +98,15 @@ this one is the later reading.
    header note reserves it for the frontend fix if that finding is written): cite that file and the
    artefact it names, and do not paste a signature from anywhere else. Until then the honest state stays
    "nothing is deployed".
+   **[RESOLVED 2026-11-08T03:45Z. The write landed and T9 is closed. `records/devnet-artefacts.json`
+   exists and verifies; it names the program `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, the mint
+   `6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV`, the memo signature with its slot and block time, and
+   the two transfer legs — one admitted at 1,250,000,000 lamports, one refused with `6010`. The record of
+   the work is `records/findings/18` (toolchain, local validator), `records/findings/21` (the hook in the
+   tree, the publisher), `records/findings/28` (the resume fix) and `programs/cap_hook/README.md` (what the
+   deployed program does and does not do). §3 item 16's form field can now carry these three public
+   identifiers — and only these three. `/health` still reports `programDeployed: false` because its chain
+   adapter never asks the cluster; that value is not evidence against the deployment.]**
 8. **Registration and check-in are machine-checked, and the form fields are §3 items 12 and 20.** Run
    the submit path once early on Sunday rather than at 09:55; the event page shows three steps, register,
    check in, submit, and a registered-but-not-checked-in account may not be able to submit at all. **The
@@ -102,7 +147,8 @@ point at, and `records/findings/13-submission-readiness.md` is the finding behin
    (item 16), and the Demo URL per T3 and T11 (item 5).
 5. **Decide T5** (first-time-hacker status, which decides Best Beginner) and **T9** (whether to
    attempt the one devnet memo write). Both change what the form says and neither changes what the
-   repo does.
+   repo does. **[T9 IS CLOSED 2026-11-08T03:45Z: the write was made and the artefacts verify. What is left
+   of it is not a decision but a paste — the three public identifiers in item 7 above.]**
 6. **Delete the remote branch** `refs/heads/wip/mode-sentences-20261107T1650Z` if a judge reading
    "branches" should not find a branch named after an unfinished sentence fix. Measured on the
    remote at 17:36Z.
@@ -128,7 +174,7 @@ Every line below was produced by a command in this session, not carried from ano
 | Pricing console (`ticketpath/console/`) | **does not exist** | `ls ticketpath/` |
 | Price served anywhere | **none**: `/health` → `pricingModel.available: false, reason: no_model_registered` | `/health` |
 | Chain | `programDeployed: false, programId: null, rpcEnabled: false` | `/health` |
-| Test suite | `python3 -m unittest discover -s tests` → **546 tests, OK** **[AMENDED 17:36Z, re-measured at HEAD `375126f`; count re-measured again 18:11Z with `python3 tools/tp.py gate`, `tests=546 OK`, 23.3 s for the whole gate]** | run in this session |
+| Test suite | `python3 -m unittest discover -s tests` → **610 tests, OK** **[AMENDED 2026-11-08T03:45Z: `Ran 610 tests in 23.958s` at `HEAD 33d95b3`; the swarm harness adds a separate 274. Earlier readings: 546 at 18:11Z, 453 at 17:36Z]** | run in this session |
 | Root README | **missing** | `ls README*` |
 | LICENSE | **missing** | `ls LICENSE` |
 | Repo | public, `andy1245-rgb/ticketpath`, created 2026-11-07T10:25Z; `LICENSE` is MIT with the holder filled in **[AMENDED 17:36Z: the `license: None` reading was true at 10:25Z and is not any more]** | GitHub API |
@@ -231,6 +277,8 @@ changes.
 | 3 The console | 0:43 to 1:04 | `http://<host>:8788/?event=evt_syn_02&tier=tier_stg_general&capBps=1500&tau=0.2` | **`Recommended primary price: at least 1.38 SOL per ticket, General tier.`** under its `[UNVALIDATED]` badge, then `That is a floor, not an estimate.`, and the cap's role said out loud: a resale ceiling, not the primary price |
 | 4 The refusal | 1:04 to 1:20 | same console page, scrolled to `What the engine refuses` | **`not_identified`** and its sentence about asking prices, and **`Range: 1.38 SOL and up.`** |
 | 5 The on-chain invariant | 1:20 to 1:42 | `http://<host>:3001/tickets/tkt_syn_0001`, the "Custody trail", then the "On-chain (simulated)" card | the `Transferred` row with **no price**, then **`Not enforced — no program is deployed`** |
+
+**[Corrected 2026-11-08T08:05Z: the second half of row 5 is false on the screen and in the tree.** A program is deployed on devnet (`5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`), and the frontend no longer prints "Not enforced, no program is deployed". Read the row as "this server did not determine whether the transfer is enforced, because it reads no chain", and see `docs/ON-CHAIN-DESIGN.md` section 0 for what the deployed v1 does and does not enforce.]**
 | 6 The close | 1:42 to 1:58 | end card: `Ticketpath` / `Organizer pricing from the resale record` / `github.com/andy1245-rgb/ticketpath` | **"Nothing is deployed"** has already landed; here the line is **"everything else carries a label saying what it is"** |
 
 **Beat 1, spoken (51 words, about 22 s):**
@@ -284,11 +332,24 @@ the page's own line (A10) says the cap is a ceiling on the resale price and a fl
 the primary price. Fetched for this edit: `curl -s 'http://127.0.0.1:8788/?event=evt_syn_02&tier=tier_stg_general&capBps=1500&tau=0.2'`
 → 200, strings above.
 
+**[Corrected 2026-11-08T08:05Z: the badge list above says `0 on-chain transactions`; the page now prints `3`, because the evidence count is the number of signatures the artefact carries (three), not one per verified file. The sentence has been left as written.]**
+
 **The block that sits in the middle of the frame.** Between the `[UNVALIDATED] The decision` badge and the
 `[UNVALIDATED] Recommended primary price` line the page prints a `[UNVALIDATED] Decision mode:
 COUNTERFACTUAL` block ending `and it is not a price you could have set.` It is the newest sentence on the
 page and it lands before the number it qualifies: keep it in frame, do not read it aloud, and do not scroll
 it half off. Measured on a fresh instance at HEAD `375126f`: `127.0.0.1:8813`, 13,726 bytes on `/`.
+
+**What is now in frame for free, and this is not in the script above.** The console's `[DEVNET]` slot is
+empty for every state except one, and it is worth one line on camera because it is the only screen in the
+submission that carries a devnet signature. Add `&asOf=2026-11-07T18:34:29.183Z` to the Beat 3 URL — the
+instant and the identifiers are the recorded ones — and the slot at the bottom of the page renders
+`[DEVNET] Verified at … against api.devnet.solana.com`, the signature, the slot and the block time.
+Measured 2026-11-08T03:40Z: that URL returns 200, 14,275 bytes, and the signature string is in the body.
+Two cautions, both measured: the verification instant renders as the literal string `None` (a defect in the
+page, not in the record; `records/STATE-OF-PROJECT.md` §A6 item 1), so do not read that line aloud; and any
+other `asOf` renders the slot as unverified, which is correct but is not the shot you want.
+**[ADDED 2026-11-08T03:45Z: measured this pass, not in the 12:19Z script.]**
 
 **Beat 4, spoken (36 words, about 15 s):**
 
@@ -316,6 +377,8 @@ account exists on any cluster and no transaction backs these rows", its `Transfe
 `Not enforced — no program is deployed`, and the mint is a `SYN1...` placeholder. Keep your hands off the
 explorer link: it 404s, and a 404 on camera undoes the beat. Fetched for this edit: `curl -s
 http://127.0.0.1:3001/tickets/tkt_syn_0001` → 200, both cards above.
+
+**[Corrected 2026-11-08T08:05Z: the `Transfer restriction` row no longer reads that sentence, and the claim behind it is false. A program is deployed on devnet; the row says this server did not determine enforcement because it reads no chain. The mint is still a placeholder in the fixture. The paragraph above is kept as the description it was written as.]**
 
 **Beat 6, spoken (35 words, about 15 s):**
 
@@ -363,11 +426,19 @@ spoken claim that no price is served in frame, when the console serves a bounded
 259 spoken words, 1:51 at a normal pace (140 words per minute), 1:52 with the beat between sections.
 Say `NAME` as your own name; it is the only substitution. Nothing else in the blocks below changes.
 
+**[ADDED 2026-11-08T03:45Z: this variant is now obsolete in two more places, and beat 3 and beat 5 are
+the ones that could be recorded by mistake. Beat 3's on-screen line "Not enforced, no program is
+deployed" and beat 5's "Nothing is deployed" are false of the tree: the program is deployed on devnet and
+the cap boundary is proven there. Do not record this variant. If you want the refusal beat, take it from
+§1.2, which is the script to record.]**
+
 | Beat | Time | On screen (exact) | Must land |
 |---|---|---|---|
 | 1 The problem | 0:00 to 0:23 | `http://<host>:3001/organizer?event=evt_syn_02`, the "Resale analytics" panel, scrolled to the four stat tiles | **22.03 SOL across 12 sales, average markup +12%, cap is +15%**, all three visible at once |
 | 2 The thing that runs | 0:23 to 0:57 | same page, then tab 2: `http://<host>:8788/api/events/evt_syn_02/analytics` | the JSON shows **`"saleCount": 12`** and **`"avgMarkupBps": 1233`**, the same numbers as the page |
 | 3 The on-chain invariant | 0:57 to 1:18 | `http://<host>:3001/tickets/tkt_syn_0001`, the "Custody trail", then the "On-chain (simulated)" card | the invariant sentence, then **"Not enforced, no program is deployed"** on screen |
+
+**[Corrected 2026-11-08T08:05Z: the quoted on-screen sentence is gone and the claim behind it is false.** The ticket page no longer says no program is deployed, and one is. What is true, and what the voice-over should say, is that this server did not determine enforcement because it reads no chain; the deployed v1 enforces the price predicate and nothing else, and its staging instructions take no signer (`docs/ON-CHAIN-DESIGN.md` section 0). Keep the beat, change the words.]**
 | 4 The honest limitation | 1:18 to 1:35 | the same ticket page, the unpriced `Transferred` row and the custody trail | the sentence about the ask, spoken over a row that has **no price** |
 | 5 The close | 1:35 to 1:52 | end card: `Ticketpath` / `Organizer pricing from the resale record` / `github.com/andy1245-rgb/ticketpath` | **"Nothing is deployed"** has already landed; here the line is **"everything else carries a label saying what it is"** |
 
@@ -449,14 +520,21 @@ marks are kept so the record shows what was conditional and when it stopped bein
 > organizer would need, which is volume, median price, markup distribution and where the tickets ended up.
 > It runs tonight as a Python backend that answers nine endpoints of the platform's own frontend contract,
 > serving eight events and seventy-six tickets with a working custody trail, resale analytics and real
-> Ed25519 wallet signature verification, on a 546-test suite that passes (`python3 -m unittest discover -s
-> tests`, `Ran 546 tests`, `OK`). It also serves a console that
+> Ed25519 wallet signature verification, on a 610-test suite that passes (`python3 -m unittest discover -s
+> tests`, `Ran 610 tests in 23.958s`, `OK`). It also serves a console that
 > reads one event's resale record and gives a floor on the primary price from it, labelled a floor and not
 > an estimate, and it states the cap's role correctly: a cap in basis points over face sets the ceiling on
 > the resale price and, where it binds, fixes how that price divides between the organizer's price and the
 > reseller's margin, and it does not set the primary price. The ledger is a generated fixture and not ticket data, and
-> every screen says so in the visible text. No ticket program is deployed, so no price is enforced on chain:
-> the program that would refuse a resale above the cap is designed and simulated, not deployed.
+> every screen says so in the visible text. A ticket program is deployed on devnet and it refuses a resale
+> above the cap there, with a landed transfer and a refused one one lamport apart to show it; the rest of
+> the design — the hop record, the destination check, the verified-wallet gate — is designed and simulated,
+> not deployed.
+
+**[CORRECTED 2026-11-08T03:45Z in this pasted paragraph, two places: the suite is 610 tests, not 546,
+and the closing clause about no program being deployed is rewritten because one is. Nothing else in the
+paragraph changed, and it is safe to paste as it now reads. The measurements and the three public
+identifiers are in the state block at the top of this file.]**
 
 **[REWRITTEN 2026-11-07T15:10Z — two sentences replaced, and the old wording is kept for the record.** The
 closing sentence ("no price is served: the backend reports `pricingModel.available: false`") was true at
@@ -511,7 +589,16 @@ frame for 21 seconds, and the description a judge reads could not find it.]**
 
 > The entry is thin in five places, and each one is visible rather than argued away. First, nothing is
 > deployed: no program, no mint, no transaction, so a judge cannot confirm any chain claim by looking at a
-> cluster, only by reading the design and the simulation in the repo. Second, there is no real data. The
+> cluster, only by reading the design and the simulation in the repo. **[REPLACED 2026-11-08T03:45Z: this
+> is false of the tree. A program is deployed on devnet at
+> `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, a Token-2022 mint with the transfer hook is at
+> `6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV`, a quote memo landed with a block time, and a transfer
+> at 1,250,000,000 lamports was admitted and one at 1,250,000,001 refused with `6010` as a failed
+> transaction with its own signature. `records/devnet-artefacts.json` holds the record and this pass
+> re-read it from the cluster. What replaces the sentence, and is the honest form of the same item: the
+> deployed program checks the cap and nothing else — no hop record, no destination check, no
+> verified-wallet gate — so a judge can confirm the cap claim by looking at a cluster and cannot confirm
+> the rest of the invariant.]** Second, there is no real data. The
 > record is eight events and seventy-six tickets generated by a script in the repo; it is internally
 > consistent and it is not evidence about any market, and the screens say so. Third, the pricing engine is
 > unvalidated. A console page served at `/` prints a recommended primary price for the selected event, and
@@ -545,10 +632,15 @@ rule-based-bounded-estimator`, `fitted: false`.]**
 - Python 3.12, standard library only, no package installed
 - The platform's own Next.js frontend, unmodified in layout, plus our text-only labelling patch
 - Node 24 and the Next dev server, for the demo copy on port 3001
-- Token-2022 and a transfer-hook design, not deployed
+- Token-2022 and a transfer-hook program: **deployed on devnet** at
+  `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, with the hooked mint at
+  `6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV`; the cap check is the part that is deployed, and
+  `programs/cap_hook/README.md` says what is not. **[REPLACED 2026-11-08T03:45Z: this bullet read
+  "Token-2022 and a transfer-hook design, not deployed".]**
 - Ed25519 signature verification, implemented in the repo
-- A deterministic fixture generator (seed 20261107) and a 546-test unittest suite (`python3 -m unittest
-  discover -s tests`, `Ran 546 tests`, `OK`)
+- A deterministic fixture generator (seed 20261107) and a **610-test** unittest suite (`python3 -m unittest
+  discover -s tests`, `Ran 610 tests in 23.958s`, `OK`), plus a separate **274-test** suite for the swarm
+  harness (`python3 -m unittest discover -s market_swarm/tests`) **[corrected from 546, 2026-11-08T03:45Z]**
 - No Solana RPC in the running build: the chain adapter is off by default and opens no socket
   (`/health` reports `rpcEnabled: false`, `reason: rpc_disabled`). The devnet reads in §2.4 were made by
   hand with `curl` from the build machine, are recorded there, and are not performed by the app. **[Replaces
@@ -697,13 +789,13 @@ means the text is in this document and needs no decision. "TBD" means only he ca
 | 7 | How it works / technical description | §2.3 | set |
 | 8 | What is on-chain | §2.4, verbatim | set |
 | 9 | What is not done | §2.5, verbatim | set |
-| 10 | Inspiration / challenges / accomplishments / what we learned / what's next | accomplished: 546 tests, real signature verification, a labelling patch that makes an inherited UI tell the truth. Learned: the asking price is the missing observation, and no model fixes a missing column. Next: one write on devnet, then a real ledger | set |
+| 10 | Inspiration / challenges / accomplishments / what we learned / what's next | accomplished: 610 tests, real signature verification, a labelling patch that makes an inherited UI tell the truth, a program deployed on devnet whose cap boundary is proven there by a landed transfer and a refused one. Learned: the asking price is the missing observation, and no model fixes a missing column. Next: a real ledger | set **[610 corrected from 546, and the devnet clause added, 2026-11-08T03:45Z]** |
 | 11 | Built with / technologies | §2.6 | set |
 | 12 | Team members, names, emails, MLH accounts | **Two people: the operator and one teammate.** Both must be registered on MLH and **checked in**, or the second account may not be able to submit at all (§0 item 8). Both names are on the team field and in `LICENSE`, not in this file (see the note below); emails and account state are his | **T4, names set** |
-| 13 | Track: Top 3 Overall | select, knowing the score. The criterion is applied by looking for four things, and the repo has none of them: no account that belongs to the project (`chain.programId: null`, and every mint is a `SYN*` placeholder: measured 17:47Z, devnet `getAccountInfo` on `SYNfivkiJSwcrAgDeKA2bynB9SAuH7Y8Gg1ZrNV4agm` returns `value: null`), no transaction signature with a block time (every ledger row is `signature: null`, `slot: null`), no program the team did not write doing work the product depends on (Token-2022 exists on devnet and nothing here calls it), and no read of chain state back into the app (`ticketpath/adapters/rpc_adapter.py` opens no socket). **0 of 4.** Measured in `13-submission-readiness.md` §4. Top 3 Overall is unlikely on the chain criterion; the realistic path is MLH's own four-part rubric (Technology, Design, Completion, Learning), where the console is now the interface the build did not have | set |
+| 13 | Track: Top 3 Overall | select, knowing the score. The criterion is applied by looking for four things. **[RE-MEASURED 2026-11-08T03:45Z — the sentence that followed this point used to say the repo has none of them, 0 of 4. Two of the four are now met and two are partial, and `records/findings/29` §1 reaches the same reading. What each is now: an account that belongs to the project — MET, the program id above resolves as `executable: true` on devnet; a transaction signature with a block time — MET, three of them, block times 1794099003 / 1794099006 / 1794099023, while every fixture ledger row still carries `signature: null`; a program the team did not write doing work the product depends on — PARTIAL, Token-2022 processes each transfer and calls this project's hook inside it, and the shipped app still calls no chain; the product reading that state back — PARTIAL, the console renders the recorded artefact after recomputing its quote hash, and `rpc_adapter.py` still opens no socket, so it is a recorded read. The realistic path is still MLH's own four-part rubric, where the console is the interface the build did not have.]** Measured in `13-submission-readiness.md` §4 and re-measured in `records/STATE-OF-PROJECT.md` §A2 | set |
 | 14 | Track: Best Beginner | eligible only if more than half the team are first-time hackers | **T5** |
 | 15 | Track: AI, DeFi, Gaming | recommend none. There is no AI component in the build, no payment or lending surface, and no game | set (your veto) |
-| 16 | Devnet program id / mint / address field | **leave empty.** Nothing is deployed. An invented address is the one lie that would sink the entry | set |
+| 16 | Devnet program id / mint / address field | **fill it now.** The program is deployed: `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, with the hooked mint `6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV`, and the memo and transfer signatures are in `records/devnet-artefacts.json`. Paste only those recorded identifiers. An invented address is the one lie that would sink the entry | set **[CHANGED 2026-11-08T03:45Z: this row said "leave empty. Nothing is deployed."]** |
 | 17 | Licence | MIT, in `LICENSE`, copyright line filled with the holder's name. Nothing to decide; confirm the name is the one he wants on a public repo | **T6, confirm only** |
 | 18 | AI tool disclosure | §2.7 | **T7** |
 | 19 | Screenshots / thumbnail | **captures exist** — twelve PNGs in `~/tools/shot/out/` before 18:40Z and one more taken during this pass, from the copy and from the console at 1280 and 390 (`docs/SHOTS.md`, `tools/shot.py`). Whether any go in the form is his call: the video is what a judge watches, and the form's own screenshot field was not visible without an account. The thumbnail still comes from the video platform. **[CORRECTED 2026-11-07T18:55Z: this row used to say "none exist", which was false of the build machine.]** | set (his veto) |
@@ -775,6 +867,8 @@ therefore not a valid 64-byte signature: `getTransaction` answers `Invalid param
 17:47Z) — is cited as prior work and not as this project's. Then `git grep -nE
 '[1-9A-HJ-NP-Za-km-z]{32,44}'` and confirm every long string is either a `SYN` placeholder or a protocol
 program id (Token-2022, Memo) that we do not own.
+
+**[Corrected 2026-11-08T08:05Z: this safety pass is now out of date in both directions.** `git grep -n deployed` still finds the old negatives, but a program IS deployed on devnet, so "every occurrence is a negation" no longer implies the pass. The one signature above is no longer the only one: `records/devnet-artefacts.json` carries three devnet signatures and the console renders them, which is the claim the submission should be making. Read this item as "every deployment sentence names what was deployed, where, and what it does not prove".]**
 
 **6. The labels.**
 On the machine serving the demo, for each of the four screens that print a number:
@@ -856,7 +950,8 @@ The rest, in the order they tend to come.
    video.
 7. **What actually works right now?** Eight events and seventy-six tickets served from our backend into the
    platform's UI, with per-ticket custody trails, resale analytics, and Ed25519 wallet signature
-   verification, on 546 passing tests (`python3 -m unittest discover -s tests` → `Ran 546 tests`, `OK`).
+   verification, on 610 passing tests (`python3 -m unittest discover -s tests` → `Ran 610 tests` in
+   23.958 s, `OK`) **[corrected from 546, 2026-11-08T03:45Z]**.
 8. **Can I click it?** Not without running it: there is no hosted demo and the submission has no demo URL;
    the repo has the two commands.
 9. **What does the pricing engine output today?** A floor, not an estimate. The console served at `/`
@@ -876,6 +971,8 @@ The rest, in the order they tend to come.
     enforce it is designed and not deployed, and the UI says "Not enforced, no program is deployed".
 14. **What is next?** One write on devnet, then a real ledger, then the listing fields, in that order,
     because that is the order in which each one makes the next one mean something.
+
+**[Corrected 2026-11-08T08:05Z: answer 13 above is wrong twice.** A program is deployed on devnet and enforces the price predicate inside the transfer hook (one landed transfer at the ceiling, one refused `6010`), so "the program that would enforce it is designed and not deployed" is false; and the UI no longer says "Not enforced, no program is deployed". What is true: the deployed v1 enforces the cap on the price a transfer declares and nothing else, its staging instructions take no signer, and the fixture ticket page is not on chain. Answer 14 should start from the v2 program and the reconciliation of the two jurisdiction decisions, not from "one write on devnet".]**
 
 ---
 
@@ -976,9 +1073,12 @@ pushed.
 | 16 | §4 item 9 | told him to fix a §2.2 sentence that no longer exists | re-pointed at findings 1, 2 and 5, which are the five sentences that were actually false, all corrected in place |
 
 **What did not change, on purpose.** §2.4 keeps `Nothing. No program, no mint, no transaction, no address,
-and no signature`; the materials test stays **0 of 4** and now says so in §3 item 13 with all four absences
-named. No line in this file claims a deployment, a signature or a program for this project, and the
-correction pass added none.
+and no signature` **[FALSE OF THE TREE SINCE 2026-11-08T03:45Z: all four now exist and are recorded in
+`records/devnet-artefacts.json`. §2.4 is left as written because it is a dated snapshot of 12:19Z; the
+form field is §3 item 16, which is corrected.]** The line that used to end this paragraph — the materials
+test stays **0 of 4** — is corrected in §3 item 13. The rest of the paragraph is kept, and so is its
+point: no line in this file *invented* a deployment, a signature or a program for this project, and the
+correction passes added none. The deployment recorded here was measured before it was written down.
 
 ### Publication note — 2026-11-07T18:11Z
 

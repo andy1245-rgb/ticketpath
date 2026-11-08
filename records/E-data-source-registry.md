@@ -1,6 +1,13 @@
 # E-data-source-registry
 
-**Programme section:** §2.E. **Seeded:** 2026-11-07. **Last touched:** 2026-11-07T10:48Z.
+**Programme section:** §2.E. **Seeded:** 2026-11-07. **Last touched:** 2026-11-08T06:25Z, extended with S29 (primary legislation, for the region-aware
+resale caps) after the 05:54Z extension with S28 (the memo program); no
+existing entry was edited or renumbered.
+
+**Extended 2026-11-08T08:30Z: the header for 06:25Z above is kept as it was written.** The ten-feature
+documentation pass added S30 to S32 later the same day, with no existing entry edited or renumbered;
+the count line below now carries both the 27 it said before that pass and the 32 it says after it,
+each with its date.
 **Filled from:** `findings/01-d-external.md` (Tables C-1, C-2, E-1, §8 money gates, §9 limits)
 and `records/00-data-situation.md` (what the platform itself yields, Gaps 1–4).
 
@@ -71,8 +78,19 @@ Bounded single `curl` calls, no recursion, nothing written outside `/tmp`.
 | S25 | Public holiday and school-term calendars | not stated in 01-d | Obtainable today | Training + inference | not stated in 01-d |
 | S26 | Paid Google Trends aggregators (SerpAPI, DataForSEO, Glimpse) | various | Obtainable today (paid) — rejected on mechanism | not stated in 01-d | not stated in 01-d |
 | S27 | Journalism / unstructured press | various | Obtainable today, but unstructured and uncountable | Inference only (human-set override); never a feature | **E** (report) |
+| S28 | Memo program (per-cluster id) | Solana, and the `solana` CLI's shipped memo program | Obtainable today: public, executable, no key; **the id differs by cluster** | Inference only; a commitment, not a dataset | **A** on devnet, **D** on mainnet-beta and localnet (see record) |
+| S29 | Primary legislation on ticket resale (the region-caps table) | each jurisdiction's legislation service | Obtainable today for the rows marked A; walls elsewhere | Neither: a constraint applied at decision time | A for the rows read, E for `unknown` |
+| S30 | Token-2022 transfer-fee extension | Token-2022 program, on every cluster | Obtainable today: public, executable, no key | Neither: a mechanism the product tested, not a dataset | **A** for the ceiling measured on a local validator |
+| S31 | The band feed, `["band", mint]` | this repository's own program | Obtainable today on the local validator only | Inference: an input a consumer must carry the uncertainty fields from | **A** for the account shape and its fields; **E** for any market claim |
+| S32 | A live child model as a decision source (deepseek) | the model provider, through the `pi` CLI | Obtainable today, paid, operator's account | Neither: a policy that chooses an action, not a feature | **A** for the measured cost; **D** for whether it trades better |
 
-Count: **27 sources registered.**
+**[Historic count, superseded 2026-11-08.]** This line recorded 27 sources before the ten-feature
+documentation pass added S30 to S32; it is kept because the record is append-only:
+Count: **27 sources registered** (S28 and S29 were added 2026-11-08; no existing entry was renumbered
+or moved).
+
+Count: **32 sources registered** (S30 to S32 were added 2026-11-08 by the ten-feature documentation pass; S29 was added 2026-11-08 by the region-caps pass; S28 was added 2026-11-08; no existing entry was renumbered or
+moved).
 
 ---
 
@@ -623,6 +641,137 @@ Count: **27 sources registered.**
 | Training vs inference | Inference only, by human judgement; never a feature |
 | Claim status | cited-not-reverified |
 | Evidence class | **E** |
+
+### S28 — Memo program (per-cluster id)
+
+Added 2026-11-08 by the feature-1 documentation pass. This is not a price source and not a dataset;
+it is a **third-party program the product depends on**, registered here because its id is read per
+cluster and the value differs, which is the kind of fact this registry exists to keep straight.
+
+| Field | Value |
+|---|---|
+| Provider or source | Solana hosts the program; the `solana` CLI ships and writes to the one it calls its memo program |
+| Data type | Not data. A program id, and the memo instructions that run under it (a quote's commitment text) |
+| Historical depth | The program account's own history per cluster; not a series |
+| Update frequency | Immutable: a program id does not change. What changes is which cluster hosts which id |
+| Granularity | One program per cluster |
+| Geographic coverage | Cluster-specific: `devnet`, `mainnet-beta`, `localnet`; `testnet` not measured |
+| API or collection method | `getTransaction` on a transaction that carries a memo, then read the memo instruction's `programIdIndex` into `accountKeys`; or `getAccountInfo` on a candidate id |
+| Licensing and access restrictions | None: public, executable, no key, no rate-limit beyond the public RPC's own |
+| Estimated collection cost | Free, one read-only call |
+| Reliability | High for the id (it is on chain); a wrong id is silently accepted by a cluster that hosts it, which is the failure this entry guards against |
+| Known limitations | **The ids disagree by cluster.** Devnet hosts both the measured id and the CLI's, so a memo sent to the wrong one lands and is read by nobody. `testnet` has no measured id and the client refuses it rather than borrowing one. `localnet` resolves to the CLI's id, which is class D. |
+| Availability verdict | **Obtainable today** on devnet (measured) and mainnet-beta (public RPC; not measured in this pass). No local validator run has been made |
+| Training vs inference | Neither: a commitment and an identifier, not a training or inference input |
+| Claim status | devnet: measured 2026-11-08T05:39:47Z by one `getTransaction`, quoted with its account keys in `records/findings/40-memo-program-id.md` §2, and not re-read in this pass; mainnet-beta and localnet: cited-not-reverified, no measurement |
+| Evidence class | devnet **A** (measured 2026-11-08T05:39:47Z, quoted in `records/findings/40-memo-program-id.md` §2); mainnet-beta and localnet **D** (the CLI's shipped id, no measurement) |
+
+**Correction, 2026-11-08T08:20Z.** Two sentences in the row above are stale against the code. The
+`mainnet-beta` row left `chain_client.MEMO_PROGRAMS`, and `localnet` no longer resolves to the CLI's
+id: the table is `devnet` and `localnet`, both `Memo4c2pN8afCj432Lb7RMVKi9PbQnn7ewFFaV3oAH`, the id
+the installed CLI was measured building. `mainnet-beta` and `testnet` are both refused, and the two
+surfaces refuse differently: `memo_program_id(cluster)` raises `UnknownCluster` naming the clusters
+the table covers, while the console answers `chain.memoProgram: null` for the server's cluster
+instead of failing the page. The ids are class A on devnet and on the installed CLI, and unmeasured
+on mainnet-beta, which is why nothing is named for it.
+
+### S29 — Primary legislation on ticket resale (the region-caps table)
+
+Added 2026-11-08 by the region-aware resale caps pass. This is not a price source and not a market
+dataset; it is the **legal basis** for a refusal the platform performs, registered here because it is
+read, dated, cited and versioned like any other input, and because the table's confidence grades are
+the same kind of claim this registry already grades.
+
+| Field | Value |
+|---|---|
+| Provider or source | Each jurisdiction's own legislation service: `legislation.gov.uk`, `irishstatutebook.ie`, `ontario.ca/laws`, `legisquebec.gouv.qc.ca`, `bclaws.gov.bc.ca`, `austlii.edu.au` + state sites, `leginfo.legislature.ca.gov`, `nysenate.gov`, `leg.state.fl.us`, `malegislature.gov`, `laws-lois.justice.gc.ca`, `ecfr.gov`, `eur-lex.europa.eu` |
+| Data type | Statute, regulation and announced government policy text. Not prices, not events, not behaviour |
+| Historical depth | Complete for each instrument's life: `in_force_from`/`in_force_to` per row, plus a retrieval timestamp |
+| Update frequency | Irregular, by legislation. The table is a snapshot with a version (`2026-11-08.1`) and a SHA-256; a re-read is a new version |
+| Granularity | One row per instrument per jurisdiction; a jurisdiction may have several (an in-force disclosure duty and an announced cap) |
+| Geographic coverage | **25 codes read or explicitly marked**: IE, CA-ON, CA-QC, CA-BC, AU-NSW, AU-SA, AU-WA, AU-VIC, GB, US (federal x2), US-CA, US-FL, US-MA, US-NY, and rows marking unknowns. 13 EU member states and 22 US states are `unknown` |
+| API or collection method | `web-fetch` skill per page; a bounded number of fetches per cluster, every quote read from the page it cites. No scraping, no bulk download |
+| Licensing and access restrictions | **Not assessed and not asserted here.** Each service carries its own terms (Crown copyright/OGL for UK legislation, public-domain US federal text, and so on). The table stores a citation and a URL, not a copy of a statute, and the platform's use is to read a limit, not to republish the text |
+| Estimated collection cost | Free; the cost is human reading time. One cluster took about 20 minutes and 25-30 fetches |
+| Reliability | High where a row is class A (the instrument text was read). Low where it is D or E, which is why those rows may not produce a cap (`tests/test_region_caps_table.py` enforces it) |
+| Known limitations | The largest one is coverage: most jurisdictions were not read. Second, the walls are real — Légifrance and Normattiva serve article text by JavaScript, the NSW official site and AustLII returned a Cloudflare challenge, and the Queensland authorised PDF is encrypted. Third, a row goes stale silently: it is true of the date it was retrieved until someone re-reads it. Fourth, a law can be silent on the exact question that matters (New York does not say whether an independent reseller is a licensee) |
+| Availability verdict | **Obtainable today** for the rows marked A. **Not obtainable from this host in this pass** for the EU member states and Queensland |
+| Training vs inference | Neither. This is a constraint applied at decision time, not a feature and not a training input. It must never enter a model |
+| Claim status | Per row: A (instrument read), B (official page states it), D (secondary only), E (unknown). The table's own validator refuses an A row with no quote or URL |
+| Evidence class | A for the rows read; the synthesis is `records/findings/33-a-region-cap-law.md` and the five cluster records beside it |
+
+---
+
+### S30: Token-2022 transfer fee (the mechanism, measured)
+
+Added 2026-11-08 by the ten-feature documentation pass. Not a price source: it is the mechanism two
+features were built on and the one that blocked them, and it is registered here because the ceiling
+fact is now load-bearing for a product decision (D15, Q5).
+
+| Field | Value |
+|---|---|
+| Provider or source | Token-2022 (`TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`), the runtime itself |
+| Data type | Fee arithmetic and withheld balances: `withheldAmount` on a recipient token account's `transferFeeAmount` extension, and the `TransferChecked` result that moved the rest |
+| Historical depth | Not a series. A balance at a slot |
+| Update frequency | Per transfer |
+| Granularity | Per mint (one `TransferFeeConfig` per mint), read per token account |
+| Geographic coverage | Every cluster that hosts Token-2022, which is all of them |
+| API or collection method | `getAccountInfo` with `encoding: jsonParsed` on the recipient token account, before and after a raw `TransferChecked` (instruction 12) that passes no fee, so the number that comes back is the runtime's own arithmetic |
+| Licensing and access restrictions | None: public program, public RPC, no key |
+| Estimated collection cost | Free apart from the validator; the measurement used four throw-away local validators, each killed by the tool |
+| Reliability | High for the arithmetic measured: it is the runtime's, not a client's. It matches `spl-token-2022` 7.0.0's `calculate_fee`, which divides with a ceiling and then clamps to `maximum_fee` |
+| Known limitations | **The ceiling is the finding.** At `decimals 0` and `amount 1`, any rate from 1 to 9999 bps withholds the whole ticket, so the fee can only be 0 or 1 base unit. The `maximum_fee` clamp was never exercised by a real transfer, only in `tests/test_fee_experiment.py`. The version of Token-2022 built into the validator was not read off the cluster |
+| Availability verdict | **Obtainable today** on a local validator with no key and no faucet; no devnet or mainnet transaction was sent |
+| Training vs inference | Neither. It is a mechanism the product either uses or refuses |
+| Claim status | measured-today: four legs, quoted RPC objects, the arithmetic written out (finding 36) |
+| Evidence class | **A** for the ceiling arithmetic and the withdraw behaviour; **D** for the validator's embedded program version |
+
+### S31: The band feed (`["band", mint]`) as a data source
+
+Added 2026-11-08 by the ten-feature documentation pass. This is the first on-chain account in this
+repository that is meant to be **read by someone else**, so it is registered as a source and not only
+as an account.
+
+| Field | Value |
+|---|---|
+| Provider or source | This repository's own program (`programs/cap_hook/`), one account per mint |
+| Data type | A signed band: `low`, `high`, `as_of_slot`, `published_slot`, `sample_n`, `refused`, `model_hash`, `authority` |
+| Historical depth | One head per mint. The history is the forecast log, one account per `(mint, as_of_unix)` |
+| Update frequency | Rewritable on purpose: every `PublishBand` replaces the head |
+| Granularity | Per mint (one ticket type) |
+| Geographic coverage | **Local validator only.** No band exists on devnet or mainnet, so there is no third-party consumer and no public reader today |
+| API or collection method | `getAccountInfo` on the `["band", mint]` PDA, decoded by `ticketpath/onchain/v2.py` (102 bytes, offsets pinned by `tests/test_onchain_v2.py`) |
+| Licensing and access restrictions | None on the account; reading it needs a cluster |
+| Estimated collection cost | One RPC read per head, per consumer poll. The local run's band was read back at slot 12 |
+| Reliability | The account is authority-signed (`6026`), which is a permission and not a guarantee: the program cannot check that the sample size or the model hash are honest |
+| Known limitations | **No third-party program consumes it**, so the composability claim is unproven. `refused` is stored, not enforced: it travels with the number so a consumer inherits the uncertainty, but nothing acts on it. `low > high` is refused `6022` rather than written |
+| Availability verdict | **Obtainable today on the local validator**; not published on any public cluster |
+| Training vs inference | Inference only, and only with the uncertainty fields carried alongside the number. Never a training input on its own |
+| Claim status | measured-today on the local run: `low 900000000`, `high 1100000000`, `as_of_slot 10`, `published_slot 12`, `sample_n 42`, `refused 0`, quoted in the run's artefact |
+| Evidence class | **A** for the account's shape and its fields; **E** for any claim that a band describes a real market |
+
+### S32: A live child model as a decision source (deepseek through the `pi` CLI)
+
+Added 2026-11-08 by the ten-feature documentation pass. Registered because it is the only source in
+this file that **spends money**, and because its cost was measured rather than estimated.
+
+| Field | Value |
+|---|---|
+| Provider or source | The model provider, reached by the `pi` CLI as a child process (`market_swarm/forge_policy.py`) |
+| Data type | One JSON decision per child: an action, a price in lamports, a ticket id, a rationale. Not a price series and not a dataset |
+| Historical depth | Not a series. One row per decision, in the adapter's own JSONL |
+| Update frequency | Per decision; each child is one call |
+| Granularity | One agent, one round, one event |
+| Geographic coverage | Not applicable: a model call has no market coverage |
+| API or collection method | Spawned as `pi --mode rpc`, prompt over stdin as one JSON line, answer read off the assistant `message_end` record; `sessionId` captured with a `get_state` probe so the decision can be tied to the provider's own accounting |
+| Licensing and access restrictions | Paid, on the operator's own account. The child authenticates from its own auth file under `HOME`; no API key is passed in its environment |
+| Estimated collection cost | **Measured, not estimated.** One live decision: 22,838 in, 157 out, 4,096 cache-read, `$0.003532`, 4.2 s. Four children in the feature: `$0.011581380` in total, cross-checked against the CLI's own usage log for those four |
+| Reliability | The answer is one JSON object or a refusal. A provider failure arrives as a zero-token `message_end` with `stopReason: error`, which the adapter reports with the child's own sentence rather than as a priced decision |
+| Known limitations | **The cap is parent-side.** The argv gives the child no limit of its own, and a SIGKILLed parent can leak a child with no wall clock and no token cap. The usage log writes no row for a `--no-extensions` child, so 38 children spawned by another session rest on their own session files alone. The live path is off unless `MARKET_SWARM_LIVE_LLM=1` |
+| Availability verdict | **Obtainable today**, paid, opt-in |
+| Training vs inference | Neither. It is a policy that chooses an action, not a feature and not a training input |
+| Claim status | measured-today: the four child rows and the total, quoted with the provider's own cost field in `records/findings/41-deepseek-live-adapter.md` |
+| Evidence class | **A** for the wire handling and the cost; **D** for the claim that one live child buys a better market than a scripted policy |
 
 ---
 

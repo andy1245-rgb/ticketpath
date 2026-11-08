@@ -792,6 +792,13 @@ def submit(self, payload: Mapping) -> dict                   # raises ChainUnava
 [{"program": "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr", "data": memoText}], serialized: None}`. It holds
 no key material, imports no network module, and has no code path that returns a signature.
 
+> **Superseded (2026-11-08T07:05Z), for the `instructions` field only.** `quote_commit` now takes
+> a `cluster` and names that cluster's id from `MEMO_PROGRAMS`, so the `MemoSq4gq…` in the entry
+> above is wrong for the default cluster: devnet's measured id is `Memo4c2p…`. A caller that has
+> already resolved the id passes `memo_program=`. The signature above is otherwise unchanged.
+> `records/findings/40-memo-program-id.md` §2 has the measurement and the correction that dates
+> from the same pass.
+
 May import: `hashlib`, `json`, `typing`. May not: `urllib`, `subprocess`, `os` (no env keypath).
 
 Tests: `tests/test_chain_client.py` — the hash is deterministic and equals `tools/devnet_check.py`'s

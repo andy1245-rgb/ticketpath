@@ -4,7 +4,8 @@ Decisions with their evidence, rejected approaches, conflicting findings, and qu
 Nothing is deleted from here; a question that is no longer worth pursuing is marked
 closed with the reason, not removed.
 
-**Last updated:** 2026-11-07T18:55Z (**D8 appended**; nothing else in this file changed).
+**Last updated:** 2026-11-08 (**D10 appended**; nothing else in this file changed except the
+`Last updated` line itself since the D9 and Q4 edit of the same day).
 
 ---
 
@@ -367,3 +368,499 @@ notes inside the window are permitted and notes before it are what the prior-wor
 nothing about provenance and letting the git history speak: the history only answers "did they start before
 the event", and the one wording that can cost this entry is a claim about inherited material, so the
 sentence is free and belongs in the submission.
+
+## D9 — The app holds the tickets and every resale goes through it (2026-11-08)
+
+**Decision (the operator's).** Three things, taken together because they are one design: the app is
+the custodian and holds the tickets, every resale goes through the app, and users cannot contact each
+other. The price on a resale is the app's own input control, not a number two users agree between
+themselves.
+
+**What is decided, and what is inferred.** Only the paragraph above is decided. Everything in the
+Consequences block below is read off it, labelled as a consequence, and rests on the stated premise
+rather than on a measurement. Nothing here is a finding about a market, and no artefact may cite it
+as one.
+
+**Consequences.** Class D: a mechanism with no measurement behind it, conditional on app custody
+continuing to hold.
+
+- **The side-payment bypass does not apply while the tickets stay in app custody.** D6 named that
+  hole and named it correctly for a design in which buyer and seller settle between themselves:
+  declare a face-value price on the record, pay the difference in cash or anywhere else, and the
+  chain bounds the record and not the money. Under custody there is no user-to-user channel inside
+  the product and no transfer the platform does not sign, so the declared price is the only price
+  the product can express. That is a statement about the product's own surface, not about two people
+  who already know each other outside it, and it lapses the moment a ticket can leave.
+- **The chain's role is then commitment and verifiability, not stopping a rogue user.** With the
+  platform signing every move, the on-chain cap is no longer the thing that stops a determined
+  seller; it becomes three other things, and `README.md` §"Why the chain" states them: the rule binds
+  the platform as well, because no instruction raises a cap and the promise therefore cannot be
+  quietly withdrawn; the sale record is public and cannot be rewritten afterwards, which is what the
+  pricing engine reads and what a monitor-only mode would read; and any reader can check all of it
+  without trusting the operator. This decision is why those three are the ones that carry weight.
+- **"It still holds if the ticket leaves the app" applies only if the ticket can leave.** The
+  argument survives withdrawal in one sense and not in another, and the two should not be run
+  together. It survives because the cap check lives in the mint and travels with the token. It does
+  not survive because the no-user-channel premise is then false, so D6's side-payment hole returns in
+  full. Whether tickets are ever withdrawable is open (O1), so this line is written as conditional and
+  must stay conditional until someone closes O1.
+- **Custody makes the platform the signer, so the key-management and trust model has to be written
+  down.** Every transfer is signed by the platform, which makes the platform's key the thing that
+  moves a ticket. A document has to say who holds it, what a compromise of it allows and what it does
+  not, how it is rotated, and how that compares with a design where the holder signs. It does not
+  exist yet. `docs/ON-CHAIN-DESIGN.md` §4.2 covers the organizer and `verifier` keys of the design,
+  not the custodian, so until that document is written what the platform can do with its own key is
+  described nowhere.
+
+**Open questions.** Both are the operator's.
+
+- **O1 — Are tickets ever withdrawable to a user's own wallet?** This decides which sentence the
+  product may carry. If yes, the side-payment hole is back and the honest claim narrows to "the chain
+  bounds the record, not the money". If no, custody is a standing premise of the product and belongs
+  in the design, not in a paragraph of a decision log. Nothing in the tree answers it today.
+- **O2 — What exactly does the platform's signing key control, and who can use it?** One key or a
+  multisig, under whose authority, rotated how, and what an outage of it costs. This is the same
+  question D6 asks of the organizer key (`docs/ON-CHAIN-DESIGN.md` §4.2.3); custody adds the platform
+  itself to the list of keys that need an answer.
+
+**Rejected alternative.** Keeping the chain as the enforcement mechanism and treating custody as an
+implementation detail. Rejected because the two give different sentences about the same product: with
+custody, the load-bearing claim is a promise that binds the operator and can be checked, and the
+"a seller cannot bypass the cap" claim rests on there being no channel to bypass it with. Writing the
+second while doing the first would claim the stronger thing on the weaker reason.
+
+## Q4 — A region-aware cap: monitor where resale is legal, enforce on chain where it is capped (direction decided 2026-11-08 by D11; the mapping is open, see D16)
+
+**Status changed on 2026-11-08, and one part of it is still open.** This question was open with nothing designed and nothing built.
+It is now decided by **D11** and built: the design is `records/REGION-CAPS-DESIGN.md`, the law is
+`records/findings/33-a-region-cap-law.md`, the table is `ticketpath/data/region-caps.json` and the
+resolver is `ticketpath/core/region_caps.py`. The three questions at the bottom of this entry are
+answered where D11 answers them and marked as still open where it does not. The text below is kept
+as it was written, because the reasoning that framed the question is still the reasoning that
+constrains the answer.
+
+Recorded here because the direction was named; when this was written, **nothing was decided and
+nothing was built.**
+
+**What is decided, and what is not, in one sentence (added 2026-11-08T08:20Z).** The direction is
+decided by D11 for the region-cap work (a dated rules table and a policy field, with a local-only
+gate program); the mapping from a jurisdiction to a policy is **not** built in this program, which
+records the code and does not interpret it (D16). The record's `[u8; 2]` can name a nation and not a
+subdivision, and 72 of the table's 82 codes are subdivisions, so any reconciliation is nation-level
+only.
+
+The idea: one rule for the whole platform is the wrong shape if resale law differs by jurisdiction.
+Where resale above face is restricted, enforce the cap on chain as D6 does. Where it is lawful, do
+not cap, and use the public record as monitoring instead of control. That is the same record point 2
+of `README.md` §"Why the chain" describes.
+
+What this file does **not** establish: which jurisdictions restrict resale above face, at what
+number, or whether a platform rule may vary by event at all. That is a legal question for the
+operator, not a research finding, and no claim about it appears anywhere in this tree.
+
+**Open questions, all the operator's.**
+
+- **At what level does the cap bind where it binds: face, or face plus a margin?** Zero basis points
+  is a ban on selling above face, which refuses a resale that merely covers a fee and is a different
+  product from a markup ceiling. Any margin is a per-event policy number, and it is the `c` that
+  D7's split instrument divides with.
+- **What does "monitored" show on a screen?** A monitored event has no cap to display, so the choice
+  is between nothing, a badge saying resale is unregulated here, and the observed markup shown as
+  data. The third is the useful one and the one that can read as an accusation of the organizer, so
+  whoever designs the screen has to pick deliberately rather than by default.
+- **How does an event get its jurisdiction?** It has to be a per-event setting, set before sale and
+  recorded where the cap is recorded now. And a transfer carries an amount and no price, so a
+  region-varying rule needs the region written somewhere the hook can read; there is no such field in
+  the record today (`records/STATE-OF-PROJECT.md` §E). Until there is, the cap stays one number per
+  ticket record, and a monitored event simply has no cap.
+
+## D10 — The memo program id is a per-cluster fact, measured not assumed (2026-11-08)
+
+**Decision.** The program id a quote's memo runs on is looked up per cluster, from a table of
+measured ids, and never held as one constant for the repository. `devnet` resolves to
+`Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH`, measured from the proven memo transaction;
+`mainnet-beta` and `localnet` resolve to the `solana` CLI's shipped memo program,
+`MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr`. A cluster with no entry raises `UnknownCluster`;
+there is no default and no fallback. The publish path asserts the id in the transaction the
+cluster actually landed against the table's id for the run's cluster, on the reuse path and the
+
+**Corrected 2026-11-08T08:20Z: three statements in the paragraph above are false against the code,
+and `mainnet-beta` is not in the table.** Measured with `python3 -c "from ticketpath.adapters
+import chain_client as c; ..."`: `devnet` and `localnet` both resolve to
+`Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH` (the installed CLI was measured building that id, so
+the localnet row is measured, not the CLI's documented one); `mainnet-beta` and `testnet` are
+**absent** and `memo_program_id` raises `UnknownCluster` for either; and the **cluster argument**
+defaults to devnet when `None` is passed, while the **id** has no default and no fallback. The two
+literals stay in the file because documents quote them and the `ids` gate compares against them, but
+neither is a mapping for mainnet. The sentence above is kept as the record of what D10 said before
+the correction.
+fresh-send path alike.
+
+**Evidence.** `records/findings/40-memo-program-id.md` §2. One `getTransaction` against
+`https://api.devnet.solana.com` at 2026-11-08T05:39:47Z for the proven memo transaction, whose
+quoted account keys end:
+
+```
+"accountKeys":["75UcdvvgZYVK6Z8BCs8RnNP4WBpDiTtKBEijZxdovxGy","2k1PvrHrue11in9kmwV9gjhLtFMVM8ndHSFiscV79GVd","11111111111111111111111111111111","Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH"]
+```
+
+Its memo instruction carries `"programIdIndex":3`, and the logs quote
+`Program Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH invoke [1]`. A second read showed devnet also
+hosts the CLI's id as an executable program, which is why the old constant never failed a
+transaction and only misdirected every record and the console's `memoProgram`. The devnet id is
+class **A**; mainnet's is class **D**, the CLI's shipped id, not measured from mainnet.
+
+**Consequence.** Three things follow, and each is a place the old constant could mislead again:
+an unknown cluster raises rather than borrowing a neighbouring id, so `testnet` is refused until
+someone measures it; the console's `memoProgram` field may be `null` when the server's cluster has
+no measured id, which is a statement rather than a lie the page cannot detect; and the artefact
+records the id a run actually resolved, additively, so a record written before the field existed
+still verifies and an older observation is read back unchanged instead of being overwritten by
+today's table. `tests/test_onchain_sim.py` and `tests/test_devnet_publish.py` exercise each of
+the three, including the mismatch that stops a run.
+
+**Rejected alternative.** Keep one constant and add a comment naming devnet's id. Rejected
+because the constant is what every reader, the console field and the local validator's `--clone`
+read, and a comment cannot stop any of them: the defect was not a bad string but a claim nobody
+checked, so the fix has to be a table plus a read-back of the landed transaction.
+
+## D11 — A region-aware cap is a deterministic table plus a policy field, not a model (2026-11-08)
+
+**Decision (the operator's direction, this session's build).** One rule for the whole platform is
+the wrong shape when resale law differs by jurisdiction. The platform resolves each event to one of
+three policies from a table of instruments, and the chain stores the outcome:
+
+| policy | when | chain |
+|---|---|---|
+| `capped` | a law in force restricts resale above a limit | the hook refuses a staged price above the limit |
+| `monitored` | a law in force establishes no price limit | the hook admits and logs the jurisdiction and the price |
+| `unresolved` | the law could not be established from a primary source | the hook admits and logs `unresolved`; the event may not claim lawfulness |
+
+**What is new, in six sentences.** The table is JSON (`ticketpath/data/region-caps.json`, version
+`2026-11-08.1`, 25 jurisdiction codes and 33 instruments) with one row per instrument, not per
+jurisdiction, because a jurisdiction can have an in-force disclosure duty and an announced price
+cap at the same time. `announced_policy` is a first-class instrument kind and never binds. The
+resolver is a pure function of (jurisdictions, date, table): no network, no clock, no model. The cap
+base is part of the law, so the table distinguishes face, face + fees, face + fees-capped-at-a-share,
+a percentage, and a fixed money amount. A fixed amount is never approximated into basis points: it
+resolves to `unresolved` unless an FX snapshot with a source and a timestamp is supplied. And a
+ticket's policy can only ever tighten on chain, never loosen.
+
+**Corrected 2026-11-08T08:20Z: the counts in the first sentence above are wrong.** Measured against
+`ticketpath/data/region-caps.json` (version `2026-11-08.1`, and the file's own `compiled_at`): **82
+entry codes and 84 instruments**, not 25 and 33. The instrument kinds are 21 `primary_legislation`, 2
+`secondary_legislation`, 1 `announced_policy` and 60 `none_identified`; 72 of the 82 codes are
+subdivisions (`CA-ON`, `AU-NSW`, `US-CA`) and 10 are nations. `README.md` and
+`records/STATE-OF-PROJECT.md` already carried 82 and 84; this entry was the odd one out. The rest of
+the paragraph is unchanged and still true of the file.
+
+**Evidence.** `records/findings/33-a-region-cap-law.md` and its five cluster records, every row
+carrying the instrument, the quoted provision, the dates and a confidence grade. Two premises the
+brief supplied were checked and were wrong: the United Kingdom's cap is announced policy and not law
+(19 November 2025), and New South Wales is not a flat 10% (it is face + the fees paid, counted at no
+more than 10% of face). Both corrections are recorded in the finding rather than quietly dropped.
+The on-chain half is verified on a **local validator**: `tools/region_local_proof.py`, eleven legs,
+PASS 11/11, real transactions with real refusals (`records/findings/34-region-caps-build.md`).
+
+**Consequences.** Class A for the instrument texts and the local-validator behaviour; **Class E for
+every jurisdiction the table marks unknown**, which is most of the world: those events resolve to
+`unresolved` and the platform makes no claim about them. The devnet program `5EJ1GU3M4vn…` is
+untouched by this decision; the region gate is a separate, local-only crate
+(`programs/region_gate/`) because a second program was being written in `programs/cap_hook/` at the
+same time (see that crate's §12 collision record). The platform's own configured cap and the law's
+cap are combined in lamports, and the stricter one is what the chain holds; the event record names
+which rule produced it.
+
+**Rejected alternatives.** (1) An LLM prompt over a description of the law: not reproducible, not
+diffable, and a hallucinated citation in a legal rule is worse than no rule. (2) One global cap:
+the question this decision answers. (3) Comparing basis points across bases: 500 bps over face +
+fees is looser than 1000 bps over face, so the comparison is done in lamports. (4) Failing open on
+an unknown jurisdiction and calling it `monitored`: that would report "resale is unrestricted" on
+the strength of not having looked. (5) Letting the chain loosen a cap when a law is repealed: the
+chain cannot tell a repeal from an organiser's convenience, and the gaming hole D6 closes would
+reopen.
+
+**Open, and the operator's to answer.** Whether a mid-event tightening binds tickets already sold
+(the design makes it possible, is silent on whether it is right); whether the platform may be
+stricter than the law (it can, and the record says which rule bound); which jurisdiction applies to
+a cross-border resale (venue, buyer residence or seller establishment — the resolver does not
+choose); and whether `programs/region_gate/` is retired once the v2 program carries `policy = 2` and
+`TightenPolicy`, which are the two additive pieces it needs.
+
+---
+
+**Numbering note, 2026-11-08.** The ten-feature build's documentation pass was briefed to number its
+seven decisions D11 to D17. D11 is already the region-aware cap decision above, and a second `## D11`
+would make every `D11` in the tree ambiguous, so the seven are appended here as **D12 to D18**, in the
+order the brief gave them: the console's recorded-quote rule is D12, the v2 program id is D13, the band
+feed and forecast log are D14, the fee policy and the two blocked features are D15, jurisdiction is
+D16, the live agent adapter is D17, and the documentation gate is D18.
+
+## D12: The console renders a recorded quote as recorded, and says separately whether it is the quote on screen (2026-11-08)
+
+**Decision.** The `[DEVNET]` block renders the artefact's own fields under `chain.recorded`: its
+`asOf`, slot, block time, signature, mint, program, memo program, recommended lamports, both transfer
+legs and the refusal's error. The page always prints the recorded instant and slot. A second, separate
+fact, `chain.matchesCurrentQuote`, says whether the number the page computed for its own instant is
+the number the chain recorded, and the page prints one of two sentences accordingly. `chain.state`
+answers only "did the file verify", and the three states stay distinct: verified, unverified with a
+named reason, absent.
+
+**Evidence.** Measured in this pass through `tools/guidance.py` and the page renderer. At the
+artefact's own instant, `evt_syn_02` at `2026-11-07T18:34:29.183Z`: `state verified`,
+`matchesCurrentQuote True`, and the page prints "The number on this page is the quote the chain
+recorded." At `evt_syn_04` at `2026-11-07T18:00:00Z`: `state verified`, `matchesCurrentQuote False`,
+and the page prints "The number on this page is computed now and is not the number the chain
+recorded; the recorded quote is for 2026-11-07T18:34:29.183Z." The recorded block also carries
+`checkedAt` and `checkerVersion`, so the page now prints "The file verified at 2026-11-08T00:50:25.281Z
+with checker devnet-publish-2026-11-07" instead of the `Verified at None` defect A6 recorded.
+`tests/test_console_recorded_artefact.py` (19 tests) and 17 new `tools/console-check.py` cases pin it.
+
+**Corrected 2026-11-08T07:55Z: two sentences above are wrong against the console as it now stands,
+and one is a quotation of a sentence that no longer exists.** (1) The agreement sentence is about
+the quote, not the number: it names both quote ids and both instants, and it is printed as either
+"The quote this page commits is the quote the file records: quote id …, taken at …" or "This page
+commits … for …; the file records … for …". (2) The two recommendations are a separate sentence and
+both numbers are printed only where they differ: "The recorded recommendation is …, and this page
+recommends the same number", or both numbers when they differ. On the shipped record the two numbers
+are the same (1,380,000,000), which is why the old sentence was false. (3) The verification line now
+reads "The file verified. The checker wrote 2026-11-08T00:50:25.281Z with checker
+devnet-publish-2026-11-07", with no `[DEVNET]` badge on the timestamp, because `checkedAt` is the
+checker's clock and not a chain fact. Also: `[DEVNET]` marks only the six fields the quote hash
+covers, every other value is printed under "The file states, and the quote hash does not cover", the
+evidence count is **3 on-chain transactions**, the absent sentence is about the console's file, and
+the explorer link is rendered only for an `https` URL on `explorer.solana.com`. The test file is now
+20 tests. Measured by rendering `page.chain_slot` from `tools/guidance.py`'s payload at 07:50Z.
+
+**Consequence.** A proven devnet transaction is visible on every page instead of on exactly one, and
+a page whose instant differs from the recorded one says so rather than downgrading the artefact to
+absent. `rpc_adapter.program_status` keeps `programDeployed: false` with `askedCluster: false` and
+carries the recorded program id in its own block with its source, so the page never claims a
+deployment it read from the chain.
+
+**Rejected alternative.** Showing the live recommendation as the chain's number, which is the defect
+this decision removes: two facts with different instants were being rendered as one. And hiding a
+verified artefact whenever the page's `asOf` moved, which made the chain work invisible to any reader
+who changed the instant.
+
+## D13: Program v2 is a new program id, deployed to a local validator only (2026-11-08)
+
+**Decision.** The v2 instruction set is a new program: a new deploy keypair, a new program id
+(`CTEnej2b5cgJ7uQ185k7yWZChe8GasAgPYCc4BHFB67w`), new mints and a fresh local ledger. The devnet
+program `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva` and `records/devnet-artefacts.json` are frozen
+evidence: no upgrade, no re-sign, no edit, ever.
+
+**Evidence.** The local run's record, `records/onchain-v2.local.json` (git-ignored), written
+2026-11-08T06:48:48.836Z: `programId CTEnej2b5cgJ7uQ185k7yWZChe8GasAgPYCc4BHFB67w`,
+`cluster localnet`, `localOnly true`, and both phases deployed that same `.so` (sha256
+`0b6174344329f1a60e079572fcb43bbc59250470a398c788a32a7e66a8fa16c7`). The devnet id in
+`records/devnet-artefacts.json` is unchanged.
+
+**Corrected 2026-11-08T07:55Z: the run was rebuilt and the hash above is superseded.** The v2
+program was rebuilt after `records/findings/37-program-v2-review-fixes.md` and both builders produced
+the same output twice: **111,504 bytes, sha256
+`de89af3cf0831bc6bad181ee7762c83e6486c4b9d0facb6f99cd7cfa6e949cac`**. The artefact was regenerated by
+the same run (`writtenAt` in the current file), its phase one now carries proofs `a` to `g` and its
+phase two carries thirteen tag 4..6 proofs, and its forecast is forward-dated to
+`as_of_unix 1794123175`, 117 s ahead of the block time that created it. `0b617434…` is the hash of
+the program this decision first shipped and is kept above as what the record said at the time. The
+devnet id and `records/devnet-artefacts.json` are still unchanged, which is the point of the decision.
+
+**Consequence.** Two programs on two clusters, and a reader has to know which one they are reading.
+The devnet deployment has four instruction tags and no floor, jurisdiction or policy byte; the local
+v2 has seven tags and the three new fields. `docs/ON-CHAIN-DESIGN.md` §0 states the difference in the
+same table as the instruction set, so a reader cannot take the table for a description of devnet.
+
+**Rejected alternative.** Upgrading the proven devnet program in place. It would have re-signed and
+rewritten the artefact the whole devnet proof rests on, to add features the proof does not need, and
+the old boundary could never be re-verified against the bytes that proved it.
+
+## D14: The band feed is a rewritable head, the forecast log is the immutable history, and a score is a separate account (2026-11-08)
+
+**Decision.** `PublishBand` (tag 4) writes `["band", mint]`, rewritable on purpose: low, high,
+`as_of_slot`, `published_slot`, `sample_n`, `refused`, `model_hash`, `authority`. `LogForecast` (tag
+5) creates `["forecast", mint, as_of_unix]` once (`6024` on a second write). `ScoreForecast` (tag 6)
+creates `["score", forecast]` once (`6025`), and writes nothing into the forecast it scores.
+
+**Evidence.** The local run: band at address `4V4hkMn…` read back with `low 900000000`,
+`high 1100000000`, `as_of_slot 10`, `published_slot 12`, `sample_n 42`, `refused 0`; a forecast at
+`as_of_unix 1760000000` carrying `scoring_rule_hash bb9ddc66…`; a second `LogForecast` for the same
+instant refused `6024` with the forecast account's sha256 identical before and after
+(`78752fd0…952`); a score written with `interval_score_micro 200000000000000` and `covered 1` and the
+forecast's sha256 unchanged again; a second score refused `6025`; a band signed by a non-authority
+refused `6026` with the band's bytes unchanged. `tests/test_onchain_v2.py` pins the layouts and the
+address derivation.
+
+**Consequence.** A consumer reads the head and inherits the uncertainty fields with it; a reader who
+wants the history reads the forecast log, which cannot be revised. The feed's composability is
+unproven, because no third-party program consumes it today, and `refused` is stored rather than
+enforced.
+
+**Rejected alternative.** One mutable account holding the band and the scores. A score that can be
+rewritten is not a score, and a history that can be overwritten cannot answer what was believed at a
+past instant.
+
+## D15: The fee policy is a property of the mint, and features 5 and 7 are blocked because Token-2022 ceils a fee on an indivisible ticket (2026-11-08)
+
+**Decision.** No fee instruction ships. The artist fee (feature 5) and the flip tax (feature 7) are
+recorded in every table as **not built, blocked**, with the measurement that blocks them, and the
+three surviving alternatives are put to the operator as an open question (Q5) with no recommendation.
+
+**Evidence.** `records/findings/36-transfer-fee-on-a-one-unit-ticket.md`, measured on four throw-away
+local validators, quoted RPC objects and all. Token-2022 ceils the fee: at `decimals 0` and `amount
+1`, 500 bps and 1500 bps both leave `withheldAmount = 1` and the recipient 0; ten units at 1500 bps
+withhold 2, not 1, which is the ceiling; at `decimals 9` and 10^9 base units the fee is exactly
+150,000,000. The only fees this mint can express are 0 and the whole ticket. Also measured there: on
+a mint carrying both a `TransferFeeConfig` and the transfer hook, `WithdrawWithheldTokensFromAccounts`
+succeeds without the hook's accounts and does not invoke the hook.
+
+**Consequence.** `TicketRecord.held_since_unix` is written by the hook on every admitted transfer and
+nothing consumes it; `ClaimRebate` (tag 7) is not implemented; the two error names reserved for it,
+`6027` and `6028`, are declared in `error.rs` and raised by no instruction. The pool and rebate
+plumbing is viable and the rate is not. This is a decision to ship no fee, not a decision that the
+product should have none.
+
+**Rejected alternative.** Turning the fee on at a small basis-point value. At 500 bps it withholds the
+whole ticket and leaves the buyer with nothing, which is a seizure, not a fee. And giving both fees
+one mint: Token-2022 carries one `TransferFeeConfig` per mint, so that is not a choice the mechanism
+offers.
+
+## D16: Jurisdiction is a recorded field, not an encoded legal mapping (2026-11-08)
+
+**Decision.** `TicketRecord.jurisdiction` is `[u8; 2]`, an ISO-3166-1 alpha-2 code in uppercase, with
+`ZZ` for unspecified, and `TicketRecord.policy` is `0` (capped) or `1` (monitored). The program logs
+the jurisdiction on every admitted transfer and skips both price predicates when the policy is
+monitored. The program does not interpret the code, does not validate it, and does not map a
+jurisdiction to a policy.
+
+**Evidence.** `programs/cap_hook/src/state.rs`, whose comment on the field says a wrong code is a
+wrong statement by the issuer and there is no list on chain to check it against. The local run
+initialised a record with `jurisdiction ZZ`, `policy 0`, admitted a transfer at the floor with
+`jurisdiction=ZZ` in the log line, and refused `policy 2` with `6023`. `tests/test_onchain_v2.py`
+pins the two-byte encoding and the decoder.
+
+**Consequence.** The mapping from a jurisdiction to a policy is off chain, in the rules table D11
+describes, and **the two must not be read as one decision: D11 decides the direction for the
+region-cap work; this entry says that the mapping is not built into `cap_hook` at all.** Neither of
+the record's two bytes is on the wire contract; the event-level `jurisdiction` and `resalePolicy`
+keys that D11's work serves are a different pair at a different level, and no sentence in this tree
+claims any jurisdiction's law applies to a ticket record. **The record is `[u8; 2]`, so it can name a
+nation and not a subdivision:** 72 of the table's 82 codes are subdivisions (`CA-ON`, `AU-NSW`,
+`US-CA`), so any reconciliation between the record and the table is nation-level only, and the finer
+mapping has nowhere to be written on the v2 record.
+
+**Rejected alternative.** Mapping the code to a policy inside the program. That puts a legal table in
+a program that cannot be amended when a law changes, and it makes a refusal on chain look like a
+legal conclusion the chain cannot draw.
+
+## D17: The live agent adapter is opt-in, capped per decision and in total, and the scripted policies remain the default (2026-11-08)
+
+**Decision.** `market_swarm/forge_policy.py` is off unless `MARKET_SWARM_LIVE_LLM=1`. A decision
+reserves `min(per-decision cap, remaining total)` before a child exists; the charge is the observed
+usage afterwards; an overrun is recorded and refuses every later decision. `timeout_seconds` is
+mandatory, and no child is spawned without one. The scripted policies stay the default path, so a
+dataset is produced only by a live run if an operator asks for one.
+
+**Evidence.** `records/findings/41-deepseek-live-adapter.md` and its appended review section. One live
+decision: 22,838 in, 157 out, 4,096 cache-read, `$0.003532`, 4.2 s, a parsed `Intent`. Four children in
+the feature, `$0.011581380` total, cross-checked against the CLI's own usage log for those four. The
+same file records the correction that matters: the cap is parent-side, and the usage log writes no row
+for a `--no-extensions` child.
+
+**Consequence.** A leaked child is possible if the parent is SIGKILLed, and the spend ledger is the
+child's own session file for the hardened path. Neither is a reason to run it by default; both are
+reasons the live path is a flag and the budget is reserved before the spawn.
+
+**Rejected alternative.** A default-on live path, which would spend money on a plain test run. And a
+cap checked after the charge, which is not a cap: the money is already gone.
+
+## Q5: How is a fee on resale charged, given that Token-2022 can only take the whole ticket? (open, 2026-11-08)
+
+Opened by D15. Three alternatives were measured or derived in
+`records/findings/36-transfer-fee-on-a-one-unit-ticket.md` §5, and none is recommended here:
+
+1. **A lamport fee at the venue.** Take a basis-point share of the staged price in the same
+   transaction that stages it. Exact percentages are expressible because the fee is on the price and
+   not on the token amount. It binds only transfers that go through the program, and a marketplace
+   that does not know about us can ignore it. Not tested.
+2. **A recorded obligation settled off chain.** Record the price and the fee owed in a PDA and
+   collect at checkout or by invoice. The cheapest on-chain option and the weakest guarantee: an
+   attestation, not an enforcement.
+3. **A divisible mint.** Give the ticket, say, 10^6 base units and keep `amount == TICKET_UNITS` in
+   the hook so a ticket still moves as one object. Then 500 bps withholds 5% of the ticket instead of
+   all of it. It changes every consumer of `decimals 0`, and 5% of a ticket is still not 5% of a
+   price unless a fractional ticket can be sold for its pro-rata value.
+
+The operator's to answer. Nothing is built for any of the three, and this log recommends none.
+
+**Corrected 2026-11-08T08:00Z: two of the three alternatives above do not work as written.** An
+independent review (`tmp/review/fee-mechanism.md`, read-only, did not build the finding) reproduced
+the fee ceiling and then found two mechanism errors in finding 36's §5. Both are recorded here because
+this question is what a reader would act on:
+
+1. **A lamport fee cannot be taken from the buyer, who never signs.** A Token-2022 `TransferChecked`
+   is signed by the source account's owner or delegate, which is the **seller**; the hook receives
+   `[source, mint, destination, authority]` and `authority` is the seller's key. The fee has to come
+   from the seller, by a `system_program::transfer` CPI out of the `authority` account the hook already
+   receives, with the artist's or the pool's wallet added through the extra-account-metas list. Two
+   consequences follow: the seller must hold the lamports at transfer time, and the fee is charged on
+   the staged number in the record, not on lamports that actually moved. That makes the option more
+   feasible than finding 36 says, not less.
+2. **A divisible mint does not make the buyer whole.** Token-2022 calls the hook with the **pre-fee**
+   amount and credits the destination `amount - fee`, so a transfer of `TICKET_UNITS` leaves the buyer
+   with 950,000 of a 1,000,000-unit ticket at 500 bps and 850,000 at 1,500 bps. To deliver a whole
+   ticket the seller must send `calculate_pre_fee_amount(TICKET_UNITS)` (1,052,632 at 500 bps,
+   1,176,471 at 1,500 bps), which is not `TICKET_UNITS`, so the proposed `amount == TICKET_UNITS`
+   check refuses the only transfer that would work. The hook's check would have to move to the net
+   amount, which it cannot compute without unpacking the mint's live fee schedule, or be replaced by
+   a per-holder balance check.
+3. The third alternative, a recorded obligation settled off chain, stands as written, with one
+   correction of detail: the record carries `pending_price_lamports`, not a hop count, so a hop count
+   would have to be added to it. Finding 36's §3.3 detector is also weaker than stated (the withdraw
+   path has no account slot for hook accounts at all), though its conclusion is right. None of these
+   corrections changes the ceiling measurement or the decision that features 5 and 7 are blocked.
+
+## D18: The documentation gate runs in the commit gate, and a documentation-only change runs it too (2026-11-08)
+
+**Decision.** `tools/doc_check.py` is a gate and not a report: it exits 1 on any violation, and
+`tools/tp.py gate` runs it beside the tests and the console checks. A change that touches only
+documents runs it as well, because a stale claim is a defect a reader acts on and the pass that
+writes prose is the pass most likely to create one. A path that is deliberately absent from the tree
+is written down once, per path, with a reason, in `ALLOWED_ABSENCES`; an entry with no reason
+suppresses nothing and is itself a violation.
+
+**Evidence.** Six checks, each a claim that can be false: every repo path a document names exists; a
+finding, section or decision reference resolves; the memo program ids and the devnet program id and
+mint quoted are the code's and the artefact's; the program's error numbers, instruction tags and PDA
+seeds equal the `IMPLEMENTED TODAY` table in `docs/ON-CHAIN-DESIGN.md` both ways; a registry that
+states a count of its own rows is right; and every row of the feature table carries a status from the
+closed set and names a file that exists. This pass's final run: `python3 tools/tp.py doc-check` →
+`doc_check: clean, 6 check(s), <repo root>; 21 allowed absence(s) suppressed by
+ALLOWED_ABSENCES`, exit 0, with the root path elided.
+
+**Consequence.** The gate caught two real things in this pass and they are worth naming because each
+is the kind of error prose creates: `records/A-research-ledger.md` cited a findings *directory* as a
+path, which the checker reads as a claim that a `.md` file of that name exists, and the
+`IMPLEMENTED TODAY` table had to be re-read when the program gained five error codes and changed a
+signer requirement while this pass was running. The table is the truth about the code or the gate
+says so, which is the whole point.
+
+**Rejected alternative.** A checker that reads prose and judges whether it is true. It cannot, and a
+checker that guessed would fail on correct sentences until someone switched it off. The six checks
+are exactly the claims a program can refute.
+
+**A red that arrived after that run, and cleared, named.** At 07:27Z the same command reported two
+violations, both on `programs/cap_hook/README.md:18`, which cited a finding file that did not exist yet.
+That is a code-owned file and an unwritten finding, not a claim this pass wrote, and the gate stayed
+green on every document this entry's pass touched. The finding was written at 07:30Z and the gate read
+`doc_check: clean, 6 check(s), 21 allowed absence(s) suppressed`, exit 0. Recorded rather than fixed,
+because the fix was an edit to a file this pass does not own.
+
+**A limit stated, and the limit is gone (corrected 2026-11-08T08:20Z).** This paragraph used to say the
+feature-table check required a `tested` row to name a file under the root `tests/` directory, that a
+package with its own suite could not make a row `tested`, and that feature 9 was therefore recorded as
+`built`. The checker has since widened: `tools/doc_check.py`'s `TEST_DIRS` is
+`("tests", "market_swarm/tests")`, and a `tested` row may name either root. Feature 9 is `tested` in
+`records/STATE-OF-PROJECT.md` with `market_swarm/tests/test_feature9_fixes.py` and `test_forge_policy.py`
+named, which is the row the evidence supports. The old paragraph is kept in this note because it was
+published in this log's first edition.

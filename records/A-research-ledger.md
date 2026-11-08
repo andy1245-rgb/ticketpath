@@ -223,3 +223,83 @@ The 404 itself was real — a Crossref query for `10.1016/S0304-4076(73)90005-5`
 that the resolving DOI is `10.1016/0304-4076(73)90005-5` is true. What is false is the attribution of that
 string to `01-b`, and with it the word "unresolvable". The distinction matters because it is the difference
 between a citation that needs fixing and a check that was run on the wrong input.
+
+
+---
+
+## R3-1 (2026-11-08T06:25Z) — findings 33 and 34: the region-aware cap, and two premises corrected
+
+Two records were added by the region-aware resale caps pass, and both change what this ledger should
+carry rather than only adding to it.
+
+**`findings/33-a-region-cap-law.md`** (with five cluster records in the
+`33-b-region-cap-law-sources` directory, one file per region: `uk-ie.md`, `eu.md`, `us.md`, `canada.md`,
+`australia.md`) establishes, from primary instruments, which jurisdictions
+restrict resale above a price and on what basis. Two premises that were supplied to the research were
+checked and were wrong, and both are recorded as corrections rather than quietly replaced:
+
+*[Reference corrected 2026-11-08: this row cited the sources directory as a path, which
+`tools/doc_check.py` resolves as a claim that a file ending in `.md` exists at that name and reports
+as a violation. The five files are named directly instead. The claim is unchanged.]*
+
+1. **The United Kingdom's resale cap is announced policy, not law.** The government announced on
+   19 November 2025 that resale above the original price plus unavoidable fees would be made illegal;
+   no bill, instrument or commencement was identified. A table that treated the announcement as law
+   would have refused lawful sales in the largest market in this dataset.
+2. **New South Wales is not a flat 10%.** Part 4A of the Fair Trading Act 1987 (NSW) caps at "original
+   acquisition cost", which s. 58E builds as the original supply cost plus the transaction cost
+   actually paid, counted at no more than 10% of the supply cost. The ceiling is
+   `face + min(fees paid, 10% of face)`, and the advertisement ceiling (110% of supply cost) is a
+   different and looser number.
+
+**Classification.** A for every instrument whose text was read; D for the one jurisdiction whose number
+came from a committee report (Queensland) and is therefore **not enforced**; E for every jurisdiction
+that was not read, which is most of the world. The table's own tests refuse a cap produced by a D- or
+E-grade row, so the class is not decoration.
+
+**`findings/34-region-caps-build.md`** carries the build and verification record, including the local
+validator's eleven legs.
+
+**What this does not establish.** Nothing about a market. It is a legal-constraint record: not a price,
+not an elasticity, not a transaction probability. The only empirical claim in it is structural — a cap
+truncates a price distribution, and a table of caps partitions the sample.
+
+## R3-2 (2026-11-08T08:00Z) — the fee finding's ceiling stands, two of its alternatives do not
+
+`findings/36-transfer-fee-on-a-one-unit-ticket.md` was reviewed by a non-builder (`tmp/review/fee-mechanism.md`,
+read-only, reproduced the measurement independently). The review's verdict on the finding's central
+claim is **reproduced and confirmed**, and the review found two errors in the alternatives section
+that a reader would have acted on. This ledger entry records both, because finding 36 is not the doc
+steward's file and is not rewritten.
+
+**Confirmed, independently.** Token-2022 ceils the fee. At `decimals 0` and `amount 1` every rate
+from 1 to 10,000 bps withholds the whole base unit, the withheld set is exactly `{0, 1}`, and the
+reviewer proved it by enumerating the surface rather than sampling. `maximum_fee = 0` is the only
+other way to withhold 0. Two premises the finding listed as unverified were exercised by the review:
+the `maximum_fee` clamp on a real transfer, and `bps = 10,000` (legal on chain, refused above it). The
+finding's conclusion is unaffected: features 5 and 7 are not buildable on an indivisible ticket.
+
+**Corrected by the review, and this is the part this ledger now carries.**
+
+1. **A venue lamport fee cannot come from the buyer.** The signer of a Token-2022 `TransferChecked`
+the **seller** (the source account's owner or delegate); the buyer never signs, and the hook sees the
+destination only as a token account. Finding 36 §5.1 says the opposite. The fee would have to be
+taken from the seller through a `system_program::transfer` CPI out of the `authority` account the hook
+already receives, with the recipient wallet added via extra-account-metas. The seller must hold the
+lamports at transfer time, and the fee is charged on the staged price in the record, not on lamports
+that moved.
+2. **A divisible mint does not deliver a whole ticket.** Token-2022 invokes the hook with the
+**pre-fee** amount and credits the destination `amount - fee`. A transfer of `TICKET_UNITS` leaves
+the buyer holding 950,000 of 1,000,000 units at 500 bps and 850,000 at 1,500 bps. The seller must
+send `calculate_pre_fee_amount(TICKET_UNITS)` (1,052,632 and 1,176,471), which is not equal to
+`TICKET_UNITS`, so the proposed `amount == TICKET_UNITS` check refuses the only transfer that would
+work. The check would have to move to the net amount, which the hook cannot compute without the
+mint's live fee schedule, or to a per-holder balance check.
+3. Two smaller corrections: the record carries `pending_price_lamports` and no hop count, and §3.3's
+stated detector for the withdraw path is wrong (the instruction has no account slot for hook accounts
+at all) though its conclusion holds.
+
+**Classification.** A for the ceiling and everything the review and the finding measured; C for the
+two corrected mechanisms (properties of the token program's call shape, read from the interface
+source); no market claim either way. Q5 in `records/F-decision-log.md` now carries the same two
+corrections, and features 5 and 7 remain **not built, blocked**.
