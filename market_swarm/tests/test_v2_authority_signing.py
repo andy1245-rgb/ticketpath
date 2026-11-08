@@ -464,20 +464,23 @@ class TestTheDeployedBytesAreTheOnesTheRecordNames(unittest.TestCase):
     that derives the right address says nothing about what is at it.
     """
 
-    def make_root(self, tmp: Path, *, recorded_sha: str, recorded_path: str) -> Path:
+    def make_root(
+        self,
+        tmp: Path,
+        *,
+        recorded_sha: str,
+        recorded_path: str,
+        recorded_id: str | None = None,
+        write_bytes: bytes = b"ELF not really",
+    ) -> Path:
         (tmp / "programs" / "cap_hook").mkdir(parents=True)
         binary = tmp / recorded_path
         binary.parent.mkdir(parents=True, exist_ok=True)
-        binary.write_bytes(b"ELF not really")
-        record = {
-            "schema": "build-provenance/1",
-            "programs": [
-                {
-                    "version": "v2",
-                    "binary": {"path": recorded_path, "sha256": recorded_sha},
-                }
-            ],
-        }
+        binary.write_bytes(write_bytes)
+        entry = {"version": "v2", "binary": {"path": recorded_path, "sha256": recorded_sha}}
+        if recorded_id is not None:
+            entry["program_id"] = recorded_id
+        record = {"schema": "build-provenance/1", "programs": [entry]}
         (tmp / "programs" / "cap_hook" / "BUILD-PROVENANCE.json").write_text(
             json.dumps(record), encoding="utf-8"
         )
@@ -517,15 +520,51 @@ class TestTheDeployedBytesAreTheOnesTheRecordNames(unittest.TestCase):
             del binary
         self.assertIn("one of the two is wrong", str(caught.exception))
 
-    def test_a_tree_with_no_record_is_not_refused(self) -> None:
-        # There is nothing to check it against, and the record is one file a reader can see is
-        # absent. Refusing here would make the build unusable, not make it verified.
+    def test_a_tree_with_no_record_is_refused(self) -> None:
+        # This test used to assert the opposite, on the argument that there is nothing to check an
+        # absent record against. A reviewer showed what that makes true: deleting one committed
+        # file switches the guard off, and `cp cap_hook.so cap_hook-v1.so` then deploys v2's bytes
+        # at v1's address with no refusal from anywhere. A tree holding the `.so` and not the
+        # record has had the record removed.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             binary = root / "programs" / "cap_hook" / "target" / "deploy" / "cap_hook.so"
             binary.parent.mkdir(parents=True)
             binary.write_bytes(b"ELF")
-            self.assertIsNone(gw.binary_provenance_mismatch(root, "v2", binary))
+            with self.assertRaises(gw.ChainUnavailable) as caught:
+                gw.binary_provenance_mismatch(root, "v2", binary)
+        self.assertIn("pinned by nothing", str(caught.exception))
+
+    def test_a_record_about_another_programs_address_is_refused(self) -> None:
+        # The record's id and PROGRAM_IDS are one fact; a record naming a third address is a
+        # record about another program, whatever its hashes say.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = "programs/cap_hook/target/deploy/cap_hook.so"
+            binary = self.make_root(
+                root,
+                recorded_sha=hashlib.sha256(b"ELF not really").hexdigest(),
+                recorded_path=path,
+                recorded_id="7ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ",
+            )
+            with self.assertRaises(gw.ChainUnavailable) as caught:
+                gw.binary_provenance_mismatch(root, "v2", binary)
+        self.assertIn("about a different program", str(caught.exception))
+
+    def test_a_binary_outside_the_root_is_a_sentence_not_a_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as other:
+            root = Path(tmp)
+            self.make_root(
+                root,
+                recorded_sha=hashlib.sha256(b"x").hexdigest(),
+                recorded_path="programs/cap_hook/target/deploy/cap_hook.so",
+                write_bytes=b"x",
+            )
+            outside = Path(other) / "cap_hook.so"
+            outside.write_bytes(b"x")
+            with self.assertRaises(gw.ChainUnavailable) as caught:
+                gw.binary_provenance_mismatch(root, "v2", outside)
+        self.assertIn("not inside", str(caught.exception))
 
     def test_a_record_that_does_not_mention_the_program_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -542,6 +581,7 @@ class TestTheDeployedBytesAreTheOnesTheRecordNames(unittest.TestCase):
         record = root / "programs" / "cap_hook" / "BUILD-PROVENANCE.json"
         if not record.is_file():  # pragma: no cover - the record is committed
             self.skipTest("no provenance record in this tree")
+        checked = 0
         for program, name in (("v2", "cap_hook.so"), ("v1", "cap_hook-v1.so")):
             binary = root / "programs" / "cap_hook" / "target" / "deploy" / name
             if not binary.is_file():
@@ -550,6 +590,13 @@ class TestTheDeployedBytesAreTheOnesTheRecordNames(unittest.TestCase):
                 gw.binary_provenance_mismatch(root, program, binary),
                 f"{name} is not the binary BUILD-PROVENANCE.json records for {program}",
             )
+            checked += 1
+        if not checked:
+            # Said out loud rather than skipped in silence. A reviewer measured a clone reporting
+            # `OK, skipped=0` for a test that asserted nothing, which is the failure mode this
+            # whole record exists to prevent.
+            self.skipTest("no built .so in this tree, so there is nothing to compare")
+        self.assertEqual(checked, 2, "both builds are on disk and were compared")
 
 
 if __name__ == "__main__":  # pragma: no cover - the suite runs it through discovery

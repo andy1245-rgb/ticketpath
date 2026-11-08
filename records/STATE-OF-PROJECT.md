@@ -755,10 +755,10 @@ validator, with no devnet and no spend:
 | reading | value |
 |---|---|
 | agents, rounds, events | 6, 10, 2 (`capped` ceiling 1,250,000,000; `monitored` 7,553,500,000) |
-| rows | 56: 42 executed, 4 refused on chain, 10 asks no bid met |
+| rows | 56 per run: 24 executed trades, 18 listings, 4 refused on chain, 10 bids no ask met |
 | refusals carrying a code | 4, all `6010` `E_CAP_EXCEEDED`, each with its own signature |
 | cost | $0.00 — scripted policies, no model call, and a validator funded at genesis |
-| wall | 28.8 s, no kill, budgets untouched (25.8 of 80 SOL notional committed) |
+| wall | 33.2 s, no kill, 25.8 of 80 SOL notional committed (the run before it: 28.8 s, same counts) |
 
 It exists because v2's live path was broken in four places, found by running it rather than
 reading it: the stage signer, the deploy's `.so` and program keypair not following the program
@@ -766,12 +766,40 @@ name, `start()` deadlocking on a second call, and `_record_until` comparing a v2
 field names. `records/swarm-live-onchain.json` is the aggregate a panel reads, written by
 `tools/swarm_summary.py` from the two datasets, which stay git-ignored.
 
+**[CORRECTED 2026-11-08T14:30Z, after three independent reviews. Four readings in the table above were
+wrong and they are replaced, not footnoted. `42 executed` counted 18 `list` rows, which carry a price
+and `status: ok` and no chain instruction behind them — `cap_hook` has no listing surface, and the
+row's own rationale says nothing moved. `10 asks no bid met` inverted the side of the book: all ten
+rows are `action: buy`, and each says in its own words that it is a censored bid. `28.8 s` was the
+first run's wall; the committed aggregate is a re-run at 33.2 s, and a re-run of the same config and
+seeds reproduced both events' counts exactly — 28 rows each, identical action-by-status counts — so
+the numbers are reproducible and not one draw. The reviews also found two things this branch had
+broken that no green suite caught: the summary tool drew a listing as a clearing price in four
+capped rounds that had no sale at all, and the second event's sidecar claimed every row of the run
+(`rows: 56` beside a 28-row file) because the runner wrote run-wide counters into a per-event file.
+Both are fixed, and the aggregate now names the program id the rows were produced against. The first version of this note had itself claimed these corrections while the
+table beside it still read 42 — one commit changed the note and not the table, which is the failure
+this record exists to catch, so the table is corrected in place here.]**
+
+**One gap this branch found and did not close, because it is shared tooling and not this branch's
+to change.** `tools/tp.py gate` runs `unittest discover -s tests` and the documentation check; it
+does not run `market_swarm/tests`, which is 801 tests, and it does not run
+`tools/build_provenance.py verify`. The pre-commit hook's code trigger matches `ticketpath/`,
+`tests/` and `tools/`, so a commit touching only `programs/cap_hook/**` or `market_swarm/**` runs
+no gate at all. Every "green at this commit" claim in this branch's messages therefore rests on
+both suites and `verify` having been run by hand, which they were, at each commit; it does not
+rest on the hook. Adding two discovery roots and one verb to the gate is a change to the
+repository's shared tooling and belongs with whoever owns it, not with a branch about the swarm.
+
 **What the `/pricing` panel should read, and its fields.** `records/swarm-live-onchain.json`, one
-file, 15,630 bytes: `agents`, `rounds` (`configured`, `completed`), `executed`, `refused` with
-`refused_by_code` (code, name, count), `unfilled_asks`, `cost` (`usd`, `basis`), `validator`
-(`cluster`, `chain`, `program`, `dry_run`), and `price_paths` — two series per event, `asked` and
-`cleared`, one point per round with `median_lamports`, `max_lamports` and `n`, beside the event's
-`ceiling_lamports` so the cap can be drawn as a line. The aggregate is E-class: SYNTHETIC, scripted
+file, under 20 KB: `agents`, `rounds` (`configured`, `completed`), `executed` (trades only — a
+listing is not one), `refused` with `refused_on_chain`, `declined_by_policy` and `refused_by_code`
+(code, name, count), `unfilled_bids` and `unfilled_asks` kept apart because they are opposite sides
+of the book, `run` (`wall_seconds`, `budget`), `cost` (`usd`, `basis`), `validator`
+(`cluster`, `chain`, `program`, `program_id`, `dry_run`), and `price_paths` — two series per event, `asked` and
+`cleared`, one point per round with `median_lamports` (a lower median), `max_lamports` and `n`,
+beside the event's `ceiling_lamports` so the cap can be drawn as a line. A round with no trade in it
+appears with `median_lamports: null` and `n: 0` rather than being dropped, so a chart draws a gap. The aggregate is E-class: SYNTHETIC, scripted
 agents, a validator this machine started, evidence about no real market.]**
 
 **The label, which is the whole point of the package's existence: every number it produces is

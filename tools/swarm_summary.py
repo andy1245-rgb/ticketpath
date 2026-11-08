@@ -316,8 +316,10 @@ def _event_block(path: Path, meta: dict) -> dict:
             "cleared": {
                 "rule": (
                     "lower median (nearest rank) price that transacted in the round: trades "
-                    "only (buy, resell, status ok), so a round in which only listings and "
-                    "refusals happened has no point here"
+                    "only (buy, resell, status ok). A round in which only listings and "
+                    "refusals happened carries this point with median_lamports null, "
+                    "max_lamports null and n 0, so a chart draws a gap rather than a line "
+                    "through a round that never traded"
                 ),
                 "points": series(cleared),
             },

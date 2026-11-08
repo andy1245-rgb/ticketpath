@@ -571,14 +571,24 @@ def binary_provenance_mismatch(root: Path, program: str, binary: Path) -> str | 
     completes, and every row says `program=v1` over v2's code. The keypair check in
     `_program_id_from_disk` cannot see that; only the hash can.
 
-    A tree with no record is not refused: there is nothing to check it against, and the record is
-    one file a reader can see is absent. A record that is present and disagrees is refused, with
-    both hashes in the sentence, because the fix is either "rebuild from the source the record
-    names" or "re-record what you built" and a reader must be able to tell which.
+    A record that is present and disagrees is refused, with both hashes in the sentence, because
+    the fix is either "rebuild from the source the record names" or "re-record what you built"
+    and a reader must be able to tell which.
+
+    An **absent** record is refused when there is a binary to check. It used to be let through --
+    "there is nothing to check it against" -- and a reviewer pointed out what that makes true:
+    deleting one tracked file switches the guard off and `cp cap_hook.so cap_hook-v1.so` deploys
+    v2's bytecode at v1's address with no refusal from anywhere. The record is committed, so any
+    tree that has the `.so` and not the record has had it removed; the sentence says how to put it
+    back.
     """
     record_path = root / "programs" / "cap_hook" / "BUILD-PROVENANCE.json"
     if not record_path.is_file():
-        return None
+        raise ChainUnavailable(
+            f"{record_path.name} is absent, so the bytes about to be deployed as {program} are "
+            "pinned by nothing. It is a committed file: restore it, or regenerate it with "
+            "tools/build_provenance.py write after checking what is on disk"
+        )
     try:
         record = json.loads(record_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -595,7 +605,24 @@ def binary_provenance_mismatch(root: Path, program: str, binary: Path) -> str | 
     entry = entries[0]
     expected = (entry.get("binary") or {}).get("sha256")
     recorded_path = (entry.get("binary") or {}).get("path")
-    relative = binary.relative_to(root).as_posix()
+    # The record's id and the id this gateway will deploy at are one fact, so they are compared
+    # here rather than trusted to agree. `PROGRAM_IDS` is what `_program_id_from_disk` checks the
+    # keypair against, so a record naming a third address is a record about another program.
+    recorded_id = entry.get("program_id")
+    expected_id = PROGRAM_IDS.get(program)
+    if recorded_id and expected_id and recorded_id != expected_id:
+        raise ChainUnavailable(
+            f"{record_path.name} records the {program} binary as deployed at {recorded_id}, and "
+            f"this gateway deploys {program} at {expected_id}: the record is about a different "
+            "program, so it cannot vouch for these bytes"
+        )
+    try:
+        relative = binary.relative_to(root).as_posix()
+    except ValueError:
+        raise ChainUnavailable(
+            f"{binary} is not inside {root}, so it is not a build this repository's record can "
+            "be about"
+        ) from None
     if recorded_path and recorded_path != relative:
         raise ChainUnavailable(
             f"the {program} program deploys from {relative}, and {record_path.name} records its "

@@ -878,6 +878,28 @@ def _check_entry(root: Path, entry: dict) -> list[str]:
                     problems.append(f"{where} is recorded but is not in the tree")
                     continue
                 actual = sha256_file(path)
+                # A tree-scoped entry reads its bytes from disk, so resolving the commit says
+                # nothing about whether that commit is the one the bytes came from. Measured: a
+                # record naming v1's commit for v2 verified clean, because nothing compared the
+                # two. This is that comparison, and it cannot fire on a healthy record: at write
+                # time the tree and the commit are the same bytes, and an edit after the build is
+                # already caught by the hash above.
+                try:
+                    committed = sha256_bytes(git_blob(root, f"{commit}:{name}"))
+                except CommandTimeout:
+                    raise
+                except ProvenanceError:
+                    problems.append(
+                        f"source-commit: {version} names {commit[:12]}, and that commit has no "
+                        f"{name}: the source it claims to have been built from is not there"
+                    )
+                else:
+                    if committed != actual:
+                        problems.append(
+                            f"source-commit: {version} names {commit[:12]}, whose {name} is "
+                            f"{committed}, while the tree holds {actual}: the recorded commit is "
+                            "not the one these bytes came from"
+                        )
             else:
                 problems.append(f"{where} has an unknown source scope {scope!r}")
                 continue
@@ -1016,6 +1038,18 @@ def cmd_verify(args: argparse.Namespace) -> int:
     checked: dict[str, bool] = {}
     try:
         violations: list[str] = []
+        # Deleting a whole entry used to leave this green: the loop checks the entries that are
+        # there, so the one that is not there is checked by nobody. Measured -- drop v1's entry
+        # and `ok, 1 program(s)` came back at exit 0.
+        recorded_versions = {
+            entry.get("version") for entry in entries if isinstance(entry, dict)
+        }
+        for version in VERSIONS:
+            if version.label not in recorded_versions:
+                violations.append(
+                    f"program-set: no entry for {version.label}, so its binary is pinned by "
+                    "nothing here"
+                )
         for entry in entries:
             if not isinstance(entry, dict):
                 violations.append(

@@ -351,6 +351,18 @@ class TestAListingIsAnAskAndNotATrade(unittest.TestCase):
         self.assertIn("trades only", cleared_rule)
         self.assertIn("buy", cleared_rule)
         self.assertIn("resell", cleared_rule)
+        # And it says what a reader will actually find in a round with no trade. The rule used to
+        # say such a round "has no point here", while the series carried the point with nulls --
+        # measured on the real capped event, rounds 2 to 5. A rule the points contradict is the
+        # same defect one layer down.
+        self.assertIn("null", cleared_rule)
+        empty = [
+            point for point in paths["cleared"]["points"] if point["n"] == 0
+        ]
+        self.assertTrue(empty, "the fixture has a round with no trade to describe")
+        for point in empty:
+            self.assertIsNone(point["median_lamports"])
+            self.assertIsNone(point["max_lamports"])
 
 
 class TestTheTwoSidesOfTheUnfilledBook(unittest.TestCase):
