@@ -34,16 +34,22 @@ Nothing here is a claim about a real ticket market. No accuracy number is claime
 Open https://seatpass-ticketpath.pages.dev/demo/ . Everything runs in your browser; state is kept in
 `localStorage`, so clearing site data ends the run.
 
-- The header toggle switches **Buyer** and **Organiser**.
-- Buyer: buy a ticket at face, then list it at a price you type. The listing is admitted or refused
-  before any hop is recorded; each ticket keeps a hop history (price, wallet, instant).
-- Organiser: face price, platform cap, manual override, resale mode (open, monitored, banned), region,
-  artist fee and flip tax. Changes move the buyer view, because both read one state object.
-- `/rules/` shows the cap predicate and the recorded devnet transfers; `/pricing/`, `/door/` and
-  `/verify/` are the other proof pages. What each page does is in `frontend/DEMO.md` and `frontend/README.md`.
+- The header toggle switches **Buyer** and **Organiser** (it is on every page except `/demo`, which has its
+  own). The demo opens on the US region with the 25% cap binding, a 1.25 SOL ceiling on a 1 SOL face.
+- Buyer: buy a ticket at face, then list it at a price you type. A banned, frozen or unresolved-region
+  listing is refused with its own notice and is not dressed up as a cap breach; an over-cap price is
+  refused as `6010` and the card prints both sides of the predicate. An admitted listing shows price,
+  flip tax, artist fee and net. Each ticket keeps a hop history (price, wallet, instant).
+- Organiser: name, face price, platform cap, manual override, resale mode (open, monitored, banned),
+  region with its law ceiling, artist fee, flip tax, and per-ticket overrides (freeze, per-ticket maximum).
+  Changes move the buyer view, because both read one state object.
+- Other pages: `/events/` (filterable list), `/rules/` (the cap predicate and the recorded devnet
+  transfers), `/pricing/`, `/door/` and `/verify/` (proof pages; the door lookup is inert on the static
+  export). `frontend/DEMO.md` and `frontend/README.md` have the detail.
 
 Real inside the demo: the cap predicate, the `6010` code, the flip-tax and artist-fee formulas and the
-region table output. Simulated: the wallet, the sale, the clock, all money. Nothing is charged.
+region table output. Simulated: the wallet, the sale, the clock, all money. Nothing is charged. Only the cap is chain-enforced
+in reality; ban, freeze, region, fee and tax are application policy in the demo.
 
 ## How the cap works
 
