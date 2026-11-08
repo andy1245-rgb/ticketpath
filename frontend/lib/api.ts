@@ -62,6 +62,14 @@ export const MOCK_DATA_SOURCE: DataSource = {
 };
 
 /**
+ * The one reason a mock-mode verification gives, in the same shape as the
+ * backend's own flags (`wallet_not_verified`), so a screen can print either
+ * without pretending to know which kind of deployment it is running in.
+ */
+const MOCK_UNVERIFIED_FLAG =
+  "mock_mode: this build checks no signature, so no wallet is verified";
+
+/**
  * Kept only so the pre-rebuild /my-tickets screen still compiles while it is
  * replaced. Nothing in this module reads it, no wallet is auto-connected, and it
  * should go with that screen.
@@ -227,18 +235,20 @@ function buildAnalytics(event: Event): EventAnalytics {
 }
 
 function mockVerification(wallet: WalletAddress): WalletVerification {
-  const row = walletsFixture.verified.find((w) => w.wallet === wallet);
-  // Unknown wallets are unverified rather than an error — that is the real
-  // backend's behaviour too, since any wallet may connect.
-  const verified = row?.verified ?? false;
+  // A fixture row that says a wallet was verified is a row somebody typed, not a
+  // signature anybody checked, and this build has no key, no server and no cluster
+  // to check one against. So the answer is never `verified: true` here, and the flag
+  // says why in the same machine vocabulary the backend uses for its own refusals.
+  // The fixture's own `verified` list still supplies a region, which is a fixture
+  // fact about a wallet and not a claim that anything was checked.
   return {
     wallet,
-    verified,
-    verifiedAt: verified ? "2026-10-18T14:02:00.000Z" : null,
-    method: verified ? ((row?.method as WalletVerification["method"]) ?? "wallet_signature") : null,
-    canPurchase: verified,
-    canReceiveTransfer: verified,
-    flags: verified ? [] : ["wallet_not_verified"],
+    verified: false,
+    verifiedAt: null,
+    method: null,
+    canPurchase: false,
+    canReceiveTransfer: false,
+    flags: [MOCK_UNVERIFIED_FLAG],
     dataSource: MOCK_DATA_SOURCE,
   };
 }
@@ -413,12 +423,18 @@ export async function completeWalletVerification(args: {
   }
   return settle({
     ...mockVerification(args.wallet),
-    verified: true,
-    verifiedAt: new Date().toISOString(),
-    method: "wallet_signature",
-    canPurchase: true,
-    canReceiveTransfer: true,
-    flags: [],
+    // No signature is checked in mock mode, because there is no key here to check
+    // one against. This branch used to answer `verified: true` and the clock's own
+    // instant to whichever payload arrived, and the screen printed a sentence
+    // claiming a backend had recorded it. On a public deployment anyone can put the
+    // screen in that state, so the only true answer is that this build verifies no
+    // wallet at all.
+    verified: false,
+    verifiedAt: null,
+    method: null,
+    canPurchase: false,
+    canReceiveTransfer: false,
+    flags: [MOCK_UNVERIFIED_FLAG],
   });
 }
 

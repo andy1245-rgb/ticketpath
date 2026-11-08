@@ -7,6 +7,7 @@ import {
   ApiError,
   completeWalletVerification,
   getWalletVerification,
+  isMockMode,
   startWalletVerification,
 } from "@/lib/api";
 import type { WalletVerification } from "@/lib/types";
@@ -237,7 +238,7 @@ export function VerifyClient(): React.ReactElement {
                     <dd className="mt-2">
                       {verification.flags.length === 0 ? (
                         <p className="t-meta text-ink">
-                          Empty. The backend returned no flags for this wallet.
+                          Empty. No flag came back with this record.
                         </p>
                       ) : (
                         <>
@@ -249,7 +250,9 @@ export function VerifyClient(): React.ReactElement {
                             ))}
                           </ul>
                           <p className="t-micro mt-2 text-muted">
-                            Printed verbatim. These are the backend&rsquo;s own machine strings.
+                            {isMockMode
+                              ? "Printed verbatim. These are this build's own strings: no backend was asked, so none of them came from one."
+                              : "Printed verbatim. These are the backend's own machine strings."}
                           </p>
                         </>
                       )}
@@ -273,10 +276,18 @@ export function VerifyClient(): React.ReactElement {
                       : "Sign to verify"}
                 </button>
 
-                {verification.verified && (
+                {verification.verified && !isMockMode && (
                   <p className="t-meta mt-4 text-ink">
                     The backend recorded this wallet as verified
                     {verification.verifiedAt ? ` at ${formatDateTime(verification.verifiedAt)}` : ""}.
+                  </p>
+                )}
+
+                {isMockMode && (
+                  <p className="t-meta mt-4 text-ink">
+                    This deployment verifies nothing. The wallet signs the message and the
+                    signature goes nowhere: there is no backend behind this site to check it
+                    against, so no wallet is recorded as verified here and nothing is gated on it.
                   </p>
                 )}
 
