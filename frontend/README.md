@@ -1,7 +1,9 @@
 # SeatPass — front end
 
 The web front end for SeatPass: wallet-bound event tickets on Solana where every
-resale price and every custody hop is recorded against the ticket itself.
+resale price and every custody hop is recorded against the ticket itself in the
+ledger. The deployed devnet program enforces the cap; the custody hop is design
+and fixture, not yet a program instruction.
 
 Next.js 15 App Router, React 19, TypeScript 5.9 (strict), Tailwind 4. One design
 system in `app/theme.css`, one data seam in `lib/api.ts`, no component that
@@ -34,11 +36,47 @@ npm run build              # production build
 `.next`.** It replaces the bundle under that server. `tools/build-copy.sh` builds
 and serves a throwaway copy instead.
 
+### Serve the built site
+
+`npm run build` writes a static export to `out/`; it does not serve it. `out/`
+is plain HTML, JS and assets, so any static host will do:
+
+```bash
+npm run build
+python3 -m http.server 4599 --directory out
+# then open http://127.0.0.1:4599/
+```
+
+## Verify in 60 seconds
+
+```bash
+npm install
+npm run typecheck   # tsc --noEmit: 0 errors
+npm run lint        # eslint .: 0 problems
+npm test            # node --test on lib/*.test.ts: all pass
+```
+
+No network and no wallet are needed for any of the three. Then open two pages on
+the served build and check what they claim:
+
+- **`/rules`** prints the cap predicate `price*10000 <= face*(10000+cap_bps)` and
+the devnet record behind it: a 1,250,000,000 lamport leg admitted, and 1 lamport
+above the ceiling refused with `6010 E_CAP_EXCEEDED`. The signature and slot on
+that page are read from `data/devnet-artefacts.json` at build time, not from a
+cluster, and the page says so.
+- **`/demo`** runs both sides of a resale in the browser. The cap check is the
+real predicate; the artist fee and the flip tax are transcribed from the
+repository's own modules and are not on chain.
+
+The full command list with its measured output is `VERIFY.md`; the static-export
+recipe with the browser check is `DEMO.md`.
+
 ## Routes
 
 | Route | What it is |
 |---|---|
 | `/` | landing: the hero ticket, the on-chain strip, the cap, the proof band |
+| `/demo` | both sides of a resale, simulated in the browser; the cap check is the real predicate |
 | `/events` | browse, with status, city, text and cursor paging in the URL |
 | `/events/[slug]` | detail: tiers, enforced cap, series, six buckets, destinations |
 | `/events/[slug]/checkout` | face, cap and verification; payment is Unavailable |
@@ -48,7 +86,7 @@ and serves a throwaway copy instead.
 | `/organizer` | volume, sales, median, markup, holders, destinations |
 | `/organizer/events/new` | the create form; submission is Unavailable |
 | `/resale`, `/resale/list/[ticketId]` | no listings endpoint; the cap check for one ticket |
-| `/account`, `/verify` | wallet signature verification |
+| `/account`, `/verify` | wallet signature verification; `/verify` is linked from the footer |
 | `/pricing` | the backend's health: data source, chain, model, contract counts |
 | `/rules` | the cap predicate, immutability, and the real enforcement status |
 
