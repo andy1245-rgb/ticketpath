@@ -59,7 +59,7 @@ is not automatically a defect, but it is a question to answer before pushing, no
 
 ```bash
 git status --short                                          # empty
-git log --oneline 33d95b3..HEAD | wc -l                      # 18
+git log --oneline 33d95b3..HEAD | wc -l                      # 21
 python3 -m unittest discover -s tests                        # Ran 1251 tests, OK (skipped=27)
 python3 -m unittest discover -s market_swarm/tests           # Ran 771 tests, OK (skipped=2)
 python3 tools/tp.py gate --quick                             # gate ok, doc-check=0 violation(s)
@@ -71,6 +71,12 @@ python3 tools/public_safety.py check --range origin/main..HEAD   # clean over ev
 
 `check --range` is the one the scheduled push gate runs, and it reads the commits ahead of
 `origin/main` rather than the tree. Run it last, because it is the last thing that will refuse.
+
+**[Added 2026-11-08, at `HEAD 501c8ae`: the readings above are the branch as handed over at that tip,
+and one redaction commit -- sibling-project names, a hostname and process ids taken out of two findings
+-- sits on top of it, so at the tip that carries this line `git log --oneline 33d95b3..HEAD | wc -l`
+is 22, the author split is 11 `andy1245-rgb` and 11 `VeerCodes`, and the committer check still prints
+nothing.]**
 
 **[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. Two readings in the block above were wrong and they
 are replaced, not footnoted. `check --tracked` prints `public_safety: clean, tracked tree, 394

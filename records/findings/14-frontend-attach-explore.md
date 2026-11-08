@@ -5,7 +5,7 @@
 **Scope:** `/home/friend/ticketing-frontend` (his, never written, :3000 never touched),
 `/home/friend/ticketpath-demo` (our copy, :3001, read only), our backend on :8788 (read only),
 `/home/friend/ticketPricing` (records read, nothing written but this file).
-**Not touched:** `:3000` (pid 81447, answered 200 before and after), `:8787` (identified from
+**Not touched:** `:3000` (a process id, answered 200 before and after), `:8787` (identified from
 `ps` as an unrelated node service, never probed), and the three unrelated tooling trees under his home
 directory.
 **Not done:** no commit, no restart, no write outside this file, no subagent.
@@ -33,9 +33,11 @@ across four disjoint files, none of it in his tree.
 ### 1.1 `:3000` is not pointed at anything
 
 ```
-ss -ltnp | grep 3000        -> 0.0.0.0:3000  next-server (v15.5.29), pid 81447
-ps -o cmd -p 81434          -> npm exec next start -H 0.0.0.0 -p 3000
-tr '\0' '\n' < /proc/81447/environ | grep -i api_base   -> (nothing)
+# the process ids this section read are written $PID (the listener on :3000) and $PARENT (the
+# npm wrapper above it); the numbers themselves are not carried in this record
+ss -ltnp | grep 3000        -> 0.0.0.0:3000  next-server (v15.5.29), pid $PID
+ps -o cmd -p "$PARENT"      -> npm exec next start -H 0.0.0.0 -p 3000
+tr '\0' '\n' < /proc/"$PID"/environ | grep -i api_base   -> (nothing)
 ls /home/friend/ticketing-frontend/.env*                -> .env.example only
 ```
 
@@ -66,8 +68,9 @@ clicking :3000 today is looking at, openly labelled as mock.
 ### 1.2 `:3001` is pointed at our backend, and the wiring lives only in the process env
 
 ```
-ps -o cmd -p 233147         -> node ./node_modules/.bin/next dev -p 3001
-tr '\0' '\n' < /proc/233166/environ | grep -i 'api_base\|pwd'
+# $DEV is the `next dev` process and $CHILD the worker under it; the ids are not carried here
+ps -o cmd -p "$DEV"         -> node ./node_modules/.bin/next dev -p 3001
+tr '\0' '\n' < /proc/"$CHILD"/environ | grep -i 'api_base\|pwd'
     NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788
     PWD=/home/friend/ticketpath-demo
 ls -a /home/friend/ticketpath-demo | grep env   -> .env.example only

@@ -1,6 +1,6 @@
-# 15 — visionHelper (`vh.py`): where it is, where it is not, and how to screenshot this box without a browser
+# 15 — the vision reader (`vh.py`): where it is, where it is not, and how to screenshot this box without a browser
 
-Run 2026-11-07 17:35–17:40 UTC on `friend-vm` (`friend@friend-vm`, kernel host name `friend-vm`).
+Run 2026-11-07 17:35–17:40 UTC on this box.
 Read only. Nothing committed, no repository file touched. Scratch output went to `/tmp/vh-shim/`.
 One unauthenticated `GET /` was sent to `:3000` and `:8787` as part of the port survey (status codes only,
 no interaction, no state change); everything else in this record concerns `:8788` and `:3001`.
@@ -36,18 +36,18 @@ The skill survived the migration. The 24 KB of code it documents did not.
 
 | path | status |
 |---|---|
-| `/home/friend/visionHelper/` | `ls: cannot access '/home/friend/visionHelper': No such file or directory` |
-| `/home/friend/visionHelper/vh.py` | same |
+| `/home/friend/<sibling-tool>/` | `ls: cannot access '/home/friend/<sibling-tool>': No such file or directory` |
+| `/home/friend/<sibling-tool>/vh.py` | same |
 | `/home/friend/.pi/agent/skills/` | does not exist at all |
 | `/home/friend/.agents/` | does not exist at all |
-| `/home/friend/.claude/skills/` | exists but holds only `agent-manager`, no vision skill |
+| `/home/friend/.claude/skills/` | exists but holds only one unrelated skill, no vision skill |
 | `vh` on `PATH` | absent. `/home/friend/.local/bin` holds exactly three entries, and `vh` is not one of them. |
 
 Searched and found nothing: every top level directory under `/home/friend` (including `tools`, `reports`,
-`research`, `emoney`, `loginsw`, `hackathonPrep`, `ticketPricing`, `ticketpath-demo`, `ticketing-frontend`,
-his three unrelated tooling trees, `.pi`, `.local`, `.claude`, `.config`, `.cache`, `.npm`, `.nvm`),
+`ticketPricing`, `ticketpath-demo`, `ticketing-frontend`, several other sibling projects and tooling trees,
+`.pi`, `.local`, `.claude`, `.config`, `.cache`, `.npm`, `.nvm`),
 plus `/opt`, `/srv`, `/usr/local`, `/usr/bin`, `/usr/local/bin`, `/root`, `/etc/skel`.
-`/home/andrew` does not exist, and neither does `/home/friend/mnt` (the dell321 mount is gone).
+`/home/andrew` does not exist, and neither does `/home/friend/mnt` (a network mount is gone).
 
 A literal `find / -name vh.py` could not be run: the bashguard blocks any recursive walk that reaches the
 sshfs mount, and it fires on `find` from `/` or from `/home/friend` regardless of `-prune`. Every search
@@ -57,17 +57,16 @@ above was therefore scoped to one named directory per command. No `locate`/`ploc
 
 ## 3. Why it is missing, in the record's own words
 
-This is not a mystery and it is not damage. `~/visionHelper` was deliberately left behind by the transfer.
+This is not a mystery and it is not damage. The sibling tool's directory was deliberately left behind by
+the transfer.
 
-`/home/friend/reports/T2-inventory.md` L179 (the source box inventory):
+A local report, the source box inventory, records at its line 179 that the directory held 3.5 GB (about
+1 MB of code, `vh.py` 24 KB), that code came across and `sessions/` did not, that it backs the
+vision-helper skill and the vision profile, and that its code "has 0 hardcoded paths".
 
-> `| ~/visionHelper | 3.5 GB (≈1 MB code, vh.py 24 KB) | T* | code yes, sessions/ 3.5 GB no | Backs
-> vision-helper skill + the vision profile. **Code has 0 hardcoded paths.** |`
-
-`/home/friend/reports/T5-transfer.md` §9, item 9 lists what was not carried:
-
-> `usage.jsonl`, `visionHelper`, `listenmatch`, `toolInterfacer`, `sync-tools`, `cmdcs`.
-> "Not carried, because the manifest did not list them"
+Another local report, the transfer record, lists at §9 item 9 what was not carried: `usage.jsonl` and
+five sibling projects and tools beside it, this one included. Its reason, quoted from the record:
+"Not carried, because the manifest did not list them".
 
 So: about 1 MB of code, zero hardcoded paths, and it was skipped only because the manifest did not name it.
 The skill, the profile and the credential file all came across; the program they describe did not.
@@ -79,8 +78,8 @@ The skill, the profile and the credential file all came across; the program they
 ### The command that was asked for, and its exact output
 
 ```
-$ timeout 20 python3 /home/friend/visionHelper/vh.py --help
-python3: can't open file '/home/friend/visionHelper/vh.py': [Errno 2] No such file or directory
+$ timeout 20 python3 /home/friend/<sibling-tool>/vh.py --help
+python3: can't open file '/home/friend/<sibling-tool>/vh.py': [Errno 2] No such file or directory
 exit=2
 ```
 
@@ -95,7 +94,7 @@ marker is the skill's own words:
 ## Usage
 
 ```bash
-cd /home/friend/visionHelper
+cd /home/friend/<sibling-tool>
 
 # single image (default: handwriting mode, 2 passes)
 ./vh.py run /path/shot.png -p
@@ -144,7 +143,7 @@ enumerated from here. Only the flags the skill chose to show are known: `run`, `
 
 1. Under the `vision` profile: `/profile use vision` inside a session. The profile pins
    `commandcode/deepseek/deepseek-v4.1-flash`, sets `effort: low`, and hides 26 registry skills.
-2. From any profile, because the CLI is self contained: `cd /home/friend/visionHelper && ./vh.py run shot.png -p`.
+2. From any profile, because the CLI is self contained: `cd /home/friend/<sibling-tool> && ./vh.py run shot.png -p`.
 
 The skill also records that `pi --profile vision` **does not work on pi 1.2.0** (the flag is never
 registered, `Error: Unknown option: --profile`). This box runs `@earendil-works/pi-coding-agent@1.2.0`, so
@@ -258,7 +257,7 @@ System libraries a real Chromium would need (14 checked): 3 present (`libnss3.so
 Worse, there is no way to install any of them right now: `python3 -m pip` reports
 `No module named pip`, `python3 -m ensurepip` reports `No module named ensurepip`, and
 `python3 -m venv /tmp/venvprobe` fails with *"You may need to use sudo with that command. After installing
-the python3-venv package"*. `uv` is absent (T5 recorded this too).
+the python3-venv package"*. `uv` is absent (the transfer record noted this too).
 
 ### Node: this is where the rasteriser is
 
@@ -298,8 +297,8 @@ Practical routes, if he says yes:
   Gives real pixel screenshots including CSS layout, charts, canvas and images.
 - `sudo -n apt-get install -y wkhtmltopdf` (candidate `0.12.6-2build2`, a real deb, not a snap wrapper).
   Older engine, but adequate for a text-heavy console page and much smaller than Chromium.
-- Restoring `~/visionHelper` from the source box (about 1 MB of code, 0 hardcoded paths per T2) needs no
-  sudo at all.
+- Restoring `~/<sibling-tool>` from the source box (about 1 MB of code, 0 hardcoded paths per the
+  source-box inventory) needs no sudo at all.
 
 ---
 
@@ -322,7 +321,7 @@ npx playwright screenshot --viewport-size=1440,900 --full-page \
     http://127.0.0.1:8788/ /tmp/vh-shim/8788.png
 
 # 2. read it
-cd /home/friend/visionHelper && ./vh.py run /tmp/vh-shim/8788.png -p --passes 1 \
+cd /home/friend/<sibling-tool> && ./vh.py run /tmp/vh-shim/8788.png -p --passes 1 \
     --vocab "capBps,feeLamports,lamports,resale,tier,asOf,ISO-8601,tau,decision mode,counterfactual"
 ```
 
@@ -335,7 +334,7 @@ exactly the tokens a vision model mangles.
 ```bash
 npx playwright screenshot --viewport-size=1440,900 --full-page \
     http://127.0.0.1:3001/ /tmp/vh-shim/3001.png
-cd /home/friend/visionHelper && ./vh.py run /tmp/vh-shim/3001.png -p --passes 1
+cd /home/friend/<sibling-tool> && ./vh.py run /tmp/vh-shim/3001.png -p --passes 1
 ```
 
 `:3001` is the frontend copy (title `Events`, 118,917 B of HTML), so it is heavier on layout and iconography
@@ -362,14 +361,14 @@ comes out 1653 px wide. That upscale is what makes 15 px text legible to a visio
 ### Feeding it to `vh.py`
 
 ```bash
-cd /home/friend/visionHelper && ./vh.py run /tmp/vh-shim/8788-live.png -p --passes 1
+cd /home/friend/<sibling-tool> && ./vh.py run /tmp/vh-shim/8788-live.png -p --passes 1
 ```
 
 That is the exact command. It cannot run here:
 
 ```
-$ timeout 20 python3 /home/friend/visionHelper/vh.py run /tmp/vh-shim/8788-live.png -p --passes 1
-python3: can't open file '/home/friend/visionHelper/vh.py': [Errno 2] No such file or directory
+$ timeout 20 python3 /home/friend/<sibling-tool>/vh.py run /tmp/vh-shim/8788-live.png -p --passes 1
+python3: can't open file '/home/friend/<sibling-tool>/vh.py': [Errno 2] No such file or directory
 ```
 
 The PNG is ready and nothing else is missing from the inputs. The single missing component is the program.
@@ -497,8 +496,8 @@ Doors
 ### Step 5, hand it to `vh.py`
 
 ```
-$ timeout 20 python3 /home/friend/visionHelper/vh.py run /tmp/vh-shim/8788-live.png -p --passes 1
-python3: can't open file '/home/friend/visionHelper/vh.py': [Errno 2] No such file or directory
+$ timeout 20 python3 /home/friend/<sibling-tool>/vh.py run /tmp/vh-shim/8788-live.png -p --passes 1
+python3: can't open file '/home/friend/<sibling-tool>/vh.py': [Errno 2] No such file or directory
 ```
 
 **This is where the example ends.** Steps 1 to 4 are real and complete. Step 5 fails on a missing file, not
@@ -518,7 +517,7 @@ because it is the kind of silent corruption a vision model would faithfully tran
 | # | option | cost | needs his yes | gets a real screenshot | gets a vision read |
 |---|---|---|---|---|---|
 | 1 | Share the existing PNG into a pi session with the `read` tool | free, already done in this session | no | no | **yes** |
-| 2 | Copy `~/visionHelper` from the source box (about 1 MB, 0 hardcoded paths) | free | yes, and it needs a route to that box | no | **yes** |
+| 2 | Copy `~/<sibling-tool>` from the source box (about 1 MB, 0 hardcoded paths) | free | yes, and it needs a route to that box | no | **yes** |
 | 3 | Keep the `sharp` text renderer (`/tmp/vh-shim/texrender.py`) | free | no | text only | **yes** |
 | 4 | `npx playwright install chromium` + `install-deps` | ~170 MB, free bandwidth, passwordless sudo | **yes, this changes the machine** | **yes** | yes, with 2 |
 | 5 | `apt-get install wkhtmltopdf` | small | yes | yes, weaker engine | yes, with 2 |
@@ -530,7 +529,7 @@ and `watch` on a folder. That is worth restoring for bulk work, and it is overki
 
 My recommendation, in order:
 
-1. **Restore `~/visionHelper` from the source box.** It is 1 MB of clean code that the record already
+1. **Restore `~/<sibling-tool>` from the source box.** It is 1 MB of clean code that the record already
    certifies as having zero hardcoded paths, and it is the only option that brings back the cost logging and
    CER scoring. Also confirm whether he wants `sessions/` (3.5 GB) with it. I cannot reach that box from
    here: `~/.ssh/config` lists only `github.com`, `known_hosts` lists only `github.com`, and there is no key
@@ -549,15 +548,15 @@ restored. Primary and first fallback are both commandcode and both covered.
 
 ## 11. Reproduction, and what was verified where
 
-Everything above was measured on `friend-vm` in this session, not inferred from the skill's prose or from
+Everything above was measured on this box in this session, not inferred from the skill's prose or from
 the migration reports. The three exceptions, each labelled as such in the text: `vh.py`'s internal
 behaviour and its model fallback contract come from `SKILL.md` (unverifiable here, the program is absent),
-and the reason for its absence comes from `T2-inventory.md` L179 and `T5-transfer.md` §9 item 9.
+and the reason for its absence comes from a local report's line 179 and another local report's §9 item 9.
 
 ```bash
 # absence
-ls -la /home/friend/visionHelper
-timeout 20 python3 /home/friend/visionHelper/vh.py --help
+ls -la /home/friend/<sibling-tool>
+timeout 20 python3 /home/friend/<sibling-tool>/vh.py --help
 
 # skill and profile
 ls -la /home/friend/.pi/profiles/registry/vision-helper/
