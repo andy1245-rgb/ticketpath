@@ -17,10 +17,10 @@
 | `fixtures/synthetic_store.json` | `15e6f6611652ae43f3967e110e2feeffde0cc2ace13ea868ff3abb0012bb9bfa` |
 
 **What I did not review.**
-- The Next.js frontend at `/home/friend/ticketing-frontend` (out of bounds for this pass). I did not apply or assess `docs/frontend-honesty.patch`.
+- The Next.js frontend at `../ticketing-frontend` (out of bounds for this pass). I did not apply or assess `docs/frontend-honesty.patch`.
 - The Solana program. None exists; there is nothing compiled, deployed or run. I read the design and the simulated state machine, not a cluster.
 - The literature claims in the findings. I read 02-a §8, 02-b §1–3, 02-c §2 and §6, 02-d §2, 02-e §4–5, 03-b §2 and §6, and the ban in 00-adversarial-review §6, and checked the code against them. I did not verify their citations or the borrowed numbers.
-- The six records A–F row by row; the fixture generator's intent (I verified its output invariants with `--check`); the wallet-verification cryptography beyond what the conformance suite exercises; the `agentFleet`, `~/fleet-gui` and `~/fleet-manager` trees (out of bounds).
+- The six records A–F row by row; the fixture generator's intent (I verified its output invariants with `--check`); the wallet-verification cryptography beyond what the conformance suite exercises; the operator's fleet tool repositories (out of bounds).
 - Anything about the operator's accounts, a real ledger, or a devnet artefact. The store is synthetic and the chain slot is absent.
 
 ---
@@ -42,7 +42,7 @@ The rest of this file is the evidence for those lines, then the fix list ranked 
 
 ### 1.1 Start and health
 
-`8788` was already bound by another process (`python3`, pid 255762) when the pass began. `8787` was left alone, as instructed. I ran my own instances on scratch ports: `--port 8891` (12:00Z, code before the 12:08 changes) and `--port 8896`/`8897` (12:13Z and later, current code). The cold-start and pathological stores were served on `8908`, `8911`–`8913`, `8974`, `8981`, `8986`, `8991`, `8994`, `8995`; all of those were mine and are stopped.
+`8788` was already bound by another process (`python3`) when the pass began. `8787` was left alone, as instructed. I ran my own instances on scratch ports: `--port 8891` (12:00Z, code before the 12:08 changes) and `--port 8896`/`8897` (12:13Z and later, current code). The cold-start and pathological stores were served on `8908`, `8911`–`8913`, `8974`, `8981`, `8986`, `8991`, `8994`, `8995`; all of those were mine and are stopped.
 
 `GET /health` on the current code:
 
@@ -718,3 +718,30 @@ The runner-ups, all in the same five minutes:
 ---
 
 *End of review. No file other than this one was written. No commit, no push, no fix.*
+
+---
+
+## CORRECTION (2026-11-08T08:30Z): four machine handles redacted, no verdict changed
+
+**Scope:** this file only, and only three lines: two in "What I did not review" and one in §1.1.
+**Why:** this repository is public and `tools/public_safety.py` refuses a tracked file that carries
+an absolute path under a home directory, a process id, or the name of another of the operator's
+repositories. The rule and its reason are in `.public-denylist`.
+
+**What the redaction costs: nothing that was reviewed.** The bullet's job is to say what was out of
+bounds. It still says that: the frontend is given by the repository-relative path this repository
+uses for it everywhere else, and the out-of-bounds trees of the operator's are named by what they
+are instead of by three directory names. In §1.1 the point is that the port was already held by a
+plain `python3` process that this pass did not own, which the sentence still says; the pid it then
+printed identified a process that stopped on 2026-11-07.
+
+| Where | Was | Now |
+|---|---|---|
+| What I did not review, frontend bullet | an absolute path under a home directory | `../ticketing-frontend` |
+| What I did not review, records bullet | three of the operator's repositories, named | "the operator's fleet tool repositories (out of bounds)" |
+| §1.1 | ``(`python3`, pid <n>)`` | ``(`python3`)`` |
+
+**Residue, stated rather than hidden.** Port numbers on lines this rule does not classify are
+unchanged. `.public-denylist` states why it does not deny those, and `/tmp` paths are exempt for
+`records/` on purpose. `python3 tools/public_safety.py check --tracked` reports zero hits for this
+file as of this note.

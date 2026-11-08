@@ -73,11 +73,11 @@ a price. The block now carries the missing distinction between *populated* and *
 ## 3. What could not be fixed
 
 **The live port on :8788 was stale for the length of this pass, and stopped being stale at
-12:13Z.** At 12:02Z that process (pid 255762, started 11:58:06Z) still answered the old payload:
+12:13Z.** At 12:02Z that process (started 11:58:06Z) still answered the old payload:
 `"designDoc": "docs/ON-CHAIN-FOR-LAPTOP.md"` and a `pricingModel` with no `kind` and no
 `fitted`. A process started before a source change holds the old code, and it is not mine to
 restart. A concurrent session restarted it while this pass was writing up: at 12:13Z `curl
-http://127.0.0.1:8788/health` (new pid 263482) returns `docs/ON-CHAIN-DESIGN.md` and the block in
+http://127.0.0.1:8788/health` (the process that replaced it) returns `docs/ON-CHAIN-DESIGN.md` and the block in
 §2. The agreement between tree and live system therefore holds — but only because of a restart,
 which is why the after payload is quoted from a port this pass started itself and not from the
 one that happened to be running.
@@ -130,3 +130,26 @@ curl -s http://127.0.0.1:8791/health | python3 -m json.tool
 curl -s http://127.0.0.1:8791/ | sed 's/<[^>]*>/ /g' | grep -o 'at least [0-9.]* SOL'
 python3 -m unittest discover -s tests
 ```
+
+---
+
+## CORRECTION (2026-11-08T08:30Z): two process ids redacted, no claim changed
+
+**Scope:** this file only, and only two parentheticals in §3. **Why:** this repository is public and
+`tools/public_safety.py` refuses a tracked file that carries a process id. The rule and its reason
+are in `.public-denylist`.
+
+**What the redaction costs: nothing that was measured.** §3's measurement is a payload that changed
+between 12:02Z and 12:13Z because the code changed and the process was restarted. That is still
+what it says: which process answered is given by its start time, 11:58:06Z, and by "the process that
+replaced it". Neither pid was carrying a number the sentence reasons from.
+
+| Where | Was | Now |
+|---|---|---|
+| §3, the stale payload at 12:02Z | `pid <n>` beside the start time | the start time alone, 11:58:06Z |
+| §3, the corrected payload at 12:13Z | `new pid <n>` | "the process that replaced it" |
+
+**Residue, stated rather than hidden.** Port numbers on lines this rule does not classify are
+unchanged, including this project's own documented backend port. `.public-denylist` states why it
+does not deny those, and `/tmp` paths are exempt for `records/` on purpose.
+`python3 tools/public_safety.py check --tracked` reports zero hits for this file as of this note.

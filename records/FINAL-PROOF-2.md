@@ -2,7 +2,7 @@
 
 Second proof pass for the Ticketpath submission. Window `2026-11-07T15:35:40Z` to
 `2026-11-07T15:50Z`, on this machine, Python 3.12.3, standard library only, backend on
-`127.0.0.1:8788`, a copy of the platform frontend on `127.0.0.1:3001`, the live frontend on
+`127.0.0.1:8788`, a copy of the platform frontend on its own port, and the live frontend on
 `127.0.0.1:3000`.
 
 This file is the only file this run writes inside the repository. Nothing was fixed, installed,
@@ -24,17 +24,17 @@ itself" half of it is what Part 2 measures, and there it fails. Details in Step 
 
 Environment established before the first test:
 
-- `:3000` is the live platform frontend, `next-server` pid 81447, started `Fri Nov 6 23:57:34
-  2026`, cwd `/home/friend/ticketing-frontend`. Untouched.
-- `:3001` is the copy at `/home/friend/ticketpath-demo`, `next-server` pid 233166 (dev parent
-  233147), started `11:08:30`. `/proc/233166/environ` shows
+- the live platform frontend's port serves `next-server`, started `Fri Nov 6 23:57:34
+  2026`, cwd `../ticketing-frontend`. Untouched.
+- the demo copy sits at `../ticketpath-demo`, served by `next-server` under a dev parent (the
+  run printed both pids), started `11:08:30`. The child's `/proc/<pid>/environ` shows
   `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788`, read from the process, not assumed.
-- `:8788` was serving pid 313388 (`python3 -m ticketpath.server --port 8788`, cwd
-  `/home/friend/ticketPricing`). It was stopped and replaced with pid 315801 running the
-  documented command, so every reading below is against the code on disk at 15:36Z.
-- `:8787` is another process (`node server.mjs`, pid 246814). Never bound, never touched.
+- `:8788` was serving a backend this run did not start (`python3 -m ticketpath.server
+  --port 8788`, cwd `<repository root>`). It was stopped and replaced with a fresh instance
+  running the documented command, so every reading below is against the code on disk at 15:36Z.
+- `8787` is another process (`node server.mjs`). Never bound, never touched.
 - Two stray backend processes from an earlier session were running on `:8801` and `:8802`
-  (pids 250184, 250434, started 11:45). Observed, not touched, not used. They are still there.
+  (started 11:45). Observed, not touched, not used. They are still there.
 - Newest source file in the tree: `ticketpath/api/guidance.py`, `15:28`. The backend was
   started after it, so no reading here comes from stale bytecode in a running process.
 
@@ -148,8 +148,8 @@ exit 0
 
 ## Step 2: the backend on 8788
 
-The process on 8788 was confirmed as this project's backend (`/proc/313388/cwd` =
-`/home/friend/ticketPricing`) and stopped. One fresh instance:
+The process on 8788 was confirmed as this project's backend (`/proc/<pid>/cwd` =
+`<repository root>`) and stopped. One fresh instance:
 
 ```bash
 python3 -m ticketpath.server
@@ -158,7 +158,7 @@ python3 -m ticketpath.server
 ```
 ticketpath 0.1.0 listening on http://127.0.0.1:8788 dataSource=synthetic-fixture synthetic=True cluster=devnet routes=10
   SYNTHETIC FIXTURE DATA. Generated for tests and demonstration, not real ticket data.
-pid 315801, started Sat Nov  7 15:36:03 2026, LISTEN 127.0.0.1:8788
+started Sat Nov  7 15:36:03 2026, LISTEN 127.0.0.1:8788
 ```
 
 Every route, status and bytes as served:
@@ -413,16 +413,16 @@ requires, and the page carries the backend's own synthetic-data label.
 
 ---
 
-## Step 5: the live frontend on :3000, untouched
+## Step 5: the live frontend's port, untouched
 
 ```
-listener:  :3000  next-server (v15.5.29)  pid 81447
-pid 81447: STARTED Fri Nov  6 23:57:34 2026   ELAPSED 15:47:37
-cwd:       /home/friend/ticketing-frontend
+listener:  the live frontend  next-server (v15.5.29)
+the frontend: STARTED Fri Nov  6 23:57:34 2026   ELAPSED 15:47:37
+cwd:       ../ticketing-frontend
 GET :3000/  ->  200  30546b
 ```
 
-File tree, `find /home/friend/ticketing-frontend -xdev` against the run marker
+File tree, `find ../ticketing-frontend -xdev` against the run marker
 `2026-11-07 15:35:40.298`:
 
 ```
@@ -436,13 +436,13 @@ It is still its own app, not repointed:
 ```
 :3000/events/evt_syn_02              404
 :3000/events/evt_midnight_static_tour 200
-mock ids on the :3000 home page: evt_harbor_lights_festival evt_midnight_static_tour
+mock ids on the live frontend's home page: evt_harbor_lights_festival evt_midnight_static_tour
   evt_northline_derby_finals evt_riverside_comedy_night evt_sidestage_warehouse_04
   evt_winter_chamber_series
-evt_syn ids on the :3000 home page: none
+evt_syn ids on the live frontend's home page: none
 ```
 
-**PASS.** Same pid, same start time, HTTP 200, zero files written, six mock events and a 404 on
+**PASS.** Same process, same start time, HTTP 200, zero files written, six mock events and a 404 on
 ours — the untouched state, not a regression.
 
 ---
@@ -491,7 +491,7 @@ The 64-character hits are sha256 digests of files and RFC 8032's published test 
 
 ```
 CMD1  python3 -m ticketpath.server
-      8788 is served by exactly this command (pid 315801). Cold start on the documented
+      8788 is served by exactly this command. Cold start on the documented
       override TICKETPATH_PORT=8795:
         ticketpath 0.1.0 listening on http://127.0.0.1:8795 ... routes=10
         GET /health -> 200
@@ -561,7 +561,7 @@ Still a placeholder. Until it is replaced the licence names no holder, and the R
 - The frontend copy on `:3001` serves the backend's numbers: 13 of 13 comparisons match, all 8
   backend event slugs appear, none of its 6 bundled mock ids do, and the synthetic-data label is
   on the page.
-- The live frontend on `:3000` is untouched: same pid 81447, same start time, HTTP 200, zero of
+- The live frontend's port is untouched: the same process, the same start time, HTTP 200, zero of
   42,608 files written during this run.
 - No secret, key file, token or `.env` anywhere in the tree.
 - Every README command runs, and nothing in the run claims a deploy.
@@ -586,8 +586,8 @@ Still a placeholder. Until it is replaced the licence names no holder, and the R
 2. Fill in the LICENSE copyright line.
 3. Fix C1, C2, C3 above, and fix the console-check assertion that pins C1, or accept the
    contradictions and say so.
-4. Repoint `:3000` at this backend if the live app is the one to be shown; today the copy on
-   `:3001` is the only frontend reading it.
+4. Repoint the live frontend's port at this backend if the live app is the one to be shown; today
+   the copy on `:3001` is the only frontend reading it.
 5. Supply real ledger data if the numbers must stop being synthetic. Nothing here pretends
    otherwise.
 
@@ -619,3 +619,39 @@ does not.
 `/tmp/proof2/03b-clock.py` (64 states), `/tmp/proof2/04-frontend.py` (7 routes, 13 numbers),
 `/tmp/proof2/02-wallet-post.py` (the two POST routes). Logs and their JSON output are beside
 them in `/tmp/proof2/`.*
+
+---
+
+## CORRECTION (2026-11-08T08:30Z): machine handles redacted, no claim changed
+
+**Scope:** this file only, and only the lines in the table below. **Why:** this repository is public
+and `tools/public_safety.py` refuses a tracked file that carries an absolute path under a home
+directory, a process id, or the name of another of the operator's repositories. The rule and its
+reason are in `.public-denylist`. The whole-tree run is the only one of its three entry points that
+reads what is already published, which is why this is a forward edit and not a rewrite of history.
+
+**What a redaction here is allowed to cost: nothing that was measured.** A process id was never the
+measurement. It was the handle that identified which process was holding a port, and the sentence
+still carries the identification it was using: the command, the start time, the listener, and where
+the point was that nothing moved, the words "the same process". A home path said nothing the
+repository-relative path beside it does not say. No number was replaced with a different number, and
+no count, status code, start time, byte size or verdict changed.
+
+| Where | Was | Now |
+|---|---|---|
+| Environment, live frontend | the port tied to `pid <n>`, started …, and a `cwd` under a home directory | the port named by what it serves, `next-server` and the start time kept, `cwd` `../ticketing-frontend` |
+| Environment, demo copy | the port tied to `pid <n>` (dev parent `<n>`), a path under a home directory, `/proc/<n>/environ` | the copy named by `../ticketpath-demo`, both pids gone, `/proc/<pid>/environ` |
+| Environment, backend | `pid <n>` on the port, a `cwd` under a home directory, "replaced with pid `<n>`" | the backend named by its command, the pids gone, `cwd` `<repository root>`, "replaced with a fresh instance" |
+| Environment, other process and strays | `pid <n>` on `8787`; `pids <n>, <n>` on `:8801` and `:8802` | the process and its command, the pids gone, the start times kept |
+| Opening window | a copy of the frontend on a tied port | "a copy of the platform frontend on its own port" |
+| Step 2, process confirmation | `/proc/<n>/cwd` equal to a path under a home directory | `/proc/<pid>/cwd` equal to `<repository root>` |
+| Step 2, startup banner | the banner's own line began `pid <n>, started …` | the line keeps the start time and the listener, the pid is gone |
+| Step 5, listener capture | the port as a tied handle, `pid <n>` on two lines, `cwd` under a home directory | the port named by what it serves, the pid gone, start time and ELAPSED kept, `cwd` `../ticketing-frontend` |
+| Step 5, home page and file tree | the port in two lines reporting the home page; `find` over an absolute path | "the live frontend's home page"; `find ../ticketing-frontend -xdev` |
+| Step 5 verdict, Step 7, recommendation 4 | "same pid `<n>`", "(pid `<n>`)", a port named as a handle | "same process", the pid gone, "the live frontend's port" |
+
+**Residue, stated rather than hidden.** Port numbers on lines this rule does not classify are
+unchanged, including this project's own documented backend port and the demo copy's port where it
+appears in a URL or a heading. `.public-denylist` states why it does not deny those, and `/tmp`
+paths are exempt for `records/` on purpose. `python3 tools/public_safety.py check --tracked` reports
+zero hits for this file as of this note.

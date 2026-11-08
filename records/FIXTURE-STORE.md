@@ -302,7 +302,7 @@ than claimed.
 
 **The running backend does not reload the store.** `LedgerAdapter.from_fixture` reads the
 file once at startup, so a process started before this change keeps serving the old store
-from memory. The instance on `127.0.0.1:8788` (pid 233049, started by the demo session at
+from memory. The instance on `127.0.0.1:8788` (started by the demo session at
 11:1xZ) was still answering with the two-event store when this was written. Restarting it
 is the operator's call and was not done here. The new store was verified end to end on a
 scratch port, which disturbs nothing already running: 8 events and 76 tickets on the list routes, an event by id and by slug, a ticket by
@@ -378,3 +378,19 @@ build time rather than typed (`tools/build_fixture_store.py`, `sampling_clause`)
   asserts the over-sampling clause is present; `tests/test_http_contract.py` asserts the
   served description still starts with "Synthetic demonstration record", which appending
   a second sentence does not disturb. No test elsewhere asserted a description string.
+
+---
+
+## CORRECTION (2026-11-08T08:30Z): one process id redacted, no claim changed
+
+**Scope:** this file only, and only the sentence about the running backend not reloading the store.
+**Why:** this repository is public and `tools/public_safety.py` refuses a tracked file that carries
+a process id. The rule and its reason are in `.public-denylist`.
+
+**What the redaction costs: nothing that was measured.** The claim is that a process started before
+the store changed keeps serving the old one from memory, so this file's new store was proven on a
+scratch port instead. The instance is still identified by what it serves and by the session that
+started it at 11:1xZ, and the operator's call about restarting it is still recorded as his. The pid
+was a handle on a process that no longer exists.
+
+`python3 tools/public_safety.py check --tracked` reports zero hits for this file as of this note.

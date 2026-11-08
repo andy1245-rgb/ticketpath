@@ -242,7 +242,7 @@ policy, and now they say so, in two words, with no change to layout.
 | `next start -p 3100` against the running backend on `:8788`, `GET /`, `/events/fixture-hall-session`, `/tickets/tkt_fixture_0001`, `/organizer` | all `200`; each page's HTML contains `SYNTHETIC FIXTURE DATA. Hand-authored for tests, not real ticket data. No ticket program is deployed for this build...` exactly once; the old "Mock data" banner is **absent**; footer, `On-chain (simulated)`, `Not enforced — no program is deployed`, `Verified wallets only (policy) · Resale capped at +25% (policy)` and both transfer-rule sentences all present in the served HTML |
 | `next start -p 3101` in mock mode | `200`, "Mock data" banner present, no provenance notice — the fixtures carry no `dataSource`, which is the correct behaviour and not a regression |
 | `git apply --check` on a clean copy of the original files | all 10 file entries check; full apply reproduces `../ticketpath-demo` byte for byte |
-| `../ticketing-frontend` | never written; `:3000` answered `200` throughout, same pid 81447 |
+| `../ticketing-frontend` | never written; the live frontend answered `200` throughout, same process |
 
 Both test servers were started on demand, used, and killed; `:3100` and `:3101` are free
 again. The `:8788` backend was already running and was only read.
@@ -307,3 +307,25 @@ can. The patch labels it a fixture placeholder and stops there.
   `../ticketing-frontend` (his, needs his explicit yes and a `:3000` restart to take
   effect only if he also sets the env var — the patch itself needs no restart beyond the
   normal rebuild).
+
+---
+
+## CORRECTION (2026-11-08T08:30Z): a machine handle redacted, no claim changed
+
+**Scope:** this file only, and only the last row of the results table. **Why:** this repository is
+public and `tools/public_safety.py` refuses a tracked file that carries a process id or a port tied
+to a running process. The rule and its reason are in `.public-denylist`.
+
+**What the redaction costs: nothing that was measured.** The row's job is to say that the live
+tree was never written to and that the live frontend kept answering `200` for the whole pass, and
+it still says both. The pid was only the handle for "the same one throughout", which the row now
+says in words.
+
+| Where | Was | Now |
+|---|---|---|
+| results table, `../ticketing-frontend` row | a tied port and `same pid <n>` | "the live frontend answered `200` throughout, same process" |
+
+**Residue, stated rather than hidden.** Port numbers on lines this rule does not classify are
+unchanged. `.public-denylist` states why it does not deny those, and `/tmp` paths are exempt for
+`records/` on purpose. `python3 tools/public_safety.py check --tracked` reports zero hits for this
+file as of this note.

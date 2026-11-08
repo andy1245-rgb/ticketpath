@@ -27,7 +27,7 @@
 | `tests/test_console_fixes.py` | `84eea7e93c13ce25` |
 | `fixtures/synthetic_store.json` | `15e6f6611652ae43` (`15e6f6611652ae43f3967e110e2feeffde0cc2ace13ea868ff3abb0012bb9bfa`) |
 
-**Ports.** My console ran on `8841` (fixture store) and `8843` (empty store); both are stopped. `8788` is the instance another session is running; I read it once through a URL the checker prints and otherwise ran my own. `8787` was **not bound and not used for any reading**; the only request I sent it was one `GET /` at the very end to confirm it was still serving after my runs (302), and nothing was taken from it. `:3000` and `../ticketing-frontend` were not touched. The fleet trees (`agentFleet`, `~/fleet-gui`, `~/fleet-manager`) were not read or written.
+**Ports.** My console ran on `8841` (fixture store) and `8843` (empty store); both are stopped. `8788` is the instance another session is running; I read it once through a URL the checker prints and otherwise ran my own. `8787` was **not bound and not used for any reading**; the only request I sent it was one `GET /` at the very end to confirm it was still serving after my runs (302), and nothing was taken from it. The live frontend's port and `../ticketing-frontend` were not touched. The operator's fleet tool repositories were not read or written.
 
 **What I did not review.** The Next.js frontend; the Solana program (none exists); the literature claims in the findings; the six records row by row; the wallet cryptography; anything about the operator's accounts or a real ledger. The store is synthetic and the chain slot is absent. I did not re-litigate the engine's design choices that the first review already recorded as narrowings; I checked whether the fix passes changed them and whether the new code is right.
 
@@ -345,3 +345,28 @@ The runner-ups, all in the same five minutes:
 - **The five-minute catch of the previous review is closed.** `evt_syn_03` now badges the zero-sale rate `[DECLARED]`, names the `Gamma(1, 1)` posterior and says the number is not measured. Nothing on the default page repeats it.
 
 *End of review. One file written, this one. No fix, no commit, no push, no dependency installed, no other tree touched.*
+
+---
+
+## CORRECTION (2026-11-08T08:30Z): three machine handles redacted, no verdict changed
+
+**Scope:** this file only, and only the Ports paragraph of the preamble. **Why:** this repository is
+public and `tools/public_safety.py` refuses a tracked file that carries a port tied to a running
+process, an absolute path under a home directory, or the name of another of the operator's
+repositories. The rule and its reason are in `.public-denylist`.
+
+**What the redaction costs: nothing that was measured.** The paragraph's job is to isolate this
+pass: which ports were mine, which belonged to another session, which I only read, and what I did
+not touch. It still says all of it, and the fleet sentence still states the same negative, that
+those trees were not read or written, without listing directory names.
+
+| Where | Was | Now |
+|---|---|---|
+| Ports, live frontend | a port tied to "were not touched" | "The live frontend's port and `../ticketing-frontend` were not touched." |
+| Ports, fleet sentence | three trees named, one with a home path | "The operator's fleet tool repositories were not read or written." |
+
+**Residue, stated rather than hidden.** Port numbers on lines this rule does not classify are
+unchanged, including the two scratch ports this pass used and this project's own backend port.
+`.public-denylist` states why it does not deny those, and `/tmp` paths are exempt for `records/` on
+purpose. `python3 tools/public_safety.py check --tracked` reports zero hits for this file as of this
+note.

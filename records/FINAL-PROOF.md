@@ -13,14 +13,14 @@ numbers that came from it, with everything labelled and nothing crashed.**
 
 Environment facts established before any test:
 
-- `:3000` is the live platform frontend, `next-server` pid 81447, started
+- the live platform frontend's port serves `next-server`, started
   `Fri Nov 6 23:57:34 2026`. Untouched.
-- `:3001` is a copy of that frontend at `/home/friend/ticketpath-demo`, started
+- `:3001` is a copy of that frontend at `../ticketpath-demo`, started
   with `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788` (read from
-  `/proc/233166/environ`, not assumed).
-- `:8788` is the ticketpath backend. At window open it was pid 280535
-  (`python3 -m ticketpath.server`, cwd `/home/friend/ticketPricing`, listening
-  `127.0.0.1:8788`). It was stopped and replaced with pid 281914 running the
+  the process's own `/proc/<pid>/environ`, not assumed).
+- `:8788` is the ticketpath backend. At window open it was an instance of
+  `python3 -m ticketpath.server`, cwd `<repository root>`, listening
+  on `127.0.0.1:8788`. It was stopped and replaced with a fresh instance running the
   identical command, so the proof is against the code on disk now.
 - `:8787` is another process. Never bound, never touched.
 
@@ -31,7 +31,7 @@ Environment facts established before any test:
 Command:
 
 ```bash
-cd /home/friend/ticketPricing
+cd <repository root>
 python3 -m unittest discover -s tests
 ```
 
@@ -52,8 +52,8 @@ README says to expect ("the count moves as the backend grows").
 ## Step 2: Backend on 8788: health, every contract route, and the console
 
 The process holding 8788 was identified as the backend on that port
-(`python3 -m ticketpath.server`, cwd `/home/friend/ticketPricing`) and stopped:
-only pid 280535 was killed. A fresh instance was started with the documented
+(`python3 -m ticketpath.server`, cwd `<repository root>`) and stopped:
+only that instance was killed. A fresh instance was started with the documented
 command. Startup banner:
 
 ```
@@ -233,7 +233,7 @@ any issue has nothing at or before it.
 
 ## Step 4: The frontend copy on :3001 against the backend
 
-`/proc/233166/environ` showed `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788`,
+The copy's `/proc/<pid>/environ` showed `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788`,
 so the copy already running was the one under test. That it is live and not
 reading its bundled fixtures is proven by content: `lib/mock/events.json` has 6
 events with different ids; the rendered page has the backend's 8 `evt_syn_*`
@@ -285,15 +285,15 @@ numbers, labelled as synthetic.
 
 ---
 
-## Step 5: The live frontend on :3000 is untouched
+## Step 5: The live frontend's port is untouched
 
 ```
-:3000 listener:  next-server (v15.5.29), pid=81447
-pid 81447:       STARTED Fri Nov 6 23:57:34 2026, ELAPSED 13:16:56
+the live frontend's port:  next-server (v15.5.29)
+the frontend:    STARTED Fri Nov 6 23:57:34 2026, ELAPSED 13:16:56
 GET :3000/  ->   200  30546b
 ```
 
-File tree, measured with `find /home/friend/ticketing-frontend -xdev`:
+File tree, measured with `find ../ticketing-frontend -xdev`:
 
 ```
 files newer than the run window: 0
@@ -478,3 +478,35 @@ it is visible to anyone who clones the repo until the operator commits.
 1. The console, the honest decision: `http://127.0.0.1:8788/`
 2. The frontend against our backend: `http://127.0.0.1:3001/`
 3. Where the data comes from, in one call: `http://127.0.0.1:8788/health`
+
+---
+
+## CORRECTION (2026-11-08T08:30Z): machine handles redacted, no claim changed
+
+**Scope:** this file only, and only the lines in the table below. **Why:** this repository is public
+and `tools/public_safety.py` refuses a tracked file that carries an absolute path under a home
+directory or a process id. The rule and its reason are in `.public-denylist`. The whole-tree run is
+the only one of its three entry points that reads what is already published, which is why this is a
+forward edit and not a rewrite of history.
+
+**What a redaction here is allowed to cost: nothing that was measured.** The pid was the handle that
+identified which process was holding a port, not the measurement. The sentence now names the process
+by what the run printed for it, the command line, the start time and the listener, and where the
+claim was that nothing moved, it says "the same process". The home paths say the same thing as the
+repository-relative paths beside them.
+
+| Where | Was | Now |
+|---|---|---|
+| Environment, live frontend | the port tied to `pid <n>`, started … | "the live platform frontend's port serves `next-server`, started …" |
+| Environment, demo copy | a path under a home directory | `../ticketpath-demo` |
+| Environment, backend | `pid <n>`, a `cwd` under a home directory, "replaced with pid `<n>`" | the backend named by its command, the pids gone, `cwd` `<repository root>`, "replaced with a fresh instance" |
+| Step 1, suite block | `cd` into a path under a home directory | `cd <repository root>` |
+| Step 2 | `cwd` under a home directory, "only pid `<n>` was killed" | `cwd` `<repository root>`, "only that instance was killed" |
+| Step 4 | `/proc/<n>/environ` | the copy's `/proc/<pid>/environ` |
+| Step 5, listener capture | the port as a tied handle on the listener line, `pid=<n>` on the next, `pid <n>` on the one after | the port named by what it serves, the pid gone, the start time and ELAPSED kept |
+| Step 5, file tree | `find` over an absolute path | `find ../ticketing-frontend -xdev` |
+
+**Residue, stated rather than hidden.** Port numbers on lines this rule does not classify are
+unchanged, including this project's own documented backend port. `.public-denylist` states why it
+does not deny those, and `/tmp` paths are exempt for `records/` on purpose.
+`python3 tools/public_safety.py check --tracked` reports zero hits for this file as of this note.
