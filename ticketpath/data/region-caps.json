@@ -1,0 +1,2040 @@
+{
+  "version": "2026-11-08.1",
+  "compiled_at": "2026-11-08T06:05:00Z",
+  "scope_note": "One row per instrument, not one per jurisdiction: a jurisdiction can have an in-force disclosure duty and an announced price cap at the same time, and the table must not have to choose. `announced_policy` never binds. `status: unknown` and instrument_kind `none_identified` resolve to `unresolved`, never to `monitored`: absence of a located instrument is not evidence that resale is unrestricted. No row in this file is legal advice, and the table is not a complete survey of any jurisdiction.",
+  "country_inheritance": true,
+  "entries": {
+    "GB": [
+      {
+        "jurisdiction": "GB",
+        "instrument_kind": "primary_legislation",
+        "citation": "Consumer Rights Act 2015 (c. 15), ss. 90-95 (secondary ticketing); as amended by Digital Economy Act 2017 (c. 30) s. 105 and Digital Markets, Competition and Consumers Act 2024 (c. 13) s. 216",
+        "url": "https://www.legislation.gov.uk/ukpga/2015/15/section/90",
+        "status": "in_force",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "no_price_cap",
+        "cap_value": null,
+        "penalty": {
+          "kind": "civil",
+          "summary": "Financial penalty on a person who breaches a duty or prohibition in the chapter; due-diligence defence for ss. 90 and 91",
+          "max": "GBP 5000 per breach (s. 93(9))"
+        },
+        "enforcement_body": "Local weights and measures authorities in Great Britain (s. 93(1)); Department of Enterprise, Trade and Investment in Northern Ireland (s. 93(2)); Competition and Markets Authority (s. 93(2A), inserted 6 April 2025)",
+        "quoted_provision": "The amount of a financial penalty imposed under this section - (a) may be such as the enforcement authority imposing it determines, but (b) must not exceed GBP 5,000.",
+        "notes": "No price cap anywhere in the chapter, which is why this row is an all-resale finding and not a sectoral one: the duties it does impose are disclosure duties (s. 90(3)(c), the face value), not price limits. Chapter 5 commenced two months after Royal Assent (s. 100(4)); the exact commencement date was not read off an order, and `in_force_from` is null for that reason. This row is the same law in England and Wales, Scotland and Northern Ireland: none of the three has a resale price instrument of its own (the only Scotland-specific touting instrument is the Glasgow 2014 Commonwealth Games regulations, event-specific and spent). Separately, Criminal Justice and Public Order Act 1994 s. 166 makes unauthorised sale of a ticket for a designated football match an offence in England and Wales: that is an authorisation rule, not a price rule.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      },
+      {
+        "jurisdiction": "GB",
+        "instrument_kind": "announced_policy",
+        "citation": "UK Government announcement of 19 November 2025 on ticket resale (no bill or instrument giving effect to it was identified)",
+        "url": "https://www.gov.uk/government/news",
+        "status": "announced",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "face_plus_fees",
+        "cap_value": null,
+        "penalty": {
+          "kind": "none",
+          "summary": "Nothing to enforce: announced policy, not law",
+          "max": null
+        },
+        "enforcement_body": "Competition and Markets Authority (proposed, not enacted)",
+        "quoted_provision": "Resale above the original ticket price plus unavoidable fees to be made illegal (government announcement, not statutory text)",
+        "notes": "ANNOUNCED, NOT LAW. The policy as announced: resale above the original price plus unavoidable fees to be illegal, a cap on resale-platform fees, a platform duty to monitor, a ban on bulk purchase, and CMA penalties up to 10 percent of global turnover. No bill, no instrument and no commencement were identified on 2026-11-08. The URL is the government news index because the announcement page's own address was not recorded; the citation, not the URL, is what a reader should search for. This row must never bind.",
+        "confidence": "B",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "IE": [
+      {
+        "jurisdiction": "IE",
+        "instrument_kind": "primary_legislation",
+        "citation": "Sale of Tickets (Cultural, Entertainment, Recreational and Sporting Events) Act 2021 (No. 21 of 2021), s. 15; commenced by S.I. No. 398/2021",
+        "url": "https://www.irishstatutebook.ie/eli/2021/act/21/section/15/enacted/en/html",
+        "status": "in_force",
+        "in_force_from": "2021-07-31",
+        "in_force_to": null,
+        "applies_to": "designated_events",
+        "cap_basis": "face_plus_fees",
+        "cap_value": null,
+        "penalty": {
+          "kind": "criminal",
+          "summary": "Contravention of s. 15(1) or (2) is an offence (s. 15(3)); summary conviction: class B fine and/or up to 6 months for a first offence, class A fine and/or up to 12 months for a second or subsequent offence; on indictment a fine and/or up to 2 years. Directors and officers may be liable (s. 23(4)).",
+          "max": "EUR 100000 fine and/or 2 years imprisonment on indictment (s. 23(2)(b))"
+        },
+        "enforcement_body": "An Garda Siochana (entry, search and arrest powers, ss. 20-22); the Minister maintains the register of designated venues and events (s. 14)",
+        "quoted_provision": "Subject to section 18, a secondary ticket seller shall not sell a ticket or ticket package for a relevant event for a price exceeding the original sale price.",
+        "notes": "Zero headroom: `original sale price` is defined in s. 2 as the primary sale price and includes any additional charge or fee applying to that sale, so the base is face value plus primary fees and the cap over that base is 0 bps. Applies only to a `relevant event`: an event in a designated venue (s. 7) or a designated event (s. 9). Advertising a sale above the original price is also prohibited (s. 15(2)). s. 19 voids contract terms that limit transfer or sale at or below the original price; s. 18 exempts charities and amateur sports clubs. UNVERIFIED: which venues and events are currently on the s. 14 register, and whether s. 15 reaches a platform transacting wholly outside the State. Because the register could not be read, an Irish event must be marked `declared_event` by the operator; without that, this cap does not bind and the resolver says so.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "CA": [
+      {
+        "jurisdiction": "CA",
+        "instrument_kind": "primary_legislation",
+        "citation": "Competition Act, R.S.C. 1985, c. C-34, ss. 52 and 52.01(4.1)",
+        "url": "https://laws-lois.justice.gc.ca/eng/acts/C-34/section-52.01.html",
+        "status": "in_force",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "disclosure_only",
+        "cap_basis": "no_price_cap",
+        "cap_value": null,
+        "penalty": {
+          "kind": "criminal",
+          "summary": "Offence under s. 52.01(6); Competition Bureau enforcement",
+          "max": "indictment: fine at court discretion and/or up to 14 years; summary: $200,000 and/or 1 year"
+        },
+        "enforcement_body": "Competition Bureau; Director of Public Prosecutions",
+        "quoted_provision": "the making of a representation of a price that is not attainable due to fixed obligatory charges or fees constitutes a false or misleading representation",
+        "notes": "No federal ticket-resale price cap. Drip-pricing only: the advertised price must be attainable. Act current to 2026-10-19, last amended 2026-03-26. Only the drip-pricing provision was read; the Act was not surveyed for a ticket-specific price rule, and none is asserted.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "CA-ON": [
+      {
+        "jurisdiction": "CA-ON",
+        "instrument_kind": "primary_legislation",
+        "citation": "Ticket Sales Act, 2017, S.O. 2017, c. 33, Sched. 3, s. 2(3), as enacted by Plan to Protect Ontario Act (Budget Measures), 2026, S.O. 2026, c. 2, Sched. 16, s. 4(2)",
+        "url": "https://www.ontario.ca/laws/statute/17t33",
+        "status": "in_force",
+        "in_force_from": "2026-04-24",
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "face_plus_fees",
+        "cap_value": null,
+        "penalty": {
+          "kind": "criminal",
+          "summary": "Contravening s. 2 is an offence (s. 35(1)(b)(i)); the Director may also impose an administrative penalty of up to $25,000 (s. 30(3))",
+          "max": "$250,000 corporation; $50,000 and/or up to 2 years less a day imprisonment individual"
+        },
+        "enforcement_body": "Director designated under the Ministry of Consumer and Business Services Act; appeals to the Licence Appeal Tribunal",
+        "quoted_provision": "No person shall make a ticket available for sale on the secondary market ... for an amount that exceeds the total price paid when the ticket was purchased from the primary seller, plus any applicable fees, service charges and taxes charged by the secondary seller",
+        "notes": "Cap added in 2026; the Act as passed in 2017 had no price cap. The ceiling is the original all-in price paid at primary, plus the resale side's own fees. This table maps it to a 0 bps cap over the all-in base, which IGNORES the allowance for the reseller's own fees: that is stricter than the statute and it is deliberate, because the platform cannot verify a reseller's costs and a stricter ceiling cannot break the law. s. 2(4) exempts registered-charity benefit sales; s. 1.2 imputes a total price for free tickets. The commencement is SPLIT: Schedule 16 came into force on Royal Assent (24 April 2026) except ss. 1-2, which are in force 1 July 2026 (definitions and the secondary-market definition); this row is dated at 24 April, and an event in the window between the two dates is capped by this table on a definition not yet in force. `stricter_than_law` is true because the statute allows the resale side's own fees on top of the original total, and this table does not.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z",
+        "stricter_than_law": true
+      }
+    ],
+    "CA-QC": [
+      {
+        "jurisdiction": "CA-QC",
+        "instrument_kind": "primary_legislation",
+        "citation": "Consumer Protection Act, CQLR c. P-40.1, ss. 236.0.1 and 236.1-236.6",
+        "url": "https://www.legisquebec.gouv.qc.ca/en/document/cs/P-40.1",
+        "status": "in_force",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "face",
+        "cap_value": null,
+        "penalty": {
+          "kind": "criminal",
+          "summary": "Penal fines under s. 278 for contravening ss. 236.0.1-236.5; doubled for repeat offences (s. 281)",
+          "max": "$62,500 individual / $125,000 other, or 5% of worldwide turnover if greater"
+        },
+        "enforcement_body": "Office de la protection du consommateur; penal prosecution",
+        "quoted_provision": "The resale price charged for a ticket may not be higher than the price announced by the vendor authorized by the producer of the event, unless",
+        "notes": "Cap enacted by 2011, c. 22; amended 2018, c. 14 and 2026, c. 16. The ceiling is the producer-authorised vendor's announced price; a higher resale is allowed only with the producer's prior written consent and disclosure of an agreed maximum, which this table cannot represent, so the 0 bps cap over face is the stricter reading. `in_force_from` is null because the commencement day was not read off the instrument: null means 'treat as in force for every check date', which is what the row's text supports.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "CA-BC": [
+      {
+        "jurisdiction": "CA-BC",
+        "instrument_kind": "primary_legislation",
+        "citation": "Ticket Sales Act, SBC 2019, c. 13",
+        "url": "https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/19013",
+        "status": "in_force",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "no_price_cap",
+        "cap_value": null,
+        "penalty": {
+          "kind": "criminal",
+          "summary": "Offence under s. 20; the court may add up to 3x the monetary benefit and order compensation to the purchaser",
+          "max": "$10,000 and/or 12 months individual; $100,000 corporation"
+        },
+        "enforcement_body": "Director under the Ticket Sales Act (Consumer Protection BC)",
+        "quoted_provision": "A primary ticket seller who makes a ticket available for sale must ensure that the offer to sell the ticket discloses the total price of the ticket",
+        "notes": "No price cap. Consumer Protection BC states the Act 'doesn't regulate ticket prices'. Requires total price and itemised fees (s. 4), refund guarantees on secondary sales (s. 6), a bar on related primary/secondary sellers (s. 8), a possession rule (s. 9) and a bot offence (s. 3). Does not reach private individual-to-individual sales. Commencement by regulation; date not read.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "CA-MB": [
+      {
+        "jurisdiction": "CA-MB",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: the Consumer Protection Act, C.C.S.M. c. C200 (no occurrence of 'ticket')",
+        "url": "https://web2.gov.mb.ca/laws/statutes/ccsm/c200.php",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "No ticket-resale price instrument located. The complete statute table could not be read (index page returned 404), so this is 'not found', not 'not regulated'.",
+        "confidence": "D",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "CA-AB": [
+      {
+        "jurisdiction": "CA-AB",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official statute index for this jurisdiction",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "No instrument located and no primary source reached. Re-check the Alberta King's Printer consolidated statutes before treating Alberta as unregulated.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "CA-SK": [
+      {
+        "jurisdiction": "CA-SK",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official statute index for this jurisdiction",
+        "url": "https://publications.saskatchewan.ca/",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "Publications Saskatchewan served a JavaScript application; no statute list was readable, so nothing is asserted.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "CA-NS": [
+      {
+        "jurisdiction": "CA-NS",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official statute index for this jurisdiction",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "The statutes paths tried returned 404; no consolidated index was readable.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "CA-NB": [
+      {
+        "jurisdiction": "CA-NB",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official statute index for this jurisdiction",
+        "url": "https://laws.gnb.ca/en/ShowAll/cs",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "The page served a shell with no statute text.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "CA-PE": [
+      {
+        "jurisdiction": "CA-PE",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official statute index for this jurisdiction",
+        "url": "https://www.princeedwardisland.ca/en/legislation",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "The legislation page lists no act text to a plain fetch.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "CA-NL": [
+      {
+        "jurisdiction": "CA-NL",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official statute index for this jurisdiction",
+        "url": "https://assembly.nl.ca/Legislation/sr/statutes/",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "The statutes path answered but yielded no readable statute list.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "CA-YT": [
+      {
+        "jurisdiction": "CA-YT",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official statute index for this jurisdiction",
+        "url": "https://laws.yukon.ca/",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "laws.yukon.ca returned 403 to this host.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "CA-NT": [
+      {
+        "jurisdiction": "CA-NT",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official statute index for this jurisdiction",
+        "url": "https://www.justice.gov.nt.ca/en/legislation/",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "The legislation page answered; no instrument identified, but it is not a verified complete statute table.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "CA-NU": [
+      {
+        "jurisdiction": "CA-NU",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official statute index for this jurisdiction",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "Not checked in this run. Unknown, not unregulated.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "AU": [
+      {
+        "jurisdiction": "AU",
+        "instrument_kind": "secondary_legislation",
+        "citation": "Competition and Consumer (Australian Consumer Law - Electronic Ticket Resale Service) Information Standard 2022 (Cth), F2022L00475, made under the Australian Consumer Law (Competition and Consumer Act 2010) s. 134(1)",
+        "url": "https://www.legislation.gov.au/F2022L00475/latest/text",
+        "status": "in_force",
+        "in_force_from": "2022-10-01",
+        "in_force_to": null,
+        "applies_to": "disclosure_only",
+        "cap_basis": "no_price_cap",
+        "cap_value": null,
+        "penalty": {
+          "kind": "civil",
+          "summary": "Breach of an information standard attracts ACCC enforcement; ACL ss. 18 and 29 misleading-conduct prohibitions also apply to resale platforms",
+          "max": null
+        },
+        "enforcement_body": "Australian Competition and Consumer Commission",
+        "quoted_provision": "is a ticket resale service. You are not buying from a primary ticket provider.",
+        "notes": "Disclosure only, no price cap. Applies to an electronic platform whose sole or dominant purpose is to facilitate a market in event tickets; s. 5 provides that the standard does not exclude State or Territory law, so state caps stack on top. No Commonwealth cap.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "AU-NSW": [
+      {
+        "jurisdiction": "AU-NSW",
+        "instrument_kind": "primary_legislation",
+        "citation": "Fair Trading Act 1987 (NSW), Part 4A (ss. 58A-58L), inserted by Fair Trading Amendment (Ticket Scalping and Gift Cards) Act 2017",
+        "url": "https://www.austlii.edu.au/cgi-bin/viewdoc/au/legis/nsw/consol_act/fta1987117",
+        "status": "in_force",
+        "in_force_from": "2018-06-01",
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "face_plus_fees_capped",
+        "cap_value": {
+          "kind": "fee_cap_bps",
+          "bps": 1000
+        },
+        "penalty": {
+          "kind": "criminal",
+          "summary": "1,000 penalty units corporation / 200 penalty units individual for resale above original acquisition cost, prohibited advertisements and bot use",
+          "max": "$110,000 corporation; $22,000 individual; on-the-spot $1,100 / $550"
+        },
+        "enforcement_body": "NSW Fair Trading (Department of Customer Service)",
+        "quoted_provision": "The first purchaser of a ticket must not sell the ticket to any other person for an amount that exceeds the original acquisition cost of the ticket.",
+        "notes": "The cap is NOT a flat 10%. s. 58E defines original acquisition cost as the original supply cost plus the transaction cost actually paid, with that transaction cost not exceeding 10% of the original supply cost; so the ceiling is face + min(fees paid, 10% of face). The advertisement ceiling is different and looser (s. 58F(2): 110% of original supply cost), so a sale at 110% of face can breach s. 58G while its own advertisement complies. The trigger is a resale restriction in the ticket terms (s. 58B), not a ministerial declaration. s. 58I puts a duty on advertising-publication owners (platforms). Read from the AustLII consolidation as at 20 June 2025; the official site served a Cloudflare challenge. If the fee the first purchaser paid is not recorded, the base falls back to face, which is stricter than the law.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "AU-VIC": [
+      {
+        "jurisdiction": "AU-VIC",
+        "instrument_kind": "primary_legislation",
+        "citation": "Major Events Act 2009 (Vic), Part 9A (ss. 182A-182O), inserted by Major Events Legislation Amendment (Ticket Scalping and Other Matters) Act 2018 (No. 13 of 2018)",
+        "url": "https://www.legislation.vic.gov.au/in-force/acts/major-events-act-2009/042",
+        "status": "in_force",
+        "in_force_from": "2018-06-01",
+        "in_force_to": null,
+        "applies_to": "designated_events",
+        "cap_basis": "pct_above_face",
+        "cap_value": {
+          "kind": "bps",
+          "bps": 1000
+        },
+        "penalty": {
+          "kind": "criminal",
+          "summary": "s. 182F: 60 penalty units natural person / 300 body corporate for 6+ tickets; s. 182G: 30 penalty units for 5 or fewer; aggregate capped per event per day",
+          "max": "3,000 penalty units (body corporate) aggregate"
+        },
+        "enforcement_body": "Consumer Affairs Victoria",
+        "quoted_provision": "at a price that exceeds the combined face value price of all those tickets by more than 10%",
+        "notes": "Applies only where the Minister makes a major event ticketing declaration (s. 182C), published in the Government Gazette. 'face value price' expressly excludes commission, booking fee, administration fee, surcharge and distribution cost, so the 10% is on face alone and the buyer's fees are outside the base. No amendment after 7 September 2022, so no general cap was introduced 2024-2026. An event must be marked `declared_event` for this row to bind; the declarations are in the Gazette and the engine does not read them.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "AU-SA": [
+      {
+        "jurisdiction": "AU-SA",
+        "instrument_kind": "primary_legislation",
+        "citation": "Fair Trading Act 1987 (SA), Part 4A (ss. 37A-37N), inserted by Fair Trading (Ticket Scalping) Amendment Act 2018 (SA) No. 20 of 2018",
+        "url": "https://www.legislation.sa.gov.au/_legislation-documents/lz/v/a/2018/fair-trading-ticket-scalping-amendment-act-2018_20/2018.20.un.pdf",
+        "status": "in_force",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "pct_above_face",
+        "cap_value": {
+          "kind": "bps",
+          "bps": 1000
+        },
+        "penalty": {
+          "kind": "criminal",
+          "summary": "s. 37G maximum penalty $100,000 body corporate / $20,000 natural person; expiation fee $550",
+          "max": "$100,000"
+        },
+        "enforcement_body": "Consumer and Business Services (SA); Commissioner for Consumer Affairs",
+        "quoted_provision": "A person must not sell a ticket to any other person for an amount that exceeds 110% of the original supply cost of the ticket.",
+        "notes": "The trigger is a resale restriction in the ticket terms (s. 37B), not a ministerial declaration; the 2018 Act also repealed s. 9 of the Major Events Act 2013 (SA), moving SA off a designated-event model. s. 37E(1) defines original supply cost as the price paid to the authorised seller excluding any transaction cost, so the ceiling is a flat 110% of face with no allowance for the buyer's fees. s. 37I puts the duty on advertising publication owners. Commencement was by proclamation and the date was not verified, so `in_force_from` is null: treated as in force for every check date.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "AU-WA": [
+      {
+        "jurisdiction": "AU-WA",
+        "instrument_kind": "primary_legislation",
+        "citation": "Ticket Scalping Act 2021 (WA) No. 17 of 2021",
+        "url": "https://www.legislation.wa.gov.au/legislation/statutes.nsf/law_a147313.html",
+        "status": "in_force",
+        "in_force_from": "2021-09-10",
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "face_plus_fees",
+        "cap_value": {
+          "kind": "bps",
+          "bps": 1000
+        },
+        "penalty": {
+          "kind": "criminal",
+          "summary": "s. 7 resale above the ceiling: $20,000. s. 11 publication owner: $20,000. s. 9 contingent supply: $20,000. s. 12 bots: $100,000",
+          "max": "$100,000"
+        },
+        "enforcement_body": "Commissioner for Consumer Protection (Consumer Protection WA)",
+        "quoted_provision": "A person must not sell a ticket for admission to an event for an amount which exceeds the original ticket price by more than 10%.",
+        "notes": "The only jurisdiction read here whose base INCLUDES the buyer's fees: s. 3 defines original ticket price to include any booking fee or other commission payable to an authorised ticket seller, and the ceiling is 110% of that. s. 6(2) expressly extends the Act to conduct occurring outside Western Australia. s. 5 trigger is a resale restriction in the ticket terms. s. 10 sets a 110% advertising ceiling; s. 11 a publication-owner duty.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "AU-QLD": [
+      {
+        "jurisdiction": "AU-QLD",
+        "instrument_kind": "primary_legislation",
+        "citation": "Major Sports Facilities Act 2001 (Qld) and Major Events Act 2014 (Qld) — the provisions were not read: the site renders Act text by JavaScript and the authorised PDF is encrypted",
+        "url": "https://www.legislation.qld.gov.au/view/whole/html/inforce/current/act-2001-084",
+        "status": "in_force",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "designated_events",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "Penalty units increased by a 2025 amending Bill; amounts not read from the Act",
+          "max": "unknown"
+        },
+        "enforcement_body": "Queensland Office of Fair Trading; Major Sports Facilities Act administered by the Department of Sport",
+        "quoted_provision": "prohibit resale of tickets for more than 10% of the original purchase price",
+        "notes": "The quote is from the Queensland Parliament committee report on the 2025 amending Bill, not from the Act. The reported 10% ceiling, the fee treatment and the exact penalties are unsettled, so `cap_basis` is `unknown` and this row resolves to unresolved rather than to a 10% cap on a D-grade claim. If QLD matters, its Act needs a host that can decrypt the PDF or one that is not blocked.",
+        "confidence": "D",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "AU-TAS": [
+      {
+        "jurisdiction": "AU-TAS",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official legislation index for this jurisdiction",
+        "url": "https://www.legislation.tas.gov.au/",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "No price-cap instrument located and no regulator statement read either way. Absence of an identified instrument, not a finding that resale is unregulated; the Australian Consumer Law still applies.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "AU-ACT": [
+      {
+        "jurisdiction": "AU-ACT",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official legislation index for this jurisdiction",
+        "url": "https://www.legislation.act.gov.au/",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "No price-cap instrument located and no regulator statement read either way. The Australian Consumer Law still applies.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "AU-NT": [
+      {
+        "jurisdiction": "AU-NT",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: an official legislation index for this jurisdiction",
+        "url": "https://legislation.nt.gov.au/",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "No price-cap instrument located and no regulator statement read either way. The Australian Consumer Law still applies.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US": [
+      {
+        "jurisdiction": "US",
+        "instrument_kind": "primary_legislation",
+        "citation": "Better Online Ticket Sales Act of 2016, Public Law 114-274, 15 U.S.C. section 45c",
+        "url": "https://www.govinfo.gov/content/pkg/PLAW-114publ274/pdf/PLAW-114publ274.pdf",
+        "status": "in_force",
+        "in_force_from": "2016-12-14",
+        "in_force_to": null,
+        "applies_to": "bots_only",
+        "cap_basis": "no_price_cap",
+        "cap_value": null,
+        "penalty": {
+          "kind": "civil",
+          "summary": "Unfair or deceptive act or practice under the FTC Act; FTC and state attorneys general enforcement",
+          "max": null
+        },
+        "enforcement_body": "Federal Trade Commission; state attorneys general",
+        "quoted_provision": "It shall be unlawful for any person to circumvent a security measure, access control system, or other technological control or measure that is used by an online ticket issuer to enforce posted event ticket purchasing limits",
+        "notes": "No price cap. Prohibits circumventing ticket-purchase controls and selling, or offering to sell, a ticket obtained in violation. Read in full from the public law text.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      },
+      {
+        "jurisdiction": "US",
+        "instrument_kind": "secondary_legislation",
+        "citation": "FTC Rule on Unfair or Deceptive Fees, 16 CFR Part 464 (total price disclosure for live-event tickets and short-term lodging)",
+        "url": "https://www.ecfr.gov/current/title-16/chapter-I/subchapter-D/part-464",
+        "status": "in_force",
+        "in_force_from": "2025-05-12",
+        "in_force_to": null,
+        "applies_to": "disclosure_only",
+        "cap_basis": "no_price_cap",
+        "cap_value": null,
+        "penalty": {
+          "kind": "civil",
+          "summary": "FTC Act enforcement for failing to disclose the total price",
+          "max": null
+        },
+        "enforcement_body": "Federal Trade Commission",
+        "quoted_provision": "The price of the live-event ticket or short-term lodging must be the total price",
+        "notes": "No price cap. Requires the total price to be disclosed up front. Read from the eCFR text current to 2026-11-05.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "US-NY": [
+      {
+        "jurisdiction": "US-NY",
+        "instrument_kind": "primary_legislation",
+        "citation": "New York Arts and Cultural Affairs Law, s. 25.29 (unlawful charges in connection with tickets), with s. 25.35 (penalties); NB repealed 2027-07-01",
+        "url": "https://www.nysenate.gov/legislation/laws/ACA/25.29",
+        "status": "in_force",
+        "in_force_from": null,
+        "in_force_to": "2027-07-01",
+        "applies_to": "unknown",
+        "cap_basis": "face",
+        "cap_value": null,
+        "penalty": {
+          "kind": "criminal",
+          "summary": "s. 25.35: a violation of s. 25.27 or s. 25.29 is a class A misdemeanour, whether or not the person is domiciled, licensed or registered in the state",
+          "max": "USD 1,000 or two times the defendant's gain"
+        },
+        "enforcement_body": "Attorney General (concurrent jurisdiction with district attorneys), s. 25.29(3)",
+        "quoted_provision": "No operator of any place of entertainment, or his or her agent, representative, employee or licensee shall, if a price be charged for admission thereto, exact, demand, accept or receive, directly or indirectly, any premium or price in excess of the established price plus lawful taxes",
+        "notes": "Cap basis is the 'established price' (s. 25.03(2)) plus lawful taxes; fees are not in the base, and a service charge is allowed only for special services. It binds the operator and its agent, representative, employee or licensee. Whether an independent unlicensed reseller is a 'licensee' is NOT settled by the sections read, which is why `applies_to` is `unknown`: the resolver therefore reports unresolved and does not claim the cap binds. Repealed on 1 July 2027 unless replaced; the sunset is carried in `in_force_to`. Read in full through a text-extraction reader because the site returned a Cloudflare interstitial to a plain fetch. s. 25.27, a rewrite already enacted and not yet in force, is recorded in the cluster source and deliberately not carried here.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "US-CA": [
+      {
+        "jurisdiction": "US-CA",
+        "instrument_kind": "primary_legislation",
+        "citation": "California Business and Professions Code chapter 21 (ss. 22500-22514), enacted by AB 8 (2023-24); Penal Code s. 346 read for the venue-grounds prohibition",
+        "url": "https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB8",
+        "status": "in_force",
+        "in_force_from": "2025-01-01",
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "no_price_cap",
+        "cap_value": null,
+        "penalty": {
+          "kind": "civil",
+          "summary": "Civil penalties and injunctive relief under chapter 21; Penal Code s. 346 makes selling above face on venue grounds without written permission a misdemeanour",
+          "max": null
+        },
+        "enforcement_body": "Attorney General; local district attorneys",
+        "quoted_provision": "a person shall not restrict the resale of a ticket ... and the ticket shall be transferable at any price",
+        "notes": "No general price cap: chapter 21 bars restricting resale and requires transferability at any price. Penal Code s. 346 separately bars selling above face on the grounds of the venue without the owner's written permission, which is a venue-grounds rule and not a general cap. The brief's bill number (AB 472) is wrong: AB 472 (2023-24) is about classified school employees; the ticket chapter is carried by AB 8.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "US-FL": [
+      {
+        "jurisdiction": "US-FL",
+        "instrument_kind": "primary_legislation",
+        "citation": "Florida Statutes, s. 817.36 (resale of tickets), 2026 edition, unamended since ch. 2010-5",
+        "url": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0800-0899/0817/Sections/0817.36.html",
+        "status": "in_force",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "enumerated_events",
+        "cap_basis": "margin_absolute",
+        "cap_value": {
+          "kind": "minor_units",
+          "amount": 100,
+          "currency": "USD"
+        },
+        "penalty": {
+          "kind": "criminal",
+          "summary": "Violation of s. 817.36 is a misdemeanour of the second degree",
+          "max": null
+        },
+        "enforcement_body": "State attorneys; local law enforcement",
+        "quoted_provision": "A person or entity that offers for resale or resells any ticket may charge only $1 above the admission price charged therefor by the original ticket seller of the ticket for the following transactions",
+        "notes": "A $1 MARGIN over the original seller's price, not a fixed ceiling, and only for four enumerated categories (common carrier passage; multiday/multievent tickets to a park or entertainment complex; tickets issued by a 501(c)(3) charity under 3,000 tickets per performance; and the fourth category in the statute). Escaped by a website authorised by the original seller or one that posts the statutory guarantees and disclosures. A fixed amount of money in USD cannot be enforced through a basis-points field over lamports, so this row resolves to unresolved unless an FX snapshot is supplied; it is not approximated.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "US-MA": [
+      {
+        "jurisdiction": "US-MA",
+        "instrument_kind": "primary_legislation",
+        "citation": "Massachusetts General Laws, chapter 140, s. 185A",
+        "url": "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXX/Chapter140/Section185A",
+        "status": "in_force",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "administrative",
+          "summary": "Licensing requirement on resellers and on anyone facilitating resale; unlicensed activity is actionable",
+          "max": null
+        },
+        "enforcement_body": "Office of Consumer Affairs and Business Regulation; local licensing authorities",
+        "quoted_provision": "No person shall engage in the business of reselling tickets ... without a license",
+        "notes": "No price cap in the section read; a licensing regime on resellers and on anyone facilitating resale. Only this section was read and the chapter was not surveyed, so a cap elsewhere in chapter 140 is neither excluded nor implied: this row is `unknown` and resolves to unresolved rather than to a finding of no cap.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "US-CO": [
+      {
+        "jurisdiction": "US-CO",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: the Colorado General Assembly bill search (three full-text searches for ticket resale)",
+        "url": "https://leg.colorado.gov/",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "No instrument located and no primary source read: the 2025 Colorado ticket legislation could not be found from the official site in this run. Unknown, not unregulated.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-AR": [
+      {
+        "jurisdiction": "US-AR",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-CT": [
+      {
+        "jurisdiction": "US-CT",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-KY": [
+      {
+        "jurisdiction": "US-KY",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-LA": [
+      {
+        "jurisdiction": "US-LA",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-MI": [
+      {
+        "jurisdiction": "US-MI",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-MN": [
+      {
+        "jurisdiction": "US-MN",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-MS": [
+      {
+        "jurisdiction": "US-MS",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-MO": [
+      {
+        "jurisdiction": "US-MO",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-NJ": [
+      {
+        "jurisdiction": "US-NJ",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-PA": [
+      {
+        "jurisdiction": "US-PA",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-RI": [
+      {
+        "jurisdiction": "US-RI",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-TN": [
+      {
+        "jurisdiction": "US-TN",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-WI": [
+      {
+        "jurisdiction": "US-WI",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-IL": [
+      {
+        "jurisdiction": "US-IL",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-MD": [
+      {
+        "jurisdiction": "US-MD",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-VA": [
+      {
+        "jurisdiction": "US-VA",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-GA": [
+      {
+        "jurisdiction": "US-GA",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-TX": [
+      {
+        "jurisdiction": "US-TX",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-WA": [
+      {
+        "jurisdiction": "US-WA",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-OR": [
+      {
+        "jurisdiction": "US-OR",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-AZ": [
+      {
+        "jurisdiction": "US-AZ",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-NV": [
+      {
+        "jurisdiction": "US-NV",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-AL": [
+      {
+        "jurisdiction": "US-AL",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-AK": [
+      {
+        "jurisdiction": "US-AK",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-DC": [
+      {
+        "jurisdiction": "US-DC",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-DE": [
+      {
+        "jurisdiction": "US-DE",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-HI": [
+      {
+        "jurisdiction": "US-HI",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-ID": [
+      {
+        "jurisdiction": "US-ID",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-IN": [
+      {
+        "jurisdiction": "US-IN",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-IA": [
+      {
+        "jurisdiction": "US-IA",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-KS": [
+      {
+        "jurisdiction": "US-KS",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-ME": [
+      {
+        "jurisdiction": "US-ME",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-MT": [
+      {
+        "jurisdiction": "US-MT",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-NE": [
+      {
+        "jurisdiction": "US-NE",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-NH": [
+      {
+        "jurisdiction": "US-NH",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-NM": [
+      {
+        "jurisdiction": "US-NM",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-NC": [
+      {
+        "jurisdiction": "US-NC",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-ND": [
+      {
+        "jurisdiction": "US-ND",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-OH": [
+      {
+        "jurisdiction": "US-OH",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-OK": [
+      {
+        "jurisdiction": "US-OK",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-SC": [
+      {
+        "jurisdiction": "US-SC",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-SD": [
+      {
+        "jurisdiction": "US-SD",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-UT": [
+      {
+        "jurisdiction": "US-UT",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-VT": [
+      {
+        "jurisdiction": "US-VT",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-WV": [
+      {
+        "jurisdiction": "US-WV",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "US-WY": [
+      {
+        "jurisdiction": "US-WY",
+        "instrument_kind": "none_identified",
+        "citation": "No ticket-resale price instrument located; checked: nothing: this state was not opened in this pass",
+        "url": "",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "No instrument identified",
+          "max": null
+        },
+        "enforcement_body": "",
+        "quoted_provision": "",
+        "notes": "NOT CHECKED. Unknown, not unregulated: do not add a cap and do not report that resale is unrestricted. Opening the state's own statute is what would settle it.",
+        "confidence": "E",
+        "retrieved_at": "2026-11-08T05:56:00Z"
+      }
+    ],
+    "BE": [
+      {
+        "jurisdiction": "BE",
+        "instrument_kind": "primary_legislation",
+        "citation": "Loi du 30 juillet 2013 relative a la revente de billets d'acces a des evenements (the ticket-resale statute), art. 5; upheld by the Constitutional Court on 2026-06-18",
+        "url": "https://www.ejustice.just.fgov.be/",
+        "status": "in_force",
+        "in_force_from": "2013-10-01",
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "face_plus_fees",
+        "cap_value": null,
+        "penalty": {
+          "kind": "criminal",
+          "summary": "Habitual resale is prohibited outright; an occasional resale above the definitive price is an offence and the buyer may reclaim the excess",
+          "max": "unknown: the penalty provisions were not read"
+        },
+        "enforcement_body": "SPF Economie / FPS Economy; criminal courts",
+        "quoted_provision": "the ticket may not be resold at a price higher than the definitive price",
+        "notes": "Zero markup over the 'prix definitif', which the law defines to include VAT and the mandatory add-on services, which is why the base is face + fees and the margin is 0. The text was read through the Constitutional Court's judgment because the gazette page is a JavaScript shell; the reported ~20% cap is REFUTED, not confirmed.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "ES": [
+      {
+        "jurisdiction": "ES",
+        "instrument_kind": "primary_legislation",
+        "citation": "Real Decreto 2816/1982, de 27 de agosto, art. 67 (resale of tickets), as consolidated 2023-03-22",
+        "url": "https://www.boe.es/buscar/act.php?id=BOE-A-1982-24125",
+        "status": "in_force",
+        "in_force_from": "1982-11-26",
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "pct_above_face",
+        "cap_value": {
+          "kind": "bps",
+          "bps": 2000
+        },
+        "penalty": {
+          "kind": "administrative",
+          "summary": "Administrative penalties for resale above the permitted price or outside the licensed channel; street resale is banned outright",
+          "max": "unknown: the penalty scale was not read"
+        },
+        "enforcement_body": "Comunidades autonomas (consumer authorities)",
+        "quoted_provision": "no podra exceder del 20 por ciento del precio de taquilla",
+        "notes": "20% above the box-office price, but ONLY for licensed resale outlets (art. 67.1); street or ambulant resale is banned outright (art. 67.2) and online resale is not capped by this article. Whether a platform is a licensed outlet is not knowable from here, so the row is `applies_to: unknown` and resolves to unresolved rather than capping every Spanish sale. A 2024 real decreto on resale is an anteproyecto only and is refuted as law in the cluster record.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "FR": [
+      {
+        "jurisdiction": "FR",
+        "instrument_kind": "primary_legislation",
+        "citation": "Code penal art. 313-6-2, as amended by loi n 2012-158; read in the Journal officiel",
+        "url": "https://www.legifrance.gouv.fr/",
+        "status": "in_force",
+        "in_force_from": "2012-03-14",
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "no_price_cap",
+        "cap_value": null,
+        "penalty": {
+          "kind": "criminal",
+          "summary": "Habitual resale of a ticket without the organiser's authorisation is an offence; intermediaries who provide the means are caught too",
+          "max": "unknown: the penalty text was not read in this pass"
+        },
+        "enforcement_body": "Public prosecutor; the organiser's authorisation is the defence",
+        "quoted_provision": "Le fait de proposer, de ceder ou d'exposer en vue de la cession des billets sans l'autorisation du producteur",
+        "notes": "No price element at all: the offence is the absence of the organiser's authorisation, not a price above a limit. A reform bill before Parliament in 2024-2025 was not in force at retrieval. Recorded as a restriction that is not a cap, so the policy is monitored and the other restriction is in the audit trail.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "IT": [
+      {
+        "jurisdiction": "IT",
+        "instrument_kind": "primary_legislation",
+        "citation": "Legge 11 dicembre 2016 n. 232, art. 1 commi 545 and 545-bis (as amended), read in the Gazzetta Ufficiale",
+        "url": "https://www.normattiva.it/",
+        "status": "in_force",
+        "in_force_from": "2017-01-01",
+        "in_force_to": null,
+        "applies_to": "all_resale",
+        "cap_basis": "no_price_cap",
+        "cap_value": null,
+        "penalty": {
+          "kind": "administrative",
+          "summary": "Resale by a person outside the ticket system is an administrative offence; AGCOM enforces the nominative-ticket and channel rules",
+          "max": "unknown: the penalty scale was not read in this pass"
+        },
+        "enforcement_body": "AGCOM; Guardia di Finanza",
+        "quoted_provision": "il divieto di rivendita dei titoli di accesso da parte di soggetti non autorizzati",
+        "notes": "No percentage cap anywhere in the provision: the offence is channel-based (a reseller who is not an authorised holder or intermediary), and the only price element is a condition of the safe harbour. comma 545-bis was amended in December 2025.",
+        "confidence": "A",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ],
+    "PT": [
+      {
+        "jurisdiction": "PT",
+        "instrument_kind": "primary_legislation",
+        "citation": "Decreto-Lei n. 28/84, art. 35 (reported; the article was NOT read)",
+        "url": "https://diariodarepublica.pt/",
+        "status": "unknown",
+        "in_force_from": null,
+        "in_force_to": null,
+        "applies_to": "unknown",
+        "cap_basis": "unknown",
+        "cap_value": null,
+        "penalty": {
+          "kind": "unknown",
+          "summary": "Reported: resale above the organiser's price is a crime. Not verified",
+          "max": "unknown"
+        },
+        "enforcement_body": "unknown",
+        "quoted_provision": "",
+        "notes": "DL 23/2015 was refuted as the instrument. Art. 35 of DL 28/84 is identified but was not read, so this row carries no claim and resolves to unresolved.",
+        "confidence": "D",
+        "retrieved_at": "2026-11-08T05:55:00Z"
+      }
+    ]
+  }
+}

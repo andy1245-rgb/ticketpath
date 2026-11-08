@@ -1,0 +1,23 @@
+[package]
+name = "region-gate"
+version = "0.1.0"
+edition = "2021"
+description = "Transfer hook that enforces a per-event jurisdiction's resale policy: cap where the law caps, log where it does not, and never loosen an issued ticket."
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "region_gate"
+
+[dependencies]
+solana-program = "2.1"
+spl-transfer-hook-interface = "0.10"
+spl-tlv-account-resolution = "0.10"
+spl-discriminator = "0.4"
+borsh = { version = "1.5", features = ["derive"] }
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
