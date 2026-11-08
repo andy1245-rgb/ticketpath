@@ -163,6 +163,10 @@ def build(
         "fixtureBuild": {"sha256": fixture_sha, "labelId": "T1"},
         "event": {
             "id": event["id"],
+            # The slug is not printed by the page, and `/guidance.json` needs the same
+            # event a reader would click from the grid. Reading it here keeps the two
+            # surfaces projections of one payload rather than two lookups of one store.
+            "slug": event.get("slug"),
             "name": event["name"],
             "status": event.get("status"),
             "startsAt": event["startsAt"],

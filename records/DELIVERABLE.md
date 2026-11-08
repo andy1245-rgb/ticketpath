@@ -1738,7 +1738,7 @@ built.
 
 | Layer | Modules (observed line counts) | Responsibility |
 |---|---|---|
-| entry | `server.py` (385) | HTTP routing only. 9 contract routes plus `/health` in `ROUTES`; the console at `/` is served **outside** the route table on purpose, so `/health.contract.routesImplemented` stays at 10 and the console is not counted as a contract endpoint |
+| entry | `server.py` (385) | HTTP routing only. 9 contract routes plus `/health` in `ROUTES`; the console at `/` and its two JSON projections, `/guidance.json` and `/devnet-record.json`, are served **outside** the route table on purpose, so `/health.contract.routesImplemented` stays at 10 and none of the three is counted as a contract endpoint |
 | decision | `orchestrator.py` (579) | routes to adapters and core, decides, does not calculate. Every number arrives computed by `core/` |
 | contract surface | `api/` 6 modules: events, tickets, analytics, wallets, health, guidance (500) | input validation and serialisation, one module per contract area, every leaf labelled |
 | pure computation | `core/` 19 files, largest `value_band.py` (467), `labels.py` (451), `price_features.py` (388) | pure functions: features at a mandatory cut, regimes, band, path, intensity, optimum, markup, stats, analytics, pagination, base58, ed25519, verification message |

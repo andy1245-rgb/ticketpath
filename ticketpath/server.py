@@ -25,7 +25,7 @@ from ticketpath import __version__
 from ticketpath.adapters.ledger_adapter import LedgerAdapter, StoreError
 from ticketpath.adapters.pricing_model_adapter import PricingModelAdapter
 from ticketpath.adapters.rpc_adapter import RpcAdapter
-from ticketpath.api import analytics, events, health, tickets, wallets
+from ticketpath.api import analytics, evidence, events, health, tickets, wallets
 from ticketpath.console import page as console_page
 from ticketpath.errors import ApiError
 from ticketpath.orchestrator import Orchestrator
@@ -45,6 +45,46 @@ Handler = Callable[[Orchestrator, dict, dict, dict | None], tuple[int, dict]]
 # conformance test pins at ten.
 CONSOLE_PATHS = ("/", "/index.html")
 
+# The two machine-readable evidence surfaces are served the same way, for the same reason
+# extended to them: they are not endpoints in API_CONTRACT.md, the frontend's client does
+# not call them, and counting them would make /health claim a contract it does not have.
+# They are projections of the console -- `/guidance.json` of its payload, and
+# `/devnet-record.json` of the artefact its chain slot reads -- so a panel can print the
+# refusals and the recorded run as data without scraping a page, and a second
+# implementation of either cannot drift from the one the page shows.
+EVIDENCE_PATHS = ("/devnet-record.json", "/guidance.json")
+
+
+def guidance_payload(o: Orchestrator, query: dict) -> dict:
+    """The console payload for one query string, built once for both JSON and HTML.
+
+    `/` and `/guidance.json` answer from this function, so a refusal the page prints and a
+    refusal the JSON lists are one computation rather than two that happen to agree today.
+    """
+    return o.price_guidance(
+        event_id=query.get("event"),
+        tier_id=query.get("tier"),
+        as_of=query.get("asOf"),
+        cap_bps=query.get("capBps"),
+        fee_lamports=query.get("feeLamports"),
+        tau=query.get("tau"),
+        show_sim=query.get("sim") == "1",
+        mode=query.get("mode"),
+    )
+
+
+def guidance_json(o: Orchestrator, query: dict, base: str = "") -> tuple[int, dict]:
+    """GET /guidance.json -- the console payload's refusals as sentences, and their count.
+
+    The sentences are `blocks.refusal_lines`, the function the HTML block wraps in its own
+    `<li>` markup, so the two surfaces cannot say different things about one refusal. A bad
+    parameter is the `ApiError` the console renders as a page; here it is the error shape
+    every JSON route already returns.
+    """
+    payload = guidance_payload(o, query)
+    payload["canonicalUrl"] = canonical_url(payload, base)
+    return 200, evidence.guidance_document(payload, payload["canonicalUrl"])
+
 
 def console_index(o: Orchestrator, query: dict, base: str = "") -> tuple[int, str]:
     """GET / -- the one HTML route. Every control is a query parameter.
@@ -56,16 +96,7 @@ def console_index(o: Orchestrator, query: dict, base: str = "") -> tuple[int, st
     reason is a worse-looking page and a far better answer than no answer.
     """
     try:
-        payload = o.price_guidance(
-            event_id=query.get("event"),
-            tier_id=query.get("tier"),
-            as_of=query.get("asOf"),
-            cap_bps=query.get("capBps"),
-            fee_lamports=query.get("feeLamports"),
-            tau=query.get("tau"),
-            show_sim=query.get("sim") == "1",
-            mode=query.get("mode"),
-        )
+        payload = guidance_payload(o, query)
     except ApiError as exc:
         return exc.status, console_page.render_error(
             status=exc.status, message=exc.message, code=exc.code or "error"
@@ -247,6 +278,29 @@ class TicketpathHandler(BaseHTTPRequestHandler):
                 host, port = self.server.server_address[:2]
                 status, html = console_index(self.orchestrator, query, base=f"http://{host}:{port}")
                 self._send_text(status, html, head_only=head_only)
+                return
+            if split.path in EVIDENCE_PATHS:
+                if read_method != "GET":
+                    # A JSON surface has one verb, and a wrong one gets the same rendered
+                    # 405 the console answers: the route exists and the method does not.
+                    message = f"{method} is not allowed here; allowed: GET, HEAD"
+                    self._send_text(
+                        405,
+                        console_page.render_error(status=405, message=message, code="method_not_allowed"),
+                        head_only=head_only,
+                    )
+                    return
+                query = {key: values[0] for key, values in parse_qs(split.query, keep_blank_values=True).items()}
+                host, port = self.server.server_address[:2]
+                if split.path == "/devnet-record.json":
+                    self._send(200, self.orchestrator.devnet_record(), head_only=head_only)
+                    return
+                try:
+                    status, payload = guidance_json(self.orchestrator, query, base=f"http://{host}:{port}")
+                except ApiError as exc:
+                    self._send(exc.status, exc.payload(), head_only=head_only)
+                    return
+                self._send(status, payload, head_only=head_only)
                 return
             handler, extra = match(read_method, split.path)
             if handler is None:

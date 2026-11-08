@@ -29,13 +29,19 @@ Global flags are accepted before or after the verb: `--base URL` (default
 | `gate [--quick]` | an ephemeral server of this tree | the unit tests, the documentation check, and the console checks |
 | `doc-check [--root DIR] [--check NAME] [--verbose]` | the tracked markdown of this tree | the documentation violations, one line each, and the count of allowed absences |
 
-`price` exists because the guidance payload has exactly one HTTP surface in this tree: the
-console page. `ticketpath/server.py` serves nine contract routes plus `/health` and `/`, and
-`/` is the one that carries the guidance payload; every control is a query parameter, which
-is what makes the page reproducible by URL. There is no `/api/guidance` route to forward, so
-`price` builds the URL the page documents and prints the page. Its `--json` document carries
-that URL, the status and the page's lines, with a note saying so, rather than a
-reconstruction that could disagree with the page.
+`price` exists because the guidance payload's human surface is the console page.
+`ticketpath/server.py` serves nine contract routes plus `/health`, and three surfaces beside
+the route table: `/`, `GET /guidance.json` and `GET /devnet-record.json`. Every console
+control is a query parameter, which is what makes the page reproducible by URL. There is no
+`/api/guidance` route to forward, so `price` builds the URL the page documents and prints
+the page. Its `--json` document carries that URL, the status and the page's lines, with a
+note saying so, rather than a reconstruction that could disagree with the page.
+
+A program that wants the same state as data reads `/guidance.json` with the same query
+string: it returns the refusals as plain sentences, the count, the event and tier, and the
+canonical URL. `/devnet-record.json` returns the recorded devnet artefact the console's
+chain slot reads, with a note that this server asked no cluster. Both are described in
+`records/VIDEO-EVIDENCE.md`, and neither is counted in `/health.contract.routesImplemented`.
 
 ```bash
 $ python3 tools/tp.py price evt_syn_02 --cap 298 --at 2026-11-07T12:00:00Z | head -2

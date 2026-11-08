@@ -8,7 +8,8 @@ every number goes through `units.num`, every sentence through `labels.render`.
 from __future__ import annotations
 
 import re
-from typing import Mapping
+from html import unescape
+from typing import Mapping, NamedTuple
 
 from ticketpath.core import labels
 from ticketpath.core.timeutil import TimestampError, parse
@@ -773,18 +774,49 @@ def _no_exposure_sentence(payload: Mapping) -> str:
     return _count_sentence(label_id, tickets, {})
 
 
-def refusals(payload: Mapping) -> str:
-    """Always present, never empty. Each line names the missing observation or the censoring."""
+class RefusalLine(NamedTuple):
+    """One refusal in the two forms this tree prints it.
+
+    The first three fields are what a machine-readable surface needs: the code, the label
+    the sentence was rendered from, and the sentence as plain text. `html` is the same
+    sentence with the console's number spans, and `tag` is the badge that opens the row.
+    Both forms are produced by one loop in `refusal_lines`, because a second composition
+    of the same sentence is exactly how `/guidance.json` and the page would come to
+    disagree about what the engine refused.
+    """
+
+    code: str
+    label_id: str
+    sentence: str
+    tag: str
+    names_code: bool
+    html: str
+
+
+def refusal_lines(payload: Mapping) -> list[RefusalLine]:
+    """Every refusal as `(code, label_id, sentence)`, beside the console's own rendering.
+
+    `sentence` is the console's words with the markup removed: `_plain` strips the spans
+    from `html` rather than re-rendering the label, so the plain text cannot drift from
+    what a screenshot of the page says. `/guidance.json` prints `sentence`; `refusals()`
+    wraps `html` in the badge and the `<li>` it has always used.
+    """
     tier = selected_tier(payload)
-    lines = []
+    lines: list[RefusalLine] = []
     for entry in payload["refusals"]:
         code = entry["code"]
         label_id = entry["labelId"]
         if code == "path_answered" and tier is not None:
             theta = tier["path"]["theta"]
             lines.append(
-                f'<li>[UNVALIDATED] path curvature: {num(theta, "log")} (log units per log day) · '
-                f'{esc(tier["path"]["identification"])}</li>'
+                _line(
+                    code,
+                    label_id,
+                    f'path curvature: {num(theta, "log")} (log units per log day) · '
+                    f'{esc(tier["path"]["identification"])}',
+                    tag="[UNVALIDATED]",
+                    names_code=False,
+                )
             )
             continue
         fields = _refusal_fields(entry, payload, tier)
@@ -801,14 +833,14 @@ def refusals(payload: Mapping) -> str:
             else:
                 label_id = "insufficient_marks_one" if singular else "insufficient_marks"
             if singular:
-                lines.append(f'<li>[REFUSED] {esc(code)}: {esc(labels.render(label_id))}</li>')
+                lines.append(_line(code, label_id, esc(labels.render(label_id))))
                 continue
             lines.append(
-                f'<li>[REFUSED] {esc(code)}: {_count_sentence(label_id, tier["market"]["sales"], fields)}</li>'
+                _line(code, label_id, _count_sentence(label_id, tier["market"]["sales"], fields))
             )
             continue
         if label_id == "recommendation_above_cap" and tier is not None:
-            lines.append(f'<li>[REFUSED] {esc(code)}: {_cap_refusal(payload, tier)}</li>')
+            lines.append(_line(code, label_id, _cap_refusal(payload, tier)))
             continue
         if label_id == "A17":
             label_id, fields = _a17_label(fields.get("n_events"), fields.get("m"))
@@ -818,7 +850,34 @@ def refusals(payload: Mapping) -> str:
             sentence = labels.render(label_id, **fields)
         except KeyError:
             sentence = code
-        lines.append(f"<li>[REFUSED] {esc(code)}: {esc(sentence)}</li>")
+        lines.append(_line(code, label_id, esc(sentence)))
+    return lines
+
+
+def _line(
+    code: str,
+    label_id: str,
+    html: str,
+    *,
+    tag: str = "[REFUSED]",
+    names_code: bool = True,
+) -> RefusalLine:
+    return RefusalLine(code, label_id, _plain(html), tag, names_code, html)
+
+
+def _plain(fragment: str) -> str:
+    """The text a reader sees: tags removed and entities resolved, nothing else changed."""
+    return unescape(re.sub(r"<[^>]+>", "", fragment))
+
+
+def refusals(payload: Mapping) -> str:
+    """Always present, never empty. Each line names the missing observation or the censoring."""
+    lines = []
+    for line in refusal_lines(payload):
+        # The badge and the code prefix are the console's, not the sentence's: the JSON
+        # surface prints the sentence alone, and this wrapper is written once for both.
+        lead = f"{line.tag} {esc(line.code)}: " if line.names_code else f"{line.tag} "
+        lines.append(f"<li>{lead}{line.html}</li>")
     out = ['<section class="panel refusals" aria-label="[REFUSED] what the engine refuses">']
     out.append("<h2>[REFUSED] What the engine refuses</h2>")
     out.append("<ul>" + "".join(lines) + "</ul>")
