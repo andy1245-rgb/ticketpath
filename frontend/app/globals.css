@@ -286,3 +286,12 @@ select:focus-visible {
   .hero-art > :first-child { transition: none; }
   .hero-art > :first-child:hover { transform: none; }
 }
+
+/* Demo ticket: a stub edge on the left, and the hops as a vertical timeline. */
+.ticket-card { border-left: 6px solid var(--color-accent, #4f2ee5); }
+.hop-timeline { position: relative; margin: 0; padding: 0 0 0 1.25rem; list-style: none; border-left: 2px solid var(--color-line, #e3e0d8); }
+.hop-timeline__item { position: relative; padding: 0 0 0.9rem 0.5rem; }
+.hop-timeline__dot { position: absolute; left: -1.6rem; top: 0.4rem; width: 0.7rem; height: 0.7rem; border-radius: 9999px; background: var(--color-accent, #4f2ee5); box-shadow: 0 0 0 3px var(--color-surface, #fff); }
+/* The refusal: a strong accent edge, not an alarm colour fill. */
+.refusal-card { border: 1px solid #a4452c; border-left-width: 6px; }
+.refusal-card__eq { padding: 0.6rem 0.75rem; border-radius: 0.5rem; background: rgba(164, 69, 44, 0.07); }

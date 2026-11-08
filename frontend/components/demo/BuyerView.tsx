@@ -118,14 +118,14 @@ function OutcomeCard({ outcome, state }: { outcome: Outcome; state: DemoState })
   const capBreach = outcome.result.code === "E_CAP_EXCEEDED";
 
   return (
-    <Card>
+    <Card className="refusal-card">
       <Chip>Refused</Chip>
       <p className="h-section mt-3 text-ink">{outcome.result.title}</p>
-      <p className="t-meta mt-2 break-words text-muted">{outcome.result.detail}</p>
+      <p className="refusal-card__eq figure t-meta mt-3 break-words text-ink">{outcome.result.detail}</p>
       {capBreach ? (
-        <p className="t-body mt-3 text-muted">
-          Computed in this browser from the same predicate the contract runs. The code is the
-          one the devnet program returned for the same breach.
+        <p className="t-meta mt-3 text-muted">
+          Same rule as the program: computed in this browser from the same predicate the contract
+          runs. The code is the one the devnet program returned for the same breach.
         </p>
       ) : (
         <p className="t-body mt-3 text-muted">
@@ -191,16 +191,24 @@ export function BuyerView(props: Props) {
           ) : null}
 
           {tickets.map((ticket) => (
-            <Card key={ticket.id}>
-              <div className="flex flex-wrap items-center justify-between gap-3">
+            <Card key={ticket.id} className="ticket-card">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="t-meta text-muted">Ticket {ticket.serial}</p>
-                  <p className="t-body mt-1 text-ink">
-                    {ticket.tier} · face {sol(event.faceLamports)}
+                  <p className="t-micro-caps text-muted">{event.name}</p>
+                  <p className="h-section mt-1 text-ink">
+                    {ticket.tier} <span className="figure text-muted">{ticket.serial}</span>
+                  </p>
+                  <p className="t-meta mt-1 text-muted">
+                    Face <span className="figure text-ink">{sol(event.faceLamports)}</span>
                   </p>
                 </div>
-                <Chip>{ticket.hops.length} hop{ticket.hops.length === 1 ? "" : "s"}</Chip>
+                <Chip>
+                  {ticket.hops.length > 1 ? "RESOLD" : "ISSUED"} · {ticket.hops.length} hop
+                  {ticket.hops.length === 1 ? "" : "s"}
+                </Chip>
               </div>
+
+              <Perforation className="my-4" width={300} />
 
               <Rule className="my-4" />
 
@@ -243,28 +251,24 @@ export function BuyerView(props: Props) {
               <Rule className="my-4" />
 
               <h3 className="t-meta text-muted">Custody hops</h3>
-              <table className="mt-2 w-full text-left">
-                <thead>
-                  <tr className="t-meta text-muted">
-                    <th className="py-1 font-medium">#</th>
-                    <th className="py-1 font-medium">Price</th>
-                    <th className="py-1 font-medium">Wallet</th>
-                    <th className="py-1 font-medium">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ticket.hops.map((hop, index) => (
-                    <tr key={`${ticket.id}-${index}`} className="border-t border-line">
-                      <td className="py-2 t-body text-muted">{index + 1}</td>
-                      <td className="py-2 t-body u-num text-ink">{sol(hop.priceLamports)}</td>
-                      <td className="py-2 t-meta text-muted">
-                        {hop.wallet.slice(0, 6)}…{hop.wallet.slice(-4)}
-                      </td>
-                      <td className="py-2 t-meta text-muted">{hop.at.replace("T", " ").slice(0, 19)}Z</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ol className="hop-timeline mt-3">
+                {ticket.hops.map((hop, index) => (
+                  <li key={`${ticket.id}-${index}`} className="hop-timeline__item">
+                    <span className="hop-timeline__dot" aria-hidden="true" />
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                      <span className="t-body u-num text-ink">
+                        {index + 1}. {sol(hop.priceLamports)}
+                      </span>
+                      <span className="t-meta text-muted">
+                        {hop.at.replace("T", " ").slice(0, 19)}Z
+                      </span>
+                    </div>
+                    <p className="figure t-meta text-muted">
+                      to {hop.wallet.slice(0, 6)}…{hop.wallet.slice(-4)}
+                    </p>
+                  </li>
+                ))}
+              </ol>
               <p className="t-meta mt-3 text-muted">
                 Every hop is a price, a wallet and an instant. On the platform each one is a ledger
                 entry; here it is a row in your own browser.
