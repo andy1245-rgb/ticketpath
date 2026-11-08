@@ -159,9 +159,9 @@ implements the feature is claimed in this pass.
 | 2 | Console renders the real devnet artefact as recorded | **tested** | `ticketpath/orchestrator.py` (`_chain_payload`, `recorded`, `matchesCurrentQuote`); `ticketpath/console/page.py` (`chain_slot`, `_recorded_quote`, `_match_sentence`); `ticketpath/adapters/rpc_adapter.py` (`program_status.recorded`) | `tests/test_console_recorded_artefact.py` (20 tests, `OK`). Measured through `tools/guidance.py`: pinned state → `verified True`; any other instant → `verified False`, with both quote ids and both instants named on the page and the two recommendations printed only where they differ (re-measured 2026-11-08T07:45Z) |
 | 3 | Chart and animation assets from `market_swarm` data, every asset labelled SYNTHETIC | **tested** | `tools/swarm_charts.py`; `docs/charts/` (five SVGs and an index); `docs/CHARTS.md` | `tests/test_swarm_charts.py` (41 tests, `OK`), which is what the status rests on. `python3 tools/swarm_charts.py verify --out docs/charts` prints `PASS LABELS ONLY`, `series rebuilt from the dataset on 0 of 5 asset(s)`, and `note: exit 3, labels and internal consistency only; nothing about the data was checked`, and exits **3**. The label and the internal consistency are verified; the data series are not, because `.swarm-runs/` is not in the repository and `docs/CHARTS.md:48` says the datasets are not in it. Re-measured 2026-11-08T09:22Z |
 | 4 | Forecast log on chain plus off-chain scoring | **tested** | `programs/cap_hook/src/lib.rs` (tags 5 and 6), `ticketpath/onchain/v2.py`, `ticketpath/core/forecast_score.py` | `tests/test_forecast_score.py` (18 tests) and `tests/test_onchain_v2.py` (45 tests), both `OK`. The live local-validator half is `tests/test_onchain_v2_live.py`, 26 tests, **skipped** by the documentation pass (the gate is `TP_ONCHAIN_V2_LIVE=1` and the run rewrites the run's artefact). The rebuilt artefact (111,504 bytes, sha256 `de89af3c…`) carries proofs `a` to `g` and thirteen tag 4..6 proofs, and proof `g` is the two non-authority refusals `6026` |
-| 5 | Artist fee via `TransferFeeConfig` | **not built** | none | **Blocked** by the measured Token-2022 ceiling: at `decimals 0`, `amount 1`, any rate from 1 to 9999 bps withholds the whole ticket. `records/findings/36-transfer-fee-on-a-one-unit-ticket.md` |
+| 5 | Artist fee via `TransferFeeConfig` | **built** | `market_swarm/artist_fee.py` (the seller-paid lamport leg: the assessment, the instruction and the order it sits in); `market_swarm/config.py`, `market_swarm/gateway.py`, `market_swarm/runner.py` and `market_swarm/ledger.py` (the per-event option, the leg in the sale transaction and the row's columns); `tools/artist_fee_proof.py` | **Built as a seller-paid lamport leg; the token-fee form is dead.** `records/findings/42-artist-fee-at-checkout.md` is the measurement, PASS 9/9 on a throw-away local validator, and `tools/artist_fee_proof.py` is the tool. The ceiling that killed the token-fee form is unchanged: at `decimals 0`, `amount 1`, any rate from 1 to 9999 bps withholds the whole ticket, `records/findings/36-transfer-fee-on-a-one-unit-ticket.md`. Off unless an event turns it on, the chain does not enforce it, and no live harness run can charge it (§0A feature 7 states the same limit for both legs) |
 | 6 | Price floor | **tested** | `programs/cap_hook/src/state.rs` (`band_low_lamports`), `programs/cap_hook/src/lib.rs` (`6021`, `6022`), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`) for the field and the wire format. The predicate's proof is the local-validator run recorded at `records/onchain-v2.local.json`: `899,999,999` refused `6021`, `900,000,000` admitted. Not re-run by this pass. **That artefact is git-ignored (`.gitignore:65`, 32,679 bytes on disk here) and stays local: it is not in the repository and a reader will not find it** |
-| 7 | Flip tax | **tested** | `market_swarm/flip_tax.py` (the schedule, the assessment, the 70-byte record decoder, the leg and the instruction order); `market_swarm/config.py`, `market_swarm/gateway.py`, `market_swarm/runner.py`, `market_swarm/ledger.py` and `market_swarm/datasets.py` (the per-event option, the leg in the sale transaction, the row's three columns and the dataset check); `programs/cap_hook/src/lib.rs` step 7, which writes `held_since_unix`, is the input this build reads | Off chain: `market_swarm/tests/test_flip_tax.py`, `market_swarm/tests/test_flip_tax_mutation.py` and `market_swarm/tests/test_flip_tax_wiring.py`. On chain: `tools/flip_tax_proof.py`, with `tests/test_flip_tax_proof.py` for the tool itself and the run quoted in `records/findings/43-flip-tax-at-checkout.md`. **The charging half only:** the tax is a seller-paid lamport leg in the sale transaction, 15% under an hour falling to 0 at 30 days by default and off unless an event turns it on, and the chain does not enforce it (a sale can move the ticket and pay nothing). **The pool half is not built**: the money goes to the artist wallet, a refund-to-holders pool is documented as a future option in `docs/ON-CHAIN-DESIGN.md` §16.6, `ClaimRebate` (tag 7) is absent from `lib.rs`, `6027` and `6028` are raised by nothing, and `state.rs`'s `HOLD_FULL_SECONDS = 60` is that unbuilt curve's demo number, not this schedule |
+| 7 | Flip tax | **tested** | `market_swarm/flip_tax.py` (the schedule, the assessment, the 70-byte record decoder, the leg and the instruction order); `market_swarm/config.py`, `market_swarm/gateway.py`, `market_swarm/runner.py`, `market_swarm/ledger.py` and `market_swarm/datasets.py` (the per-event option, the leg in the sale transaction, the row's three columns and the dataset check); `programs/cap_hook/src/lib.rs` step 7, which writes `held_since_unix`, is the input this build reads | Off chain: `market_swarm/tests/test_flip_tax.py`, `market_swarm/tests/test_flip_tax_mutation.py` and `market_swarm/tests/test_flip_tax_wiring.py`. On chain: `tools/flip_tax_proof.py`, with `tests/test_flip_tax_proof.py` for the tool itself and the run quoted in `records/findings/43-flip-tax-at-checkout.md`. **The charging half only:** the tax is a seller-paid lamport leg in the sale transaction, 15% under an hour falling to 0 at 30 days by default and off unless an event turns it on, and the chain does not enforce it (a sale can move the ticket and pay nothing). **The pool half is not built**: the money goes to the artist wallet, a refund-to-holders pool is documented as a future option in `docs/ON-CHAIN-DESIGN.md` §16.6, `ClaimRebate` (tag 7) is absent from `lib.rs`, `6027` and `6028` are raised by nothing, and `state.rs`'s `HOLD_FULL_SECONDS = 60` is that unbuilt curve's demo number, not this schedule. **No live harness run can charge it either:** `market_swarm/gateway.py:45-56` states that `start()` refuses `program=v2`, and that the fee and tax paths build v2 instruction shapes on a v1 run too, because the record those paths write is the one that carries the hold clock and the v2 authority, so a fee or tax event is a v2-record event whatever `program` says and cannot complete a live run under either program. The legs are measured by `tools/flip_tax_proof.py` and `tools/artist_fee_proof.py` on a throw-away local validator, not by a harness run. **[Corrected 2026-11-08T12:00Z: this cell described the charging half and not the limit on driving it. The build and the measurement are unchanged, and `market_swarm/CONTRACT.md:52-71` already carried the limit.]** |
 | 8 | Public price feed | **tested** | `programs/cap_hook/src/lib.rs` (tag 4), `programs/cap_hook/src/state.rs` (`band_seeds`), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`). The account was published and read back on the local validator (`low 900000000`, `high 1100000000`, `sample_n 42`); **no third-party consumer**, so composability is unproven. The run is the same local-only one behind feature 6: the artefact `records/onchain-v2.local.json` is git-ignored and stays local, so the numbers are the record and the artefact is not |
 | 9 | Live deepseek agent adapter, tiny budgets | **tested** | `market_swarm/forge_policy.py`, `market_swarm/budget.py`; opt-in on `MARKET_SWARM_LIVE_LLM=1` | `market_swarm/tests/test_feature9_fixes.py` and `test_forge_policy.py` (89 tests, `OK`); the whole package is 489 tests, `OK (skipped=2)` (re-measured 2026-11-08T09:22Z, was 436). The documentation gate's feature check reads both test roots as of 2026-11-08, so this row is `tested` on the suite that exercises it |
 | 10 | Per-event jurisdiction field | **tested** | `programs/cap_hook/src/state.rs` (`jurisdiction`, `policy`), `programs/cap_hook/src/lib.rs` (log line, the `policy == 1` skip), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`). The local run initialised `jurisdiction ZZ`, admitted a transfer with `jurisdiction=ZZ` in the log and refused `policy 2` with `6023`. The wire carries neither field. **This program records the code and does not interpret it**; the jurisdiction-to-policy table is a separate piece of work in this same tree by another session (D11 there, `ticketpath/core/region_caps.py`), the two must be reconciled by the operator, and any such reconciliation is nation-level only because the record is two bytes while 72 of the table's 82 codes are subdivisions (§A6 item 7) |
@@ -198,6 +198,25 @@ the table above, and both are corrections of a claim rather than of a number:
 This note is what a reader should believe about feature 3 where it disagrees with the row's older
 text, which is kept above so the false claim is visible rather than erased.
 
+**Corrected 2026-11-08T12:00Z: feature 5's row read `not built` and the correction is a status word,
+not a claim.** The row as it stood was:
+
+> `| 5 | Artist fee via TransferFeeConfig | **not built** | none | **Blocked** by the measured
+> Token-2022 ceiling: at decimals 0, amount 1, any rate from 1 to 9999 bps withholds the whole ticket.
+> records/findings/36-transfer-fee-on-a-one-unit-ticket.md |`
+
+That wording described the token-fee mechanism and was true of it. It was false of the tree: the
+artist fee ships as a seller-paid lamport leg, `market_swarm/artist_fee.py` and
+`tools/artist_fee_proof.py` are its code and its proof, and `records/findings/42-artist-fee-at-checkout.md`
+measures it at PASS 9/9. The row now says `built` and names those files; the ceiling in finding 36 is
+still the reason the token-fee form is not the one that shipped, and the row keeps it. This is the
+item `README.md` §"The ten features" was already describing in its heading, and the two now agree:
+rows 1, 2, 3, 4, 6, 8, 9 and 10 are the eight that are neither of the lamport pair and all eight read
+`tested`, which is the heading's "eight tested"; rows 5 and 7 are the pair built on the lamport route.
+Row 5's status cell reads `built` and row 7's still reads `tested`, so the heading's "two built on the
+lamport route" is a statement about where both are built and not about either row's status word, and
+this note does not move row 7.
+
 ---
 
 # A. TECHNICAL
@@ -219,7 +238,7 @@ text, which is kept above so the false claim is visible rather than erased.
 | Solana toolchain | **INSTALLED, NOT ON A NON-LOGIN PATH** | `bash -lc 'which solana spl-token cargo-build-sbf rustc cargo'` → all five resolve; versions in §0 row 5. In a plain non-login shell `which solana` still returns nothing |
 | API layer | **WORKS** | one module per contract area; `tests/test_contract_conformance.py` addresses every route over a socket |
 | Console | **WORKS** | one server-rendered page at `/`, no JavaScript, every state a URL. **The `[DEVNET]` slot now renders the recorded artefact as recorded** (§A3): the file's own instant, slot, block time, signature, mint, program, memo program, both transfer legs and the refusal's `6010`, plus a separate sentence saying whether the page's number is the chain's. The `Verified at None` defect is closed (§A6 defect 1). Page byte count not re-measured this pass |
-| CLI (`tools/tp.py`) | **WORKS** | 8 verbs, exit codes 0/1/2/3 |
+| CLI (`tools/tp.py`) | **WORKS** | 8 verbs, exit codes 0/1/2/3 **[corrected 2026-11-08T12:00Z: 10 verbs, `timeout 60 python3 tools/tp.py --help` → `health events event tickets history price page sweep gate doc-check`, and the exit codes are unchanged. `docs/CLI.md:19-30` already tabulated all ten]** |
 | Publish script | **WORKS, AND RESUMABLE** | `tools/devnet_publish.py`: nine steps, each reads the cluster before it writes; transport retries 4× with 0.5/1/2 s backoff; resume file `records/devnet-progress.json` (git-ignored, 0600); `--inject` faults armed only by an explicit flag; `--local` runs a validator it kills on every exit path |
 | `market_swarm/` | **IN PROGRESS, SEPARATE PACKAGE** | 11 modules + 7 test modules, standard library only, imports nothing from `ticketpath/` and is imported by nothing in it. 274 tests green. No run config file in the tree, so `python3 -m market_swarm plan --config <path>` is the only entry point and there is nothing to point it at yet (§A9) |
 | Public-safety check | **WORKS AS A TOOL, AND CLEAN ON THE TRACKED TREE SINCE `aea1cbe`** (`64 hits in 9 tracked files` was the reading on 2026-11-08T03:30Z; see the correction below the table) | `python3 tools/public_safety.py check --tracked` re-measured 2026-11-08T09:22Z → `public_safety: clean, tracked tree, 285 file(s)`, exit 0. Detail in §A6 |
@@ -389,8 +408,23 @@ tree they were taken on.
 | `ls tests/test_*.py \| wc -l` | **51 test modules under `tests/`** | 51 |
 | `ls market_swarm/*.py \| wc -l` | **15 Python files in `market_swarm/`** | 15 |
 | `ls market_swarm/tests/test_*.py \| wc -l` | **23 test modules there** | 23 |
-| `find market_swarm -name '*.py' \| xargs wc -l` | **24,147 lines with its tests** | 24,147 |
+| `find market_swarm -name '*.py' \| xargs wc -l` | **24,147 lines with its tests** | 24,147 **[corrected 2026-11-08T12:00Z: 24,153, by the same command at `HEAD 3ad15bb`]** |
 | `git ls-files frontend \| wc -l` | **82 files in the index** | 82, and 1,097,690 bytes by `du -cb`; the 81 / 1,097,001 in §A1 and §A10 was the reading before `frontend/.env.example` was staged at 11:18Z, and it is 689 bytes |
+
+**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. Four rows above are readings of an instant at
+which the tree they describe did not exist. The commits that built the merged tree are timestamped
+2026-11-08 11:38:37 to 11:41:29 (`git log --format='%h %ci' dd42348..HEAD`), and the first of them,
+`df02ea2` at 11:38:37, is eight minutes after the last reading in this table. So 367 was the index at
+that moment, with 285 committed files at `HEAD 948b5d5` beside 82 staged frontend files -- which the
+table itself half-admits where it says "which is the commit and not the index" -- and findings 42 and
+43 were untracked because their commit `7df7597` landed at 11:39:08. The readings were true of the
+index they were taken on and nothing that was measured at 11:27-11:30Z became the released tree.
+Re-measured at `HEAD`, with the commands in the rows: `git ls-files | wc -l` → **394 tracked**;
+`git ls-tree -r --name-only HEAD | wc -l` → **394 at `HEAD`**;
+`git ls-files records/findings | wc -l` → **59 tracked findings**;
+`git ls-files -o --exclude-standard records/findings | wc -l` → **0 untracked**; and
+`python3 tools/public_safety.py check --tracked` → `public_safety: clean, tracked tree, 394 file(s)`.
+The four old readings stay in the rows above so the instant each belongs to is visible.]**
 
 **Beyond the counts, the merge changed the finding series.** `records/findings/` now runs to 43 with
 gaps at 04, 05 and 22, and it gained two entries from the other checkout: the artist fee at 42 and the
@@ -924,8 +958,8 @@ Declared status, in the closed set this file uses elsewhere:
 
 | part | status | where it is | what proves it |
 |---|---|---|---|
-| the rules table | **built** | `ticketpath/data/region-caps.json` (version `2026-11-08.1`, 82 codes, 84 instruments) | `tests/test_region_caps_table.py` (29 tests, corrected 08:25Z from 25) |
-| the resolver | **built, tested** | `ticketpath/core/region_caps.py` | `tests/test_region_caps.py` (54 tests) |
+| the rules table | **built** | `ticketpath/data/region-caps.json` (version `2026-11-08.1`, 82 codes, 84 instruments) | `tests/test_region_caps_table.py` (29 tests, corrected 08:25Z from 25) **[corrected 2026-11-08T12:00Z: 30 tests, `Ran 30 tests in 0.031s`, `OK`]** |
+| the resolver | **built, tested** | `ticketpath/core/region_caps.py` | `tests/test_region_caps.py` (54 tests) **[corrected 2026-11-08T12:00Z: 57 tests, `Ran 57 tests in 0.008s`, `OK`]** |
 | the event field and the additive wire keys | **built, tested** | `ticketpath/core/event_records.py`; declared in `tests/test_contract_conformance.py` | `tests/test_event_jurisdiction.py` (11 tests, corrected 08:25Z from 10; **corrected again 2026-11-08T09:22Z: 12 tests, `Ran 12 tests in 0.204s`, `OK`**) |
 | the harness adapter | **built, tested** | `tools/region_harness.py` | `tests/test_region_harness.py` (14 tests), including the swarm's own loader accepting the resolved file |
 | the on-chain policy layer | **built, tested on a local validator** | `programs/region_gate/` (separate crate; the devnet program is untouched) | `tools/region_local_proof.py`, **PASS 11/11**, 11 real transactions, `records/findings/34-region-caps-build.md` |
@@ -965,6 +999,19 @@ all in `test_guidance_api`, `test_labels` and the console tests, against files
 `ticketpath/api/guidance.py` and `ticketpath/console/page.py` that had been written two minutes
 earlier by the concurrent ten-feature build. This pass did not touch those files, and the four new
 modules pass on their own.
+
+**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. The 06:20Z inventory above is wrong in its
+terms, and the same section's table states a different set for the same four modules. This
+is the disagreement the claim matrix already carried as C15, "the region test counts disagree three
+ways". Measured now, one command per module: `python3 -m unittest tests.test_region_caps_table` →
+`Ran 30 tests`; `python3 -m unittest tests.test_region_caps` → `Ran 57 tests`;
+`python3 -m unittest tests.test_event_jurisdiction` → `Ran 12 tests`;
+`python3 -m unittest tests.test_region_harness` → `Ran 14 tests`. All four `OK`, and the four together
+are **113 tests (30 + 57 + 12 + 14)**. The 101 above is 54 + 23 + 10 + 14: the sum is right and the
+terms are not, because the table in the same section gives 29 and 54 for the first two modules, so the
+section had stated three sets of numbers for four files. The 23 is the one term no row of that table
+carries in either its 08:25Z or its 09:22Z reading, and this pass cannot recover what it was measured
+on. The 113 is the reading to quote, and the command is the thing to run rather than the number.]**
 
 **Five things the operator may want to decide**, all of them named in `D11`'s open list: whether a
 mid-event tightening binds tickets already sold; whether the platform may be stricter than the law

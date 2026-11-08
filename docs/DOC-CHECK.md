@@ -185,3 +185,14 @@ skips, with the reason, because a silent skip is indistinguishable from a pass.
   They are listed in `tmp/doc-check-baseline.md` for the doc steward, which is where the
   fixing happens; this checker will keep failing until that pass lands, and that is what a
   gate is for.
+
+  **[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. The state this bullet describes is not the
+  state the check is in. `timeout 200 python3 tools/doc_check.py --root .` → `doc_check: clean, 7
+  check(s)`, 24 allowed absences suppressed, exit 0, in this worktree and in a fresh clone of the
+  branch tip; the checker does not keep failing. `tmp/doc-check-baseline.md` does not exist on disk
+  (`ls` returns no such file), `git ls-files tmp/` returns 0 files, and `tmp/` is in `.gitignore`, so
+  the file the bullet sends a doc steward to has never been committed and is not there. The reason
+  this paragraph cannot catch itself is the mechanism the file already documents: a git-ignored
+  absent path is suppressed by the `paths` rule, which is what the run's `7 git-ignored path(s) not
+  claimed of the tree` counts. Read the bullet as the history of a gate that was red, and the two
+  commands above as what it does now.]**

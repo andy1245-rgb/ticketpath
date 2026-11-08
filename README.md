@@ -171,6 +171,16 @@ the operator's instruction. `HEAD` is `33d95b3` and carries none of the ten feat
 `git clone --no-hardlinks` of this tree: `Ran 574 tests in 23.262s`, `OK`. The eight results, one per
 command:
 
+**[Corrected 2026-11-08T12:00Z, at the branch tip. Every sentence above is false of `release/prep`
+now, and it is kept here because it records the tree the section was written against. On this branch
+`git log -1 --format='%H %s'` reads `3ad15bb Record the push plan, and that the import is committed`,
+the branch is a straight descendant of `33d95b3`, and the tree is clean at `3ad15bb`; so `HEAD` is not
+`33d95b3` and carries all ten features. Measured on
+`git clone --no-hardlinks --branch release/prep <this repo> <a directory outside this tree>`, in
+that clone: `Ran 1251 tests in 29.639s`, `OK (skipped=31)`, exit 0; `git ls-files | wc -l` → 394; and
+every file the paragraph lists as absent is present, `market_swarm/` included. The `Ran 574 tests in
+23.262s`, `OK` quoted above is a clone of `33d95b3`, the base commit, not of this branch.]**
+
 - Feature 1: `ImportError: cannot import name 'memo_program_id' from 'ticketpath.adapters.chain_client'`.
 - Feature 2: `KeyError: 'matchesCurrentQuote'`.
 - Feature 3: `can't open file 'tools/swarm_charts.py': [Errno 2] No such file or directory`.
@@ -180,7 +190,17 @@ command:
 - Feature 9: `ImportError: Start directory is not importable: 'market_swarm/tests'`.
 - Feature 10: `tests/test_onchain_v2.py` is untracked, `FAILED (errors=1)`.
 
+**[Corrected 2026-11-08T12:00Z: none of those eight results reproduces at `3ad15bb`. Measured in the
+clone above, the two modules the list calls untracked are committed, `tools/swarm_charts.py`,
+`tools/doc_check.py`, `ticketpath/onchain/v2.py` and `ticketpath/core/forecast_score.py` are in the
+clone, `market_swarm/tests` is importable, and each command below runs there. The list is kept as the
+record of what the base commit carried.]**
+
 So every count below is a count of the working tree; the clone's whole suite is **574 tests**.
+
+**[Corrected 2026-11-08T12:00Z: the clone's whole suite is 1251 tests, `OK (skipped=31)`. The working
+tree and the clone hold the same tracked content at `3ad15bb`; they differ only in the git-ignored
+local artefacts, which is why the clone skips four more tests than the worktree, 31 against 27.]**
 
 **When these commands were run.** Every command below was run on 2026-11-08 between 07:00Z and
 07:30Z and re-run at 08:07-08:12Z with the same output, and that output is quoted as it printed. The tree was being edited by another agent while this
@@ -190,6 +210,8 @@ artefact-verification modules. The last reading in this pass, after that edit an
 is `python3 -m unittest discover -s tests -t .` → `Ran 1058 tests in 30.275s`, `OK (skipped=26)`, at
 07:47Z **on the working tree; the clone of `HEAD` is 574 tests and `OK`**. If a command below fails
 for you, run `git status` before concluding a feature is missing.
+
+**[Corrected 2026-11-08T12:00Z: the clone of `HEAD` is 1251 tests, `OK (skipped=31)`, at `3ad15bb`.]**
 
 ### 1. Memo program id, per cluster
 
@@ -258,6 +280,30 @@ Observed on this machine: `PASS docs/charts: 5 asset(s) and the index, 4 chart k
 followed by four more lines (the label and not-evidence sentence in every title and visible text, the
 series rebuilt from the dataset and matched on all five, and the two dataset digests re-checked), exit 0.
 
+**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. The two clauses above that say "matched on all
+five" and "the two dataset digests re-checked" are the opposite of what the tool returns, and `exit 0`
+is not the code. Measured on this machine with `timeout 120 python3 tools/swarm_charts.py verify --out
+docs/charts`, the output is seven lines and it does not begin with the bare `PASS` line:**
+
+```
+PASS LABELS ONLY docs/charts: 5 asset(s) and the index, 4 chart kind(s), mode(s) capped, monitored
+     label SYNTHETIC and the not-evidence sentence in every title and in every visible text; the bytes are what this tool renders from the provenance each asset carries
+     series rebuilt from the dataset on 0 of 5 asset(s): no dataset was present for the rest, so their numbers were not checked against any data file. Pass --dataset <path.jsonl> to check them
+     dataset digests: 0 re-checked against the file, 2 not present (named below, and not claimed)
+     dataset sw20261108T054830Z6297-evt_capped-SYNTHETIC.jsonl: not present, so its digest and its series were not re-checked against the file
+     dataset sw20261108T054830Z6297-evt_monitored-SYNTHETIC.jsonl: not present, so its digest and its series were not re-checked against the file
+     note: exit 3, labels and internal consistency only; nothing about the data was checked
+```
+
+**The exit code is 3.** The reason is that the datasets are not in the tree: they live in `.swarm-runs/`,
+which is git-ignored and uncommitted, so `verify` has no file to rebuild a series from. `status` in
+`tools/swarm_charts.py` is `PASS` only when `all_rebuilt` is true and `PASS LABELS ONLY` otherwise, and
+`all_rebuilt` needs a dataset it can locate beside the assets or receive with `--dataset`; none is in
+this tree, so the command prints `PASS LABELS ONLY` here and exits 3. What it verifies is the
+`SYNTHETIC` label and the internal consistency of the five assets and the index, which it does verify;
+what it does not verify is any number on them. `records/STATE-OF-PROJECT.md` §0A feature 3 and §A4
+carry the same reading at 09:22Z.]**
+
 **The limit.** Every number on them is class E: scripted agents against a simulated gateway, not
 observed prices. The datasets live in `.swarm-runs/`, which is git-ignored, so on a clone with none
 present `verify` exits 3 with `PASS LABELS ONLY`: the labels and the internal consistency were
@@ -278,6 +324,9 @@ python3 -m unittest tests.test_forecast_score tests.test_onchain_v2
 Observed: `Ran 63 tests`, `OK` (63 at 07:29Z; it was 56 at 07:05Z, because the test file grew with a
 concurrent program edit). On the clone of `HEAD` these two modules are untracked and the whole suite
 is 574 tests.
+
+**[Corrected 2026-11-08T12:00Z: both modules are committed at `3ad15bb` and the clone's suite is 1251
+tests, `OK (skipped=31)`.]**
 
 **The limit.** The program stores `interval_score_micro` as supplied and recomputes only `covered`.
 Nothing on chain recomputes the penalty, so a score above the band's width is a well-formed account
@@ -308,6 +357,9 @@ python3 -m unittest tests.test_onchain_v2 -k TicketRecord
 Observed: `Ran 6 tests`, `OK`. On the clone of `HEAD` the module is untracked and the whole suite is
 574 tests.
 
+**[Corrected 2026-11-08T12:00Z: the module is committed at `3ad15bb` and the clone's suite is 1251
+tests, `OK (skipped=31)`.]**
+
 **The limit.** The predicate is in the Rust program, so the proof that it refuses is a chain run:
 on a local validator, 899,999,999 lamports was refused `6021` and 900,000,000 was admitted with the
 jurisdiction in the log line, recorded at `records/onchain-v2.local.json` (git-ignored). That run is
@@ -328,6 +380,9 @@ python3 -m unittest tests.test_onchain_v2 -k band
 Observed: `Ran 2 tests`, `OK`. On the clone of `HEAD` the module is untracked and the whole suite is
 574 tests.
 
+**[Corrected 2026-11-08T12:00Z: the module is committed at `3ad15bb` and the clone's suite is 1251
+tests, `OK (skipped=31)`.]**
+
 **The limit.** No third-party program consumes the feed today, so the composability claim is
 unproven: what exists is a readable account with its own uncertainty fields, and this repository is
 the only reader. `refused` is stored, not enforced, and `low > high` is refused `6022` rather than
@@ -346,6 +401,9 @@ python3 -m unittest discover -s market_swarm/tests -t .
 
 Observed: `Ran 436 tests`, `OK (skipped=2)`. On the clone of `HEAD` there is no `market_swarm/` and the
 `tests/` suite is 574 tests.
+
+**[Corrected 2026-11-08T12:00Z: `market_swarm/` is in the clone at `3ad15bb`, its suite there is 771
+tests, `OK (skipped=4)`, and the `tests/` suite is 1251, not 574.]**
 
 **The limit.** The cap is parent-side: the child is spawned with no limit of its own, so a SIGKILLed
 parent can leak a child with no wall clock and no token cap on it. The provider usage log is also
@@ -367,6 +425,9 @@ python3 -m unittest tests.test_onchain_v2 -k jurisdiction
 
 Observed: `Ran 2 tests`, `OK`. On the clone of `HEAD` the module is untracked and the whole suite is
 574 tests.
+
+**[Corrected 2026-11-08T12:00Z: the module is committed at `3ad15bb` and the clone's suite is 1251
+tests, `OK (skipped=31)`.]**
 
 **The limit.** The program does not interpret the country code and does not map a jurisdiction to a
 policy. It does not validate the code either: there is no list on chain to check it against, so a
@@ -395,6 +456,21 @@ operator's to decide; this entry does not settle it, and nothing here deletes D1
 holder held. As token fees both are dead, blocked by one measured fact about the token program.
 As lamport legs charged by the checkout, both are built, and both are off unless an event turns
 them on.**
+
+**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. Both are built and both are measured, and that
+claim is not weakened here. What the sentence above does not say is that no live harness run can
+charge either leg today, and a reader who takes "charged by the checkout" as a statement about a
+running swarm would be wrong. `market_swarm/gateway.py:45-56` states that `start()` refuses
+`program=v2`, because v2's `SetPendingPrice` is authorised by the record's authority, which this
+harness cannot sign; the same place states that the fee and tax paths build v2 instruction shapes "on
+a v1 run too", because the record those paths write is the one that carries the hold clock and the v2
+authority. A fee or tax event is therefore a v2-record event whatever `program` says, and a plain sale
+on a v1 run keeps the v1 encoders, so a fee or tax event cannot complete a live run under either
+program. What measured the two legs is the two proof tools on a throw-away local validator,
+`tools/artist_fee_proof.py` (PASS 9/9) and `tools/flip_tax_proof.py`, recorded in
+`records/findings/42-artist-fee-at-checkout.md` and `records/findings/43-flip-tax-at-checkout.md`. The
+harness's own fee path is unit-tested against a fake cluster and is not measured on a validator
+(finding 42 §8). `market_swarm/CONTRACT.md:52-71` already says all of this; this section did not.]**
 
 Token-2022 computes a transfer fee on the base-unit amount and rounds it **up**. At `decimals 0`,
 `amount 1`, any rate from 1 to 9999 bps withholds the whole ticket: `withheldAmount = 1`, the
@@ -670,6 +746,15 @@ against `main`, and the eighteen findings it counted as uncommitted are committe
 The 57 tracked is 52 tracked finding files plus the five cluster records in
 `33-b-region-cap-law-sources/`, all of them `.md`. Two of the 54 on disk are the untracked pair
 above. Nothing earlier in this line was rewritten.]**
+
+**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. Re-measured, the pair the 11:20Z note calls
+untracked is committed, and the tree reads: `find records/findings -name '*.md' | wc -l` → 59,
+`ls records/findings/*.md | wc -l` → 54, `git ls-files records/findings | wc -l` → 59, and
+`git ls-files -o --exclude-standard records/findings | wc -l` → 0. The 59 tracked is the 54 top-level
+finding files plus the five cluster records in `33-b-region-cap-law-sources/`, and the untracked count
+is 0 because findings 42 and 43 landed in `7df7597`. The 11:20Z reading was taken at 11:27Z, twelve
+minutes before that commit existed, which is why it sees two files that are now in the tree. The
+54 top-level files on disk is the one number that did not move.]**
 - `STATE-OF-PROJECT.md` the read-only measurement of the tree, the chain and the console, rewritten at 2026-11-08T03:45Z.
 - `BUILD-REPORT-CONSOLE.md` what the console pass built and where it departed from its spec.
 - `FINAL-PROOF.md` the end-to-end proof run: what was executed, what it showed, what it did not.
@@ -808,6 +893,14 @@ that ships. The commit trailers name one of the tools on six of the repository's
 (`git log --format='%(trailers)'`). This is not a claim of solo human authorship and no part of this
 repository should be read as one. No generative model is implemented inside the product: the pricing
 engine is bounded arithmetic with declared parameters, and `/health` reports `fitted: false`.
+
+**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. It is ten of forty: `git rev-list --count HEAD` →
+40 and `git log --format='%(trailers:only,unfold)' | grep -c .` → 10. All ten carry a
+`Co-authored-by` trailer naming `Claude Sonnet 5.5`. The sentence understated the machine involvement,
+which is the direction this file otherwise avoids. The six and the nineteen were read before the
+release merge added the commits. Every commit that carries the trailer is listed by
+`git log --format='%h %(trailers:only,unfold)'`, which is the command to run rather than trusting
+either number.]**
 
 ## Licence and status
 

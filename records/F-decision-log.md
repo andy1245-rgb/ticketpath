@@ -836,12 +836,24 @@ this question is what a reader would act on:
 
 1. **The author on the commit.** `--author` is a person, and this pass does not choose one. The
    import is staged and the commit command is in the handover to the operator.
+
+   **[Corrected 2026-11-08T12:00Z: the import is committed, as `009f103` on `release/prep` at
+   11:39:41Z (`git log -1 --format='%h %ci %s' 009f103`), and it is not in the index. The item above
+   was true when it was written and is kept for that reason. The author question it raises is closed:
+   the author and the committer are the contributor whose checkout it came from, and the same person
+   on every commit on the branch.]**
 2. **The demo copy's second pass.** `frontend/NOTES.md` lists nine sentences that ship as written
    and overclaim: a payment flow, a wallet the platform creates, a contract that rejects every
    above-face resale, a door code that works without signal, and three proof-band figures. The
    landing page's argument is that it does not overclaim, so this is the one open item that a
    reader meets on the first screen. It is the operator's call whether that list is edited before
    the import is published or after it.
+
+   **[Corrected 2026-11-08T12:00Z: the table at `frontend/NOTES.md:23-32` has eight body rows, not
+   nine. The eight are two payment/issue sentences, the cap sentence, two door-code sentences and the
+   three proof-band figures, so the sentence's own summary already counts eight and the word "nine"
+   was the arithmetic slip. Measure it with `awk 'NR>=24 && NR<=31' frontend/NOTES.md | grep -c
+   '^|'` rather than trusting either number.]**
 3. **The two Stitch exports.** `frontend/VERIFY.md` 8.7 could not be run: the export files were
    never on this machine, so the visual comparison was made against the written specification
    only. Landing `desktop.html` and `mobile.html` in `../seatpass-exports/` makes that check
@@ -860,10 +872,21 @@ writes prose is the pass most likely to create one. A path that is deliberately 
 is written down once, per path, with a reason, in `ALLOWED_ABSENCES`; an entry with no reason
 suppresses nothing and is itself a violation.
 
-**Evidence.** Six checks, each a claim that can be false: every repo path a document names exists; a
+**Evidence.** Seven checks, each a claim that can be false: every repo path a document names exists; a
 finding, section or decision reference resolves; the memo program ids and the devnet program id and
 mint quoted are the code's and the artefact's; the program's error numbers, instruction tags and PDA
 seeds equal the `IMPLEMENTED TODAY` table in `docs/ON-CHAIN-DESIGN.md` both ways; a registry that
+states a count of its own rows is right; and every row of the feature table carries a status from the
+closed set and names a file that exists.
+
+**[Corrected 2026-11-08T12:00Z: there are seven checks, and the sentence above read `Six checks`.
+The list that follows it names six of the seven; the one it omits is `findings-unique`, which refuses
+two findings with the same number and no letter.
+`grep -n '^CHECKS' -A 8 tools/doc_check.py` prints `paths`, `cross-references`, `findings-unique`,
+`ids`, `program-vs-doc`, `registry-counts`, `feature-table`; `docs/DOC-CHECK.md` tabulates the same
+seven, and `python3 tools/doc_check.py --root .` reports `clean, 7 check(s)`. The count is corrected to
+seven; the sentence's list is left as it stood, so the number and the list disagree by one until
+someone adds the missing clause.]**
 states a count of its own rows is right; and every row of the feature table carries a status from the
 closed set and names a file that exists. This pass's final run: `python3 tools/tp.py doc-check` →
 `doc_check: clean, 6 check(s), <repo root>; 21 allowed absence(s) suppressed by
@@ -922,6 +945,12 @@ redaction notes; nothing was over 1 MB, so nothing
 - `python3 tools/public_safety.py check --staged` → `clean, staged, 82 file(s)`, exit 0, over the
   copy plus this pass's edits. `python3 tools/public_safety.py check --tracked` →
   `clean, tracked tree, 366 file(s)`, exit 0.
+
+  **[Corrected 2026-11-08T12:00Z: the tracked-tree reading is 394 file(s) at `HEAD 3ad15bb`, by
+  `python3 tools/public_safety.py check --tracked`. The 366 above is a reading taken on this pass's
+  index and is kept with that date on it; it is not the current size of the tree, and neither is the
+  367 in `records/PUSH-PLAN.md` or the 285 in §A1 and §A6, which belongs to `HEAD 948b5d5`. The
+  command is the thing that produces the number, so run it rather than quoting any of the four.]**
 - `python3 tools/doc_check.py` → `clean, 7 check(s), ... 24 allowed absence(s) suppressed`, exit 0.
 
 **[Corrected 2026-11-08T11:30Z: the exclusion above no longer holds of the index. `git ls-files
@@ -990,6 +1019,11 @@ rendered mock is the one thing in this tree that a reader could mistake for a me
 app's records and tools behind. That publishes the product surface with none of the evidence for
 it, and `frontend/NOTES.md` is the file that lists the nine strings that still read as shipped
 features.
+
+**[Corrected 2026-11-08T12:00Z: `frontend/NOTES.md:23-32` has eight body rows, not nine. This is the
+same correction as the one at Q6 item 2 and both places needed it; the list lives in exactly one
+table, so the two sentences were describing the same eight rows. `awk 'NR>=24 && NR<=31'
+frontend/NOTES.md | grep -c '^|'` prints 8.]**
 
 **Staged, not committed.** The import is in the index and no commit is made by this pass. The
 commit is the operator's, and so is the author on it.

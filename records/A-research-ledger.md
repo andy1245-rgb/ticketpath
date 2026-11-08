@@ -353,7 +353,7 @@ the thing that makes a move-only transaction possible. The proof tool and the ha
 that instruction with the record writable and say why; the publish file belongs to another run and is
 untouched.
 
-**Classification.** A for everything the local validator measured, and for the writability rule now
+**Classification.** OBSERVED for everything the local validator measured, and for the writability rule now
 that the review measured it (a read-only-only message is refused `PrivilegeEscalation`, and the stage
 marks the record writable so the move's flag is redundant on the fee path); C for the two-signature
 fact, which is a property of the deployed program's source read here rather than estimated; no market
@@ -394,10 +394,21 @@ from `lib.rs`, `6027`/`6028` are raised by nothing, `["rebate-pool", mint]` is a
 instruction behind it, and `state.rs`'s `HOLD_FULL_SECONDS = 60` is the demo's number for that curve,
 **not** this schedule's 3 600 seconds.
 
-**Classification.** A for everything the local validator measured: the leg and the money, the
+**Classification.** OBSERVED for everything the local validator measured: the leg and the money, the
 two-signature shape (leg 1 prints both signers), and the clock's value read from a real record through
-three decoders that agree (leg 8). A for the rate-for-age curve too, which is measured off chain as a
-pure function over a dense sweep and pinned at both boundaries. C for the hook's write path -- step 7
+three decoders that agree (leg 8). OBSERVED for the rate-for-age curve too, which is measured off chain
+as a pure function over a dense sweep and pinned at both boundaries. C for the hook's write path -- step 7
 of `execute`, and the read-only branch that leaves the field at 0 -- which is the deployed program's
 source read here rather than exercised from the read-only side. No market claim of any kind, and no
 statement about any real artist's revenue.
+
+**[Corrected 2026-11-08T12:00Z: the two classification sentences above read `A` for the local-validator
+measurements and now read `OBSERVED`. The claims are untouched; only the label changed.
+`records/README.md:47` defines **A** as "Directly supported by ticket-market empirical evidence
+(published primary market data or peer-reviewed ticket research)", which a local-validator run is not,
+and this file already provides the right word at `:27-31`: **OBSERVED** "marks a statement that is
+true of this repository by direct inspection ... It says nothing about ticket markets." Both entries
+already end with "no market claim of any kind", which is the tell that the label was the wrong half of
+the sentence. Three other places use `A` the same loose way and were left alone: `:255` and `:302` in
+this file, and `records/F-decision-log.md:567`. They are another pass's classification rather than this
+one's, and changing them would be a vocabulary decision for the record as a whole.]**
