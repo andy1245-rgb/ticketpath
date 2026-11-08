@@ -732,8 +732,11 @@ def build_store() -> dict:
                 "recomputation is exact."
             ),
             "missingOnChain": (
-                "signature and slot are null on every row because no program is "
-                "deployed and no transaction exists."
+                "signature and slot are null on every row because this store is "
+                "synthetic: it is generated from a seed rather than observed, and "
+                "no transaction was read to produce any row. A program is deployed "
+                "on devnet, and records/onchain-v2-devnet.json is the record of the "
+                "run that did it; none of its transactions is a row here."
             ),
         },
         "cluster": "devnet",
