@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ApiError, getEvent, getResaleHistory, getTicket } from "@/lib/api";
+import { ApiError, getEvent, getResaleHistory, getTicket, getTickets } from "@/lib/api";
 import { capabilities } from "@/lib/capabilities";
 import type { Capability } from "@/lib/capabilities";
 import type { Event, TicketStatus } from "@/lib/types";
@@ -74,6 +74,18 @@ const TRANSFER_AND_REFUND: Capability = {
   endpoint: `${capabilities.transfers.endpoint}; ${capabilities.refunds.endpoint}`,
   shows: `${capabilities.transfers.shows} ${capabilities.refunds.shows}`,
 };
+
+/**
+ * Static export: every ticket URL is enumerated at build time from lib/api,
+ * because there is no server to resolve /tickets/<id> on demand.
+ */
+export async function generateStaticParams(): Promise<Array<{ ticketId: string }>> {
+  const { items } = await getTickets({ limit: 1000 });
+  return items.map((ticket) => ({ ticketId: ticket.id }));
+}
+
+/** With no server, any other ticket id is a 404 the host serves. */
+export const dynamicParams = false;
 
 export default async function TicketPage({
   params,

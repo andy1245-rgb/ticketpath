@@ -273,13 +273,14 @@ const STEPS: ReadonlyArray<{ numeral: string; copy: string }> = [
 // ---------------------------------------------------------------------------
 
 /**
- * The three states the brief gives this route (loading, empty, error) only
- * exist while the route is rendered per request. Prerendered at build time, the
- * page would either bake one snapshot of the backend or fail the build when the
- * backend is down, and app/loading.tsx and app/error.tsx could never come into
- * play. So the route reads the backend on each request.
+ * Prerendered once, at build time. This deployment is a static export: Next
+ * writes plain HTML into `out/`, no process serves it, and there is no request
+ * to read a query string from. `force-static` is what that means. Every read
+ * below happens during the build, against the bundled fixtures and the one
+ * record file, and the panels say which instant that was: app/loading.tsx and
+ * app/error.tsx cannot come into play, because nothing renders at request time.
  */
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 export default async function HomePage() {
   // The three reads, in the order the screen needs them. The event list is wide

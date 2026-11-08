@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ApiError, getEvent, getEventAnalytics, getTickets } from "@/lib/api";
+import { ApiError, getEvent, getEventAnalytics, getEvents, getTickets } from "@/lib/api";
 import { TierTable } from "@/components/TierTable";
 import { StatRow, StatTile } from "@/components/StatTile";
 import { PriceHistoryChart } from "@/components/PriceHistoryChart";
@@ -45,6 +45,20 @@ const TICKET_STATUS: Record<
   redeemed: { label: "Redeemed", tone: "neutral" },
   revoked: { label: "Revoked", tone: "danger" },
 };
+
+/**
+ * Static export: the build has to know every event URL up front, because there
+ * is no server to answer /events/<slug> at request time. The list comes from
+ * the same lib/api the page reads, so the exported set is exactly the set the
+ * fixtures (or a live backend at build time) actually hold.
+ */
+export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
+  const { items } = await getEvents({ limit: 1000 });
+  return items.map((event) => ({ slug: event.slug }));
+}
+
+/** With no server, any other slug is a 404 the host serves, not a page to render. */
+export const dynamicParams = false;
 
 export default async function EventPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
