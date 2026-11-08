@@ -3,7 +3,6 @@ import { TicketCard } from "@/components/TicketCard";
 import { Chip, DataSourceNote, Panel, Pill, Rule } from "@/components/ui";
 import { getDevnetRecord, getEvents, getResaleHistory, getTickets } from "@/lib/api";
 import { capCeilingLamports } from "@/lib/cap";
-import { HIDDEN_FEES } from "@/lib/demo";
 import { formatDate, formatDateTime, formatLamports } from "@/lib/format";
 import { PROGRAM_ID, explorerProgramUrl } from "@/lib/solana";
 
@@ -145,7 +144,7 @@ function IconCap() {
   );
 }
 
-/** Works without signal at the door: arcs and a slash, no invented offline mode. */
+/** Runs with no backend, on fixtures: arcs and a slash, no invented offline mode. */
 function IconNoSignal() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
@@ -301,8 +300,8 @@ const STEPS: ReadonlyArray<{ numeral: string; copy: string; missing: string }> =
   },
   {
     numeral: "04",
-    copy: "Show the code at the door. It works without signal.",
-    missing: "no door code is issued and there is no offline path.",
+    copy: "Show the code at the door.",
+    missing: "no door code is issued, and there is no offline mode: a lookup needs the network.",
   },
 ];
 
@@ -369,8 +368,8 @@ export default async function HomePage() {
         a ceiling.
       </h1>
       <p className="t-deck mt-6 max-w-[350px] text-muted">
-        One face value, one cap. SeatPass prices from the resale record, and the
-        chain refuses anything above a cap when the organiser sets one.
+        One face value, one cap. Prices come from the resale record; this build renders the record, not the model. The
+        devnet program refuses anything above a cap when the organiser sets one (6010).
       </p>
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Pill href="/events" variant="primary">
@@ -396,7 +395,7 @@ export default async function HomePage() {
         <span aria-hidden="true" className="h-4 w-px bg-line" />
         <span className="inline-flex items-center gap-2 t-meta text-ink">
           <IconNoSignal />
-          Works without signal at the door
+          Runs with no backend, on fixtures
         </span>
       </div>
     </div>
@@ -564,7 +563,7 @@ export default async function HomePage() {
               <FeatureCard
                 diagram={<DiagramCap />}
                 title="A cap that is a rule, not a promise"
-                copy="The contract rejects any resale above the cap. The organizer sets it once, at creation."
+                copy="The contract admits no price where price*10000 > face*(10000+cap_bps)."
               />
             </li>
             <li>
@@ -645,13 +644,13 @@ export default async function HomePage() {
                 </p>
               </div>
               <div>
-                <p className={PROOF_FIGURE}>${HIDDEN_FEES}</p>
-                <p className="t-meta text-muted">hidden fees, demo value: no fee field exists</p>
+                <p className={PROOF_FIGURE}>2 legs</p>
+                <p className="t-meta text-muted">seller-paid on resale in the demo: artist fee and flip tax, no buyer-side fee</p>
               </div>
             </div>
             <p className="t-micro mt-6 text-muted">
               The cap figure is the recorded devnet run. The issued count is the bundled fixture.
-              The fee figure is a demo value: no fee field exists in any record.
+              The two legs are transcribed rules in the browser demo, not in the deployed v1 program.
             </p>
           </div>
           <Rule />

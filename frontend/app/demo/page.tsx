@@ -148,7 +148,7 @@ export default function DemoPage() {
       <Card>
         <h2 className="h-section text-ink">The refusal is the real code</h2>
         <p className="t-body mt-3 max-w-[76ch] text-muted">
-          This page simulates the environment, not the rule. The cap program is deployed on solana
+          The cap predicate is the contract&apos;s. The jurisdiction table, artist fee and flip tax are rules transcribed into this browser, not enforced by v1 (v2 is the program meant to hold region and hold-clock rules). The cap program is deployed on solana
           devnet, and its record carries both legs: one resale at exactly the ceiling that was
           admitted, and one lamport higher that the program refused.
         </p>
@@ -157,8 +157,8 @@ export default function DemoPage() {
           <p className="t-meta break-all text-muted">program v2 {DEVNET_PROOF.programIdV2}</p>
           <p className="t-meta text-muted">
             admitted {sol(DEVNET_PROOF.acceptedLamports)} · refused{" "}
-            {sol(DEVNET_PROOF.refusedLamports)} with {DEVNET_PROOF.error} · slot{" "}
-            {DEVNET_PROOF.slot}
+            {sol(DEVNET_PROOF.refusedLamports)} with {DEVNET_PROOF.error} · refused at slot{" "}
+            {DEVNET_PROOF.slot.toLocaleString("en-US")}
           </p>
           <p className="t-meta text-muted">
             The recorded admitted and refused legs were produced by v1: data/devnet-artefacts.json
