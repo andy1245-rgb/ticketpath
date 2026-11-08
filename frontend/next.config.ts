@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // Static export: `next build` writes a plain `out/` directory of HTML, JS and
   // assets that any static host can serve. No Node process at runtime.
   output: "export",
+  // Emit demo/index.html, not demo.html, so every in-site link resolves under a
+  // plain static server (python3 -m http.server) as well as on a host that rewrites.
+  trailingSlash: true,
   // The export has no image optimisation server, so every <Image> must be
   // served as-is. No next/image is used today; this keeps it true if one is added.
   images: { unoptimized: true },

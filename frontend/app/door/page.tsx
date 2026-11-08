@@ -7,7 +7,7 @@ import { AddressPill } from "@/components/AddressPill";
 import { Chip, DataSourceNote, Panel, Unavailable } from "@/components/ui";
 import { formatDateTime } from "@/lib/format";
 
-export const metadata = { title: "Door" };
+export const metadata = { title: "Door check" };
 
 /**
  * The door screen reads real fields and stops there. It does not admit anyone,

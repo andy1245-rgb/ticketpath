@@ -25,9 +25,11 @@ export default function Error({
       <div className="max-w-2xl">
         <p className="t-micro-caps text-danger">Error</p>
         <h1 className="h-display mt-3 text-ink">Something went wrong</h1>
+        {/* A visitor reads this page. The build's configuration is the console
+            line's business, and the digest below is the only handle that ties
+            the two together. */}
         <p className="t-deck mt-4 text-muted">
-          The data layer returned an error. If the backend is running, check that
-          NEXT_PUBLIC_API_BASE_URL points at it.
+          We could not load this data. Try again, or browse the events list.
         </p>
         {error.digest && (
           <p className="t-micro mt-4 text-muted">

@@ -221,3 +221,18 @@ body {
 .skip-link:focus-visible {
   transform: none;
 }
+
+/* ---------------------------------------------------------------------------
+ * The header is sticky at 64px plus its mobile navigation row. An in-page
+ * anchor (`/rules#security` is the one the footer links) would otherwise land
+ * with its heading underneath the header, so every element with an id gets the
+ * header's height back as scroll margin. `scroll-padding-top` on the document
+ * root covers the same case for anything that scrolls inside a container.
+ * ------------------------------------------------------------------------ */
+html {
+  scroll-padding-top: 5rem;
+}
+
+[id] {
+  scroll-margin-top: 5rem;
+}

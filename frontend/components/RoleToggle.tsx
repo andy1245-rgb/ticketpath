@@ -4,18 +4,27 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getRole, setRole, type Role } from "@/lib/roleStore";
 
+// The stored value stays `organiser` because it is the key in an existing
+// localStorage entry; only the label a reader sees is spelled one way with
+// `/organizer`, the header and the footer.
 const OPTIONS: { value: Role; label: string }[] = [
   { value: "buyer", label: "Buyer" },
-  { value: "organiser", label: "Organiser" },
+  { value: "organiser", label: "Organizer" },
 ];
 
 /**
- * One toggle, two sides. It writes the role and, when you are not already on the demo,
- * takes you there, because a toggle that changes nothing on screen is a lie about state.
+ * One toggle, two sides, and it lives on `/demo` only, which is the one place
+ * that reads the stored role.
+ *
+ * It used to sit in the header on every route and push `/demo` when clicked: on
+ * `/rules` or `/events` it navigated away and changed nothing else, and a
+ * `role="group"` moving a screen-reader user to a new page is a state change
+ * with no announcement. The navigation is now the navigation, and this control
+ * only writes what the page underneath re-renders against.
  */
-export function RoleToggle() {
-  const pathname = usePathname();
+export function RoleToggle({ navigate = false }: { navigate?: boolean }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [role, setLocalRole] = useState<Role>("buyer");
 
   useEffect(() => {
@@ -25,13 +34,17 @@ export function RoleToggle() {
   function choose(value: Role) {
     setLocalRole(value);
     setRole(value);
-    if (pathname !== "/demo") router.push("/demo");
+    // In the header the choice also moves you to that side of the site, because
+    // only /demo reads the stored role. On /demo the page re-renders in place.
+    if (navigate && pathname !== "/demo") {
+      router.push(value === "organiser" ? "/organizer" : "/events");
+    }
   }
 
   return (
     <div
       role="group"
-      aria-label="View as"
+      aria-label="View the site as"
       className="inline-flex items-center rounded-pill border border-line bg-surface-2 p-1"
     >
       {OPTIONS.map((option) => {
@@ -42,7 +55,7 @@ export function RoleToggle() {
             type="button"
             onClick={() => choose(option.value)}
             aria-pressed={active}
-            className={`u-transition rounded-pill px-3 py-1 t-meta ${
+            className={`u-transition inline-flex min-h-9 items-center rounded-pill px-3 py-2 t-meta ${
               active ? "bg-ink text-on-accent" : "text-muted hover:text-ink"
             }`}
           >
