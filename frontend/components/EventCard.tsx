@@ -1,22 +1,7 @@
 import Link from "next/link";
-import type { Event, EventStatus } from "@/lib/types";
+import type { EnforcedCap, Event, EventStatus } from "@/lib/types";
 import { formatBpsPercent, formatCompact, formatDate } from "@/lib/format";
 import { Chip, Rule } from "./ui";
-
-/**
- * The backend serves an enforced cap beside the event's own policy: the
- * jurisdiction gate and the platform cap, tightened to the lower of the two.
- * lib/types.ts does not carry it yet, so it is declared here and read
- * structurally. Nothing is defaulted: no field means no row is shown, never a
- * number this file made up.
- */
-interface EnforcedCap {
-  enforcedCapBps: number;
-  enforcedCeilingLamports: number;
-  bindingRule: "law" | "platform";
-}
-
-type EventWithEnforcedCap = Event & { enforcedCap?: EnforcedCap | null };
 
 /**
  * Status is a tone from the shared palette, and never the warning colour: that
@@ -31,16 +16,24 @@ const STATUS: Record<EventStatus, { label: string; tone: "neutral" | "positive" 
 };
 
 /**
- * The cap as a sentence, not a badge: an enforced ceiling names which rule
- * binds it, an event with no cap says so, and the event's own policy is the
- * last resort.
+ * The cap as a sentence, not a badge. The backend serves an enforced ceiling
+ * beside the event's own policy: the jurisdiction gate and the platform cap,
+ * tightened to the lower of the two, and lib/types.ts carries both shapes. An
+ * enforced ceiling names which rule binds it, an event with no cap says so, and
+ * the event's own policy is the last resort.
+ *
+ * "Uncapped" used to stand where the last line is, under a landing screen whose
+ * headline is "The markup has a ceiling.": the flag contradicted the pitch and
+ * read as a boast about a missing control. The field being absent is a fact
+ * about the organiser's configuration, so the row states that fact and invents
+ * no number to fill the gap.
  */
 function capLabel(event: Event, enforced: EnforcedCap | null): string {
   if (enforced) {
     const percent = formatBpsPercent(enforced.enforcedCapBps);
     return enforced.bindingRule === "law" ? `Cap by law ${percent}` : `Cap ${percent}`;
   }
-  if (event.resalePriceCapBps == null) return "Uncapped";
+  if (event.resalePriceCapBps == null) return "No cap set by the organiser";
   return `Cap ${formatBpsPercent(event.resalePriceCapBps)}`;
 }
 
@@ -49,14 +42,22 @@ function capLabel(event: Event, enforced: EnforcedCap | null): string {
  * control competing with it for the click, and nothing inside it is focusable.
  * imageUrl is null for every event in this build, so there is no image and no
  * empty box standing in for one.
+ *
+ * The link's accessible name is the event name alone. Left to itself the card
+ * would announce name, venue, city, date, issued count and cap, and six cards of
+ * that is roughly twenty-five words each before a reader has chosen anything.
+ * The facts stay on the screen and are hidden from the accessibility tree, which
+ * is the trade this row makes: a name is what a list is scanned by, and the
+ * detail is one link away on the event's own page.
  */
 export function EventCard({ event, className = "" }: { event: Event; className?: string }): React.ReactElement {
   const status = STATUS[event.status];
-  const enforced = (event as EventWithEnforcedCap).enforcedCap ?? null;
+  const enforced = event.enforcedCap ?? null;
 
   return (
     <Link
       href={`/events/${event.slug}`}
+      aria-label={event.name}
       className={`u-transition block rounded-card border border-control bg-surface p-6 hover:border-accent ${className}`}
     >
       <div className="flex items-start justify-between gap-4">
@@ -72,7 +73,7 @@ export function EventCard({ event, className = "" }: { event: Event; className?:
 
       <Rule className="my-4" />
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+      <dl aria-hidden="true" className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
         <div>
           <dt className="t-micro-caps text-muted">Date</dt>
           <dd className="figure t-meta mt-1 text-ink">{formatDate(event.startsAt)}</dd>

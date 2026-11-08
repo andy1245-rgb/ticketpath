@@ -6,7 +6,8 @@ import { StatRow, StatTile } from "@/components/StatTile";
 import { PriceHistoryChart } from "@/components/PriceHistoryChart";
 import { MarkupDistribution } from "@/components/MarkupDistribution";
 import { AddressPill } from "@/components/AddressPill";
-import { Chip, DataSourceNote, Panel, Pill } from "@/components/ui";
+import { Chip, DataSourceNote, Panel, Pill, Unavailable } from "@/components/ui";
+import { capabilities } from "@/lib/capabilities";
 import {
   formatBpsPercent,
   formatCeiling,
@@ -134,6 +135,14 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
     enforced?.enforcedCeilingLamports ??
     (uniformBps !== null && minCeiling === maxCeiling ? minCeiling : null);
 
+  // The issued-ticket rows carry a serial, a status and a face value but no
+  // tier, so "Balcony" and "Orchestra" are indistinguishable in the list. The
+  // tier is resolved from each ticket's own tierId against the tiers the event
+  // actually holds; a ticket whose tier is not in the payload keeps the dash.
+  const tierNameById = new Map<string, string>(
+    event.tiers.map((tier) => [tier.id, tier.name]),
+  );
+
   return (
     <div className="box py-16">
       <Link href="/events" className="u-transition t-meta text-muted hover:text-ink">
@@ -142,12 +151,28 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
 
       <header className="mt-6">
         <h1 className="h-section">{event.name}</h1>
+
+        {/* The synthetic-data label, repeated here rather than left only at the
+            foot. A venue, a city, two dates and a supply count read as real for
+            the whole scroll, and a 12px line 3000px down is not where a reader
+            meets that. Same field, same sentence the backend wrote, twice. */}
+        <div className="mt-2">
+          <DataSourceNote dataSource={analytics.dataSource} />
+        </div>
+
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-3">
           <span className="t-meta text-muted">
             {event.venue} · {event.city}
           </span>
           <span className="figure t-meta text-ink">{formatDateTime(event.startsAt)}</span>
           <Chip tone={status.tone}>{status.label}</Chip>
+          {/* The buy control sits in the first screenful, beside the state of
+              the event. It used to exist only at the foot of the page, past the
+              analytics. One destination, one label: the pill at the foot says
+              the same thing, because two names for one link is a bug. */}
+          <Pill href={`/events/${event.slug}/checkout`} variant="primary" size="sm">
+            Get tickets
+          </Pill>
           <span className="figure t-meta text-ink">
             {formatCompact(event.issuedCount)} of {formatCompact(event.totalSupply)} issued
           </span>
@@ -192,7 +217,27 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
             horizontally scrolled box; the wrapper gives it a containing block
             and clips it, so a wide table cannot widen the document at 390. */}
         <div className="relative mt-6 overflow-hidden">
-          <TierTable tiers={event.tiers} enforcedCapByTier={event.enforcedCapByTier} />
+          <TierTable
+            tiers={event.tiers}
+            enforcedCapByTier={event.enforcedCapByTier}
+            slug={event.slug}
+          />
+        </div>
+      </section>
+
+      {/* No resale listing surface exists anywhere in this build: nothing
+          creates a listing, no ticket ever reaches status `listed`, and
+          GET /api/listings is not in the contract. The panel states that rather
+          than drawing an empty grid, which would read as "nothing listed".
+          app/resale is the full account of the same absence and is built as
+          out/resale.html, but nothing in browse linked to it, so the secondary
+          pill below is that route and nothing more. */}
+      <section className="mt-12" aria-label="Resale">
+        <Unavailable capability={capabilities.listings} title="Resale listings" />
+        <div className="mt-4">
+          <Pill href="/resale" variant="secondary">
+            How resale works here
+          </Pill>
         </div>
       </section>
 
@@ -211,17 +256,32 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           <ul className="mt-6 border-t border-line">
             {tickets.map((ticket) => {
               const ticketStatus = TICKET_STATUS[ticket.status];
+              const tierName = tierNameById.get(ticket.tierId);
               return (
                 <li
                   key={ticket.id}
                   className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-line py-4"
                 >
-                  <span className="figure t-meta min-w-24 text-ink">{ticket.serial}</span>
+                  {/* Tier first: the list is read to answer "which seats are
+                      these", and a serial cannot answer it. */}
+                  <span className="t-meta text-ink">
+                    {tierName ?? (
+                      <>
+                        <span aria-hidden="true">{"\u2014"}</span>
+                        <span className="sr-only">No tier recorded for this ticket</span>
+                      </>
+                    )}
+                  </span>
+                  <span className="figure t-meta text-ink">{ticket.serial}</span>
                   <Chip tone={ticketStatus.tone}>{ticketStatus.label}</Chip>
                   <span className="figure t-meta text-ink">{formatSol(ticket.faceValueLamports)}</span>
+                  {/* At 390 a fixed minimum on the serial plus
+                      justify-between pushed this link onto a line of its own,
+                      detached from the record it belongs to. Full width on a
+                      phone, natural width above it, and no reserved column. */}
                   <Link
                     href={`/tickets/${ticket.id}`}
-                    className="u-transition t-meta text-muted underline underline-offset-2 hover:text-ink"
+                    className="u-transition t-meta w-full text-muted underline underline-offset-2 hover:text-ink sm:w-auto"
                   >
                     View ticket {ticket.serial}
                   </Link>
@@ -339,7 +399,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
 
       <div className="mt-12">
         <Pill href={`/events/${event.slug}/checkout`} variant="primary">
-          Open checkout
+          Get tickets
         </Pill>
       </div>
 

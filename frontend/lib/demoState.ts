@@ -35,6 +35,8 @@ export type EventConfig = {
   venue: string;
   startsAt: string;
   region: string;
+  /** The tier every ticket this event mints carries. The event names it, not the mint. */
+  tier: string;
   faceLamports: number;
   /** The platform's own ceiling, in basis points over face. */
   capBps: number;
@@ -49,13 +51,23 @@ export type DemoState = { version: 1; wallet: string; event: EventConfig; ticket
 
 export const WALLET = "DemoWa11et7dByerQK3zVn9xLm4sT2pR8hJ6cF1a";
 
-/** The event the demo opens on. A fan-facing event, priced at one SOL. */
+/**
+ * The event the demo opens on. A fan-facing event, priced at one SOL.
+ *
+ * The venue is in Chicago, so the jurisdiction is US and not CA-ON: a screen that prints
+ * `platform binds · CA-ON` under a Chicago venue reads as the law table wired to the wrong
+ * field. It is also the row this demo wants: US is monitored with no price cap in force,
+ * so the platform's 2500 bps is the binding ceiling at 1.25 SOL on a 1 SOL face. CA-ON
+ * caps at 0 bps, which makes every price above face refused and never lets the 25 percent
+ * platform cap be seen doing anything.
+ */
 export function defaultEvent(): EventConfig {
   return {
     name: "Midnight Static — North American Tour",
     venue: "Aurora Amphitheater, Chicago",
     startsAt: "2026-12-10T18:00:00.000Z",
-    region: "CA-ON",
+    region: "US",
+    tier: "Floor GA",
     faceLamports: 1 * SOL,
     capBps: 2500,
     overrideCapBps: null,
@@ -120,7 +132,7 @@ export function ceilingFor(event: EventConfig): Ceiling {
     row.resalePolicy === "unresolved"
       ? { code: "LAW_UNRESOLVED", reason: `${event.region} resolves to unresolved (${row.lawReason}).` }
       : event.resaleMode === "banned"
-        ? { code: "RESALE_DISABLED", reason: "The organizer switched resale off for this event." }
+        ? { code: "RESALE_DISABLED", reason: "The organizer set resale to BANNED for this event." }
         : null;
   return {
     row,
@@ -174,7 +186,7 @@ export function evaluateListing(args: {
     return {
       ok: false,
       code: ceiling.closed.code as "LAW_UNRESOLVED" | "RESALE_DISABLED",
-      title: ceiling.closed.code === "RESALE_DISABLED" ? "Resale is off for this event" : "The law here does not resolve",
+      title: ceiling.closed.code === "RESALE_DISABLED" ? "Resale is BANNED for this event" : "The law here does not resolve",
       detail: ceiling.closed.reason,
       ceiling,
       priceLamports,
@@ -235,9 +247,12 @@ function nextSerial(existing: Ticket[]): string {
 
 export function mintTicket(state: DemoState, nowMs: number): DemoState {
   const ticket: Ticket = {
-    id: `tkt_demo_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    // One clock for the id and the issue hop: `Date.now()` here would stamp an id later
+    // than the hop it names, and a caller that passes a fixed `nowMs` (a test, a replay)
+    // would get an id that disagrees with the record it just wrote.
+    id: `tkt_demo_${nowMs.toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
     serial: nextSerial(state.tickets),
-    tier: "Floor GA",
+    tier: state.event.tier,
     hops: [
       {
         kind: "issue",
@@ -284,7 +299,10 @@ export function loadState(): DemoState {
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw) as DemoState;
     if (parsed.version !== 1 || !parsed.event) return defaultState();
-    return parsed;
+    // `tier` was added to EventConfig after the first stored demos were written. It is an
+    // additive field, so the schema version stays 1 and an older event is hydrated with the
+    // same default `defaultEvent` uses; bumping the key would throw away the reader's tickets.
+    return { ...parsed, event: { ...parsed.event, tier: parsed.event.tier ?? "Floor GA" } };
   } catch {
     return defaultState();
   }

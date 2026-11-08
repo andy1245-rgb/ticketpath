@@ -3,7 +3,6 @@ import { TicketCard } from "@/components/TicketCard";
 import { Chip, DataSourceNote, Panel, Pill, Rule } from "@/components/ui";
 import { getDevnetRecord, getEvents, getResaleHistory, getTickets } from "@/lib/api";
 import { capCeilingLamports } from "@/lib/cap";
-import { HIDDEN_FEES, RESALES_BLOCKED_AT_CAP } from "@/lib/demo";
 import { formatDate, formatDateTime, formatLamports } from "@/lib/format";
 import { PROGRAM_ID, explorerProgramUrl } from "@/lib/solana";
 
@@ -28,13 +27,35 @@ import { PROGRAM_ID, explorerProgramUrl } from "@/lib/solana";
  * It used to be `onSale[0]`, which landed on whichever event sorted first and
  * once landed on an event called "Uncapped Markup Spread" whose own caption
  * reported two sales above its cap. The first frame of the film is the one
- * place a reader learns what the product is, so the card is pinned to an event
- * whose cap is the platform's binding rule, whose floor tier is one SOL, and
- * whose sales all sit under the 25% ceiling: the same face and the same cap the
- * devnet record on /rules carries. A pinned event that is not on sale falls back
- * to the first one, because a missing fixture must not blank the page.
+ * place a reader learns what the product is.
+ *
+ * The slug below is NOT in `lib/mock/events.json`. That is deliberate as a
+ * fallback path, not as a pin: `find()` misses, so the card renders
+ * `onSale[0]`, which is currently "Winter Chamber Series: Night III" (cap 5000
+ * bps, tiers at 0.45 and 1.1 SOL). An earlier version of this comment claimed
+ * the pinned event carried the same face and cap as the devnet record on
+ * /rules. It does not, and no event in the fixture does: the recorded run is
+ * `evt_syn_02` at 2500 bps on 1 SOL of face. The strip below the card says so
+ * in its own words, because the two records are different.
+ *
+ * To pin the card honestly, put a real slug here and check its cap against the
+ * copy beside it. A missing event must not blank the page, so the fallback
+ * stays.
  */
 const HERO_EVENT_SLUG = "synthetic-hall-cap-not-binding";
+
+/**
+ * The two program ids, spelled out where the strip can print them.
+ *
+ * v1 signed the recorded artefact run printed below, and is the id
+ * `records/devnet-artefacts.json` carries. v2 is deployed on devnet under its
+ * own id and is written up in docs/ON-CHAIN-DESIGN.md and
+ * records/onchain-v2-devnet.json; it adds the floor, the jurisdiction, the
+ * policy, the hold clock and the band. It is not the program that produced the
+ * admitted and refused transfers printed here, and saying so is the point.
+ */
+const PROGRAM_V1 = "5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva";
+const PROGRAM_V2 = "Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF";
 
 /**
  * The two reads that need the featured event's id, in order. Returns null when
@@ -123,7 +144,7 @@ function IconCap() {
   );
 }
 
-/** Works without signal at the door: arcs and a slash, no invented offline mode. */
+/** Runs with no backend, on fixtures: arcs and a slash, no invented offline mode. */
 function IconNoSignal() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
@@ -261,11 +282,27 @@ const PROOF_FIGURE =
   "figure text-[32px] leading-[38px] font-semibold tracking-[-0.02em] text-ink";
 
 /** The four steps, as the export writes them. Demo copy: see NOTES.md. */
-const STEPS: ReadonlyArray<{ numeral: string; copy: string }> = [
-  { numeral: "01", copy: "Pick your seat" },
-  { numeral: "02", copy: "Pay with card or Apple Pay" },
-  { numeral: "03", copy: "The ticket lands in a wallet we made you" },
-  { numeral: "04", copy: "Show the code at the door. It works without signal." },
+const STEPS: ReadonlyArray<{ numeral: string; copy: string; missing: string }> = [
+  {
+    numeral: "01",
+    copy: "Pick your seat",
+    missing: "there is no seat map, only tiers.",
+  },
+  {
+    numeral: "02",
+    copy: "Pay with card or Apple Pay",
+    missing: "no checkout, payment or settlement endpoint.",
+  },
+  {
+    numeral: "03",
+    copy: "The ticket lands in a wallet we made you",
+    missing: "nothing in the app creates a wallet.",
+  },
+  {
+    numeral: "04",
+    copy: "Show the code at the door.",
+    missing: "no door code is issued, and there is no offline mode: a lookup needs the network.",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -303,6 +340,12 @@ export default async function HomePage() {
     featured && hero ? heroCapCeiling(featured, hero.ticket) : null;
   const explorerUrl = artefact?.explorer?.program ?? explorerProgramUrl();
 
+  // How many resales the recorded run refused. The artefact holds a single
+  // refusal row, and a missing record prints an em dash rather than a zero,
+  // because "nothing was refused" and "nothing was read" are different
+  // statements. The demo constant it replaces said 3, a number no record held.
+  const refusedCount = artefact ? (artefact.transfers?.refusedOverCap ? 1 : 0) : null;
+
   // Only sales are a price paid, and the chart reads them oldest first.
   const points = hero
     ? hero.history.entries
@@ -325,8 +368,8 @@ export default async function HomePage() {
         a ceiling.
       </h1>
       <p className="t-deck mt-6 max-w-[350px] text-muted">
-        One face value, one cap. SeatPass prices from the resale record, and the
-        chain refuses anything above the ceiling.
+        One face value, one cap. Prices come from the resale record; this build renders the record, not the model. The
+        devnet program refuses anything above a cap when the organiser sets one (6010).
       </p>
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Pill href="/events" variant="primary">
@@ -337,9 +380,12 @@ export default async function HomePage() {
         </Pill>
       </div>
       <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2">
+        {/* A wallet is required to buy: checkout asks for a connected one and,
+            on some events, a verified one. "No account needed" read as "no
+            sign-up of any kind", which the checkout page contradicts. */}
         <span className="inline-flex items-center gap-2 t-meta text-ink">
           <IconNoAccount />
-          No account needed
+          No email account needed
         </span>
         <span aria-hidden="true" className="h-4 w-px bg-line" />
         <span className="inline-flex items-center gap-2 t-meta text-ink">
@@ -349,7 +395,7 @@ export default async function HomePage() {
         <span aria-hidden="true" className="h-4 w-px bg-line" />
         <span className="inline-flex items-center gap-2 t-meta text-ink">
           <IconNoSignal />
-          Works without signal at the door
+          Runs with no backend, on fixtures
         </span>
       </div>
     </div>
@@ -359,11 +405,11 @@ export default async function HomePage() {
     <>
       {/* 2. HERO: 690 + 24 + 486 = 1200, vertical centres on one line. */}
       <section className="box pt-24">
-        <div className="grid grid-cols-1 gap-12 min-[1200px]:grid-cols-[minmax(0,690px)_minmax(0,486px)] min-[1200px]:items-center min-[1200px]:gap-6">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-[minmax(0,1fr)_380px] md:items-center md:gap-8 min-[1200px]:grid-cols-[minmax(0,690px)_minmax(0,486px)] min-[1200px]:gap-6">
           {heroCopy}
 
           {/* The card's right edge sits on the content box's right edge at 1440. */}
-          <div className="min-[1200px]:justify-self-end">
+          <div className="md:justify-self-end">
             {featured && hero ? (
               <TicketCard
                 eventName={featured.name}
@@ -407,6 +453,14 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* The bundled-fixture label, above the fold. It used to be one 12px line
+          at the very foot of the page, after six screens of venues, dates and
+          wallet addresses, so a reader who stopped at the hero was never told
+          what they were looking at. */}
+      <div className="box mt-6">
+        <DataSourceNote dataSource={dataSource} />
+      </div>
 
       {/* 3. ON-CHAIN STRIP: its own band, one hairline above it, one line. */}
       <section className="mt-24">
@@ -475,6 +529,21 @@ export default async function HomePage() {
               strip prints what that run wrote.
             </p>
           )}
+          {/* Two records sit next to each other on this screen and they do not
+              describe the same event: the strip above is the recorded devnet
+              run on `evt_syn_02` (2500 bps over 1 SOL of face), and the card
+              higher up is a bundled fixture with its own cap. Nothing used to
+              separate them, so the strip read as the card's proof. It is not. */}
+          <p className="t-micro pb-6 text-muted">
+            Recorded run: event <span className="figure">{artefact?.eventId ?? "not recorded"}</span>{" "}
+            with the v1 program <span className="figure">{artefact?.programId ?? PROGRAM_V1}</span>, capped at{" "}
+            {artefact?.capBps ?? "an unrecorded"} bps over a{" "}
+            {artefact?.faceLamports !== undefined ? formatLamports(artefact.faceLamports) : "an unrecorded"}{" "}
+            face. That is a different event from the ticket card above, which carries its own cap
+            and its own face. The v2 program is <span className="figure">{PROGRAM_V2}</span>; the
+            recorded admitted and refused transfers below came from v1, because that is the id the
+            artefact file holds.
+          </p>
         </div>
       </section>
 
@@ -494,7 +563,7 @@ export default async function HomePage() {
               <FeatureCard
                 diagram={<DiagramCap />}
                 title="A cap that is a rule, not a promise"
-                copy="The contract rejects any resale above the cap. The organizer sets it once, at creation."
+                copy="The contract admits no price where price*10000 > face*(10000+cap_bps)."
               />
             </li>
             <li>
@@ -511,12 +580,23 @@ export default async function HomePage() {
       {/* 5. HOW BUYING WORKS. */}
       <section className="mt-24">
         <div className="box">
-          <h2 className="h-section text-ink">How buying works</h2>
-          <ol className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {/* "How buying works" was four promises in the present tense: there
+              is no seat map, no payment step (capabilities.purchase is false),
+              nothing that creates a wallet, and no door code or service worker
+              (capabilities.doorCode is false, and public/ holds only charts/).
+              The heading is conditional now and every step says what is not
+              built, so the film does not sell a checkout that does not exist. */}
+          <h2 className="h-section text-ink">How buying would work</h2>
+          <p className="t-body mt-4 max-w-[60ch] text-muted">
+            None of the four steps below is built. Each one names the thing that is missing, so a
+            reader can tell the design from the build.
+          </p>
+          <ol className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step) => (
               <li key={step.numeral}>
                 <p className="figure t-meta text-muted">{step.numeral}</p>
                 <p className="t-body mt-2 text-ink">{step.copy}</p>
+                <p className="t-micro mt-2 text-muted">Not built: {step.missing}</p>
               </li>
             ))}
           </ol>
@@ -526,29 +606,52 @@ export default async function HomePage() {
       {/* 6. PROOF BAND. No featured event means no band: the first figure is the
           one number here that is real. */}
       {featured && (
-        <section className="mt-24">
+        <section className="mt-24" aria-labelledby="proof-band-title">
+          {/* The three figures are display type with no heading and no
+              landmark, so a screen reader met "3 / resales blocked at the cap"
+              as body text after the step list. The heading is sr-only: the
+              design has no visible title here, and adding one would change the
+              layout to fix a reading-order problem. */}
+          <h2 id="proof-band-title" className="sr-only">
+            What the record and the fixture show
+          </h2>
           <Rule />
           <div className="box py-24">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
               <div>
+                {/* "issued", not "sold": a ticket that exists has not
+                    necessarily been paid for, and every other surface in the
+                    app says issued. */}
                 <p className={PROOF_FIGURE}>
                   {featured.issuedCount.toLocaleString("en-US")} of{" "}
-                  {featured.totalSupply.toLocaleString("en-US")} sold
+                  {featured.totalSupply.toLocaleString("en-US")} issued
                 </p>
                 <p className="t-meta truncate text-muted" title={featured.name}>
-                  {featured.name}
+                  {featured.name}. Bundled fixture.
                 </p>
               </div>
               <div>
-                <p className={PROOF_FIGURE}>{RESALES_BLOCKED_AT_CAP}</p>
-                <p className="t-meta text-muted">resales blocked at the cap</p>
+                {/* The figure used to be the demo constant 3. The one record a
+                    verified run wrote holds exactly one refusal, so 3 was a
+                    number nothing on this machine produced. */}
+                <p className={PROOF_FIGURE}>
+                  {refusedCount === null ? "—" : refusedCount.toLocaleString("en-US")}
+                </p>
+                <p className="t-meta text-muted">
+                  {refusedCount === null
+                    ? "resale refusals: no devnet record to count"
+                    : "resale refused over the cap on devnet, 6010 E_CAP_EXCEEDED"}
+                </p>
               </div>
               <div>
-                <p className={PROOF_FIGURE}>${HIDDEN_FEES}</p>
-                <p className="t-meta text-muted">hidden fees</p>
+                <p className={PROOF_FIGURE}>2 legs</p>
+                <p className="t-meta text-muted">seller-paid on resale in the demo: artist fee and flip tax, no buyer-side fee</p>
               </div>
             </div>
-            <p className="t-micro mt-6 text-muted">Demo figures</p>
+            <p className="t-micro mt-6 text-muted">
+              The cap figure is the recorded devnet run. The issued count is the bundled fixture.
+              The two legs are transcribed rules in the browser demo, not in the deployed v1 program.
+            </p>
           </div>
           <Rule />
         </section>

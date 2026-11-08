@@ -54,105 +54,123 @@ export function OwnershipTrail(props: {
   }
 
   return (
-    <ol className={`${variant === "strip" ? "w-full max-w-[380px]" : "w-full"} ${className}`}>
-      {rows.map((entry, index) => {
-        const label = ROW_LABEL[entry.kind];
-        // Who the row moved the ticket to. A revoke carries no destination, so
-        // the sender is the only wallet there is to name.
-        const counterparty = entry.toWallet ?? entry.fromWallet;
-        const isCurrent = index === rows.length - 1;
-        const isSale = entry.kind === "sale";
-        // The sale's own markup is a real backend field; when it is missing the
-        // contract's own arithmetic against this ticket's face fills it in.
-        const markupBps =
-          isSale && entry.priceLamports != null
-            ? (entry.markupBps ?? markupBpsFromPrice(entry.priceLamports, faceValueLamports))
-            : null;
+    <>
+      {/* The full trail is one flex row of up to six cells per hop with no
+          visible headings, and at 390px the cells wrap, so position stops
+          telling a reader which number is the price and which is the markup.
+          These are the column names in the order the cells print, as one
+          sr-only sentence: a screen reader walking the list gets the headings
+          once, in order, and the desktop rail below is exactly as drawn. */}
+      {full && (
+        <p className="sr-only">
+          Custody trail column headings, in order: kind, who, price, markup over
+          face value, when, transaction.
+        </p>
+      )}
+      <ol className={`${variant === "strip" ? "w-full max-w-[380px]" : "w-full"} ${className}`}>
+        {rows.map((entry, index) => {
+          const label = ROW_LABEL[entry.kind];
+          // Who the row moved the ticket to. A revoke carries no destination, so
+          // the sender is the only wallet there is to name.
+          const counterparty = entry.toWallet ?? entry.fromWallet;
+          const isCurrent = index === rows.length - 1;
+          const isSale = entry.kind === "sale";
+          // The sale's own markup is a real backend field; when it is missing the
+          // contract's own arithmetic against this ticket's face fills it in.
+          const markupBps =
+            isSale && entry.priceLamports != null
+              ? (entry.markupBps ?? markupBpsFromPrice(entry.priceLamports, faceValueLamports))
+              : null;
 
-        return (
-          <li
-            key={entry.id}
-            className={`relative flex min-w-0 items-center gap-1.5 pl-6 ${
-              full ? "flex-wrap gap-y-1 py-2" : "h-7 flex-nowrap"
-            }`}
-          >
-            {/* The rail is drawn in two halves per row so it can start and end
-                on a dot centre no matter how tall the rows turn out. */}
-            {index > 0 && (
-              <span aria-hidden="true" className={`absolute top-0 h-1/2 w-px bg-accent ${RAIL_LEFT}`} />
-            )}
-            {index < rows.length - 1 && (
-              <span aria-hidden="true" className={`absolute top-1/2 h-1/2 w-px bg-accent ${RAIL_LEFT}`} />
-            )}
-            <span
-              aria-hidden="true"
-              className={`absolute top-1/2 h-px w-2 -translate-y-1/2 bg-accent ${RAIL_LEFT}`}
-            />
-            {/* Current custody is the positive dot; everything before it is history. */}
-            <span
-              aria-hidden="true"
-              className={`absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-pill bg-current ${
-                isCurrent ? "text-positive" : "text-muted"
-              } ${DOT_LEFT}`}
-            />
-
-            {full && <span className="t-micro-caps text-muted">{KIND_LABEL[entry.kind]}</span>}
-            <span className="t-meta whitespace-nowrap text-ink">{label}</span>
-            <span
-              className="figure t-micro min-w-0 truncate text-muted"
-              title={counterparty ?? undefined}
-            >
-              {shortAddress(counterparty)}
-            </span>
-
-            {/* Only a sale is a price paid. Everything else is a priced move or
-                a gift, and an em dash says so instead of showing the face value
-                as if money changed hands. */}
-            <span
-              className={`figure t-micro ml-auto whitespace-nowrap ${
-                isSale && entry.priceLamports != null ? "text-ink" : "text-muted"
+          return (
+            <li
+              key={entry.id}
+              className={`relative flex min-w-0 items-center gap-1.5 pl-6 ${
+                full ? "flex-wrap gap-y-1 py-2" : "h-7 flex-nowrap"
               }`}
             >
-              {isSale && entry.priceLamports != null ? formatSol(entry.priceLamports) : "\u2014"}
-            </span>
-
-            {full && markupBps != null && (
-              <span className="t-micro whitespace-nowrap text-muted">
-                <span className="figure">{formatMarkup(markupBps)}</span> vs face
-              </span>
-            )}
-
-            {full && (
-              <span className="figure t-micro whitespace-nowrap text-muted">
-                {formatDateTime(entry.occurredAt)}
-              </span>
-            )}
-
-            {/* Every row here comes from the synthetic fixture store, so there
-                is no transaction to link and the column names the source
-                instead of denying the chain. When a signature does arrive the
-                same slot becomes the explorer link, named for its own row. */}
-            {entry.signature ? (
-              <a
-                href={explorerTxUrl(entry.signature)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`View transaction for ${label}`}
-                className="t-meta u-transition whitespace-nowrap text-ink underline decoration-1 underline-offset-2 hover:text-accent"
-              >
-                View tx
-              </a>
-            ) : (
+              {/* The rail is drawn in two halves per row so it can start and end
+                  on a dot centre no matter how tall the rows turn out. */}
+              {index > 0 && (
+                <span aria-hidden="true" className={`absolute top-0 h-1/2 w-px bg-accent ${RAIL_LEFT}`} />
+              )}
+              {index < rows.length - 1 && (
+                <span aria-hidden="true" className={`absolute top-1/2 h-1/2 w-px bg-accent ${RAIL_LEFT}`} />
+              )}
               <span
-                aria-label={`No transaction recorded for ${label}`}
-                className="t-meta whitespace-nowrap text-muted"
+                aria-hidden="true"
+                className={`absolute top-1/2 h-px w-2 -translate-y-1/2 bg-accent ${RAIL_LEFT}`}
+              />
+              {/* Current custody is the positive dot; everything before it is history. */}
+              <span
+                aria-hidden="true"
+                className={`absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-pill bg-current ${
+                  isCurrent ? "text-positive" : "text-muted"
+                } ${DOT_LEFT}`}
+              />
+
+              {full && <span className="t-micro-caps text-muted">{KIND_LABEL[entry.kind]}</span>}
+              <span className="t-meta whitespace-nowrap text-ink">{label}</span>
+              <span
+                className="figure t-micro min-w-0 truncate text-muted"
+                title={counterparty ?? undefined}
               >
-                Fixture
+                {shortAddress(counterparty)}
               </span>
-            )}
-          </li>
-        );
-      })}
-    </ol>
+
+              {/* Only a sale is a price paid. Everything else is a priced move or
+                  a gift, and an em dash says so instead of showing the face value
+                  as if money changed hands. */}
+              <span
+                className={`figure t-micro ml-auto whitespace-nowrap ${
+                  isSale && entry.priceLamports != null ? "text-ink" : "text-muted"
+                }`}
+              >
+                {isSale && entry.priceLamports != null ? formatSol(entry.priceLamports) : "\u2014"}
+              </span>
+
+              {full && markupBps != null && (
+                <span className="t-micro whitespace-nowrap text-muted">
+                  <span className="figure">{formatMarkup(markupBps)}</span> vs face
+                </span>
+              )}
+
+              {full && (
+                <span className="figure t-micro whitespace-nowrap text-muted">
+                  {formatDateTime(entry.occurredAt)}
+                </span>
+              )}
+
+              {/* Every row here comes from the synthetic fixture store, so there
+                  is no transaction to link. The visible text says "No tx": this
+                  column used to read "Fixture", which a sighted buyer reads as a
+                  category rather than as "no transaction recorded", leaving only
+                  the aria-label to say the real thing. When a signature does
+                  arrive the same slot becomes the explorer link, named for its
+                  own row. */}
+              {entry.signature ? (
+                <a
+                  href={explorerTxUrl(entry.signature)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`View transaction for ${label}`}
+                  className="t-meta u-transition whitespace-nowrap text-ink underline decoration-1 underline-offset-2 hover:text-accent"
+                >
+                  View tx
+                </a>
+              ) : (
+                <span
+                  aria-label={`No transaction recorded for ${label}`}
+                  title="Synthetic fixture row - no on-chain transaction"
+                  className="t-meta whitespace-nowrap text-muted"
+                >
+                  No tx
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </>
   );
 }

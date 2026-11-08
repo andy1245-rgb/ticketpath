@@ -11,8 +11,14 @@
  * beside the real one.
  */
 
-/** Resales a cap would have blocked. Nothing blocks anything yet: zero listings. */
-export const RESALES_BLOCKED_AT_CAP = 3;
+/**
+ * Resales a cap would have blocked. Deleted: the landing proof band used to
+ * print `3` from here while `records/devnet-artefacts.json` holds exactly one
+ * refused transfer (`6010 E_CAP_EXCEEDED` at priceLamports 1250000001). The
+ * band now counts the artefact's own refusal row, so this value has no reader
+ * and no source. A demo constant that contradicts the one record on disk is
+ * not a caveat, it is a false figure in display type.
+ */
 
 /** Fees a checkout would have added. There is no checkout and no fee field. */
 export const HIDDEN_FEES = 0;

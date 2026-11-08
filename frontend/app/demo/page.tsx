@@ -126,7 +126,7 @@ export default function DemoPage() {
       {role === "buyer" ? (
         <BuyerView
           state={state}
-
+          closed={ceiling.closed}
           capBps={ceiling.capBps}
           ceilingLamports={ceiling.ceilingLamports}
           binding={ceiling.binding}
@@ -162,6 +162,10 @@ export default function DemoPage() {
                 {shortAddress(artefact.programId, 8, 8)}
               </a>
             </dd>
+          </div>
+          <div>
+            <dt className="t-micro-caps text-muted">program v2 (region and hold-clock rules; recorded legs are v1)</dt>
+            <dd className="figure t-meta mt-1 text-ink break-all">Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF</dd>
           </div>
           <div>
             <dt className="t-micro-caps text-muted">the two legs</dt>
