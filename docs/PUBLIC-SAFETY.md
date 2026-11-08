@@ -145,6 +145,8 @@ name removed from `.gitignore`, the frontend path made relative in `AGENTS.md`.
 
 ## Re-measured 2026-11-07T18:45Z, and again at 18:48Z after two redactions
 
+**Current state: the tracked tree is clean (last row of the table below).** The rest of this section is the dated history of how it got there; the per-file table is no longer a list of live hits.
+
 `python3 tools/public_safety.py check --tracked` reads every tracked file from disk, and it is
 the only one of the three entry points that looks at what is already published. Two readings, an
 hour apart, and the difference between them is the point:
@@ -153,6 +155,7 @@ hour apart, and the difference between them is the point:
 |---|---|
 | `8a5e5e6`, 18:45Z | **77 hits in 11 tracked files**, 51 `live-service`, 23 `home-path`, 3 `fleet-repo` |
 | the tree as committed at 18:50Z | **64 hits in 9 tracked files**, 48 `live-service`, 14 `home-path`, 2 `fleet-repo` |
+| `b5784c5`, 2026-11-08 (after `56d9dc0`) | **clean**: `public_safety: clean, tracked tree, 421 file(s)` |
 
 The two files that left the list, `records/findings/12-final-audit.md` and
 `records/DELIVERABLE.md`, left it because a correction had to be committed to each and the

@@ -17,7 +17,7 @@ number to appear. Port 8788; 8787 is refused outright because another process ow
 curl -s http://127.0.0.1:8788/health | head -c 400
 ```
 
-`dataSource.synthetic` is `true`, `chain.programDeployed` is `false`,
+`dataSource.synthetic` is `true`, `chain.programDeployed` is `false` (this server asks no cluster, so it reports no deployment of its own; the recorded devnet program is under `chain.recorded`),
 `chain.designDoc` is `docs/ON-CHAIN-DESIGN.md`, and `pricingModel.modelVersion` is
 `engine-2026-11-07` — the engine the console serves, with `pricingModel.fitted` set to
 `false`, because no model was trained.
