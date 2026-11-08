@@ -4,8 +4,10 @@ Decisions with their evidence, rejected approaches, conflicting findings, and qu
 Nothing is deleted from here; a question that is no longer worth pursuing is marked
 closed with the reason, not removed.
 
-**Last updated:** 2026-11-08 (**D10 appended**; nothing else in this file changed except the
-`Last updated` line itself since the D9 and Q4 edit of the same day).
+**Last updated:** 2026-11-08 (**D19, D26, D27 and Q6 appended**: D19 and Q6 on the frontend
+import, which this branch wrote and the other checkout never had, and D26 and D27 on the
+artist fee and the flip tax, which the other checkout wrote and this branch never had.
+Nothing else in this file changed except this line since the D18 edit of the same day.)
 
 ---
 
@@ -675,6 +677,16 @@ same table as the instruction set, so a reader cannot take the table for a descr
 rewritten the artefact the whole devnet proof rests on, to add features the proof does not need, and
 the old boundary could never be re-verified against the bytes that proved it.
 
+**Corrected 2026-11-08T11:20Z: v2 has since been deployed on devnet too, under a third program id.**
+The title and the Consequence above say v2 is a local-validator program and that there are two
+programs on two clusters. Both statements were true when written; the second is now false because
+v2 was also published on devnet under `Bebo55oe…`, whose full value and whose 35 transaction rows,
+14 refusals included, are in `records/onchain-v2-devnet.json`. Nothing this decision decided has
+changed: the v1 devnet program `5EJ1GU3M4vn…` is still frozen, `records/onchain-v2.local.json` is
+still the local run's record, and the instruction-set difference the Consequence turns on still
+holds: v2 is seven tags and v1 is four. `docs/ON-CHAIN-DESIGN.md` carries the deploy in its two
+programs paragraph with the numbers read from that record.
+
 ## D14: The band feed is a rewritable head, the forecast log is the immutable history, and a score is a separate account (2026-11-08)
 
 **Decision.** `PublishBand` (tag 4) writes `["band", mint]`, rewritable on purpose: low, high,
@@ -820,6 +832,25 @@ this question is what a reader would act on:
    path has no account slot for hook accounts at all), though its conclusion is right. None of these
    corrections changes the ceiling measurement or the decision that features 5 and 7 are blocked.
 
+## Q6: What has to be decided before the imported frontend is published? (open, 2026-11-08)
+
+1. **The author on the commit.** `--author` is a person, and this pass does not choose one. The
+   import is staged and the commit command is in the handover to the operator.
+2. **The demo copy's second pass.** `frontend/NOTES.md` lists nine sentences that ship as written
+   and overclaim: a payment flow, a wallet the platform creates, a contract that rejects every
+   above-face resale, a door code that works without signal, and three proof-band figures. The
+   landing page's argument is that it does not overclaim, so this is the one open item that a
+   reader meets on the first screen. It is the operator's call whether that list is edited before
+   the import is published or after it.
+3. **The two Stitch exports.** `frontend/VERIFY.md` 8.7 could not be run: the export files were
+   never on this machine, so the visual comparison was made against the written specification
+   only. Landing `desktop.html` and `mobile.html` in `../seatpass-exports/` makes that check
+   runnable.
+4. **The `/tmp` exception in `.public-denylist`.** It is one glob and one class, and it exists so
+   the frontend's records stay verbatim. The alternative is rewording two documents that are the
+   evidence for the checks they describe. If the operator prefers no new exception, the wording
+   can change instead and the exception can go.
+
 ## D18: The documentation gate runs in the commit gate, and a documentation-only change runs it too (2026-11-08)
 
 **Decision.** `tools/doc_check.py` is a gate and not a report: it exits 1 on any violation, and
@@ -864,3 +895,204 @@ package with its own suite could not make a row `tested`, and that feature 9 was
 `records/STATE-OF-PROJECT.md` with `market_swarm/tests/test_feature9_fixes.py` and `test_forge_policy.py`
 named, which is the row the evidence supports. The old paragraph is kept in this note because it was
 published in this log's first edition.
+
+## D19: The frontend is imported into this tree from its own checkout, with its records and its checks (2026-11-08)
+
+**Decision.** Take the platform's Next.js frontend into `frontend/` as a copy of its own git tree,
+file for file from `git ls-files`: 81 of its 82 tracked files, `.env.example` the one left out
+because the import excluded `.env*` by name and every variable it listed is documented in
+`README.md` instead. Keep the things that make it checkable rather than only present: its records
+(`NOTES.md`, `VERIFY.md`, `DECISIONS.md`, `COVERAGE.md`, `API_CONTRACT.md`), its `package.json` and
+lock, its lint, typecheck and test scripts, and its `tools/`. Replace the machine handles in those
+tools with environment variables, so the scripts run from the new path on a machine that is not
+this one.
+
+**Evidence, all measured in `frontend/` in this worktree on 2026-11-08.**
+
+- `git ls-files` in the source checkout names 82 files; 81 were copied and the list was diffed
+  against the copy: identical. Total 1,093,317 bytes (1.04 MB) as copied, 1,097,001 as staged after this pass's
+redaction notes; nothing was over 1 MB, so nothing
+  was dropped for size. Largest file `package-lock.json` at 522,393 bytes, kept because a clone
+  that cannot reproduce the dependency set is not the app that was verified.
+- The app's own checks, run from the new path in a throwaway copy under the system temp dir with
+  `node_modules` symlinked to the builder's install, never installed into this tree:
+  `npm run typecheck` exit 0; `npm run lint` exit 0 with no warnings; `npm test` →
+  `tests 15, pass 15, fail 0`; `bash tools/greps.sh` → `8.5 GREPS: ALL ZERO`;
+  `node tools/contrast.mjs` → `28 pairs, 0 below 4.5:1`. `npm run build` was not run.
+- `python3 tools/public_safety.py check --staged` → `clean, staged, 82 file(s)`, exit 0, over the
+  copy plus this pass's edits. `python3 tools/public_safety.py check --tracked` →
+  `clean, tracked tree, 366 file(s)`, exit 0.
+- `python3 tools/doc_check.py` → `clean, 7 check(s), ... 24 allowed absence(s) suppressed`, exit 0.
+
+**[Corrected 2026-11-08T11:30Z: the exclusion above no longer holds of the index. `git ls-files
+frontend | wc -l` → 82 and the byte total `git ls-files frontend | xargs -d '\n' du -cb` →
+1,097,690, because `frontend/.env.example` (689 bytes) was staged by another pass at 11:18Z.
+This entry's Decision says 81 of 82 files with `.env.example` left out, and that is now a
+description of what the import did, not of what the tree carries. The file holds four
+`NEXT_PUBLIC_*` names with empty values and no secret, and `public_safety.py check --staged`
+is clean over it. What this decision decided about the other 81 files is unchanged.]**
+
+**What had to change to publish it, and why each change is not cosmetic.** The frontend was built
+in a checkout of its own and its tooling named this machine. `frontend/tools/build-copy.sh` had its
+source and destination as absolute paths and `frontend/tools/verify-landing.cjs` required a
+`playwright-core` and a
+Chrome binary by absolute path; both now take `SEATPASS_SRC`, `SEATPASS_BUILD_DIR`,
+`SEATPASS_PLAYWRIGHT_CORE` and `SEATPASS_CHROME`, with the checkout and the installed package as
+the defaults. The absolute paths under a home directory in `NOTES.md` and `VERIFY.md` became
+relative (`../seatpass-exports/`, `cd ..`) or named variables (`$SHOT`), and the screenshot helper
+and the vision-helper directory are described without a path. The port another session's dev
+server holds is gone from the prose that described it; the warning that made the sentence worth
+having is intact. `frontend/NOTES.md` carries the same list for a reader of the app rather than of
+this log.
+
+**One exception bought, named.** `frontend/VERIFY.md` and `frontend/DECISIONS.md` quote `/tmp`
+paths, because they are the record of the commands the build ran and a quote is evidence, not an
+instruction. `.public-denylist` gained one line for it, `allow frontend/*.md tmp-path`, one glob
+wide and one class wide, with `tests/test_public_safety.py` proving both directions: a `/tmp` quote
+in the frontend's markdown is clean, and a `/tmp` literal in `frontend/tools/build-copy.sh` still
+fails. Nothing else is exempt.
+
+**The documentation gate had to learn where the frontend is.** `tools/doc_check.py`'s check 1
+resolved every backticked path at the repository root, and its comment said the closed top-level
+set was what kept the frontend out of the check. That was true while the frontend was outside the
+tree; with the app inside it, eleven frontend documents naming their own build-copy and
+render-check scripts were reported missing, because those files exist under `frontend/tools/` and
+not at the root. The fix is two lines and a stated rule: `frontend` joined the top-level set, so
+a root document naming `frontend/README.md` is checked, and a path that does not resolve at the
+root is tried against the naming document's own directory before it is called missing. A root
+document resolves that second way to the root and changes nothing.
+
+**The operator's statement about when these files were made, recorded as his statement.** He states
+that the frontend files were made during the first night of the hackathon. That is his account and
+it is not verified here: nothing in either checkout records who wrote them, or when the work
+happened. What the two checkouts do show, as evidence and nothing more:
+
+- the source checkout's file mtimes: 64 of the 81 at 2026-11-08T07:xxZ, 5 at 08:xxZ, and 12 at
+  2026-11-06T23:xxZ (the files of its baseline commit, untouched by the rebuild);
+- its five commits: `0208765` at 2026-11-08T07:01:09Z, then four between 08:04:12Z and 08:04:24Z,
+  twelve seconds apart in total. A history written in one pass is not a record of when the work was
+  done, and it is not read as one here;
+- the hackathon's submission deadline, as this repository's own record has it, is 2026-11-08T13:00
+  EST (`records/findings/17-hackathon-rules-recheck.md` §1.1). 07:01Z to 08:04Z is 02:01 to 03:04
+  EST, the small hours before that deadline. That is arithmetic on two stated values, not a date
+  this entry asserts about the hackathon;
+- the copy in `frontend/` shows 2026-11-08T08:04Z on 76 files because `git archive` stamps every
+  file with the commit time. The copy's own mtimes are therefore evidence of nothing, and are not
+  used above.
+
+**Consequence.** The repository is no longer Python, Rust and documents: it holds a Node application
+as well, which is why `README.md` gained a layout line and *The frontend* section in the same pass,
+and why `records/STATE-OF-PROJECT.md` §A10 records what that app's checks printed from the new path.
+`frontend/lib/mock/` is published with the app and is labelled as fixture data in three places: a
+rendered mock is the one thing in this tree that a reader could mistake for a measurement.
+
+**Rejected alternative.** Copying only the screens (`app/`, `components/`, `lib/`) and leaving the
+app's records and tools behind. That publishes the product surface with none of the evidence for
+it, and `frontend/NOTES.md` is the file that lists the nine strings that still read as shipped
+features.
+
+**Staged, not committed.** The import is in the index and no commit is made by this pass. The
+commit is the operator's, and so is the author on it.
+
+## D26: The artist fee is a lamport transfer the seller makes inside the sale transaction, and the chain does not enforce it (2026-11-08)
+
+**Decision.** Feature 5 ships as a **seller-paid lamport fee inside the checkout's sale
+transaction**, not as a Token-2022 transfer fee and not as a hook check. `fee = price * fee_bps //
+10_000`, floored, `fee_bps` per event, paid by the seller to the artist's wallet by a System
+`Transfer` that sits between the price stage and the token move in one atomic transaction. Token-2022's
+`TransferFeeConfig` is not used at all. The **instructions-sysvar hook variant** — a hook that reads
+the transaction's instructions and refuses unless the artist was paid — is documented in
+`docs/ON-CHAIN-DESIGN.md` §15.4 and **not built**.
+
+**Evidence.** `records/findings/36-transfer-fee-on-a-one-unit-ticket.md` (measured: the token program
+ceils, so an indivisible ticket can pay only 0 or all of itself) and
+`records/findings/42-artist-fee-at-checkout.md` with `tools/artist_fee_proof.py` (measured on a local
+validator: the fee is paid exactly; a sale whose fee the seller cannot cover fails whole; an over-cap
+sale is refused `6010` and pays nothing). The mechanism correction is from the non-builder review in
+`tmp/review/fee-mechanism.md`, MAJOR #1: the buyer never signs, so a fee taken from the buyer was never
+available.
+
+**Consequence, and it is a product consequence, not a technical one.** The seller must hold lamports
+at sale time: a seller with a ticket and no SOL cannot resell, and the sale fails as a whole rather
+than half-completing. The sale transaction has **two signers** — the issuer signs the stage
+(`checked_record_for_write` requires `record.authorises`, strict equality with the record's authority
+field) and the seller signs the payment and the move — so the venue co-signs every sale it admits.
+That is also the limit of the enforcement: the chain guarantees that no ticket moves without a venue
+signature, and it guarantees nothing about the fee. Three ways round it are stated in finding 42 §5,
+and no screen or README may say the chain charges the fee.
+
+**Rejected alternatives.** (1) Turning the mint's transfer fee on: measured to withhold the whole
+ticket, leaving the buyer nothing (D15, finding 36). (2) A fee taken from the buyer: the buyer never
+signs and the hook is not given the buyer's wallet. (3) Charging the fee in the hook today, without
+reading the instructions sysvar: the hook has no visibility of a lamport transfer, so it could only
+check a number, which is the off-chain obligation Q5 already lists as the weakest option. (4) A
+divisible mint: it changes every consumer of `decimals = 0`, and 5% of a ticket is not 5% of a price
+unless a fractional ticket sells for its pro-rata value, which nothing establishes (finding 36 §5.3,
+and its review's second MAJOR: the buyer is credited the net amount, so `amount == TICKET_UNITS`
+refuses the only transfer that would deliver a whole ticket).
+
+**Open.** Whether the fee should be compulsory on chain is now a question with a name rather than a
+paragraph: the mechanism is the sysvar check of §15.4, and its cost is a per-mint fee account, a
+writer, and every sale's transaction shape becoming part of the program's interface. That is the
+operator's to choose, and this entry recommends nothing.
+
+## D27: The flip tax is a second seller-paid lamport leg priced off the hook's own hold clock, and the pool is not built (2026-11-08)
+
+**Decision.** Feature 7's *charging* half ships as a **seller-paid lamport tax inside the checkout's
+sale transaction**, beside the artist fee and on top of it, not as a Token-2022 transfer fee and not as
+a hook check. The rate is a function of the hold: `held_since_unix` is read from the 70-byte v2
+`["record", mint]` account, which the hook itself writes with the program's own `Clock` on every
+admitted transfer; the default schedule is **1500 bps while the hold is under one hour, falling
+linearly to 0 bps at 30 days**, with the two instants and the rate configurable per event. The tax is
+`price * rate // 10_000`, floored, paid by the seller to the **artist's wallet** by a second System
+`Transfer` that sits between the artist fee and the token move in the same atomic transaction. The
+event maker toggles it per event and **the default is off**. A **refund-to-holders pool** — the tax
+accruing to holders who did not flip, with a claim instruction — is documented in
+`docs/ON-CHAIN-DESIGN.md` §16.6 and **not built**. The instructions-sysvar hook variant of §15.4 is not
+built either, and its four reasons apply to this leg verbatim.
+
+**Evidence.** `records/findings/43-flip-tax-at-checkout.md` with `tools/flip_tax_proof.py` (measured on
+a local validator: the tax is paid exactly and in the same transaction as the fee and the move; the
+boundary ages are priced at the schedule's numbers; a disabled policy builds no sale and a tax that
+rounds to zero builds no leg; a sale whose seller cannot cover fee plus tax fails whole; an over-cap
+sale is refused `6010` and pays neither) and `market_swarm/tests/test_flip_tax.py` (the rate-for-age
+curve over a dense sweep and pinned at both boundaries, with the layout offsets pinned to
+`ticketpath/onchain/v2.py`).
+
+**Consequence, and it is a product consequence.** The seller must hold lamports for the fee and the tax
+together at sale time, and the sum can exceed what the seller expected because the tax rate moves with a
+clock nobody in the transaction controls. A seller holding a ticket and no SOL cannot resell; a seller
+whose balance covers the fee but not the fee plus the tax cannot resell either, and the failure is the
+whole sale rather than a half-paid one. The clock is the **mint's**: `held_since_unix` is per record,
+so one holder's sale resets every other holder's clock, and the number is a seller's own hold only
+where one wallet holds the mint at a time -- the design's `supply = 1` mint. The harness runs one mint
+per event carrying the event's whole supply, so there the clock is the event's; `max_holdings` limits
+units per agent and does not give a holder a clock of its own. A record whose clock was never written
+(`0`, which is what `InitializeRecord` writes and what a v1 read-only metas list leaves behind) is
+charged the **full** rate, because an unset field must not be the cheapest way out of the tax; this is
+the mirror of the rebate's `6027`, which refuses to pay on an unknown hold rather than guessing.
+
+**Rejected alternatives.** (1) A Token-2022 transfer fee: measured to withhold the whole ticket on an
+indivisible mint (D15, finding 36), and a tax that falls with the hold cannot be expressed as a rate
+the mint carries anyway, since the mint has no view of the hold. (2) Charging it in the hook: the hook
+has no visibility of lamports between wallets, and it does not have the recipient, the schedule or the
+event's toggle in the record; the sysvar variant would put every sale's transaction shape into the
+program's interface and still could not prove the buyer paid the staged price (§15.4, §16.5). (3)
+Reading the hold off chain from the app's own ledger: the app's row is the thing being audited, and the
+record's clock is written by the program. The **dry run** does keep a per-label simulated clock, and
+that is deliberate and labelled: it is a simulation with `chain=simulated` on every row and no claim to
+the chain's per-mint clock, so a dry-run `held_seconds` is not the number a live sale would carry. (4) A separate tax transaction: it breaks the atomicity that
+makes "the seller paid and the ticket moved" one statement, and it would double the signature fee.
+(5) Charging the tax on primary sales: the house selling the artist's own stock at face is not a flip,
+and the artist would be paying themselves.
+
+**Open.** (a) Whether the pool half should be built, which needs `ClaimRebate` (tag 7) implemented in
+`lib.rs` -- it is prose there and in `state.rs`, and its two error codes are the only part already in
+the source -- a
+pool account per mint and a claim rule; the claim arithmetic already exists as pure functions in
+`state.rs` (`rebate_bps`, `rebate_lamports`), and its `HOLD_FULL_SECONDS = 60` is the demo's number,
+not this decision's schedule. (b) Whether a sale staged low enough to round the tax to zero should be
+refused, which is a floor no build sets today. (c) Whether the schedule belongs in the record (a
+program change) or in the config (where it is), because a per-event policy that lives only in the
+config cannot be checked against a dataset row. All three are the operator's, and this entry
+recommends nothing.

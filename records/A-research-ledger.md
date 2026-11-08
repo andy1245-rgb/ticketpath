@@ -303,3 +303,101 @@ at all) though its conclusion holds.
 two corrected mechanisms (properties of the token program's call shape, read from the interface
 source); no market claim either way. Q5 in `records/F-decision-log.md` now carries the same two
 corrections, and features 5 and 7 remain **not built, blocked**.
+
+**[Corrected 2026-11-08T11:20Z: that last clause is true of the token-fee mechanism and is no
+longer true of the products. Both features now have a built route, as the two entries appended
+below record: the artist fee and the flip tax are seller-paid lamport legs in the checkout's
+sale transaction. The sentence above is kept because it is what the finding-36 entry concluded
+when it was written.]**
+
+## 2026-11-08 — the artist fee at checkout, built and measured (finding 42, D26)
+
+**Built.** Route 1 of finding 36 §5.1, as corrected by its non-builder review: the fee is a
+**seller-paid lamport `System` transfer inside the sale transaction**, not a Token-2022 transfer fee.
+One atomic transaction holds `SetPendingPrice`, the fee payment from the seller to the artist wallet,
+and the Token-2022 move; `fee = price * fee_bps // 10_000`, floored, `fee_bps` per event.
+`market_swarm/artist_fee.py` is the policy, the arithmetic and the instruction order;
+`tools/artist_fee_proof.py` is the proof; `market_swarm` carries it as an option that is off unless an
+event names it.
+
+**MEASURED**, on a throw-away `solana-test-validator` 4.3.2 from genesis (no faucet, no `--clone`, no
+`--url`), against the existing v2 `cap_hook` artifact
+(`de89af3cf0831bc6bad181ee7762c83e6486c4b9d0facb6f99cd7cfa6e949cac`, never rebuilt). Nine legs, PASS
+9/9, exit 0, 27 s: the fee is paid exactly (seller −50 010 000, artist +50 000 000 at 1e9 lamports and
+500 bps, `meta.fee` 10 000); an underfunded seller fails the whole sale at instruction index 1 with
+`Custom: 1` and the artist gets nothing; an over-cap sale is refused `6010` and the 62 500 000-lamport
+fee instruction that ran at index 1 is rolled back; the rounding boundary pays exactly 0 at price 19
+and exactly 1 at price 20 with the fee leg omitted at 0; a 10 000 bps fee equals the price to the
+lamport; a staged 0 is refused 6009; and the record stores the staged number, not the fee (no field
+equals 50 000 000). **The one that matters**: leg 8 stages a price in one transaction (issuer signs)
+and moves the ticket in another (seller signs, no fee leg) and **both are admitted with the artist paid
+0** — the chain does not enforce this fee, and the checkout's monopoly on staging is the only thing
+collecting it.
+
+**DERIVED, and stated in every document.** The sale has **two signers**: `checked_record_for_write`
+requires `record.authorises(authority)`, strict equality with the record's authority (the mint
+authority), so the venue stages and the seller pays and moves. And the seller needs lamports at sale
+time: a seller with a ticket and no SOL cannot resell. The stronger variant — a hook reading the
+instructions sysvar and refusing unless the artist was paid — is documented in
+`docs/ON-CHAIN-DESIGN.md` §15.4 and **not built**, with its four costs named (`D26`).
+
+**Found while building, and corrected by the review, not fixed here.** `tools/devnet_publish.py`'s
+`instruction_transfer_checked` marks the record read-only. This entry first said that means a transfer
+which lands and leaves the staging unconsumed; that is wrong, and the non-builder review measured it:
+an account is writable for a transaction if any instruction says so, and an inner CPI cannot ask for
+more than the outer instruction granted, so with v2's metas list declaring the record writable
+(`RECORD_META_WRITABLE = true`) a read-only-only message is refused **`PrivilegeEscalation`** at the
+Token-2022 instruction and the hook never runs. The converse also failed under measurement: on the fee
+path the stage already marks the record writable, so the move's own flag is belt-and-braces there and
+the thing that makes a move-only transaction possible. The proof tool and the harness's fee path build
+that instruction with the record writable and say why; the publish file belongs to another run and is
+untouched.
+
+**Classification.** A for everything the local validator measured, and for the writability rule now
+that the review measured it (a read-only-only message is refused `PrivilegeEscalation`, and the stage
+marks the record writable so the move's flag is redundant on the fee path); C for the two-signature
+fact, which is a property of the deployed program's source read here rather than estimated; no market
+claim of any kind. Features 5 and 7 were "not built, blocked" in
+`records/STATE-OF-PROJECT.md`; feature 5's mechanism now exists as an app-level fee and must not be
+described as a chain-enforced one.
+
+## 2026-11-08 — the flip tax at checkout, built and measured (finding 43, D27)
+
+**Built.** Feature 7's charging half as a **second seller-paid lamport `System` transfer inside the
+sale transaction**, on top of the artist fee and priced off the hold clock the hook writes. One atomic
+transaction holds `SetPendingPrice`, the artist fee (when the event names one), the flip tax, and the
+Token-2022 move. `held_since_unix` is read from the 70-byte v2 `["record", mint]` account at byte 30;
+the default schedule is 1500 bps under an hour, falling linearly to 0 at 30 days; the rate, the two
+instants and the toggle are per event and the toggle defaults to **off**. `market_swarm/flip_tax.py` is
+the schedule, the assessment, the record decoder and the instruction order;
+`tools/flip_tax_proof.py` is the proof; the harness carries it as an option that is off unless an event
+names it, and the ledger and dataset carry `flip_tax_lamports`, `flip_tax_bps` and `held_seconds` per
+row.
+
+**The clock, and the three facts that decide the rate.** The hook writes the value itself
+(`lib.rs` step 7, `Clock::get()?.unix_timestamp`), so the seller cannot claim an age. It is the
+**mint's** clock, not the holder's: one record per mint means the last admitted transfer of any seat
+resets it, so it is a seller's own hold only where one wallet holds the mint at a time (the design's
+`supply = 1` mint); the harness runs one mint per event carrying the event's whole supply, and its
+events' numbers are therefore the event's clock rather than the seller's. `0`
+means the clock was never written (a fresh record, or a v1 read-only metas list) and is charged the
+**full** rate, because reading it as 1970 would make an unset field the cheapest evasion. A
+`held_since_unix` in the future clamps to 0 seconds, which is the full rate, so a clock that went
+backwards cannot buy a discount.
+
+**DERIVED, and the same limit as the artist fee's.** The tax binds only sales this app builds. The hook
+has no instruction and no check that mentions lamports between wallets, so a transaction can stage a
+price, move the ticket and pay neither the fee nor the tax, and the hook admits it; the artist fee's
+free-ride leg (finding 42 §4, leg 8) is the measurement of exactly that mechanism, and nothing in this
+build narrows it. A refund-to-holders pool is documented and not built: `ClaimRebate` (tag 7) is absent
+from `lib.rs`, `6027`/`6028` are raised by nothing, `["rebate-pool", mint]` is a seed with no
+instruction behind it, and `state.rs`'s `HOLD_FULL_SECONDS = 60` is the demo's number for that curve,
+**not** this schedule's 3 600 seconds.
+
+**Classification.** A for everything the local validator measured: the leg and the money, the
+two-signature shape (leg 1 prints both signers), and the clock's value read from a real record through
+three decoders that agree (leg 8). A for the rate-for-age curve too, which is measured off chain as a
+pure function over a dense sweep and pinned at both boundaries. C for the hook's write path -- step 7
+of `execute`, and the read-only branch that leaves the field at 0 -- which is the deployed program's
+source read here rather than exercised from the read-only side. No market claim of any kind, and no
+statement about any real artist's revenue.
