@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Card, Chip, Perforation, Rule } from "@/components/ui";
 import {
   bpsLabel,
+  buyerSummary,
+  ceilingFor,
   sol,
   SOL,
   type DemoState,
@@ -202,6 +204,21 @@ export function BuyerView(props: Props) {
 
               <Rule className="my-4" />
 
+              {event.ticketOverrides?.[ticket.serial]?.frozen ? (
+                <div className="mb-4" role="status">
+                  <Chip>TICKET FROZEN</Chip>
+                  <p className="t-body mt-2 text-ink">
+                    The organiser froze resale of ticket {ticket.serial}. Any listing will be refused
+                    (TICKET_FROZEN), whatever the price. App policy in this demo, not a chain rule.
+                  </p>
+                </div>
+              ) : event.ticketOverrides?.[ticket.serial]?.maxLamports != null ? (
+                <p className="t-meta mb-4 text-muted" role="status">
+                  Organiser maximum for ticket {ticket.serial}:{" "}
+                  {sol(event.ticketOverrides[ticket.serial].maxLamports as number)}. A higher price is
+                  refused (TICKET_MAX_EXCEEDED), even below the cap. App policy, not a chain rule.
+                </p>
+              ) : null}
               {closed ? (
                 <div className="mb-4" role="status">
                   <Chip>{closed.code === "RESALE_DISABLED" ? "RESALE BANNED" : "RESALE LOCKED"}</Chip>
@@ -260,6 +277,14 @@ export function BuyerView(props: Props) {
           <h2 id="rule-title" className="h-section text-ink">
             What the rule said
           </h2>
+          <Card>
+            <p className="t-meta text-muted">What you can do on this event</p>
+            <ul className="t-body mt-2 grid gap-2 text-ink">
+              {buyerSummary(event, ceilingFor(event)).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </Card>
           <Card>
             <p className="t-meta text-muted">Face</p>
             <p className="t-body u-num text-ink">{sol(event.faceLamports)}</p>
