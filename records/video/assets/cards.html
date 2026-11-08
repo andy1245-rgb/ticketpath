@@ -43,9 +43,9 @@
   /* overlay badges: no corner tick, nothing but the plate crosses into the video */
   #badges::after,#badges2::after{display:none}
   /* overlay badges, transparent page */
-  .strip{width:760px;height:64px;display:flex;align-items:center;box-sizing:border-box;
-    padding:0 20px;background:rgba(10,14,18,.92);border:1px solid #2a323b;border-radius:4px;
-    font:600 20px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+  .strip{height:64px;display:inline-flex;align-self:flex-start;width:max-content;align-items:center;box-sizing:border-box;
+    padding:0 22px;background:rgba(10,14,18,.92);border:1px solid #2a323b;border-radius:4px;
+    font:600 22px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
   .strip.syn{color:#f0b357;border-color:#4a3a1e}
   /* devnet differs in SHAPE, not only in colour: a leader rule and a squared left edge */
   .strip.dev{color:#7ee0c0;border-color:#1f4a3c;border-left:0;border-radius:0 4px 4px 0;
@@ -63,12 +63,12 @@
   <p class="why">face 1.000 SOL × (10,000 + 2,500) ÷ 10,000 &nbsp;=&nbsp; exactly the cap, integer arithmetic<br>the program's own log line: <span style="color:#f2f5f8">cap admitted price=1250000000 face=1000000000 cap_bps=2500</span></p>
   <dl class="rows">
     <dt>signature</dt><dd>E5RCrLwWikWCdHSd5MfqEBowXsmLn2n9fwYjnSwn8NhPi9j7weahbuRhgofu8ca8MVXzQUbvPrJqENDLNab7pJf</dd>
-    <dt>slot</dt><dd>519845933</dd>
+    <dt>slot</dt><dd>519845933 · block time 2026-11-08T00:50:06Z</dd>
     <dt>program</dt><dd>5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva</dd>
     <dt>cluster</dt><dd>api.devnet.solana.com</dd>
   </dl>
-  <p class="stamp">Boundary test run by the team, not a customer purchase. Public: the signature resolves on devnet.</p>
-  <div class="badge dev">DEVNET · signature resolves</div>
+  <p class="stamp">Boundary test run by the team, not a customer purchase. No SOL moves; one token unit transfers.</p>
+  <div class="badge dev">DEVNET · real transaction · signature resolves</div>
 </section>
 
 <!-- 2. REFUSED -->
@@ -79,12 +79,12 @@
   <p class="why">custom program error <span style="color:#f2f5f8">0x177a</span> · 6010 E_CAP_EXCEEDED<br>the program's own log line: <span style="color:#f2f5f8">cap exceeded price=1250000001 face=1000000000 cap_bps=2500</span></p>
   <dl class="rows">
     <dt>signature</dt><dd>22dqSriig968nx8aA3YaFVt4CErgNbkwvxFtDKn2MWpcCdnA2KQhFYvhwTWZSpP64wzQjoBeMUKEZLRW1e7jKe79</dd>
-    <dt>slot</dt><dd>519846008</dd>
+    <dt>slot</dt><dd>519846008 · block time 2026-11-08T00:50:23Z</dd>
     <dt>program</dt><dd>5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva</dd>
     <dt>cluster</dt><dd>api.devnet.solana.com</dd>
   </dl>
-  <p class="stamp">Boundary test run by the team, not a customer purchase. Public: the signature resolves on devnet.</p>
-  <div class="badge dev">DEVNET · signature resolves</div>
+  <p class="stamp">Boundary test run by the team, not a customer purchase. No SOL moves; one token unit transfers.</p>
+  <div class="badge dev">DEVNET · real transaction · signature resolves</div>
 </section>
 
 <!-- 3. END -->
@@ -97,11 +97,32 @@
 </section>
 
 <!-- 4. BADGES, for overlay capture on a transparent background -->
-<section class="card" id="badges" hidden style="background:transparent;justify-content:flex-end;padding:0 0 40px 40px">
+<section class="card" id="badges" hidden style="background:transparent;justify-content:flex-end;align-items:flex-start;padding:0 0 40px 40px">
   <div class="strip syn" id="strip-syn">Synthetic fixtures</div>
 </section>
-<section class="card" id="badges2" hidden style="background:transparent;justify-content:flex-end;padding:0 0 40px 40px">
+<section class="card" id="badges2" hidden style="background:transparent;justify-content:flex-end;align-items:flex-start;padding:0 0 40px 40px">
   <div class="strip dev" id="strip-dev">Devnet · real transaction · signature resolves</div>
+</section>
+
+<!-- 5. THUMBNAIL, 1280x720, for the YouTube poster -->
+<section class="card" id="thumb" hidden style="width:1280px;height:720px;padding:56px 64px;justify-content:center;gap:44px">
+  <div>
+    <div style="font:600 22px/1 var(--mono);letter-spacing:.28em;text-transform:uppercase;color:var(--muted)">SeatPass · MLH Solana Hackathon</div>
+    <div style="font:600 54px/1.05 var(--sans);letter-spacing:-.02em;margin-top:18px">The cap, enforced on chain</div>
+  </div>
+  <div style="display:flex;gap:28px;align-items:stretch">
+    <div style="flex:1;border:1px solid #1f4a3c;border-left:6px solid var(--accent);padding:22px 26px;background:#0e1318">
+      <div style="font:600 30px/1 var(--sans);color:var(--accent);text-transform:uppercase;letter-spacing:.06em">Admitted</div>
+      <div style="font:500 34px/1.2 var(--mono);margin-top:12px">1.25 SOL</div>
+      <div style="font:400 20px/1.35 var(--mono);color:var(--muted);margin-top:8px">face 1.000 × cap 2,500 bps</div>
+    </div>
+    <div style="flex:1;border:1px solid #4a2a24;border-left:6px solid var(--bad);padding:22px 26px;background:#0e1318">
+      <div style="font:600 30px/1 var(--sans);color:var(--bad);text-transform:uppercase;letter-spacing:.06em">Refused</div>
+      <div style="font:500 34px/1.2 var(--mono);margin-top:12px">1.250000001</div>
+      <div style="font:400 20px/1.35 var(--mono);color:var(--muted);margin-top:8px">error 6010 · E_CAP_EXCEEDED</div>
+    </div>
+  </div>
+  <div style="font:500 20px/1.3 var(--mono);color:var(--muted)">Two public devnet transactions · signatures in the description</div>
 </section>
 
 <script>

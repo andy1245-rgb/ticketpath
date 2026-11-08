@@ -118,9 +118,13 @@ each time. Nothing else. This is the measurement that decides whether the video 
 | elapsed | pace | verdict |
 |---|---|---|
 | under 1:45 of speech | faster than 129 wpm | fine, but slow down for the take |
-| 1:47 – 1:53 of speech | 120–127 wpm | **the target band** |
-| 1:52 – 1:54 of speech | 119–121 wpm | survivable, and the take must not go slower |
-| over 1:54 of speech | slower than 119 wpm | failed take: cut beat 5's Token-2022 clause and re-time |
+| 1:47 – 1:53 of speech | 122–130 wpm | **the target band** |
+| 1:52 – 1:54 of speech | 121–122 wpm | survivable, and the take must not go slower |
+| over 1:54 of speech | slower than 121 wpm | failed take: cut `No marketplace, no checkout.` first, never the fee clause |
+
+**The plate, at one size.** 22 px on a 1080-tall frame, which is **2.04% of frame height**, identical
+in the overlay and on the cards. Any other capture height scales by `22 x height / 1080`. Check it on
+a captured frame, never on the page.
 
 **The ceiling is 1:54 of speech, whatever the word count.** Two seconds of holds and four seconds
 of card come on top, so a stopwatch past 1:54 is a failed take, not a slow one. Two earlier
@@ -184,7 +188,7 @@ re-record.
 | The frontend is mid-edit and unrecordable | **Fallback B**: the console and the generated charts for shots 1–3 | the product's face; the record argument survives |
 | The browser renders the chart without its cap rule | Fine. It is expected: `capCeilingLamports` is never passed. Never describe a dashed line that is not on screen. | nothing |
 | A click lands on a 404 | Stop, restart the take from the shot's start state. Do not cut around it: a 404 on camera is a broken product, and a cut is a lie of omission a judge may notice. | one take |
-| The voice is unusable on the day | Captions only. The script is 221 words and reads as captions over the same shots; it loses the "demo, not presentation" tone but it is still a demo. | some polish, not the argument |
+| The voice is unusable on the day | Captions only. The script is 225 words and reads as captions over the same shots; it loses the "demo, not presentation" tone but it is still a demo. | some polish, not the argument |
 | The clock runs out before a full take | Publish the best complete take, and say in the description what is missing. An incomplete entry that names its gap is eligible; an unpublished one is not. | the entry's weakest version, still an entry |
 
 ---
@@ -194,27 +198,27 @@ re-record.
 Breath points at `/`. Capitalised words are the ones that carry the beat; hit those and let
 the rest go.
 
-> **1.** I'm NAME, / and this is SeatPass, / my demo for the MLH Solana Hackathon. / An
+> **1.** I'm NAME, / and this is SeatPass, / our demo for the MLH Solana Hackathon. / An
 > organiser sets one FACE VALUE, / then learns from resale what it was worth. / SeatPass
 > PRICES from that resale record, / and the CHAIN caps the markup.
 
-> **2.** Every resale is a TRANSACTION, / with a price and a wallet. / One ticket becomes a
+> **2.** Every resale is a TRANSACTION: / a price, a wallet, a timestamp. / One ticket becomes a
 > PATH: issued at face, resold, / each hop carrying its price. / Across an event, / that is
 > enough to price the next one. / These screens run on GENERATED FIXTURES, / labelled HERE; /
-> the interface is theirs, the pricing is ours.
+> they are OURS, built this weekend.
 
 > **3.** The console recommends a PRIMARY PRICE as a floor, not a forecast: / the highest
 > price this TIER has seen. / It refuses an upper bound / and a sale probability: / the cap
 > hides the top, / and nothing recorded a LISTING.
 
-> **4.** Everything before this was generated. / This SIGNATURE is not. / This program is
+> **4.** Every NUMBER before this was generated. / This SIGNATURE is not. / This program is
 > DEPLOYED on Solana devnet. / The RECORD: face one SOL, / cap twenty five hundred basis
 > points. / A TEST transfer / priced at one point two five SOL executes. / One LAMPORT higher, /
 > and the program refuses it, / error six zero one zero. / The CHAIN refuses it, not the app.
 
-> **5.** No marketplace, no checkout. / The model is UNFITTED, and labelled so. / A Token-2022
-> fee takes a whole one-unit ticket, / so no fee ships, / we MEASURED that. / That CHAIN refusal
-> is the FEATURE. / Thank you.
+> **5.** The cap is ENFORCED. / No marketplace, no checkout. / The model is UNFITTED, and labelled
+> so. / A Token-2022 fee ROUNDS UP to the whole ticket, / so no fee ships. / That is MEASURED. /
+> That CHAIN refusal is the FEATURE. / Thank you.
 
 **The four numbers to say slowly, because a judge writes them down:** one point two five
 SOL; one lamport; six zero one zero; twenty five hundred basis points.
@@ -222,6 +226,46 @@ SOL; one lamport; six zero one zero; twenty five hundred basis points.
 **The two words to get right:** "floor", never "estimate" or "forecast"; and "primary
 price", never just "price" — the product is an organiser's pricing decision, not a resale
 valuation.
+
+---
+
+## 5a. The Token-2022 sentence, explained so it can be defended
+
+If a judge asks "what was that fee thing", this is the answer in plain English. It is in the
+rehearsal plan because the rule about a line like this is that the speaker must be able to defend
+it without notes.
+
+**What a transfer fee is.** Token-2022 mints can carry a fee that the token program itself
+withholds on every transfer, as a percentage of the amount moved. You do not ask for it; the
+runtime takes it.
+
+**The rounding is the trap.** The program rounds the fee **up**, to the next whole base unit, never
+down.
+
+**And this mint has no fractions.** Decimals are 0, so one token is one whole concert ticket. There
+is no such thing as a third of a ticket, and the smallest possible transfer is one base unit.
+
+So a 5% fee on one ticket is `ceil(1 x 500 / 10000)` which is `ceil(0.05)`, which is **1**: the whole
+ticket. A 15% fee is `ceil(1.5)`, also 1. The rate changes and the amount withheld does not, because
+1 is the ceiling of both. The buyer receives nothing and the fee account holds the ticket.
+
+**It is not a broken fee.** Transfer ten units of the same mint at 15% and the withheld amount is 2
+while the recipient gets 8. The mechanism works exactly as designed. What breaks it is the
+indivisibility of the ticket, not the fee.
+
+**Why that is the end of the artist fee feature.** On a ticket that is one token, a fee can only be
+nothing or all of it, so a 5% cut is not expressible. Turning it on would not quietly under-deliver:
+it would hand the buyer zero and move the ticket to the fee authority. The only fix is to give the
+mint decimals so one ticket is a large number of base units, and that changes what a ticket is, so
+it is a design decision rather than a bug fix.
+
+**The one sentence to say, if he says it.** "On an indivisible ticket, a Token-2022 transfer fee
+rounds up to the whole ticket, so no fee ships, and we measured that." Shorter: "the fee rounds up
+to the whole ticket, so there is no fee to take."
+
+**The test before recording.** Say it out loud, to the friend, without the notes. If it comes out in
+his own words and the friend follows it, keep the line. If it comes out as a recital, cut it:
+`SCRIPT.md` beat 5 says what that costs, and it is small.
 
 ---
 

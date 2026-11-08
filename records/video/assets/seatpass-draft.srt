@@ -1,0 +1,123 @@
+1
+00:00:00,000 --> 00:00:02,880
+I'm NAME, and this is SeatPass,
+
+2
+00:00:02,880 --> 00:00:06,240
+our demo for the MLH Solana Hackathon.
+
+3
+00:00:06,240 --> 00:00:09,120
+An organiser sets one face value,
+
+4
+00:00:09,120 --> 00:00:12,960
+then learns from resale what it was worth.
+
+5
+00:00:12,960 --> 00:00:18,720
+SeatPass prices from that resale record, and the chain caps the markup.
+
+6
+00:00:18,720 --> 00:00:24,000
+Every resale is a transaction: a price, a wallet, a timestamp.
+
+7
+00:00:24,000 --> 00:00:27,840
+One ticket becomes a path: issued at face,
+
+8
+00:00:27,840 --> 00:00:30,720
+resold, each hop carrying its price.
+
+9
+00:00:30,720 --> 00:00:36,000
+Across an event, that is enough to price the next one.
+
+10
+00:00:36,000 --> 00:00:38,880
+These screens run on generated fixtures,
+
+11
+00:00:38,880 --> 00:00:42,720
+labelled here; they are ours, built this weekend.
+
+12
+00:00:42,720 --> 00:00:47,040
+The console recommends a primary price as a floor,
+
+13
+00:00:47,040 --> 00:00:51,840
+not a forecast: the highest price this tier has seen.
+
+14
+00:00:51,840 --> 00:00:58,560
+It refuses an upper bound and a sale probability: the cap hides the top,
+
+15
+00:00:58,560 --> 00:01:00,960
+and nothing recorded a listing.
+
+16
+00:01:00,960 --> 00:01:03,840
+Every number before this was generated.
+
+17
+00:01:03,840 --> 00:01:05,760
+This signature is not.
+
+18
+00:01:05,760 --> 00:01:09,120
+This program is deployed on Solana devnet.
+
+19
+00:01:09,120 --> 00:01:14,400
+The record: face one SOL, cap twenty five hundred basis points.
+
+20
+00:01:14,400 --> 00:01:19,680
+A test transfer priced at one point two five SOL executes.
+
+21
+00:01:19,680 --> 00:01:23,520
+One lamport higher, and the program refuses it,
+
+22
+00:01:23,520 --> 00:01:25,920
+error six zero one zero.
+
+23
+00:01:25,920 --> 00:01:29,280
+The chain refuses it, not the app.
+
+24
+00:01:29,280 --> 00:01:31,200
+The cap is enforced.
+
+25
+00:01:31,200 --> 00:01:33,120
+No marketplace, no checkout.
+
+26
+00:01:33,120 --> 00:01:36,480
+The model is unfitted, and labelled so.
+
+27
+00:01:36,480 --> 00:01:40,800
+A Token-2022 fee rounds up to the whole ticket,
+
+28
+00:01:40,800 --> 00:01:42,720
+so no fee ships.
+
+29
+00:01:42,720 --> 00:01:44,160
+That is measured.
+
+30
+00:01:44,160 --> 00:01:47,040
+That chain refusal is the feature.
+
+31
+00:01:47,040 --> 00:01:48,000
+Thank you.

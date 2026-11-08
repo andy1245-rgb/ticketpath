@@ -5,6 +5,13 @@ file in this directory. Ordered by how soon the clock forces them, not by import
 
 ---
 
+## V1 — DECIDED 2026-11-08: his own machine, his own voice
+
+He records on his own machine and speaks it himself. That settles the blocking question, and it
+means the capture toolchain on this box is a rehearsal and staging aid only: it renders and measures
+the cards and the console frames, and cannot record audio or produce an mp4. The rest of this
+section is kept as the record of what was measured.
+
 ## V1 — Where the video is recorded, and by whom the voice is spoken
 
 **Blocking. This is the only decision that can stop the video existing.**
@@ -112,6 +119,25 @@ The end card must carry a URL that resolves. The repository's remote is
 3. Put both names on the card. Clutter at the exact moment the card should be cleanest.
 
 ---
+
+## V6 — DECIDED 2026-11-08: two voices, his and his friend's
+
+He and his friend both speak. That answers the solo-hacker question with a fact. What it changes,
+and nothing else does:
+
+- **The words do not have to change.** "I'm NAME, and this is SeatPass, our demo for the MLH Solana
+  Hackathon" is word-neutral: "my" becomes "our". The friend's first line is beat 4's first
+  sentence, so a second speaker arrives on the frame where the chain claim starts.
+- **Or add three words** for the friend to introduce himself: "and I'm NAME2". That takes the script
+  to 224 written, 230 spoken, 1:56.4 at 125 wpm, and moves the pace floor from 120 to 122 wpm. Only
+  worth it if he is comfortable being named on camera.
+- **Record both voices on the same microphone in the same room**, in one sitting if possible.
+  Two rooms means two noise floors, and an edit cannot hide that as well as it can hide a level
+  difference. Clap once at the top of the session; it gives the edit a sync point.
+- **Beat 4 is the friend's** because it is the beat about what was built rather than what was
+  concluded. If he would rather have beat 3, the split works there too: one voice for the record,
+  the other for the number.
+- **No timing changes.** The beats are read as written; who reads them does not move a boundary.
 
 ## V6 — One voice or two
 

@@ -17,7 +17,7 @@ package was rewritten.
 
 ## What changed because of them
 
-**The script went from 229 to 221 written words, and three of its five beats were rewritten.**
+**The script went from 229 to 225 written words, and three of its five beats were rewritten.**
 
 1. **The product's function was missing until 0:43.** A judge could say what world SeatPass
    lives in but not what it does, which costs `Design` and `Completion` — two of four equally
@@ -68,14 +68,14 @@ previously assumed.**
     the plan over the cap on the strength of its own arithmetic error. Review 3 recomputed every
     cell: the shot boundaries agreed to 0.06 s, and the error was in the summary rows.
 17. `wc -w` counts `MLH`, `Token-2022` and `one-unit` as one word each; spoken, they are three,
-    four and two. The script is 220 written and 226 spoken, so the pace floor is **120 wpm**,
+    four and two. The script is now 225 written and 230 spoken, so the pace floor is **122 wpm**,
     not the 119 an earlier header claimed.
 
 ## What was rejected, and why
 
 - **A caption track of four lower thirds was rated TASTE by review 1.** It is in
-  `CHOREOGRAPHY.md` §0.1 as an optional layer, because it is cheap, reversible, and makes the
-  argument survive a muted judge.
+  `CHOREOGRAPHY.md` §0.1, and round 5's production pass argued it should be a full caption line
+  rather than four takeaway lines. That is now what the choreography specifies.
 - **Review 1 proposed dropping "What is not built, we do not show" and "That record is the
   product".** Both were dropped. It proposed keeping the end card to 3 s; the card is 7 s,
   because the URL needs to be readable and the last 3 s are silent anyway.
@@ -101,7 +101,8 @@ All three, independently:
 
 ## What none of them could settle
 
-- Whether a judge watches muted. No measurement exists; the lower thirds are the hedge.
+- Whether a judge watches muted. No measurement exists; the burned caption line is the hedge,
+  and the uploaded track is for the judge who goes looking.
 - Whether the rebuilt frontend will be the bundle that is serving at capture time. That is
   decision **V3** in `OPEN-DECISIONS.md` and it is the operator's.
 - Whether the read lands at 121 wpm or faster. That is rehearsal pass 2.
@@ -119,8 +120,8 @@ The ones that mattered, and what was done:
 
 | Contradiction | Now |
 |---|---|
-| word count stated as 220, 221, 226, 227 and 229 in different files | **221 written, 227 spoken**, in all four |
-| end card given as 4.0 s, 4.1 s and 7.0 s | **4.1 s**, from 1:50.9 to 1:55.0 |
+| word count stated as 220, 221, 226, 227 and 229 in different files | **225 written, 230 spoken**, in all five after round 6 |
+| end card given as 4.0 s, 4.1 s and 7.0 s | **4.1 s**, from 1:52.4 to 1:56.5 |
 | the badge switch stated at 1:02.9 and at 1:03.9 | **1:03.9**, and back at 1:32.7 |
 | beat 2 ending at 0:43.7 in the choreography and 0:44.7 in the script | **0:44.7** |
 | the choreography quoting a superseded line ("this record has seen") | **"this tier has seen"** |
@@ -153,4 +154,91 @@ Three further items from round 4 were applied after it reported:
 - **`REVIEWS.md`'s own numbers** (220 words, a 7 s card) were brought in line with the script.
 
 That is the value of a fourth pass: the first three found what was wrong with the script, and the
-fourth found what the fixes had done to each other — including to the page a person reads aloud.
+fourth found what the fixes had done to each other - including to the page a person reads aloud.
+
+---
+
+## Round 5 — the improvement pass, and what survived
+
+A fifth agent was asked not to re-check truth but to find better wording, better order and a better
+allocation of the 115 seconds, with evidence. Its report is `inputs/script-improvements.md`. Three of
+its findings mattered.
+
+**Taken, both word-neutral or nearly so:**
+
+1. Beat 2's first sentence becomes `Every resale is a transaction: a price, a wallet, a timestamp.`
+   Same word count. It adds the time axis, which is the thing the ledger has that scraped data does
+   not, and the frame is showing dated trail rows while it is said.
+2. Beat 5 says the mechanism rather than the effect: `A Token-2022 fee rounds up to the whole ticket,
+   so no fee ships. That is measured.` One word longer, and it is the sentence a judge may ask about,
+   so "rounds up" is the defensible version of "takes".
+
+**Taken as a correction, not a preference:** the script's justification for opening on the product
+cited a 3.9 s demo signal from "the one compliant 2:00 winner". There is no such measurement: the 3.9 s
+figure belongs to a 3:06 entry, which is over the cap, and the compliant 2:00 winner has no measured
+demo signal at all. The claim is now the narrower one the research supports (product or event named
+inside ten seconds in 8 of 8), and the measured times of this script at 125 wpm replace it.
+
+**Rejected, with the reason recorded:**
+
+- *Speak a number in beat 3.* The report argues the digit string is identical in both records, so it
+  cannot be disambiguated by ear, and the page that would qualify it is the page that disowns it. The
+  only defensible form it offers is the ratio, not the amount: "fifteen per cent over face, which is
+  exactly its cap", 4.8 s, paid for out of beat 1. Not taken at 1:56.5 with nothing spare, but it is the
+  version to use if the operator overrules.
+- *Give "the record" a subject in beat 4* ("the ticket's record"). One word and 0.5 s, and it does
+  fix a genuine double meaning. Held for the operator's read: if he stumbles on that line, this is
+  the fix.
+- *Add the memo transaction* (the quote committed to devnet before anything moved). The report ranks it
+  as the highest-ceiling addition and the riskiest, at 9.1 s, and it points a judge at the artefact
+  that carries the 130,000,000-lamport gap. Not taken inside 2:00.
+- *Add a Design sentence* for the console. The one true version is forbidden by the prior-work rule
+  and the rest would be narration.
+
+
+---
+
+## Round 6 - the operator review, applied
+
+**Provenance, and it was a correction of fact, not of tone.** `the interface is theirs, the pricing is
+ours` was deleted everywhere: SCRIPT.md, BRIEF.md, the read sheet in REHEARSAL.md, the draft .srt,
+DELIVERY.md, and inputs/build-state-matrix.md, which now records the correction instead of the claim.
+It reads `they are ours, built this weekend`, which the git dates support: every file under the
+frontend was first written 2026-11-06 23:24Z, inside the window that opened 17:00Z, and the rebuild is
+committed. The end card is unchanged.
+
+**Stale build, resolved by building.** :3000 was measured serving the pre-rebuild bundle: one
+occurrence each of Custody trail, Enforced on-chain, Every transfer is recorded on-chain and a Mock
+data banner, and zero of the rebuilt strings. A copy of the committed tree was built and served; it
+returns Ownership trail, BUNDLED MOCK DATA and Open the listing form, with zero occurrences of any of
+the three false lines. Shots 1-3 are recordable from the rebuilt build; Fallback B is not needed. The
+frontend working tree was clean, so the build went into a copy rather than their tree.
+
+**The starred score, deleted.** This event runs MLH own flow with a description field and a top-three
+ranking. The four claims now also go in the submission description, in the video order, and DELIVERY
+section 4 carries that text. SUBMISSION-PACK section 2.4 was not used because it still says nothing is
+deployed.
+
+**The pace sample, relabelled.** Seven videos, not twelve: five MLH 2024 and two Chainlink 2020,
+machine-transcript word counts over total runtime, median 99 wpm. The reason for 225 words is stated
+plainly: it fits 2:00 at a normal read.
+
+**Plates, unified.** One size, 22 px, 2.04 percent of a 1080-tall frame, in the overlay and on the
+cards, one Devnet string in both, and the scale written into REHEARSAL.md and DELIVERY.md. Everything
+before this was generated became Every number before this was generated.
+
+**Counts, corrected.** 225 written, 230 spoken, everywhere one is stated.
+
+**Small additions, applied.** The admitted card carries the block time beside the slot
+(2026-11-08T00:50:06Z) and both cards carry the no-SOL line; beat 5 opens with The cap is enforced;
+shot 1 is a static frame instead of a 200 px scroll that could not reach the price path; the Explorer
+rule is cited as two general rules with the SYN-mint line marked as the narrow one. The bytecode hash
+was not published: it needs two cluster reads and is recorded as undone rather than done badly.
+
+**The consequence.** Three net written words added, so the file is 1:56.5 and the pace floor is 122
+wpm. Both inside the cap. If 1:55.0 exactly matters, No marketplace, no checkout (4 words, 1.9 s) is
+the cut, and the prize research says it buys nothing.
+
+**Two files outside this tree still carry the old provenance sentence** and were not edited here:
+records/SUBMISSION-PACK.md section 2.8 and records/STATE-OF-PROJECT.md. They belong to the session
+that owns them; the exact replacement text is in the board note.
