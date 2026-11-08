@@ -16,7 +16,7 @@ import {
   formatPercent,
   formatSol,
 } from "@/lib/format";
-import type { EventStatus, TicketStatus } from "@/lib/types";
+import type { EnforcedCapTier, EventStatus, TicketStatus } from "@/lib/types";
 
 /**
  * One event, everything the record holds: the policy and the ceiling the
@@ -65,21 +65,60 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
 
   const status = EVENT_STATUS[event.status];
   const enforced = event.enforcedCap ?? null;
-  const enforcedCeilingLamports = enforced?.enforcedCeilingLamports ?? null;
 
-  // The ceiling is what the record computes, never a claim that something
-  // enforced it: no program is deployed, so the wording stays in the
-  // conditional and the event's own policy is named separately.
+  // The ceiling the contract holds, per tier. An event-wide figure is emitted
+  // only when every tier resolves to the same number, and a cap expressed in
+  // basis points over different faces almost never does; so when `enforcedCap`
+  // is absent the per-tier rows are the only honest shape. The summary below is
+  // computed from those rows, never from `resalePriceCapBps`: the platform
+  // percentage is what the organiser configured, and a law can make the
+  // admitted ceiling smaller (`ticketpath/core/event_records.py` forbids a
+  // screen from displaying a cap the chain will not hold).
+  const tierRows = (event.enforcedCapByTier ?? []).filter(
+    (row): row is EnforcedCapTier =>
+      row != null &&
+      typeof row.enforcedCeilingLamports === "number" &&
+      typeof row.enforcedCapBps === "number",
+  );
+  const ceilings = tierRows.map((row) => row.enforcedCeilingLamports);
+  const minCeiling = ceilings.length ? Math.min(...ceilings) : null;
+  const maxCeiling = ceilings.length ? Math.max(...ceilings) : null;
+  const tierBps = new Set(tierRows.map((row) => row.enforcedCapBps));
+  const tierRules = new Set(tierRows.map((row) => row.bindingRule));
+  const uniformBps = tierBps.size === 1 ? [...tierBps][0] : null;
+  const uniformRule = tierRules.size === 1 ? [...tierRules][0] : null;
+
   const capAdmitted = enforced
     ? formatCeiling(enforced.enforcedCeilingLamports)
-    : event.resalePriceCapBps != null
-      ? `${formatBpsPercent(event.resalePriceCapBps)} over face`
-      : "Uncapped";
+    : uniformBps !== null
+      ? `${formatBpsPercent(uniformBps)} over face, per tier`
+      : tierRows.length > 0
+        ? `${formatCeiling(minCeiling)} to ${formatCeiling(maxCeiling)} by tier`
+        : event.resalePriceCapBps != null
+          ? `${formatBpsPercent(event.resalePriceCapBps)} over face`
+          : "Uncapped";
+  const capSource = enforced
+    ? "enforcedCap.enforcedCeilingLamports"
+    : tierRows.length > 0
+      ? "enforcedCapByTier"
+      : "resalePriceCapBps";
   const capRule = enforced
     ? enforced.bindingRule === "law"
       ? "Binding rule: law"
       : "Binding rule: platform cap"
-    : null;
+    : uniformRule
+      ? uniformRule === "law"
+        ? "Binding rule: law"
+        : "Binding rule: platform cap"
+      : tierRows.length > 0
+        ? "Binding rule: differs by tier, see the tiers below"
+        : null;
+
+  // One line the chart can draw, and only when it is true for every tier: a
+  // ceiling drawn at the loosest tier would sit above the stricter ones.
+  const chartCeiling =
+    enforced?.enforcedCeilingLamports ??
+    (uniformBps !== null && minCeiling === maxCeiling ? minCeiling : null);
 
   return (
     <div className="box py-16">
@@ -124,9 +163,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           <div className="border-t border-line pt-4">
             <dt className="t-micro-caps text-muted">Cap the contract admits</dt>
             <dd className="figure t-body mt-2 text-ink">{capAdmitted}</dd>
-            <dd className="figure t-micro mt-1 text-muted">
-              {enforced ? "enforcedCap.enforcedCeilingLamports" : "resalePriceCapBps"}
-            </dd>
+            <dd className="figure t-micro mt-1 text-muted">{capSource}</dd>
             {capRule && <dd className="t-micro mt-1 text-muted">{capRule}</dd>}
           </div>
 
@@ -147,7 +184,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
 
       <section className="mt-12" aria-labelledby="tickets-heading">
         <h2 id="tickets-heading" className="h-section">
-          Tickets
+          Issued tickets
         </h2>
         <p className="t-meta mt-1 text-muted">
           Showing {formatCompact(tickets.length)} of {formatCompact(event.issuedCount)} issued
@@ -218,7 +255,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
               priceLamports: point.avgPriceLamports,
             }))}
             faceValueLamports={analytics.faceValueLamports}
-            capCeilingLamports={enforcedCeilingLamports}
+            capCeilingLamports={chartCeiling}
             lastSaleLamports={analytics.medianResalePriceLamports}
           />
         </Panel>
