@@ -1,7 +1,7 @@
 #!/bin/sh
 # .githooks/pre-commit -- refuse anything that may not be published, then run the gate.
 #
-# Three jobs, in this order:
+# Four jobs, in this order:
 #
 #   1. Refuse a staged file that public_safety.py says may not be published: a handover
 #      sheet, an absolute path under a home directory, a scratch path, a pid, a key. It
@@ -13,11 +13,20 @@
 #      and it prints the path and the *class* of match, never the matched text -- a hook
 #      that echoes the secret into the terminal is a second leak.
 #   3. If a staged path is code -- ticketpath/, tests/ or tools/ -- run
-#      `python3 tools/tp.py gate --quick` (unit tests only, no server, under 60s).
+#      `python3 tools/tp.py gate --quick`. That gate is the unit tests and the
+#      documentation consistency check (`tools/doc_check.py`, one second, no server),
+#      so a commit that changes code cannot leave a document naming a file the tree no
+#      longer has. The doc check is one of the gate's positions, not a separate line
+#      here: one gate, one exit code, one place a position is added.
+#   3b. If a staged path is markdown under docs/ or records/, or is README.md, and no
+#      code is staged, run `python3 tools/tp.py doc-check` (one second, no server). A
+#      markdown commit is the one commit that can break the documentation, so it is the
+#      one that must not skip the check; the full gate is skipped here because a docs-only
+#      commit that waits 20s for the suite is a hook people learn to bypass, and a bypassed
+#      hook is worse than a narrow one. When code *is* staged, step 3's gate runs the same
+#      check inside itself and this step does nothing, so no commit runs it twice.
 #
-# Anything else staged (docs, records, fixtures, the console page's own notes) commits on
-# its own. A docs-only commit that waits 20s for the suite is a hook people learn to
-# bypass, and a bypassed hook is worse than a narrow one.
+# Anything else staged (fixtures, the console page's own notes) commits on its own.
 #
 # Bypass policy: never `git commit --no-verify`. The only person who may bypass this hook
 # is the operator, deliberately, and `docs/CLI.md` says so.
@@ -99,6 +108,30 @@ if [ -n "$code" ]; then
     if ! python3 tools/tp.py gate --quick; then
         echo "pre-commit: the quick gate failed; the commit is refused." >&2
         echo "pre-commit: fix the failure. Do not pass --no-verify -- docs/CLI.md on why." >&2
+        exit 1
+    fi
+fi
+
+# -- 3b. documentation ----------------------------------------------------------
+#
+# A markdown commit is the one that can break the documentation, so it is the one that
+# must not skip the documentation check. `tools/tp.py doc-check` reads the tree, binds no
+# port and takes about a second, which is why this branch can run where the whole gate
+# cannot. It is skipped when code is already staged: stage 3's gate runs the same check
+# inside itself, and running it twice in one commit teaches nobody anything.
+#
+docs=""
+for file in $staged; do
+    case "$file" in
+        docs/*.md|records/*.md|README.md) docs="$file"; break ;;
+    esac
+done
+
+if [ -n "$docs" ] && [ -z "$code" ]; then
+    echo "pre-commit: markdown staged ($docs) -- running the documentation check" >&2
+    if ! python3 tools/tp.py doc-check; then
+        echo "pre-commit: the documentation check failed; the commit is refused." >&2
+        echo "pre-commit: docs/DOC-CHECK.md says what each violation means. Do not pass --no-verify." >&2
         exit 1
     fi
 fi

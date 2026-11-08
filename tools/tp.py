@@ -288,11 +288,22 @@ def cmd_health(args) -> int:
     label = provenance_line(payload)
     if label:
         lines.append(label)
+    # The chain line answers what this server did, and `asked the cluster` is the half that
+    # keeps `program deployed: false` from reading as "there is no program anywhere": false
+    # here means not read, and the recorded line below names what a file does say.
     lines.append(
         f"{chain_badge} chain {chain.get('cluster')} - program deployed: "
         f"{str(chain.get('programDeployed')).lower()} - rpc enabled: "
-        f"{str(chain.get('rpcEnabled')).lower()} - reason {chain.get('reason')}"
+        f"{str(chain.get('rpcEnabled')).lower()} - asked the cluster: "
+        f"{str(chain.get('askedCluster')).lower()} - reason {chain.get('reason')}"
     )
+    recorded_chain = chain.get("recorded") or {}
+    if recorded_chain.get("programId"):
+        lines.append(
+            f"[DEVNET] recorded in {recorded_chain.get('source')}: program "
+            f"{recorded_chain.get('programId')} for cluster {recorded_chain.get('cluster')} "
+            "- recorded, not read by this server"
+        )
     lines.append(
         f"{chain_badge} pricing seam {model.get('kind')} - fitted: "
         f"{str(model.get('fitted')).lower()} - available: {str(model.get('available')).lower()}"
@@ -558,8 +569,7 @@ def cmd_sweep(args) -> int:
         emit([f"{badge} no sweep tool: ${AUDIT_SWEEP_ENV} is unset or names a missing "
               "file, and tools/console-check.py is missing"])
         return EXIT_FAIL
-    environment = dict(os.environ)
-    environment["TP_BASE"] = args.base
+    environment = _child_env({"TP_BASE": args.base})
     command = sweep_command(tool, args.base)
     if not args.json:
         lines = [f"{badge} sweep against {args.base} using {tool}"]
@@ -624,6 +634,31 @@ def _tail(path: Path, lines: int = 30) -> list[str]:
     return text.splitlines()[-lines:]
 
 
+def _child_env(extra: dict | None = None) -> dict:
+    """The environment a child of the gate runs in: this shell's, minus two variables.
+
+    `TICKETPATH_PORT` goes because the suite runs against the documented default:
+    `test_boundaries` pins `resolve_port()` to 8788, which is only true when the variable is
+    unset, and the gate hands its own server its port with the explicit flag, which wins
+    over the environment anyway.
+
+    `GIT_*` goes because the gate runs *inside* `.githooks/pre-commit`, where git exports its
+    own `GIT_DIR` and `GIT_INDEX_FILE` to every child it starts, and those two override `git
+    -C` in the throwaway repositories the suite builds to test the hook. Inherited, every
+    test that drives git read the outer repository's index instead of its own, so a commit
+    that staged a code file failed the gate that was checking it: measured at 16 tests in
+    `tests/test_cli.py` and `tests/test_doc_check.py` before this filter existed.
+    """
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if key != "TICKETPATH_PORT" and not key.startswith("GIT_")
+    }
+    if extra:
+        environment.update(extra)
+    return environment
+
+
 def _run(command, cwd: Path, env: dict, timeout: float) -> tuple[int, str]:
     """A bounded child. A timeout is a failure with a sentence, not an exception."""
     try:
@@ -641,6 +676,12 @@ def _run(command, cwd: Path, env: dict, timeout: float) -> tuple[int, str]:
 
 
 ACCESS_LOG = re.compile(r'^\d+\.\d+\.\d+\.\d+ "')
+
+#: One doc-check violation, as `tools/doc_check.py` prints it: `path:line: check: claim`.
+#: Parsed rather than recounted, so the gate reports the checker's own list and cannot
+#: disagree with it about how many there were.
+DOC_VIOLATION = re.compile(r"^\S+:\d+: [a-z-]+: ")
+
 
 def failure_tail(output: str, lines: int = 40) -> list[str]:
     """The part of a failing run worth reading: no access log, no dot progress bar."""
@@ -674,20 +715,24 @@ def run_gate(
     quick: bool = False,
     tests_command: list[str] | None = None,
     console_command: list[str] | None = None,
+    doc_check_command: list[str] | None = None,
     health_timeout: float = 20.0,
     tests_timeout: float = 150.0,
     console_timeout: float = 60.0,
+    doc_timeout: float = 120.0,
     out=None,
 ) -> int:
-    """Tests, then the console checks, against an ephemeral server this function owns.
+    """Tests, then the documentation check, then the console checks.
 
-    The server is killed on every exit path: pass, fail, timeout, exception. That is the
-    property the commit hook depends on, because a hook that leaves a server bound to a
-    port is a hook that breaks the next run.
+    The server this function owns is killed on every exit path: pass, fail, timeout,
+    exception. That is the property the commit hook depends on, because a hook that
+    leaves a server bound to a port is a hook that breaks the next run.
 
-    `--quick` runs the unit tests alone, under a tighter bound, and starts no server: a
-    pre-commit hook may not wait on a page render, and the unit tests bind their own
-    ephemeral servers already.
+    `--quick` runs the unit tests and the documentation check, under a tighter bound, and
+    starts no server: a pre-commit hook may not wait on a page render, and the unit tests
+    bind their own ephemeral servers already. The documentation check runs in both modes
+    because it is the one position that costs a second and can be wrong about a file the
+    same commit is changing.
     """
     stream = out or sys.stdout
     started = time.monotonic()
@@ -697,24 +742,28 @@ def run_gate(
         stream.flush()
 
     tests = tests_command or [sys.executable, "-m", "unittest", "discover", "-s", "tests"]
-    # The suite runs against the documented default: `test_boundaries` pins
-    # `resolve_port()` to 8788, which is only true when TICKETPATH_PORT is unset. The
-    # gate therefore takes that variable out of the child's environment instead of
-    # inheriting whatever this shell happens to export, and hands its own server its port
-    # with the explicit flag, which wins over the environment anyway.
-    environment = {key: value for key, value in os.environ.items() if key != "TICKETPATH_PORT"}
-    position = {"tests": None, "tests_ok": False, "console": None, "badge": "[EXACT]"}
+    # One place decides what a child of the gate may see, and it is `_child_env`: two of
+    # this shell's variables would otherwise be inherited into a suite that derives ports and
+    # drives throwaway git repositories, and each of them changes a verdict.
+    environment = _child_env()
+    position = {"tests": None, "tests_ok": False, "console": None, "doc": None, "badge": "[EXACT]"}
 
     def summary(verdict: str) -> str:
         tests_text = "tests not run" if position["tests"] is None else (
             f"tests={position['tests']} {'OK' if position['tests_ok'] else 'FAILED'}"
+        )
+        doc_text = "doc-check not run" if position["doc"] is None else (
+            f"doc-check={position['doc']} violation(s)"
         )
         if position["console"] is None:
             console_text = "console-check skipped" if quick else "console-check not run"
         else:
             console_text = f"console-check FAILURES: {position['console']}"
         wall = time.monotonic() - started
-        return f"{position['badge']} gate {verdict} - {tests_text} - {console_text} - wall={wall:.1f}s"
+        return (
+            f"{position['badge']} gate {verdict} - {tests_text} - {doc_text} - "
+            f"{console_text} - wall={wall:.1f}s"
+        )
 
     server = None
     log_path = None
@@ -770,6 +819,29 @@ def run_gate(
             say(summary("FAILED"))
             return EXIT_FAIL
 
+        # The documentation check: cheap enough for a commit hook, and it fails the gate
+        # rather than reporting, because a document that names a file the tree does not
+        # have is a claim a reader will check and find false.
+        doc = doc_check_command or [
+            sys.executable, str(REPO_ROOT / "tools" / "doc_check.py"),
+            "--root", str(REPO_ROOT),
+        ]
+        code, output = _run(doc, REPO_ROOT, environment, doc_timeout)
+        violations = [line for line in output.splitlines() if DOC_VIOLATION.match(line)]
+        position["doc"] = len(violations)
+        say(f"{position['badge']} doc-check: {len(violations)} violation(s)")
+        if code != 0:
+            if violations:
+                for line in violations[-40:]:
+                    say(f"  {line}")
+            else:
+                # No parseable violation means the checker itself could not run. Its own
+                # words are the only useful thing to print, and they are not trimmed.
+                for line in failure_tail(output, 12):
+                    say(f"  {line}")
+            say(summary("FAILED"))
+            return EXIT_FAIL
+
         if quick:
             say(summary("ok"))
             return EXIT_OK
@@ -812,6 +884,21 @@ def run_gate(
 
 def cmd_gate(args) -> int:
     return run_gate(quick=args.quick)
+
+
+def cmd_doc_check(args) -> int:
+    """The documentation consistency check, as the hook and the gate run it.
+
+    Run as a child with its own bound rather than imported: the checker is a program with
+    an exit code and a line format, and making the gate call it the same way a person does
+    is what keeps the two from drifting.
+    """
+    command = [sys.executable, str(REPO_ROOT / "tools" / "doc_check.py"), "--root", str(REPO_ROOT)]
+    code, output = _run(command, REPO_ROOT, _child_env(), 120.0)
+    sys.stdout.write(output)
+    if code == 124:
+        return EXIT_FAIL
+    return EXIT_OK if code == 0 else EXIT_FAIL
 
 
 # -- argument parsing ------------------------------------------------------
@@ -875,6 +962,10 @@ def build_parser() -> argparse.ArgumentParser:
     verbs.add_parser("sweep", parents=[common], help="run the four property checks against the server")
     gate = verbs.add_parser("gate", parents=[common], help="the commit gate: tests plus console checks")
     gate.add_argument("--quick", action="store_true", help="unit tests only, under 60s, no server")
+    verbs.add_parser(
+        "doc-check", parents=[common],
+        help="fail when the documentation disagrees with the code or with itself",
+    )
     return parser
 
 
@@ -888,6 +979,7 @@ COMMANDS = {
     "page": cmd_page,
     "sweep": cmd_sweep,
     "gate": cmd_gate,
+    "doc-check": cmd_doc_check,
 }
 
 

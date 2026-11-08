@@ -109,6 +109,14 @@ def _answers(port: int) -> bool:
     return True
 
 
+#: A doc-check that passes, for the gate tests below. The gate runs `tools/doc_check.py`
+#: as its own position, and these tests are about the *other* positions: a test that booted
+#: a server to prove a server is killed must not also be reading this repository's
+#: documents, which are mid-edit in a way that has nothing to do with the behaviour under
+#: test. `tests/test_doc_check.py` is where the checker and the wiring are exercised.
+CLEAN_DOC_CHECK = [sys.executable, "-c", "print('doc_check: clean')"]
+
+
 class CliTest(unittest.TestCase):
     """One real server for the class, and the CLI run as a process against it."""
 
@@ -475,6 +483,7 @@ class CliTest(unittest.TestCase):
                 code = tp.run_gate(
                     tests_command=failing,
                     console_command=[sys.executable, "-c", "raise SystemExit(0)"],
+                    doc_check_command=CLEAN_DOC_CHECK,
                     out=sink,
                 )
         finally:
@@ -498,7 +507,12 @@ class CliTest(unittest.TestCase):
         tp.pick_free_port = remember
         try:
             with tempfile.TemporaryFile(mode="w+") as sink:
-                code = tp.run_gate(tests_command=passing, console_command=failing, out=sink)
+                code = tp.run_gate(
+                    tests_command=passing,
+                    console_command=failing,
+                    doc_check_command=CLEAN_DOC_CHECK,
+                    out=sink,
+                )
         finally:
             tp.pick_free_port = original
         self.assertEqual(code, 1)
@@ -513,13 +527,61 @@ class CliTest(unittest.TestCase):
         passing = [sys.executable, "-c", "print('Ran 421 tests in 0.1s'); print('OK')"]
         clean = [sys.executable, "-c", "print('ok   a check'); print('FAILURES: 0')"]
         with tempfile.TemporaryFile(mode="w+") as sink:
-            code = tp.run_gate(tests_command=passing, console_command=clean, out=sink)
+            code = tp.run_gate(
+                tests_command=passing,
+                console_command=clean,
+                doc_check_command=CLEAN_DOC_CHECK,
+                out=sink,
+            )
             sink.seek(0)
             text = sink.read()
         self.assertEqual(code, 0, text)
         self.assertIn("tests=421 OK", text)
         self.assertIn("FAILURES: 0", text)
         self.assertRegex(text, r"wall=\d+\.\d+s")
+
+    def test_the_gate_does_not_hand_git_plumbing_to_its_children(self) -> None:
+        """git exports GIT_DIR and GIT_INDEX_FILE to the hook, and the gate must not pass them on.
+
+        The gate runs inside `.githooks/pre-commit`, so the suite it starts inherits git's own
+        plumbing. Those two variables override `git -C`, so every test that builds a throwaway
+        repository read the outer index instead of its own: the hook's own tests failed while a
+        code commit was staged, which is the one moment the gate has to work.
+        """
+        probe_source = (
+            "import os, pathlib, sys; print('Ran 1 tests in 0.1s'); print('OK'); "
+            "pathlib.Path(sys.argv[1]).write_text("
+            "str(sorted(k for k in os.environ if k.startswith('GIT_'))))"
+        )
+        leaked = {"GIT_DIR": "/nowhere/.git", "GIT_INDEX_FILE": "/nowhere/.git/index"}
+        original = {key: os.environ.get(key) for key in leaked}
+        os.environ.update(leaked)
+        try:
+            with tempfile.TemporaryDirectory() as workdir:
+                seen = Path(workdir) / "child-env.txt"
+                probe = [sys.executable, "-c", probe_source, str(seen)]
+                with tempfile.TemporaryFile(mode="w+") as sink:
+                    code = tp.run_gate(
+                        quick=True,
+                        tests_command=probe,
+                        doc_check_command=CLEAN_DOC_CHECK,
+                        out=sink,
+                    )
+                    sink.seek(0)
+                    text = sink.read()
+                handed = seen.read_text()
+        finally:
+            for key, value in original.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+        self.assertEqual(code, 0, text)
+        self.assertEqual(
+            handed,
+            "[]",
+            f"the gate passed git's plumbing into the suite: {handed}",
+        )
 
     def test_quick_gate_runs_no_server_and_stops_after_the_tests(self) -> None:
         called: list[str] = []
@@ -529,7 +591,13 @@ class CliTest(unittest.TestCase):
         tp.pick_free_port = lambda: called.append("port") or original()
         try:
             with tempfile.TemporaryFile(mode="w+") as sink:
-                code = tp.run_gate(quick=True, tests_command=tests, console_command=console, out=sink)
+                code = tp.run_gate(
+                    quick=True,
+                    tests_command=tests,
+                    console_command=console,
+                    doc_check_command=CLEAN_DOC_CHECK,
+                    out=sink,
+                )
                 sink.seek(0)
                 text = sink.read()
         finally:
@@ -543,7 +611,13 @@ class CliTest(unittest.TestCase):
         slow = [sys.executable, "-c", "import time; time.sleep(30)"]
         started = time.monotonic()
         with tempfile.TemporaryFile(mode="w+") as sink:
-            code = tp.run_gate(quick=True, tests_command=slow, tests_timeout=1.0, out=sink)
+            code = tp.run_gate(
+                quick=True,
+                tests_command=slow,
+                tests_timeout=1.0,
+                doc_check_command=CLEAN_DOC_CHECK,
+                out=sink,
+            )
         self.assertEqual(code, 1)
         self.assertLess(time.monotonic() - started, 20)
 

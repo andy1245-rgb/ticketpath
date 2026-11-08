@@ -26,7 +26,8 @@ Global flags are accepted before or after the verb: `--base URL` (default
 | `price <eventId> [--tier T] [--cap BPS] [--mode counterfactual\|before_on_sale] [--at ISO]` | `GET /?event=...` | the decision page as text |
 | `page <path>` | whatever the path is | the page as a browser shows it: tags stripped, entities resolved, CSS and JS dropped |
 | `sweep` | `/health`, then the checks | the four property checks, with the failures |
-| `gate [--quick]` | an ephemeral server of this tree | the unit tests and the console checks |
+| `gate [--quick]` | an ephemeral server of this tree | the unit tests, the documentation check, and the console checks |
+| `doc-check [--root DIR] [--check NAME] [--verbose]` | the tracked markdown of this tree | the documentation violations, one line each, and the count of allowed absences |
 
 `price` exists because the guidance payload has exactly one HTTP surface in this tree: the
 console page. `ticketpath/server.py` serves nine contract routes plus `/health` and `/`, and
@@ -114,17 +115,20 @@ The full gate:
    ticketpath.server` from this working tree on it;
 2. waits for `/health` (20s bound) and prints the source the server reported;
 3. runs `python3 -m unittest discover -s tests` (150s bound);
-4. if those pass, runs `tools/console-check.py` against that server through `TP_BASE` (60s
+4. if those pass, runs `tools/doc_check.py` (120s bound): the documentation consistency
+   check, which is one line per violation and no server;
+5. if that passes, runs `tools/console-check.py` against that server through `TP_BASE` (60s
    bound);
-5. kills the server on every exit path -- pass, failure, timeout, exception -- deletes its
+6. kills the server on every exit path -- pass, failure, timeout, exception -- deletes its
    log, and prints one summary line.
 
 ```
 [EXACT] gate server http://127.0.0.1:41317 (working tree, <checkout>)
 [FIXTURE] SYNTHETIC FIXTURE DATA. Generated for tests and demonstration, not real ticket data.
 [FIXTURE] unittest: OK - 453 tests
+[FIXTURE] doc-check: 0 violation(s)
 [FIXTURE] console-check: 113 ok, 0 failed, FAILURES: 0
-[FIXTURE] gate ok - tests=453 OK - console-check FAILURES: 0 - wall=18.3s
+[FIXTURE] gate ok - tests=453 OK - doc-check=0 violation(s) - console-check FAILURES: 0 - wall=18.3s
 ```
 
 `<checkout>` is the absolute path of the clone the gate is running in, which it prints in
@@ -136,9 +140,12 @@ child's environment, because `tests/test_boundaries.py` pins `resolve_port()` to
 documented default of 8788 and that assertion is only true when the variable is unset; the
 gate hands its own server the port with the explicit `--port` flag, which wins over the
 environment anyway. And `--quick` starts no server at all: a pre-commit hook may not wait on
-a page render, and the unit tests already bind their own ephemeral servers.
+a page render, and the unit tests already bind their own ephemeral servers. `--quick` still
+runs steps 3 and 4, so a code commit cannot leave a document naming a file the tree has
+lost; the documentation check costs about a second, and its violations are printed in full
+under the summary.
 
-Exit codes: 0 both steps passed, 1 a step failed or exceeded its bound, 3 the gate's own
+Exit codes: 0 every step passed, 1 a step failed or exceeded its bound, 3 the gate's own
 ephemeral server never answered `/health` (its log tail is printed, and this is a broken
 tree rather than a broken command line).
 
@@ -170,8 +177,15 @@ tree rather than a broken command line).
    a weaker promise than one that also knows them itself. The classes they share -- `.env`,
    `*.pem`, `*.key`, the SSH key names, a PEM block -- are caught by step 1 first.
 3. **Runs the quick gate** when a staged path is under `ticketpath/`, `tests/` or `tools/`.
-   Anything else commits on its own: a docs-only commit that blocks on a 20-second suite is a
-   hook people learn to bypass, and a bypassed hook is worse than a narrow one.
+   A docs-only commit does not run the suite: one that blocks on a 20-second suite is a hook
+   people learn to bypass, and a bypassed hook is worse than a narrow one. Markdown is the
+   next step, which is cheap enough to afford.
+4. **Runs the documentation check** when a staged path is markdown under `docs/` or
+   `records/`, or is `README.md`, and no code is staged. That is the one commit that can break
+   the documentation, so it is the one commit that must not skip the check; the command is
+   `python3 tools/tp.py doc-check`, which binds no port and takes about a second, so the
+   argument for a narrow hook does not apply. A code commit does not run this step twice: the
+   quick gate in step 3 runs the same check inside itself.
 
 ```bash
 tools/install-hooks.sh     # once per clone: git config --local core.hooksPath .githooks
