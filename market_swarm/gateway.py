@@ -68,6 +68,8 @@ from __future__ import annotations
 
 import atexit
 import base64
+import hashlib
+import json
 import os
 import re
 import shutil
@@ -486,9 +488,18 @@ def custom_error_code(err: Any) -> int | None:
 
 
 def _code_from_text(text: str) -> int | None:
-    """The `custom program error: 0x177a` a simulation failure quotes, as a number."""
+    """The program's own error code out of a cluster's refusal text, as a number.
+
+    Two spellings reach this function. A simulation failure quotes `custom program error: 0x177a`
+    in hex; some RPC shapes print the same code in decimal (`custom program error: 6010`), and a
+    refusal whose code is read as `None` would be written as an unbranded `error` row rather than
+    a refusal a reader can count. Both are parsed, hex first because that is the common one.
+    """
     match = re.search(r"custom program error: 0x([0-9a-fA-F]+)", text)
-    return int(match.group(1), 16) if match else None
+    if match:
+        return int(match.group(1), 16)
+    match = re.search(r"custom program error: ([0-9]+)\b", text)
+    return int(match.group(1)) if match else None
 
 
 _MINT_LOCKS: dict[str, threading.Lock] = {}
@@ -548,6 +559,62 @@ def _toolchain_path() -> str:
 
 def _which(binary: str) -> str | None:
     return shutil.which(binary, path=_toolchain_path())
+
+
+def binary_provenance_mismatch(root: Path, program: str, binary: Path) -> str | None:
+    """Why the `.so` about to be deployed is not the one the provenance record names, or None.
+
+    The build-provenance record exists to answer one question -- which source produced these
+    bytes -- and a record nobody consults on the deploy path answers it for nobody. The gap it
+    closes is measured: `cp cap_hook.so cap_hook-v1.so` puts v2's bytecode at v1's address, and
+    `solana program deploy` accepts any bytes at a fresh address, so the run does not fail. It
+    completes, and every row says `program=v1` over v2's code. The keypair check in
+    `_program_id_from_disk` cannot see that; only the hash can.
+
+    A tree with no record is not refused: there is nothing to check it against, and the record is
+    one file a reader can see is absent. A record that is present and disagrees is refused, with
+    both hashes in the sentence, because the fix is either "rebuild from the source the record
+    names" or "re-record what you built" and a reader must be able to tell which.
+    """
+    record_path = root / "programs" / "cap_hook" / "BUILD-PROVENANCE.json"
+    if not record_path.is_file():
+        return None
+    try:
+        record = json.loads(record_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ChainUnavailable(
+            f"{record_path.name} cannot be read, so the .so about to be deployed cannot be "
+            f"checked against it: {exc}"
+        ) from exc
+    entries = [entry for entry in record.get("programs") or [] if entry.get("version") == program]
+    if not entries:
+        raise ChainUnavailable(
+            f"{record_path.name} records no {program} program, so it cannot say which bytes are "
+            f"about to be deployed as {program}"
+        )
+    entry = entries[0]
+    expected = (entry.get("binary") or {}).get("sha256")
+    recorded_path = (entry.get("binary") or {}).get("path")
+    relative = binary.relative_to(root).as_posix()
+    if recorded_path and recorded_path != relative:
+        raise ChainUnavailable(
+            f"the {program} program deploys from {relative}, and {record_path.name} records its "
+            f"binary at {recorded_path}: one of the two is wrong and this run will not guess"
+        )
+    if not isinstance(expected, str) or not expected:
+        raise ChainUnavailable(
+            f"{record_path.name} records no sha256 for the {program} binary, so there is nothing "
+            f"to compare {relative} against"
+        )
+    digest = hashlib.sha256(binary.read_bytes()).hexdigest()
+    if digest != expected:
+        return (
+            f"{relative} is sha256 {digest[:12]}, and {record_path.name} records the {program} "
+            f"binary as {expected[:12]}: these are not the bytes that were built from the source "
+            f"the record names. Rebuild from that source, or re-record what is here with "
+            f"tools/build_provenance.py"
+        )
+    return None
 
 
 def record_face_cap(observed: dict) -> tuple[int | None, int | None]:
@@ -758,7 +825,9 @@ class ChainGateway:
         """
         with self._state_lock:
             # Read under the lock and answer outside it: `status()` takes the same non-reentrant
-            # lock, so returning it from inside would deadlock the second `start()`.
+            # lock, so returning it from inside would deadlock the second `start()`. This does not
+            # serialise two concurrent boots -- `_started` is set further down, outside the lock --
+            # which is the shape this method already had and is not what this change is about.
             started = self._started
             if not started:
                 self._stopped = False
@@ -799,6 +868,13 @@ class ChainGateway:
         keypair = PROGRAM_KEYPAIRS[self.program]
         if not keypair.exists():
             raise ChainUnavailable(f"no {self.program} program keypair beside the .so at {keypair.name}")
+        # The bytes, not only the name. A keypair that derives the right address says nothing
+        # about which program is at it, and `solana program deploy` accepts any bytes at a fresh
+        # address -- so without this, v2's bytecode under v1's keypair is a run that completes
+        # and labels every row with the wrong program.
+        mismatch = binary_provenance_mismatch(REPO_ROOT, self.program, binary)
+        if mismatch:
+            raise ChainUnavailable(mismatch)
         if threading.current_thread() is not threading.main_thread():
             raise ChainUnavailable(
                 "a local validator installs process-global signal handlers, so it can only be "
@@ -1473,12 +1549,11 @@ class ChainGateway:
         """The raw bytes of a v2 `["record", mint]` account, read at `confirmed`.
 
         The same `getAccountInfo` call and the same commitment as `_read_record`, differing only
-        in what comes back: the bytes, not a decoded dict. `decode_record` reads the 19-byte v1
-        layout, so it cannot serve this path -- a v2 record is 70 bytes and the hook's clock sits
-        at byte 30 -- and neither function is changed here: the v1 read and decoder are another
-        run's repair (finding 42 §6). This is the reader the flip-tax path needs, and it is
-        deliberately the only place that unpacks the account, so the byte offset has one owner
-        (`flip_tax.held_since_unix_from_record`) and one reader.
+        in what comes back: the bytes, not a decoded dict. The bytes are what the tax needs -- a
+        v2 record is 70 bytes and the hook's clock sits at byte 30 -- whereas `_read_record`
+        decodes either layout into a dict and keeps no bytes. This is the reader the flip-tax
+        path needs, and it is deliberately the only place that unpacks the account, so the byte
+        offset has one owner (`flip_tax.held_since_unix_from_record`) and one reader.
 
         Raises `ChainUnavailable` when the account is absent or does not arrive as base64, which
         is the fail-closed rule for the tax: a sale whose hold cannot be read is not built, and no
@@ -1824,9 +1899,10 @@ class EventChain:
         with; the v1 pair is one signature, unchanged. A fee or tax event takes the v2
         shapes whatever the program is, because the record those paths write is a v2 record; that
         is why the v1 branch above is exactly the branch with neither. The v2 record that the tax
-        is priced from is read raw by `_read_record_v2` because `decode_record` reads the 19-byte
-        v1 layout -- disclosed in `records/findings/42-artist-fee-at-checkout.md` §6 and another
-        run's repair.
+        is priced from is read raw by `_read_record_v2` because the tax needs the exact bytes at
+        `confirmed` and the offset the hook wrote them to, which a decoded dict no longer carries
+        -- disclosed in `records/findings/42-artist-fee-at-checkout.md` §6 and another run's
+        repair.
 
         `fee_lamports` on the result is what was paid, so it is `0` for anything that did not land:
         a refused or unconfirmed send reports nothing paid, and a row that reported a fee it did not
@@ -1907,10 +1983,11 @@ class EventChain:
         seller_path = gateway._wallet_path(from_label)  # a path for the signer child only
         seller_address = gateway._wallet_address(from_label)
         program_id = gateway._program_id()
-        # The house key, resolved only on a v2 run. v2's stage is authorised by the record's
+        # The house key, resolved on a v2 run. v2's stage is authorised by the record's
         # authority, and `InitializeRecord` pinned that to the mint authority `_init_record` signs
         # as -- the house -- so a v2 sale has to carry that signature beside the seller's. v1's
-        # stage reads no signer at all, and a v1 run must not so much as resolve this key.
+        # plain stage reads no signer, so this is the one path that never needs it; the fee and
+        # tax paths resolve it on either program, which the module docstring discloses.
         house_address = gateway._wallet_address(HOUSE_LABEL) if gateway.program == "v2" else None
         admitted = cap_admits(
             price_lamports=price, face_lamports=self.face_lamports, cap_bps=self.cap_bps

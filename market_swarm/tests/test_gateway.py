@@ -365,6 +365,37 @@ class SystemTransferTest(unittest.TestCase):
                 gw.system_transfer_instruction(source=address(1), destination=address(2), lamports=bad)
 
 
+class RefusalCodeTest(unittest.TestCase):
+    """The program's own code, out of whatever spelling the cluster used for it.
+
+    A refusal written as an unbranded `error` row is a refusal a reader cannot count, so the two
+    spellings a preflight or a confirmed transaction can produce are both read. The hex form is
+    what a simulation failure quotes; the decimal one is what some RPC shapes print.
+    """
+
+    def test_hex_form(self) -> None:
+        text = (
+            "Transaction simulation failed: Error processing Instruction 0: "
+            "custom program error: 0x177a"
+        )
+        self.assertEqual(gw._code_from_text(text), 6010)
+
+    def test_decimal_form(self) -> None:
+        self.assertEqual(
+            gw._code_from_text("Transaction simulation failed: custom program error: 6010"),
+            6010,
+        )
+
+    def test_hex_wins_when_a_message_carries_both(self) -> None:
+        self.assertEqual(
+            gw._code_from_text("custom program error: 0x177a ... custom program error: 6021"),
+            6010,
+        )
+
+    def test_a_message_with_no_code_returns_none_rather_than_a_guess(self) -> None:
+        self.assertIsNone(gw._code_from_text("blockhash not found"))
+
+
 class CapDecisionTest(unittest.TestCase):
     def test_agrees_with_the_configured_ceiling(self):
         for face in (0, 1, 999, FACE, 2**64 - 1):

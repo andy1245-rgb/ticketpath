@@ -32,6 +32,8 @@ and not two. That is what pins the fix.
 from __future__ import annotations
 
 import base64
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -405,12 +407,13 @@ class TestTheDeployFollowsTheProgram(unittest.TestCase):
 
 
 class TestThePortsTheValidatorMayNotTake(unittest.TestCase):
-    """A picked port must never be one another service owns.
+    """A picked port must never be one this repository does not own.
 
     `_free_port` binds port 0 and asks the kernel what it gave; that cannot reserve anything, so
-    the only guarantee available is to refuse the ports whose owner is known. 3010 is a live web
-    server on this machine and 8795 is kept back for one; a validator that took either would take
-    a service down instead of failing.
+    the only guarantee available is to refuse the ports whose owner is already known. Two of them
+    are kept back for services this repository does not run, and a validator that took one would
+    disturb a service instead of failing. Which service holds which port is not written down here:
+    this repository is public, and a name is not needed to know that the port is not ours.
     """
 
     def test_the_two_named_ports_are_reserved(self) -> None:
@@ -450,6 +453,103 @@ class TestThePortsTheValidatorMayNotTake(unittest.TestCase):
         port = gw._free_port()
         self.assertGreater(port, 1024)
         self.assertNotIn(port, gw._RESERVED_PORTS)
+
+
+class TestTheDeployedBytesAreTheOnesTheRecordNames(unittest.TestCase):
+    """The provenance record is consulted on the deploy path, not only on a reader's desk.
+
+    The gap this closes was measured by a reviewer: `cp cap_hook.so cap_hook-v1.so` deploys v2's
+    bytecode at v1's address, and `solana program deploy` accepts any bytes at a fresh address, so
+    nothing fails -- the run completes and every row says `program=v1` over v2's code. A keypair
+    that derives the right address says nothing about what is at it.
+    """
+
+    def make_root(self, tmp: Path, *, recorded_sha: str, recorded_path: str) -> Path:
+        (tmp / "programs" / "cap_hook").mkdir(parents=True)
+        binary = tmp / recorded_path
+        binary.parent.mkdir(parents=True, exist_ok=True)
+        binary.write_bytes(b"ELF not really")
+        record = {
+            "schema": "build-provenance/1",
+            "programs": [
+                {
+                    "version": "v2",
+                    "binary": {"path": recorded_path, "sha256": recorded_sha},
+                }
+            ],
+        }
+        (tmp / "programs" / "cap_hook" / "BUILD-PROVENANCE.json").write_text(
+            json.dumps(record), encoding="utf-8"
+        )
+        return binary
+
+    def test_the_right_bytes_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = "programs/cap_hook/target/deploy/cap_hook.so"
+            digest = hashlib.sha256(b"ELF not really").hexdigest()
+            binary = self.make_root(root, recorded_sha=digest, recorded_path=path)
+            self.assertIsNone(gw.binary_provenance_mismatch(root, "v2", binary))
+
+    def test_the_wrong_bytes_are_refused_with_both_hashes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = "programs/cap_hook/target/deploy/cap_hook.so"
+            binary = self.make_root(root, recorded_sha="0" * 64, recorded_path=path)
+            message = gw.binary_provenance_mismatch(root, "v2", binary)
+        self.assertIsNotNone(message)
+        self.assertIn("0" * 12, message)
+        self.assertIn("not the bytes that were built", message)
+
+    def test_the_wrong_path_is_refused_rather_than_compared(self) -> None:
+        """A record naming another file cannot say anything about this one."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binary = self.make_root(
+                root,
+                recorded_sha=hashlib.sha256(b"ELF not really").hexdigest(),
+                recorded_path="programs/cap_hook/target/deploy/cap_hook-v1.so",
+            )
+            v2 = root / "programs/cap_hook/target/deploy/cap_hook.so"
+            v2.write_bytes(b"ELF not really")
+            with self.assertRaises(gw.ChainUnavailable) as caught:
+                gw.binary_provenance_mismatch(root, "v2", v2)
+            del binary
+        self.assertIn("one of the two is wrong", str(caught.exception))
+
+    def test_a_tree_with_no_record_is_not_refused(self) -> None:
+        # There is nothing to check it against, and the record is one file a reader can see is
+        # absent. Refusing here would make the build unusable, not make it verified.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binary = root / "programs" / "cap_hook" / "target" / "deploy" / "cap_hook.so"
+            binary.parent.mkdir(parents=True)
+            binary.write_bytes(b"ELF")
+            self.assertIsNone(gw.binary_provenance_mismatch(root, "v2", binary))
+
+    def test_a_record_that_does_not_mention_the_program_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = "programs/cap_hook/target/deploy/cap_hook.so"
+            binary = self.make_root(root, recorded_sha="0" * 64, recorded_path=path)
+            with self.assertRaises(gw.ChainUnavailable) as caught:
+                gw.binary_provenance_mismatch(root, "v1", binary)
+        self.assertIn("records no v1 program", str(caught.exception))
+
+    def test_the_committed_record_matches_the_bytes_on_disk(self) -> None:
+        """The tree as it stands: both builds are the ones the record names."""
+        root = Path(gw.__file__).resolve().parents[1]
+        record = root / "programs" / "cap_hook" / "BUILD-PROVENANCE.json"
+        if not record.is_file():  # pragma: no cover - the record is committed
+            self.skipTest("no provenance record in this tree")
+        for program, name in (("v2", "cap_hook.so"), ("v1", "cap_hook-v1.so")):
+            binary = root / "programs" / "cap_hook" / "target" / "deploy" / name
+            if not binary.is_file():
+                continue  # git-ignored: a clone has the record and not the bytes
+            self.assertIsNone(
+                gw.binary_provenance_mismatch(root, program, binary),
+                f"{name} is not the binary BUILD-PROVENANCE.json records for {program}",
+            )
 
 
 if __name__ == "__main__":  # pragma: no cover - the suite runs it through discovery
