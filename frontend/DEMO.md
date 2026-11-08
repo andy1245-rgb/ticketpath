@@ -42,7 +42,7 @@ BANNED), region, artist fee and flip tax. Every change moves the buyer side with
 both views read one state object.
 
 The toggle in the header switches the side and writes `seatpass.role.v1`. It is the same
-toggle on every page; off `/demo` it takes you to `/demo`.
+toggle on every page; off `/demo` it takes you to `/events` (Buyer) or `/organizer` (Organizer).
 
 ## Building and serving it
 
@@ -53,7 +53,7 @@ cd frontend
 npm install                 # node_modules is not committed
 npx next build              # writes out/
 python3 -m http.server 4599 --directory out
-# then open http://127.0.0.1:4599/demo.html
+# then open http://127.0.0.1:4599/demo/
 ```
 
 ## What it does not do
