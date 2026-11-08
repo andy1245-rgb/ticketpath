@@ -13,8 +13,8 @@
  * simulated.
  */
 
-import { capCeilingLamports, isWithinCap } from "./cap";
-import { LAW_AS_OF, LAW_TABLE_SHA256, LAW_TABLE_VERSION, REGIONS, type RegionRow } from "./demoRegions";
+import { capCeilingLamports, isWithinCap } from "./cap.ts";
+import { LAW_AS_OF, LAW_TABLE_SHA256, LAW_TABLE_VERSION, REGIONS, type RegionRow } from "./demoRegions.ts";
 
 export const STORAGE_KEY = "seatpass.demo.v1";
 export const SOL = 1_000_000_000;
@@ -43,7 +43,11 @@ export type EventConfig = {
   resaleMode: ResaleMode;
   artistFee: { on: boolean; bps: number };
   flipTax: boolean;
+  /** Manual per-ticket overrides, keyed by ticket serial. Absent on older stored states. */
+  ticketOverrides?: Record<string, TicketOverride>;
 };
+
+export type TicketOverride = { frozen: boolean; maxLamports: number | null };
 
 export type DemoState = { version: 1; wallet: string; event: EventConfig; tickets: Ticket[] };
 
@@ -55,7 +59,7 @@ export function defaultEvent(): EventConfig {
     name: "Midnight Static — North American Tour",
     venue: "Aurora Amphitheater, Chicago",
     startsAt: "2026-12-10T18:00:00.000Z",
-    region: "CA-ON",
+    region: "US",
     faceLamports: 1 * SOL,
     capBps: 2500,
     overrideCapBps: null,
@@ -146,7 +150,7 @@ export type ListingOutcome =
   | { ok: true; ceiling: Ceiling; taxBps: number; taxLamports: number; feeLamports: number }
   | {
       ok: false;
-      code: "E_CAP_EXCEEDED" | "LAW_UNRESOLVED" | "RESALE_DISABLED" | "BAD_PRICE";
+      code: "E_CAP_EXCEEDED" | "LAW_UNRESOLVED" | "RESALE_DISABLED" | "BAD_PRICE" | "TICKET_FROZEN" | "TICKET_MAX_EXCEEDED";
       title: string;
       detail: string;
       ceiling: Ceiling;
@@ -176,6 +180,28 @@ export function evaluateListing(args: {
       code: ceiling.closed.code as "LAW_UNRESOLVED" | "RESALE_DISABLED",
       title: ceiling.closed.code === "RESALE_DISABLED" ? "Resale is off for this event" : "The law here does not resolve",
       detail: ceiling.closed.reason,
+      ceiling,
+      priceLamports,
+    };
+  }
+
+  const manual = event.ticketOverrides?.[ticket.serial];
+  if (manual?.frozen) {
+    return {
+      ok: false,
+      code: "TICKET_FROZEN",
+      title: "The organizer froze resale of this ticket",
+      detail: `Ticket ${ticket.serial} has a manual freeze in this event's settings. App policy in this demo, not a chain rule.`,
+      ceiling,
+      priceLamports,
+    };
+  }
+  if (manual?.maxLamports != null && priceLamports > manual.maxLamports) {
+    return {
+      ok: false,
+      code: "TICKET_MAX_EXCEEDED",
+      title: "Above the organizer's maximum for this ticket",
+      detail: `Ticket ${ticket.serial} has a per-ticket maximum of ${manual.maxLamports} lamports; ${priceLamports} is above it. App policy in this demo, not a chain rule.`,
       ceiling,
       priceLamports,
     };
@@ -307,4 +333,44 @@ export function sol(lamports: number): string {
 
 export function bpsLabel(bps: number | null): string {
   return bps == null ? "no cap" : `${(bps / 100).toFixed(2)}%`;
+}
+
+/**
+ * Plain-language lines on what a buyer may do under these settings, derived only from the
+ * event and its ceiling. Each line is a reading of a setting this demo applies; none claims
+ * the deployed program enforces anything but the cap.
+ */
+export function buyerSummary(event: EventConfig, ceiling: Ceiling): string[] {
+  const lines: string[] = [];
+  if (ceiling.closed) {
+    lines.push(
+      ceiling.closed.code === "RESALE_DISABLED"
+        ? "Resale is banned: no ticket can be listed at any price."
+        : `Resale is closed: ${ceiling.closed.reason}`,
+    );
+  } else {
+    lines.push(
+      `A ticket can be listed up to ${sol(ceiling.ceilingLamports)} (${bpsLabel(ceiling.capBps)} over face; the ${ceiling.binding} cap binds). One lamport more is refused.`,
+    );
+    if (event.resaleMode === "monitored") lines.push("Listings are marked monitored in the record. No review queue exists in this build.");
+  }
+  lines.push(
+    `Region rule: ${event.region}, ${ceiling.row.resalePolicy}${ceiling.lawBps == null ? "" : `, law ceiling ${bpsLabel(ceiling.lawBps)}`}. A rule table lookup, not a location check on the buyer.`,
+  );
+  lines.push(
+    event.artistFee.on
+      ? `Seller pays an artist fee of ${bpsLabel(event.artistFee.bps)} of the resale price.`
+      : "No artist fee on resale.",
+  );
+  lines.push(
+    event.flipTax
+      ? "Seller pays a flip tax of 15% in the first hour, falling to 0 at 30 days held."
+      : "No flip tax.",
+  );
+  const manual = Object.entries(event.ticketOverrides ?? {});
+  for (const [serial, o] of manual) {
+    if (o.frozen) lines.push(`Ticket ${serial}: resale frozen by the organizer.`);
+    else if (o.maxLamports != null) lines.push(`Ticket ${serial}: organizer maximum ${sol(o.maxLamports)}.`);
+  }
+  return lines;
 }
