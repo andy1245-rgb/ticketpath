@@ -111,6 +111,7 @@ body {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+  overflow-wrap: anywhere;
 }
 
 .u-num {
@@ -235,4 +236,14 @@ html {
 
 [id] {
   scroll-margin-top: 5rem;
+}
+
+/* Keyboard focus: one visible ring on every interactive element. */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-accent, currentColor);
+  outline-offset: 2px;
 }

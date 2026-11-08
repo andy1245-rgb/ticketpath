@@ -373,8 +373,8 @@ export default async function HomePage() {
         devnet program refuses anything above a cap when the organiser sets one (6010).
       </p>
       <div className="mt-8 flex flex-wrap items-center gap-3">
-        <Pill href="/events" variant="primary">
-          Browse events
+        <Pill href="/demo" variant="primary">
+          Try the demo: buy, then break the cap
         </Pill>
         <Pill href="/rules" variant="secondary">
           How the cap works

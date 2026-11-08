@@ -74,7 +74,7 @@ export function Chip({ children, tone = "neutral", className = "" }: { children:
 /** A raised surface: the header, the ticket card, the three feature cards. */
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-card border border-control bg-surface shadow-card ${className}`}>{children}</div>
+    <div className={`rounded-card border p-6 border-control bg-surface shadow-card ${className}`}>{children}</div>
   );
 }
 

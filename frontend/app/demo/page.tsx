@@ -33,6 +33,65 @@ import {
 const ACCEPTED = artefact.transfers.acceptedAtCap;
 const REFUSED = artefact.transfers.refusedOverCap;
 
+/**
+ * The buyer journey as five labelled steps. The current step is derived from
+ * the demo store, not stored. The wallet step is a stand-in: the demo issues a
+ * synthetic address and connects nothing.
+ */
+function JourneyStepper({
+  role,
+  ticketCount,
+  resold,
+  refused,
+}: {
+  role: Role;
+  ticketCount: number;
+  resold: boolean;
+  refused: boolean;
+}) {
+  const steps = [
+    { n: 1, label: "Wallet", note: "SIMULATED: synthetic address, nothing connects" },
+    { n: 2, label: "Buy", note: "Mint a demo ticket at face" },
+    { n: 3, label: "Receipt", note: "Fee, flip tax and cap arithmetic" },
+    { n: 4, label: "Resell", note: refused ? "Refused above the cap (6010)" : "Try at, then over, the cap" },
+    { n: 5, label: "History", note: "Hops on the ticket, and in My tickets" },
+  ];
+  const current = ticketCount === 0 ? 2 : resold ? 5 : refused ? 4 : 3;
+  return (
+    <nav aria-label="Buyer journey" className="mt-6">
+      <ol className="grid gap-2 sm:grid-cols-5">
+        {steps.map((step) => {
+          const done = role === "buyer" && step.n < current;
+          const active = role === "buyer" && step.n === current;
+          return (
+            <li
+              key={step.n}
+              aria-current={active ? "step" : undefined}
+              className={`rounded-md border px-3 py-2 ${active ? "border-accent bg-surface" : "border-line"}`}
+            >
+              <p className={`t-micro-caps ${active ? "text-accent" : "text-muted"}`}>
+                {step.n}. {step.label}
+                {done ? " (done)" : ""}
+              </p>
+              <p className="t-micro mt-1 text-muted">{step.note}</p>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="t-micro mt-3 text-muted">
+        What this demo simulates: wallet, payment and settlement run in this browser against a
+        transcription of the rules. Only the cap predicate is enforced on chain, by the v1 program
+        on devnet. Fee and flip tax are paid by the seller in the sale in this app; region rules and
+        bans are app policy. See{" "}
+        <Link href="/my-tickets" className="text-accent underline underline-offset-2">
+          My tickets
+        </Link>{" "}
+        for what you hold.
+      </p>
+    </nav>
+  );
+}
+
 export default function DemoPage() {
   const [mounted, setMounted] = useState(false);
   const [role, setLocalRole] = useState<Role>("buyer");
@@ -87,7 +146,13 @@ export default function DemoPage() {
   if (!mounted) {
     return (
       <div className="box py-16">
-        <p className="t-body text-muted">Loading the demo state from this browser…</p>
+        <p className="t-body text-muted" role="status">
+          Loading the demo state from this browser… This page is a simulation that runs in your
+          browser; it needs JavaScript and localStorage, and nothing is sent anywhere.
+        </p>
+        <noscript>
+          <p className="t-body mt-2 text-ink">JavaScript is required for the demo. See /rules for the written proof.</p>
+        </noscript>
       </div>
     );
   }
@@ -113,7 +178,7 @@ export default function DemoPage() {
             onClick={reset}
             className="u-transition t-meta text-muted underline-offset-4 hover:text-ink hover:underline"
           >
-            Clear tickets only
+            Reset demo: clear my tickets
           </button>
           <button
             type="button"
@@ -132,6 +197,13 @@ export default function DemoPage() {
           <span className="text-ink">localStorage</span>, so a reload keeps your tickets.
         </p>
       </div>
+
+      <JourneyStepper
+        role={role}
+        ticketCount={state.tickets.length}
+        resold={state.tickets.some((t) => t.hops.length > 1)}
+        refused={outcome !== null && !outcome.result.ok}
+      />
 
       <Rule className="my-8" />
 
