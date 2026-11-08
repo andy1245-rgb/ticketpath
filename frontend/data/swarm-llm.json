@@ -1,5 +1,5 @@
 {
-  "source": "reports/swarm-llm/SUMMARY.md (written 2026-11-08T15:25Z), reports/swarm-llm-dry/measured.json (read 2026-11-08, file still being written), reports/swarm-val2/totals.json",
+  "source": "reports/swarm-llm/SUMMARY.md, reports/swarm-llm-dry/SUMMARY.md (final, written 2026-11-08T16:00Z), reports/swarm-val2/totals.json",
   "label": "SYNTHETIC \u00b7 LIVE MODEL AND SCRIPTED \u00b7 MEASURED",
   "liveModelDry": {
     "runs": 3,
@@ -14,15 +14,15 @@
     "note": "Three runs of live model children on the dry gateway; the local validator would not boot in that window. 49 of 150 decisions (32.7%) had no usable reply and fell back to the scripted policy of the same name. Zero chain refusals: no agent asked above the ceiling, so these runs did not test the ceiling."
   },
   "liveModelDrySecondBatch": {
-    "runEvents": 14,
-    "completeRunEvents": 7,
-    "decisions": 680,
-    "real": 607,
-    "fallback": 73,
-    "tokens": 791367,
-    "usd": 0.339608,
+    "runEvents": 19,
+    "completeRunEvents": 19,
+    "decisions": 883,
+    "real": 735,
+    "fallback": 148,
+    "tokens": 977913,
+    "usd": 0.410464,
     "chain": "simulated",
-    "note": "Snapshot of a file that was still being written; run events not marked complete are included in these totals. Dry: any 6010 rows are predictions, not validator refusals."
+    "note": "Twelve runs, 19 datasets, final summary reports/swarm-llm-dry/SUMMARY.md. Dry gateway: nothing was sent to any chain, so the 11 refusals coded 6010 are predictions, every one from a scripted fallback and none from a model."
   },
   "scriptedSecondBatch": {
     "runs": 8,

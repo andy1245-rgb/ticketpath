@@ -146,8 +146,8 @@ export function SwarmRunPanel(): React.ReactElement {
         </p>
         <p className="t-micro mt-2 text-muted">{llm.liveModelDry.note}</p>
         <p className="t-body mt-4 text-ink">
-          Second dry batch (snapshot, {llm.liveModelDrySecondBatch.completeRunEvents} of{" "}
-          {llm.liveModelDrySecondBatch.runEvents} run events complete):{" "}
+          Second dry batch (final, {llm.liveModelDrySecondBatch.completeRunEvents} of{" "}
+          {llm.liveModelDrySecondBatch.runEvents} run events):{" "}
           {n(llm.liveModelDrySecondBatch.decisions)} decisions,{" "}
           {n(llm.liveModelDrySecondBatch.tokens)} tokens, $
           {llm.liveModelDrySecondBatch.usd.toFixed(4)}.
