@@ -226,7 +226,7 @@ this note does not move row 7.
 | Piece | State | Evidence |
 |---|---|---|
 | HTTP server, stdlib only | **WORKS** | started by this pass on a scratch loopback port, `GET /health` → 200, `contract.routesImplemented: 10`, `endpointsImplemented: 9` |
-| Route table | **WORKS** | 10 routes, 9 of them contract endpoints; `/health` was read live in this pass |
+| Route table | **WORKS** | 10 routes, 9 of them contract endpoints; `/health` was read live in this pass. Three surfaces are served beside the table and never counted in it: the console at `/`, and, added by the video-evidence pass, `GET /guidance.json` and `GET /devnet-record.json`. `/health.contract.routesImplemented` is therefore still 10 and `endpointsImplemented` still 9 (`tests/test_evidence_surfaces.py`) |
 | Ledger adapter | **WORKS** | `ticketpath/adapters/ledger_adapter.py` — the only path to data; refuses a store that does not declare `meta.synthetic: true` |
 | Store (fixture) | **WORKS, synthetic only** | `build_fixture_store.py --check` in this pass → `fixtures/synthetic_store.json matches a fresh build exactly`, and the loader accepts it |
 | Core (pure functions) | **WORKS** | unchanged since `375126f` (17:25Z): no clock except an injected `now()`, no network |
@@ -237,7 +237,7 @@ this note does not move row 7.
 | On-chain state machine | **DESIGN-ONLY + SIMULATED** | `ticketpath/onchain/sim.py`, Python mirror, same error codes; console renders 5 arms under `[SIMULATED]` |
 | Solana toolchain | **INSTALLED, NOT ON A NON-LOGIN PATH** | `bash -lc 'which solana spl-token cargo-build-sbf rustc cargo'` → all five resolve; versions in §0 row 5. In a plain non-login shell `which solana` still returns nothing |
 | API layer | **WORKS** | one module per contract area; `tests/test_contract_conformance.py` addresses every route over a socket |
-| Console | **WORKS** | one server-rendered page at `/`, no JavaScript, every state a URL. **The `[DEVNET]` slot now renders the recorded artefact as recorded** (§A3): the file's own instant, slot, block time, signature, mint, program, memo program, both transfer legs and the refusal's `6010`, plus a separate sentence saying whether the page's number is the chain's. The `Verified at None` defect is closed (§A6 defect 1). Page byte count not re-measured this pass |
+| Console | **WORKS, AND NOW HAS TWO JSON PROJECTIONS** | one server-rendered page at `/`, no JavaScript, every state a URL. Beside it and outside `ROUTES`: `/guidance.json` (the page's refusals as plain sentences and their count, composed by the same `blocks.refusal_lines` the HTML wraps, so the two cannot drift) and `/devnet-record.json` (the artefact the chain slot reads, through `Orchestrator.devnet_record`, saying in its own body that no cluster was asked). `records/VIDEO-EVIDENCE.md` is the account; the console's own `[DEVNET]` slot is unchanged. **The `[DEVNET]` slot now renders the recorded artefact as recorded** (§A3): the file's own instant, slot, block time, signature, mint, program, memo program, both transfer legs and the refusal's `6010`, plus a separate sentence saying whether the page's number is the chain's. The `Verified at None` defect is closed (§A6 defect 1). Page byte count not re-measured this pass |
 | CLI (`tools/tp.py`) | **WORKS** | 8 verbs, exit codes 0/1/2/3 **[corrected 2026-11-08T12:00Z: 10 verbs, `timeout 60 python3 tools/tp.py --help` → `health events event tickets history price page sweep gate doc-check`, and the exit codes are unchanged. `docs/CLI.md:19-30` already tabulated all ten]** |
 | Publish script | **WORKS, AND RESUMABLE** | `tools/devnet_publish.py`: nine steps, each reads the cluster before it writes; transport retries 4× with 0.5/1/2 s backoff; resume file `records/devnet-progress.json` (git-ignored, 0600); `--inject` faults armed only by an explicit flag; `--local` runs a validator it kills on every exit path |
 | `market_swarm/` | **IN PROGRESS, SEPARATE PACKAGE** | 11 modules + 7 test modules, standard library only, imports nothing from `ticketpath/` and is imported by nothing in it. 274 tests green. No run config file in the tree, so `python3 -m market_swarm plan --config <path>` is the only entry point and there is nothing to point it at yet (§A9) |
@@ -1042,11 +1042,16 @@ else, marked unresolved).
    and `records/findings/34` says so again.
 2. It does not claim the table is complete or current. Every row is stamped with the date it was
    retrieved, and a row whose instrument changed after that date is stale until it is re-read.
-3. It does not claim the fixture demonstrates the feature. The synthetic store's events now carry
-   `jurisdiction: CA-ON` (every venue in it is an invented Ontario city), so the additive keys are
-   populated on every fixture event and Ontario's 2026 cap is stricter than the fixture's own +25%
-   organiser cap. That is a demonstration of the code path on synthetic data, not evidence about any
-   market, and the store's own label still says so on every payload.
+3. It does not claim the fixture demonstrates the feature. The synthetic store's events carry
+   `jurisdiction: GB` (every venue in it is an invented British city), so the additive keys are
+   populated on every fixture event and the law resolves to `monitored`: a disclosure law is in
+   force and the announced cap is not law, so the fixture's own organiser cap is the binding rule
+   and every recorded sale is legal against the ceiling the app prints. **[Corrected 2026-11-08:
+   this paragraph said `CA-ON` and "Ontario's 2026 cap is stricter than the fixture's own +25%";
+   that was true and it made 54 of 61 recorded sales sit above the ceiling the screen printed.
+   The operator moved the fixture to GB, which is the same code path under a monitored policy.
+   `records/F-decision-log.md` D28.]** That is a demonstration of the code path on synthetic data,
+   not evidence about any market, and the store's own label still says so on every payload.
 
 **Collision record.** While this feature was being built, another agent in this tree was
 implementing the ten-feature plan's program v2 inside `programs/cap_hook/`, and it moved this

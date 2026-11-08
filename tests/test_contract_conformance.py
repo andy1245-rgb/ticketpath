@@ -110,6 +110,11 @@ def obj(schema):
     return ("object", schema)
 
 
+def either(*specs):
+    """One of several exact shapes, for a field the backend serves in two truthful forms."""
+    return ("either", specs)
+
+
 def open_obj():
     """An object whose fields the contract does not pin down (/health only)."""
     return ("object_any",)
@@ -171,7 +176,16 @@ ENFORCED_CAP_FIELDS = {
     "platformCapBps": nullable(BPS),
 }
 ENFORCED_CAP = obj(ENFORCED_CAP_FIELDS)
-ENFORCED_CAP_TIER = obj({"tierId": STR, **ENFORCED_CAP_FIELDS})
+# A tier whose law and platform cap both leave it uncapped has no ceiling to state. It is
+# served as `{"tierId": ..., "enforcedCap": null}` rather than as five invented fields:
+# `region_caps.effective_ceiling` returns None, and a base and a rate for a ceiling that
+# does not exist would be a number nobody computed. This shape was unreachable while the
+# fixture events were CA-ON, because Ontario's 0% cap gave every tier a ceiling; GB is
+# `monitored`, so the platform's own cap decides and an event that sets none has none.
+ENFORCED_CAP_TIER = either(
+    obj({"tierId": STR, **ENFORCED_CAP_FIELDS}),
+    obj({"tierId": STR, "enforcedCap": nullable(ENFORCED_CAP)}),
+)
 
 EVENT_ADDITIONS = {
     "jurisdiction": nullable(STR),
@@ -507,6 +521,19 @@ def check_value(value, spec, path, errors):
                 errors.append(f"{path}: expected a number in 0..1, got {_typename(value)}")
             elif not 0.0 <= float(value) <= 1.0:
                 errors.append(f"{path}: {value!r} is outside the contract range 0..1")
+            return
+        if tag == "either":
+            # The first alternative that validates wins, and its own errors are the ones
+            # reported, so a failure names the shape the value was closest to.
+            closest: list[str] = []
+            for alternative in spec[1]:
+                errors_here: list[str] = []
+                check_value(value, alternative, path, errors_here)
+                if not errors_here:
+                    return
+                if not closest or len(errors_here) < len(closest):
+                    closest = errors_here
+            errors.extend(closest)
             return
         raise AssertionError(f"unknown spec tag {tag!r} at {path}")
 

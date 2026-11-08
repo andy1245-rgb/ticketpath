@@ -7,6 +7,14 @@ import { StatRow, StatTile } from "@/components/StatTile";
 import { DataSourceNote, Panel } from "@/components/ui";
 import { formatCompact, formatDate, formatMarkup, formatPercent, formatSol } from "@/lib/format";
 
+/**
+ * Static export has no request to read a query string from. `force-static`
+ * tells Next to render this route once at build time with an empty
+ * `searchParams`, which is the default (unfiltered) view. Filter links still
+ * work as URLs; the values they carry are simply not read by the export.
+ */
+export const dynamic = "force-static";
+
 export const metadata = { title: "For organizers" };
 
 /** The backend caps this table at twelve rows; the screen never lengthens it. */

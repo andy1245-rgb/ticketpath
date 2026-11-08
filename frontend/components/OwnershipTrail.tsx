@@ -128,8 +128,9 @@ export function OwnershipTrail(props: {
               </span>
             )}
 
-            {/* Every signature is null in this build, so the honest row is a
-                plain statement, not a link. When a signature does arrive the
+            {/* Every row here comes from the synthetic fixture store, so there
+                is no transaction to link and the column names the source
+                instead of denying the chain. When a signature does arrive the
                 same slot becomes the explorer link, named for its own row. */}
             {entry.signature ? (
               <a
@@ -146,7 +147,7 @@ export function OwnershipTrail(props: {
                 aria-label={`No transaction recorded for ${label}`}
                 className="t-meta whitespace-nowrap text-muted"
               >
-                Not on chain
+                Fixture
               </span>
             )}
           </li>

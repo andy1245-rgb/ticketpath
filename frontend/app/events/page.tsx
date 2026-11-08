@@ -94,6 +94,14 @@ const FIELD_LABEL = "t-micro-caps text-muted";
 const FIELD_CONTROL =
   "h-11 rounded-input border border-control bg-surface px-3 t-body text-ink";
 
+/**
+ * Static export has no request to read a query string from. `force-static`
+ * tells Next to render this route once at build time with an empty
+ * `searchParams`, which is the default (unfiltered) view. Filter links still
+ * work as URLs; the values they carry are simply not read by the export.
+ */
+export const dynamic = "force-static";
+
 export default async function EventsPage({
   searchParams,
 }: {

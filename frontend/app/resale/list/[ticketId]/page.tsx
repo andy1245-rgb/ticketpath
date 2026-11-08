@@ -1,4 +1,4 @@
-import { ApiError, getEvent, getTicket } from "@/lib/api";
+import { ApiError, getEvent, getTicket, getTickets } from "@/lib/api";
 import type { Event, Ticket } from "@/lib/types";
 import { DataSourceNote, Panel } from "@/components/ui";
 import { formatDateTime, formatSol } from "@/lib/format";
@@ -16,6 +16,18 @@ export const metadata = { title: "List a ticket" };
  * code, because the message is the diagnosable part and the error boundary
  * would throw it away.
  */
+/**
+ * Static export: every ticket URL is enumerated at build time from lib/api,
+ * because there is no server to resolve /tickets/<id> on demand.
+ */
+export async function generateStaticParams(): Promise<Array<{ ticketId: string }>> {
+  const { items } = await getTickets({ limit: 1000 });
+  return items.map((ticket) => ({ ticketId: ticket.id }));
+}
+
+/** With no server, any other ticket id is a 404 the host serves. */
+export const dynamicParams = false;
+
 export default async function ListTicketPage({
   params,
 }: {

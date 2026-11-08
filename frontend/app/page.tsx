@@ -1,10 +1,10 @@
 import { AddressPill } from "@/components/AddressPill";
 import { TicketCard } from "@/components/TicketCard";
 import { Chip, DataSourceNote, Panel, Pill, Rule } from "@/components/ui";
-import { getEvents, getHealth, getResaleHistory, getTickets } from "@/lib/api";
+import { getDevnetRecord, getEvents, getResaleHistory, getTickets } from "@/lib/api";
 import { capCeilingLamports } from "@/lib/cap";
 import { HIDDEN_FEES, RESALES_BLOCKED_AT_CAP } from "@/lib/demo";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateTime, formatLamports } from "@/lib/format";
 import { PROGRAM_ID, explorerProgramUrl } from "@/lib/solana";
 
 /*
@@ -21,6 +21,20 @@ import { PROGRAM_ID, explorerProgramUrl } from "@/lib/solana";
 // ---------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------
+
+/**
+ * The event the hero card shows, named rather than taken by chance.
+ *
+ * It used to be `onSale[0]`, which landed on whichever event sorted first and
+ * once landed on an event called "Uncapped Markup Spread" whose own caption
+ * reported two sales above its cap. The first frame of the film is the one
+ * place a reader learns what the product is, so the card is pinned to an event
+ * whose cap is the platform's binding rule, whose floor tier is one SOL, and
+ * whose sales all sit under the 25% ceiling: the same face and the same cap the
+ * devnet record on /rules carries. A pinned event that is not on sale falls back
+ * to the first one, because a missing fixture must not blank the page.
+ */
+const HERO_EVENT_SLUG = "synthetic-hall-cap-not-binding";
 
 /**
  * The two reads that need the featured event's id, in order. Returns null when
@@ -259,24 +273,35 @@ const STEPS: ReadonlyArray<{ numeral: string; copy: string }> = [
 // ---------------------------------------------------------------------------
 
 /**
- * The three states the brief gives this route (loading, empty, error) only
- * exist while the route is rendered per request. Prerendered at build time, the
- * page would either bake one snapshot of the backend or fail the build when the
- * backend is down, and app/loading.tsx and app/error.tsx could never come into
- * play. So the route reads the backend on each request.
+ * Prerendered once, at build time. This deployment is a static export: Next
+ * writes plain HTML into `out/`, no process serves it, and there is no request
+ * to read a query string from. `force-static` is what that means. Every read
+ * below happens during the build, against the bundled fixtures and the one
+ * record file, and the panels say which instant that was: app/loading.tsx and
+ * app/error.tsx cannot come into play, because nothing renders at request time.
  */
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 export default async function HomePage() {
-  // The four reads, in the order the screen needs them.
-  const { items: onSale, dataSource } = await getEvents({ status: "on_sale", limit: 1 });
-  const featured = onSale[0] ?? null;
+  // The three reads, in the order the screen needs them. The event list is wide
+  // enough to find the pinned event, and the artefact read is what the program
+  // strip prints: a configured id is not a record of anything.
+  const [{ items: onSale, dataSource }, devnet] = await Promise.all([
+    getEvents({ status: "on_sale", limit: 50 }),
+    getDevnetRecord().catch(() => null),
+  ]);
+  const featured =
+    onSale.find((event) => event.slug === HERO_EVENT_SLUG) ?? onSale[0] ?? null;
   const hero = featured ? await loadHero(featured) : null;
-  const health = await getHealth();
+  const artefact = devnet?.loaded ? devnet.record : null;
+  // The record's own id wins over the build's configured one: the strip says
+  // what a verified run wrote, and falls back to configuration only when there
+  // is no record to read.
+  const programId = artefact?.programId ?? PROGRAM_ID;
 
   const capCeiling =
     featured && hero ? heroCapCeiling(featured, hero.ticket) : null;
-  const explorerUrl = explorerProgramUrl();
+  const explorerUrl = artefact?.explorer?.program ?? explorerProgramUrl();
 
   // Only sales are a price paid, and the chart reads them oldest first.
   const points = hero
@@ -295,12 +320,13 @@ export default async function HomePage() {
     <div>
       <p className="t-micro-caps text-muted">TICKETS ON SOLANA</p>
       <h1 className="h-display mt-4 text-ink">
-        The ticket that can&#39;t{" "}
+        The markup has
         <br />
-        be marked up.
+        a ceiling.
       </h1>
       <p className="t-deck mt-6 max-w-[350px] text-muted">
-        Buy at the price the artist set. Resell at the same number. And see every owner this ticket has ever had.
+        One face value, one cap. SeatPass prices from the resale record, and the
+        chain refuses anything above the ceiling.
       </p>
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Pill href="/events" variant="primary">
@@ -389,8 +415,8 @@ export default async function HomePage() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-6">
             <span className="t-meta text-muted">Program</span>
 
-            {PROGRAM_ID ? (
-              <AddressPill address={PROGRAM_ID} label="program" />
+            {programId ? (
+              <AddressPill address={programId} label="program" />
             ) : (
               <>
                 <span className="t-meta text-ink">not deployed yet</span>
@@ -407,9 +433,11 @@ export default async function HomePage() {
               </>
             )}
 
-            {/* The chip is the runtime truth from /health, never a configured id. */}
+            {/* The chip is what the artefact records, never a configured id and
+                never the build's `programDeployed`, which is false because the
+                build asks no cluster: a `false` there means "not read". */}
             <Chip tone="neutral">
-              {health.chain.programDeployed ? "Enforced on-chain" : "Not deployed"}
+              {artefact ? `Deployed on ${artefact.cluster ?? "devnet"}` : "No record"}
             </Chip>
 
             {explorerUrl ? (
@@ -438,6 +466,15 @@ export default async function HomePage() {
               </>
             )}
           </div>
+          {artefact && (
+            <p className="t-micro pb-6 text-muted">
+              Deployed on {artefact.cluster ?? "devnet"}: a verified run recorded signature{" "}
+              <span className="figure">{artefact.signature ?? "—"}</span> at slot{" "}
+              {formatLamports(artefact.slot)} on {formatDateTime(artefact.checkedAt)}. Read from the
+              artefact file at build time, not from a cluster: this build asked no cluster, so the
+              strip prints what that run wrote.
+            </p>
+          )}
         </div>
       </section>
 
@@ -457,7 +494,7 @@ export default async function HomePage() {
               <FeatureCard
                 diagram={<DiagramCap />}
                 title="A cap that is a rule, not a promise"
-                copy="The contract rejects any resale above face value. The organizer sets it once."
+                copy="The contract rejects any resale above the cap. The organizer sets it once, at creation."
               />
             </li>
             <li>

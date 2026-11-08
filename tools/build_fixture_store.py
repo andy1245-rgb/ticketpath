@@ -209,7 +209,7 @@ EVENT_SPECS = [
         "code": "HAL",
         "name": "Synthetic Hall: Cap Present, Not Binding",
         "venue": "Demonstration Hall North",
-        "city": "Toronto",
+        "city": "London",
         "starts": at(12, 5, 0, 30),
         "ends": at(12, 5, 3, 30),
         "status": "on_sale",
@@ -240,7 +240,7 @@ EVENT_SPECS = [
         "code": "STG",
         "name": "Synthetic Stage: Resale Cap Binds",
         "venue": "Sample Stage B",
-        "city": "Hamilton",
+        "city": "Manchester",
         "starts": at(11, 21, 23),
         "ends": at(11, 22, 2),
         "status": "on_sale",
@@ -270,7 +270,7 @@ EVENT_SPECS = [
         "code": "ANX",
         "name": "Synthetic Annex: Cold Start, No Resales",
         "venue": "Fixture Room 1",
-        "city": "Mississauga",
+        "city": "Birmingham",
         "starts": at(12, 12, 1),
         "ends": at(12, 12, 4),
         "status": "on_sale",
@@ -300,7 +300,7 @@ EVENT_SPECS = [
         "code": "THR",
         "name": "Synthetic Theatre: Uncapped Markup Spread",
         "venue": "Sample Theatre",
-        "city": "Kitchener",
+        "city": "Leeds",
         "starts": at(11, 14, 0),
         "ends": at(11, 14, 3),
         "status": "on_sale",
@@ -329,7 +329,7 @@ EVENT_SPECS = [
         "code": "ARE",
         "name": "Demo Arena East: Resale Switched Off",
         "venue": "Demo Arena East",
-        "city": "Ottawa",
+        "city": "Bristol",
         "starts": at(1, 16, 1, year=2027),
         "ends": at(1, 16, 4, year=2027),
         "status": "on_sale",
@@ -359,7 +359,7 @@ EVENT_SPECS = [
         "code": "CPL",
         "name": "Demonstration Annex: Completed Run",
         "venue": "Demonstration Annex",
-        "city": "London",
+        "city": "Glasgow",
         "starts": at(10, 3, 23, 30),
         "ends": at(10, 4, 2),
         "status": "completed",
@@ -388,7 +388,7 @@ EVENT_SPECS = [
         "code": "RIV",
         "name": "Synthetic River Hall: Cap Binds On One Tier",
         "venue": "Sample Hall, River Room",
-        "city": "Guelph",
+        "city": "Edinburgh",
         "starts": at(11, 28, 0, 30),
         "ends": at(11, 28, 3),
         "status": "on_sale",
@@ -419,7 +419,7 @@ EVENT_SPECS = [
         "code": "STD",
         "name": "Synthetic Studio: Draft, Nothing Issued",
         "venue": "Fixture Studio",
-        "city": "St. Catharines",
+        "city": "Cardiff",
         "starts": at(2, 20, 0, year=2027),
         "ends": at(2, 20, 3, year=2027),
         "status": "draft",
@@ -678,12 +678,17 @@ def build_store() -> dict:
                 "resaleEnabled": spec["resale"],
                 "resalePriceCapBps": spec["cap"],
                 # Region-aware resale caps (`records/REGION-CAPS-DESIGN.md`): the jurisdiction
-                # the event is sold into. Every venue in this fixture is an invented Ontario
-                # city, so every event is CA-ON, and Ontario's cap (in force 2026-04-24, over
-                # the total price paid) is what `region_caps.resolve` returns for the events
-                # whose start is after that date. The field is the INPUT to the policy; the
+                # the event is sold into. Every venue in this fixture is an invented British
+                # city, so every event is GB. GB resolves to `monitored`: a disclosure law is
+                # in force and a price cap has been announced but never enacted, and an
+                # announced policy never binds (`region_caps.resolve` refuses it as a
+                # cap). The platform cap is therefore the binding rule, and every recorded
+                # sale below is legal against the ceiling the app prints. It was CA-ON, where
+                # the law's 0% ceiling bound and 54 of 61 sales sat above the ceiling the
+                # screen printed; the operator's decision and the rejected alternative are
+                # `records/F-decision-log.md` D28. The field is the INPUT to the policy; the
                 # policy itself is derived per request and never stored here.
-                "jurisdiction": spec.get("jurisdiction", "CA-ON"),
+                "jurisdiction": spec.get("jurisdiction", "GB"),
                 "requiresVerifiedWallet": spec["verified"],
                 "totalSupply": sum(tier["supply"] for tier in spec["tiers"]),
                 "issuedCount": len(event_tickets),

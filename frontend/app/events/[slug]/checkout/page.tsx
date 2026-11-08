@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ApiError, getEvent } from "@/lib/api";
+import { ApiError, getEvent, getEvents } from "@/lib/api";
 import { DataSourceNote } from "@/components/ui";
 import { formatBpsPercent, formatCeiling, formatSol } from "@/lib/format";
 import type { DataSource, Event } from "@/lib/types";
@@ -15,6 +15,20 @@ import { CheckoutClient } from "./CheckoutClient";
 function eventDataSource(event: Event): DataSource | undefined {
   return (event as Event & { dataSource?: DataSource }).dataSource;
 }
+
+/**
+ * Static export: the build has to know every event URL up front, because there
+ * is no server to answer /events/<slug> at request time. The list comes from
+ * the same lib/api the page reads, so the exported set is exactly the set the
+ * fixtures (or a live backend at build time) actually hold.
+ */
+export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
+  const { items } = await getEvents({ limit: 1000 });
+  return items.map((event) => ({ slug: event.slug }));
+}
+
+/** With no server, any other slug is a 404 the host serves, not a page to render. */
+export const dynamicParams = false;
 
 export const metadata = { title: "Checkout" };
 

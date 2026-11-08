@@ -7,6 +7,7 @@ import {
   ApiError,
   completeWalletVerification,
   getWalletVerification,
+  isMockMode,
   startWalletVerification,
 } from "@/lib/api";
 import type { WalletVerification } from "@/lib/types";
@@ -184,6 +185,13 @@ export function VerifyClient(): React.ReactElement {
           wallets that have passed the signature check. The check proves you hold the key. It moves
           no funds.
         </p>
+        {isMockMode && (
+          <p className="t-meta mt-4 text-muted">
+            This deployment is a static build and has no backend, so it runs no signature check:
+            nothing on this site can make a wallet a verified one. The screen says so below once a
+            wallet is connected.
+          </p>
+        )}
 
         <section className="mt-12">
           <h2 className="h-section text-ink">Status</h2>
@@ -237,7 +245,7 @@ export function VerifyClient(): React.ReactElement {
                     <dd className="mt-2">
                       {verification.flags.length === 0 ? (
                         <p className="t-meta text-ink">
-                          Empty. The backend returned no flags for this wallet.
+                          Empty. No flag came back with this record.
                         </p>
                       ) : (
                         <>
@@ -249,7 +257,9 @@ export function VerifyClient(): React.ReactElement {
                             ))}
                           </ul>
                           <p className="t-micro mt-2 text-muted">
-                            Printed verbatim. These are the backend&rsquo;s own machine strings.
+                            {isMockMode
+                              ? "Printed verbatim. These are this build's own strings: no backend was asked, so none of them came from one."
+                              : "Printed verbatim. These are the backend's own machine strings."}
                           </p>
                         </>
                       )}
@@ -273,10 +283,18 @@ export function VerifyClient(): React.ReactElement {
                       : "Sign to verify"}
                 </button>
 
-                {verification.verified && (
+                {verification.verified && !isMockMode && (
                   <p className="t-meta mt-4 text-ink">
                     The backend recorded this wallet as verified
                     {verification.verifiedAt ? ` at ${formatDateTime(verification.verifiedAt)}` : ""}.
+                  </p>
+                )}
+
+                {isMockMode && (
+                  <p className="t-meta mt-4 text-ink">
+                    This deployment verifies nothing. The wallet signs the message and the
+                    signature goes nowhere: there is no backend behind this site to check it
+                    against, so no wallet is recorded as verified here and nothing is gated on it.
                   </p>
                 )}
 
@@ -308,6 +326,14 @@ export function VerifyClient(): React.ReactElement {
 
         <section className="mt-16">
           <h2 className="h-section text-ink">What gets recorded</h2>
+          {isMockMode ? (
+            <p className="t-body mt-4 text-muted">
+              Nothing, on this deployment. A backend records your public key and the time it
+              checked the signature, and this site has no backend: the signature your wallet makes
+              here is checked nowhere, so no verification is recorded and no wallet becomes a
+              verified one. What a backend would record is the list below.
+            </p>
+          ) : null}
           <ul className="t-body mt-4 space-y-3 text-muted">
             <li>Your public key and the time you verified.</li>
             <li>Every ticket issued to or transferred into this wallet, with the price paid.</li>

@@ -40,6 +40,12 @@ from ticketpath.onchain import sim
 
 DEVNET_ARTEFACT_PATH = Path(__file__).resolve().parents[1] / "records" / "devnet-artefacts.json"
 DEVNET_ARTEFACT_NAME = "records/devnet-artefacts.json"
+# What `/devnet-record.json` says about itself, in one sentence, so a reader of the JSON
+# alone cannot mistake a file this server read for a cluster this server asked.
+DEVNET_RECORD_NOTE = (
+    "Read from the committed artefact file by this server. This server asked no cluster: "
+    "the record is what the file says a verified run wrote, not a live read."
+)
 MODEL_VERSION = "engine-2026-11-07"
 TAU_MIN, TAU_MAX = 0.10, 0.406
 MAX_CAP_BPS = 10000
@@ -394,6 +400,31 @@ class Orchestrator:
         if self.artefact_path == DEVNET_ARTEFACT_PATH:
             return DEVNET_ARTEFACT_NAME
         return str(self.artefact_path)
+
+    def devnet_record(self) -> dict:
+        """The devnet artefact for `/devnet-record.json`, read by the loader the page uses.
+
+        One loader and one path, so the console's chain slot and the JSON document cannot
+        be reading two different files. A file that is absent or does not verify is
+        reported as absent or unverified with the loader's own reason: the shape is
+        filled with `null` and a sentence, never with a record nobody wrote.
+        """
+        source = self.artefact_source()
+        artefact = chain_client.load_artefact(self.artefact_path)
+        if artefact.get("state") == "verified":
+            return {"source": source, "loaded": True, "record": artefact, "note": DEVNET_RECORD_NOTE}
+        reason = artefact.get("reason") or artefact.get("state") or "devnet_unverified"
+        if artefact.get("state") == "absent":
+            missing = f"no artefact file is present at {source}"
+        else:
+            missing = f"the artefact file at {source} did not verify ({reason})"
+        return {
+            "source": source,
+            "loaded": False,
+            "record": None,
+            "reason": f"{missing}, so there is no record to show",
+            "note": DEVNET_RECORD_NOTE,
+        }
 
     def _sourced(self, payload: dict, source: dict | None = None) -> dict:
         body = dict(payload)

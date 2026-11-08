@@ -254,11 +254,15 @@ only option. The console needs no separate process: it is the page that same bac
 bytes it returns carry no `src=` or `href=` reference, so there is nothing else for it to load.
 
 Then on the recording machine, open `http://<LAN-IP>:3001/`. **Pass condition, check all five before
-recording:** eight event cards; city names including Hamilton and Guelph; the strip
+recording:** eight event cards; city names including London and Manchester; the strip
 `SYNTHETIC FIXTURE DATA. Generated for tests and demonstration...`; **no** banner reading "Mock data"; and
 `http://<LAN-IP>:8788/` shows the console with its recommendation, its `[UNVALIDATED]` badge and its own
 fixture strip. All five were confirmed on `127.0.0.1` at 12:19Z to 12:20Z; the LAN address is the same two
 processes. If the banner is there, the copy is still in mock mode and the video would show the wrong data.
+**[Corrected 2026-11-08: this pass condition named Hamilton and Guelph, which were the fixture's cities
+while the events were `CA-ON`. The operator moved them to GB and the cities are now London, Manchester,
+Birmingham, Leeds, Bristol, Glasgow, Edinburgh and Cardiff (`records/F-decision-log.md` D28), so the list
+above is the one to check. The rest of the checklist is unchanged.]**
 Exposure: binding to `0.0.0.0` puts the fixture API on the LAN while it runs. That is your call, and the
 data is synthetic.
 

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { ApiError, getHealth } from "@/lib/api";
-import type { Health } from "@/lib/types";
+import { ApiError, getDevnetRecord, getHealth } from "@/lib/api";
+import type { DevnetRecord, Health } from "@/lib/types";
 import { Chip, DataSourceNote } from "@/components/ui";
 import { capCeilingLamports, isWithinCap } from "@/lib/cap";
-import { formatBpsPercent, formatLamports } from "@/lib/format";
+import { formatBpsPercent, formatDateTime, formatLamports } from "@/lib/format";
 import { verificationMessage } from "@/lib/solana";
 
 export const metadata: Metadata = {
@@ -47,6 +47,44 @@ interface Failure {
   code: string;
 }
 
+/**
+ * A unix block time as the record carries it. Printed in UTC because this page
+ * renders on the server and a local string would differ between two renders of
+ * the same record.
+ */
+function blockTimeLabel(seconds: number | null | undefined): string {
+  if (seconds == null) return "—";
+  return new Date(seconds * 1000).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  });
+}
+
+/** One labelled field of the recorded block, in the page's own two type sizes. */
+function Recorded({
+  label,
+  children,
+  mono = true,
+}: {
+  label: string;
+  children: React.ReactNode;
+  mono?: boolean;
+}): React.ReactElement {
+  return (
+    <div>
+      <dt className="figure t-micro text-muted">{label}</dt>
+      <dd className={`mt-1 break-words text-ink ${mono ? "figure t-meta" : "t-body"}`}>
+        {children}
+      </dd>
+    </div>
+  );
+}
+
 export default async function RulesPage(): Promise<React.ReactElement> {
   let health: Health | null = null;
   let failure: Failure | null = null;
@@ -61,6 +99,18 @@ export default async function RulesPage(): Promise<React.ReactElement> {
             code: "unexpected_error",
           };
   }
+
+  // The recorded artefact, read the same way the console reads it. A page that
+  // could not read it prints the absence rather than the claim.
+  let devnet: DevnetRecord | null = null;
+  try {
+    devnet = await getDevnetRecord();
+  } catch {
+    devnet = null;
+  }
+  const artefact = devnet?.loaded ? devnet.record : null;
+  const accepted = artefact?.transfers?.acceptedAtCap ?? null;
+  const refused = artefact?.transfers?.refusedOverCap ?? null;
 
   return (
     <div className="box pt-16 pb-24">
@@ -130,12 +180,98 @@ export default async function RulesPage(): Promise<React.ReactElement> {
           </p>
         </section>
 
-        <section className="mt-16">
+        <section id="enforcement-today" className="mt-16 scroll-mt-24">
           <h2 className="h-section text-ink">Enforcement today</h2>
-          <p className="t-body mt-2 text-ink">
-            The cap program is written. It is not deployed on any cluster, so nothing is enforced at
-            runtime today. A resale above the ceiling is not refused by anything on chain.
-          </p>
+
+          {artefact ? (
+            <>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <Chip tone="neutral">Recorded on {artefact.cluster ?? "a cluster"}</Chip>
+                <span className="t-micro text-muted">
+                  verified {formatDateTime(artefact.checkedAt)}
+                </span>
+              </div>
+              <p className="t-body mt-4 text-ink">
+                The cap program is deployed on Solana {artefact.cluster ?? "devnet"}. A verified run
+                recorded the program id, the mint it guards, and two transfers against it: one
+                priced exactly at the ceiling, which executed, and one lamport above it, which the
+                program refused. The panel below is that record, printed as it was written.
+              </p>
+
+              <div className="mt-6 rounded-panel border border-line bg-surface p-6">
+                <p className="t-micro-caps text-muted">The recorded deployment</p>
+                <dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                  <Recorded label="program">{artefact.programId ?? "—"}</Recorded>
+                  <Recorded label="cluster">{artefact.cluster ?? "—"}</Recorded>
+                  <Recorded label="verification instant">
+                    {formatDateTime(artefact.checkedAt)}
+                  </Recorded>
+                  <Recorded label="signature">{artefact.signature ?? "—"}</Recorded>
+                  <Recorded label="slot">{formatLamports(artefact.slot)}</Recorded>
+                  <Recorded label="block time">{blockTimeLabel(artefact.blockTime)}</Recorded>
+                </dl>
+              </div>
+
+              {(accepted || refused) && (
+                <div className="mt-6 rounded-panel border border-line bg-surface p-6">
+                  <p className="t-micro-caps text-muted">The boundary, executed</p>
+                  <div className="mt-4 grid gap-x-6 gap-y-6 sm:grid-cols-2">
+                    {accepted && (
+                      <div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                          <Chip tone="positive">Executed</Chip>
+                          <span className="figure t-meta text-ink">
+                            {formatLamports(accepted.priceLamports)} lamports
+                          </span>
+                        </div>
+                        <p className="mt-3 space-y-1">
+                          <span className="figure t-micro block break-words text-muted">
+                            {accepted.signature}
+                          </span>
+                          <span className="figure t-micro block text-muted">
+                            slot {formatLamports(accepted.slot)} · {blockTimeLabel(accepted.blockTime)}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                    {refused && (
+                      <div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                          <Chip tone="danger">Refused</Chip>
+                          <span className="figure t-meta text-ink">
+                            {formatLamports(refused.priceLamports)} lamports
+                          </span>
+                        </div>
+                        <p className="mt-3 space-y-1">
+                          <span className="figure t-micro block break-words text-ink">
+                            {refused.error ?? "—"}
+                          </span>
+                          <span className="figure t-micro block break-words text-muted">
+                            {refused.signature}
+                          </span>
+                          <span className="figure t-micro block text-muted">
+                            slot {formatLamports(refused.slot)} · {blockTimeLabel(refused.blockTime)}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <p className="t-micro mt-3 text-muted">
+                Read from {devnet?.source || "the artefact file"} at build time. This build asked
+                no cluster, so this is the recorded verification and not a live re-read: the fields
+                below are what was asked, and they stay what was asked.
+              </p>
+            </>
+          ) : (
+            <p className="t-body mt-2 text-ink">
+              No verified artefact is available to this build, so this page prints no deployment.
+              {devnet?.reason ? ` ${devnet.reason}` : ""} The predicate and the arithmetic above
+              are the program&rsquo;s own rules and stand whatever any cluster holds.
+            </p>
+          )}
 
           {health ? (
             <>
@@ -164,8 +300,8 @@ export default async function RulesPage(): Promise<React.ReactElement> {
               <p className="t-body mt-4 text-muted">{health.chain.detail}</p>
               <p className="t-micro mt-3 text-muted">
                 {health.chain.askedCluster
-                  ? "The server queried a cluster, so this is a read of that cluster rather than a claim about it."
-                  : "The server queried no cluster, so programDeployed records that no check was made."}
+                  ? "This build queried a cluster, so this is a read of that cluster rather than a claim about it."
+                  : "This build queried no cluster, so programDeployed records that no check was made. It is not a statement that the program is absent: the recorded deployment above is what a verified run wrote."}
               </p>
               <div className="mt-4">
                 <DataSourceNote dataSource={health.dataSource} />
@@ -196,6 +332,12 @@ export default async function RulesPage(): Promise<React.ReactElement> {
             screen in this build is open. The one check the backend performs is the signature below,
             and it proves exactly one thing: that whoever asked holds the private key for the wallet
             in the message.
+          </p>
+          <p className="t-body mt-2 text-muted">
+            This deployment is a static export and calls no backend, so that check runs nowhere on
+            this site: /verify says so on the screen where a visitor would look for it. The check
+            described here is the one the backend implements, and the rest of this section is its
+            specification rather than a record of a verification.
           </p>
           <dl className="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2">
             <div>

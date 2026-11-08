@@ -50,8 +50,9 @@ export function isLikelyWalletAddress(value: string): boolean {
 /**
  * The program address, and only if it was configured. There is deliberately no
  * default: an invented address renders as fact on a page about on-chain
- * enforcement. Unset means the strip says "Program not deployed yet" and the
- * explorer controls stay disabled (brief 5.5).
+ * enforcement. Unset means the strip falls back to "not deployed yet" and the
+ * explorer controls stay disabled (brief 5.5); set means the strip prints the
+ * configured id, and a record of a deployment always wins over it.
  */
 export const PROGRAM_ID: string | null = process.env.NEXT_PUBLIC_PROGRAM_ID?.trim() || null;
 

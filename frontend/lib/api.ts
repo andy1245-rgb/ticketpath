@@ -15,6 +15,7 @@ import eventsFixture from "./mock/events.json";
 import ticketsFixture from "./mock/tickets.json";
 import ledgerFixture from "./mock/ledger.json";
 import walletsFixture from "./mock/wallets.json";
+import devnetArtefact from "@/data/devnet-artefacts.json";
 
 import { ApiError, buildQuery, paginate, requestJson } from "./http";
 import { CLUSTER } from "./solana";
@@ -23,9 +24,12 @@ import type {
   ChallengeResponse,
   DataSource,
   DestinationRow,
+  DevnetArtefact,
+  DevnetRecord,
   Event,
   EventAnalytics,
   EventQuery,
+  Guidance,
   Health,
   LedgerEntry,
   MarkupBucket,
@@ -58,6 +62,14 @@ export const MOCK_DATA_SOURCE: DataSource = {
     "BUNDLED MOCK DATA. Generated from lib/mock on this machine, not read from the backend.",
   note: "Set NEXT_PUBLIC_API_BASE_URL to read the backend instead.",
 };
+
+/**
+ * The one reason a mock-mode verification gives, in the same shape as the
+ * backend's own flags (`wallet_not_verified`), so a screen can print either
+ * without pretending to know which kind of deployment it is running in.
+ */
+const MOCK_UNVERIFIED_FLAG =
+  "mock_mode: this build checks no signature, so no wallet is verified";
 
 /**
  * Kept only so the pre-rebuild /my-tickets screen still compiles while it is
@@ -225,18 +237,20 @@ function buildAnalytics(event: Event): EventAnalytics {
 }
 
 function mockVerification(wallet: WalletAddress): WalletVerification {
-  const row = walletsFixture.verified.find((w) => w.wallet === wallet);
-  // Unknown wallets are unverified rather than an error — that is the real
-  // backend's behaviour too, since any wallet may connect.
-  const verified = row?.verified ?? false;
+  // A fixture row that says a wallet was verified is a row somebody typed, not a
+  // signature anybody checked, and this build has no key, no server and no cluster
+  // to check one against. So the answer is never `verified: true` here, and the flag
+  // says why in the same machine vocabulary the backend uses for its own refusals.
+  // The fixture's own `verified` list still supplies a region, which is a fixture
+  // fact about a wallet and not a claim that anything was checked.
   return {
     wallet,
-    verified,
-    verifiedAt: verified ? "2026-10-18T14:02:00.000Z" : null,
-    method: verified ? ((row?.method as WalletVerification["method"]) ?? "wallet_signature") : null,
-    canPurchase: verified,
-    canReceiveTransfer: verified,
-    flags: verified ? [] : ["wallet_not_verified"],
+    verified: false,
+    verifiedAt: null,
+    method: null,
+    canPurchase: false,
+    canReceiveTransfer: false,
+    flags: [MOCK_UNVERIFIED_FLAG],
     dataSource: MOCK_DATA_SOURCE,
   };
 }
@@ -411,12 +425,18 @@ export async function completeWalletVerification(args: {
   }
   return settle({
     ...mockVerification(args.wallet),
-    verified: true,
-    verifiedAt: new Date().toISOString(),
-    method: "wallet_signature",
-    canPurchase: true,
-    canReceiveTransfer: true,
-    flags: [],
+    // No signature is checked in mock mode, because there is no key here to check
+    // one against. This branch used to answer `verified: true` and the clock's own
+    // instant to whichever payload arrived, and the screen printed a sentence
+    // claiming a backend had recorded it. On a public deployment anyone can put the
+    // screen in that state, so the only true answer is that this build verifies no
+    // wallet at all.
+    verified: false,
+    verifiedAt: null,
+    method: null,
+    canPurchase: false,
+    canReceiveTransfer: false,
+    flags: [MOCK_UNVERIFIED_FLAG],
   });
 }
 
@@ -445,4 +465,52 @@ export async function getEventAnalytics(eventId: string): Promise<EventAnalytics
 export async function getHealth(): Promise<Health> {
   if (!isMockMode) return request<Health>("/health");
   return settle(mockHealth());
+}
+
+/**
+ * GET /devnet-record.json: the artefact file the server itself loaded.
+ *
+ * Not a contract endpoint, so it is not in API_CONTRACT.md and no component
+ * treats it as one. It carries `loaded: false` when there is no file to read,
+ * which is a state a page prints rather than an error to throw: a screen that
+ * says "no record" is a better answer than a screen that dies.
+ */
+export async function getDevnetRecord(): Promise<DevnetRecord> {
+  if (!isMockMode) return request<DevnetRecord>("/devnet-record.json");
+  // This build has no backend, so the record it prints travels inside the build:
+  // `tools/site_records.py` copies `records/devnet-artefacts.json` into `data/`
+  // byte for byte, and its `--check` proves the copy is still that record. It is a
+  // recorded verification and not a live read, which is why the pages that print
+  // it say no cluster was asked.
+  return settle({
+    source: "records/devnet-artefacts.json",
+    loaded: true,
+    record: devnetArtefact as DevnetArtefact,
+    note:
+      "Bundled with the build by tools/site_records.py: this is the record a verified run " +
+      "wrote, copied from the repository, not a read of any cluster.",
+  });
+}
+
+/**
+ * GET /guidance.json: the engine's refusals for one event, as sentences, with
+ * the count beside them.
+ *
+ * Bundled fixtures carry no guidance payload, and inventing one would be a
+ * screenshot of a refusal nobody computed. Mock mode therefore raises the same
+ * typed error a missing backend raises, and the caller prints that instead of a
+ * number.
+ */
+export async function getGuidance(
+  query: { event?: string; tier?: string; mode?: string } = {},
+): Promise<Guidance> {
+  if (isMockMode) {
+    throw new ApiError(
+      "This build reads its bundled fixtures, so there is no refusal list to read.",
+      503,
+      "no_backend",
+      "/guidance.json",
+    );
+  }
+  return request<Guidance>(`/guidance.json${buildQuery(query)}`);
 }

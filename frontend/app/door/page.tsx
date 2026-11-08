@@ -134,6 +134,14 @@ async function lookup(id: string): Promise<Lookup> {
   }
 }
 
+/**
+ * Static export has no request to read a query string from. `force-static`
+ * tells Next to render this route once at build time with an empty
+ * `searchParams`, which is the default (unfiltered) view. Filter links still
+ * work as URLs; the values they carry are simply not read by the export.
+ */
+export const dynamic = "force-static";
+
 export default async function DoorPage({
   searchParams,
 }: {

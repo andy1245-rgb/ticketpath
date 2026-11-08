@@ -100,14 +100,22 @@ Event order on screen is `startsAt` ascending, so the first card is the complete
 
 | Regime | Event | What it demonstrates | Numbers in this store |
 |---|---|---|---|
-| `cap_present_not_binding` | `evt_syn_01` Synthetic Hall: Cap Present, Not Binding (Toronto, 5 Dec) | A cap that exists and does not bind: every recorded sale sits below it | 3 tiers (1.0 / 2.5 / 5.0 SOL), 14 tickets, 14 sales, markups −600 to +1800 bps against a 2500 bps cap, 9 of 14 tickets resold |
-| `cap_binding` | `evt_syn_02` Synthetic Stage: Resale Cap Binds (Hamilton, 21 Nov) | A mass point at the cap: the censored record the cap research describes | 2 tiers (1.2 / 3.0 SOL), 12 tickets, 12 sales, 9 of them exactly +1500 bps (cap 1500), none above |
-| `cold_start` | `evt_syn_03` Synthetic Annex: Cold Start, No Resales (Mississauga, 12 Dec) | An event with tickets issued and no resale row at all | 2 tiers (0.7 / 1.4 SOL), 10 tickets, 0 sales, empty price series, six zero buckets |
-| `uncapped_spread` | `evt_syn_04` Synthetic Theatre: Uncapped Markup Spread (Kitchener, 14 Nov) | No cap, so both tails exist: above +25% and below face | 1 tier (0.8 SOL), 11 tickets, 12 sales, markups −3000 to +9000 bps |
-| `resale_disabled` | `evt_syn_05` Demo Arena East: Resale Switched Off (Ottawa, 16 Jan 2027) | `resaleEnabled: false` with zero transfer rows, so the absence means what it says | 2 tiers (1.5 / 2.4 SOL), 8 tickets, 0 sales |
-| `completed_run` | `evt_syn_06` Demonstration Annex: Completed Run (London, 3 Oct) | Redemptions after the last sale; the only rows with a `redeem` kind | 1 tier (0.5 SOL), 8 tickets, 7 sales, all 8 redeemed and every `redeemedAt` matches its redeem row |
-| `tier_cap_binding` | `evt_syn_07` Synthetic River Hall: Cap Binds On One Tier (Guelph, 28 Nov) | The multi-tier case: the cap binds on the cheapest tier and not above it, so the same policy produces different markups per tier | 3 tiers (0.9 / 1.8 / 3.6 SOL), 13 tickets, 16 sales; the 4 gallery sales are exactly +2500 bps, the 12 mezzanine and box sales are +200 to +1400 |
-| `nothing_issued` | `evt_syn_08` Synthetic Studio: Draft, Nothing Issued (St. Catharines, 20 Feb 2027) | A draft event reads as empty rather than as zero | 1 tier (1.0 SOL), 0 tickets, 0 sales, analytics 200 with empty lists |
+| `cap_present_not_binding` | `evt_syn_01` Synthetic Hall: Cap Present, Not Binding (London, 5 Dec) | A cap that exists and does not bind: every recorded sale sits below it | 3 tiers (1.0 / 2.5 / 5.0 SOL), 14 tickets, 14 sales, markups −600 to +1800 bps against a 2500 bps cap, 9 of 14 tickets resold |
+| `cap_binding` | `evt_syn_02` Synthetic Stage: Resale Cap Binds (Manchester, 21 Nov) | A mass point at the cap: the censored record the cap research describes | 2 tiers (1.2 / 3.0 SOL), 12 tickets, 12 sales, 9 of them exactly +1500 bps (cap 1500), none above |
+| `cold_start` | `evt_syn_03` Synthetic Annex: Cold Start, No Resales (Birmingham, 12 Dec) | An event with tickets issued and no resale row at all | 2 tiers (0.7 / 1.4 SOL), 10 tickets, 0 sales, empty price series, six zero buckets |
+| `uncapped_spread` | `evt_syn_04` Synthetic Theatre: Uncapped Markup Spread (Leeds, 14 Nov) | No cap, so both tails exist: above +25% and below face | 1 tier (0.8 SOL), 11 tickets, 12 sales, markups −3000 to +9000 bps |
+| `resale_disabled` | `evt_syn_05` Demo Arena East: Resale Switched Off (Bristol, 16 Jan 2027) | `resaleEnabled: false` with zero transfer rows, so the absence means what it says | 2 tiers (1.5 / 2.4 SOL), 8 tickets, 0 sales |
+| `completed_run` | `evt_syn_06` Demonstration Annex: Completed Run (Glasgow, 3 Oct) | Redemptions after the last sale; the only rows with a `redeem` kind | 1 tier (0.5 SOL), 8 tickets, 7 sales, all 8 redeemed and every `redeemedAt` matches its redeem row |
+| `tier_cap_binding` | `evt_syn_07` Synthetic River Hall: Cap Binds On One Tier (Edinburgh, 28 Nov) | The multi-tier case: the cap binds on the cheapest tier and not above it, so the same policy produces different markups per tier | 3 tiers (0.9 / 1.8 / 3.6 SOL), 13 tickets, 16 sales; the 4 gallery sales are exactly +2500 bps, the 12 mezzanine and box sales are +200 to +1400 |
+| `nothing_issued` | `evt_syn_08` Synthetic Studio: Draft, Nothing Issued (Cardiff, 20 Feb 2027) | A draft event reads as empty rather than as zero | 1 tier (1.0 SOL), 0 tickets, 0 sales, analytics 200 with empty lists |
+
+Every event declares `jurisdiction: GB`. The law resolves to `monitored`: the Consumer
+Rights Act 2015 chapter is in force and establishes disclosure duties, not a price limit, and
+the announced resale cap is an `announced_policy` row that never binds. The organiser's own
+`resalePriceCapBps` is therefore the binding rule, and every recorded sale is legal against
+the ceiling the app prints for its tier (measured after regeneration: 0 of 61 sales above
+their tier's effective ceiling). The fixture was `CA-ON` until 2026-11-08; the reason for the
+move, and the alternative that was rejected, are in `records/F-decision-log.md` D28.
 
 Three of these carry the demo's claims:
 

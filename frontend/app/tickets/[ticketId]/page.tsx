@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ApiError, getEvent, getResaleHistory, getTicket } from "@/lib/api";
+import { ApiError, getEvent, getResaleHistory, getTicket, getTickets } from "@/lib/api";
 import { capabilities } from "@/lib/capabilities";
 import type { Capability } from "@/lib/capabilities";
 import type { Event, TicketStatus } from "@/lib/types";
@@ -8,7 +8,7 @@ import { AddressPill } from "@/components/AddressPill";
 import { OwnershipTrail } from "@/components/OwnershipTrail";
 import { PriceHistoryChart } from "@/components/PriceHistoryChart";
 import { StatRow, StatTile } from "@/components/StatTile";
-import { Chip, DataSourceNote, EmptyState, Pill, Unavailable } from "@/components/ui";
+import { Chip, DataSourceNote, EmptyState, Unavailable } from "@/components/ui";
 import { formatCompact, formatDateTime, formatMarkup, formatSol } from "@/lib/format";
 
 export const metadata = { title: "Ticket" };
@@ -74,6 +74,18 @@ const TRANSFER_AND_REFUND: Capability = {
   endpoint: `${capabilities.transfers.endpoint}; ${capabilities.refunds.endpoint}`,
   shows: `${capabilities.transfers.shows} ${capabilities.refunds.shows}`,
 };
+
+/**
+ * Static export: every ticket URL is enumerated at build time from lib/api,
+ * because there is no server to resolve /tickets/<id> on demand.
+ */
+export async function generateStaticParams(): Promise<Array<{ ticketId: string }>> {
+  const { items } = await getTickets({ limit: 1000 });
+  return items.map((ticket) => ({ ticketId: ticket.id }));
+}
+
+/** With no server, any other ticket id is a 404 the host serves. */
+export const dynamicParams = false;
 
 export default async function TicketPage({
   params,
@@ -184,7 +196,7 @@ export default async function TicketPage({
             <Row label="Issued to">
               <AddressPill address={ticket.issuedToWallet} label="issuing wallet" />
             </Row>
-            <Row label="Transfer restricted">
+            <Row label="Transfers">
               {ticket.transferRestricted ? "Restricted" : "Not restricted"}
             </Row>
           </dl>
@@ -254,14 +266,11 @@ export default async function TicketPage({
         <div className="space-y-6">
           <Unavailable title="Door code" capability={capabilities.doorCode} />
 
-          <div>
-            <Unavailable title="List for resale" capability={capabilities.listings} />
-            <div className="mt-4">
-              <Pill href={`/resale/list/${ticket.id}`} variant="secondary" size="sm">
-                Open the listing form
-              </Pill>
-            </div>
-          </div>
+          {/* The listing form has no control here. It was a button on this page
+              that opened a form nothing can submit, and an unavailable panel
+              that names the missing endpoint is the honest shape: a control
+              that only leads to it is a promise on screen. */}
+          <Unavailable title="List for resale" capability={capabilities.listings} />
 
           <Unavailable title="Transfer and refund" capability={TRANSFER_AND_REFUND} />
         </div>

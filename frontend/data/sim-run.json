@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "label": "SCRIPTED AGENTS · DRY RUN · SYNTHETIC",
+  "runId": "sw20261108T054830Z6297",
+  "recordedOn": "2026-11-08",
+  "chain": "dry run: the chain is simulated in the run, not a validator",
+  "agentCount": 9,
+  "agents": [
+    {
+      "id": "b1",
+      "policy": "buyer"
+    },
+    {
+      "id": "b2",
+      "policy": "buyer"
+    },
+    {
+      "id": "h1",
+      "policy": "holder"
+    },
+    {
+      "id": "f1",
+      "policy": "flipper"
+    },
+    {
+      "id": "s1",
+      "policy": "scalper"
+    },
+    {
+      "id": "n1",
+      "policy": "sniper"
+    },
+    {
+      "id": "p1",
+      "policy": "panic"
+    },
+    {
+      "id": "f2",
+      "policy": "flipper"
+    },
+    {
+      "id": "g1",
+      "policy": "greater_fool"
+    }
+  ],
+  "cost": {
+    "usd": null,
+    "reason": "scripted agents, no model calls, so no dollars were spent"
+  },
+  "modes": [
+    {
+      "mode": "capped",
+      "rounds": 12,
+      "tickets": 32,
+      "decisions": {
+        "executed": 32,
+        "refused": 4,
+        "skipped": 15,
+        "total": 51
+      },
+      "capBps": 2500,
+      "ceilingLamports": 1250000000,
+      "chart": "/charts/price-path-evt_capped.svg"
+    },
+    {
+      "mode": "monitored",
+      "rounds": 12,
+      "tickets": 32,
+      "decisions": {
+        "executed": 64,
+        "refused": 4,
+        "skipped": 38,
+        "total": 106
+      },
+      "capBps": 65535,
+      "ceilingLamports": 7553500000,
+      "chart": "/charts/price-path-evt_monitored.svg"
+    }
+  ],
+  "sourceNote": "Transcribed by tools/swarm_panel.py from the run's own meta files, which are not committed because they name this machine's scratch directory. The two charts are byte copies of docs/charts/price-path-*.svg from the same run."
+}

@@ -1,0 +1,44 @@
+{
+  "asOf": "2026-11-07T18:34:29.183Z",
+  "blockTime": 1794099003,
+  "capBps": 2500,
+  "checkedAt": "2026-11-08T00:50:25.281Z",
+  "checkerVersion": "devnet-publish-2026-11-07",
+  "cluster": "devnet",
+  "eventId": "evt_syn_02",
+  "explorer": {
+    "mint": "https://explorer.solana.com/address/6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV?cluster=devnet",
+    "program": "https://explorer.solana.com/address/5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva?cluster=devnet",
+    "transaction": "https://explorer.solana.com/tx/2Lx6cboK8kvuJ7H6w2CELvZg3xF7cSHtBTSBXqi1w6KN2eXkQ6skqNPwnT5iVVAdrfBs5LiAau3pXiBMTtZMGCPZ?cluster=devnet"
+  },
+  "faceLamports": 1000000000,
+  "memoText": "ticketpath:quote:q-18f4ec73dd8d8fd1:d90cb033491701947b711c6e07139282d1faae6041b77f5a99161bdd1f177b12",
+  "mint": "6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV",
+  "modelVersion": "engine-2026-11-07",
+  "programId": "5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva",
+  "quoteHash": "d90cb033491701947b711c6e07139282d1faae6041b77f5a99161bdd1f177b12",
+  "quoteId": "q-18f4ec73dd8d8fd1",
+  "recommendedLamports": 1380000000,
+  "rpcUrl": "https://api.devnet.solana.com",
+  "signature": "2Lx6cboK8kvuJ7H6w2CELvZg3xF7cSHtBTSBXqi1w6KN2eXkQ6skqNPwnT5iVVAdrfBs5LiAau3pXiBMTtZMGCPZ",
+  "slot": 519845921,
+  "tierId": "tier_stg_general",
+  "transfers": {
+    "acceptedAtCap": {
+      "blockTime": 1794099006,
+      "error": null,
+      "explorer": "https://explorer.solana.com/tx/E5RCrLwWikWCdHSd5MfqEBowXsmLn2n9fwYjnSwn8NhPi9j7weahbuRhgofu8ca8MVXzQUbvPrJqENDLNab7pJf?cluster=devnet",
+      "priceLamports": 1250000000,
+      "signature": "E5RCrLwWikWCdHSd5MfqEBowXsmLn2n9fwYjnSwn8NhPi9j7weahbuRhgofu8ca8MVXzQUbvPrJqENDLNab7pJf",
+      "slot": 519845933
+    },
+    "refusedOverCap": {
+      "blockTime": 1794099023,
+      "error": "custom program error: 0x177a (6010 E_CAP_EXCEEDED)",
+      "explorer": "https://explorer.solana.com/tx/22dqSriig968nx8aA3YaFVt4CErgNbkwvxFtDKn2MWpcCdnA2KQhFYvhwTWZSpP64wzQjoBeMUKEZLRW1e7jKe79?cluster=devnet",
+      "priceLamports": 1250000001,
+      "signature": "22dqSriig968nx8aA3YaFVt4CErgNbkwvxFtDKn2MWpcCdnA2KQhFYvhwTWZSpP64wzQjoBeMUKEZLRW1e7jKe79",
+      "slot": 519846008
+    }
+  }
+}

@@ -6,6 +6,7 @@ import {
   ApiError,
   completeWalletVerification,
   getWalletVerification,
+  isMockMode,
   startWalletVerification,
 } from "@/lib/api";
 import type { WalletVerification } from "@/lib/types";
@@ -195,16 +196,16 @@ export function AccountClient(): React.ReactElement {
       <div className="max-w-3xl">
         <h1 className="h-display text-ink">Account</h1>
         <p className="t-deck mt-4 text-muted">
-          There is no account here. A wallet is known to this backend only by the signature it can
-          produce, so what follows is the record that signature leaves and the exact string behind
-          it.
+          There is no account here. A wallet is known to this deployment only by the signature it
+          can produce, so what follows is the record that signature leaves and the exact string
+          behind it.
         </p>
 
         {!wallet ? (
           <section className="mt-12 rounded-panel border border-line bg-surface p-6">
             <h2 className="h-section text-ink">Wallet</h2>
             <p className="t-body mt-2 text-muted">
-              Connect a wallet to read what the backend recorded about it.
+              Connect a wallet to read what this deployment holds about it.
             </p>
             <WalletButton className="mt-6" />
           </section>
@@ -273,7 +274,7 @@ export function AccountClient(): React.ReactElement {
                       <dd className="mt-2">
                         {verification.flags.length === 0 ? (
                           <p className="t-meta text-ink">
-                            Empty. The backend returned no flags for this wallet.
+                            Empty. No flag came back with this record.
                           </p>
                         ) : (
                           <>
@@ -285,7 +286,9 @@ export function AccountClient(): React.ReactElement {
                               ))}
                             </ul>
                             <p className="t-micro mt-2 text-muted">
-                              Printed verbatim. These are the backend&rsquo;s own machine strings.
+                              {isMockMode
+                                ? "Printed verbatim. These are this build's own strings: no backend was asked, so none of them came from one."
+                                : "Printed verbatim. These are the backend's own machine strings."}
                             </p>
                           </>
                         )}
@@ -309,7 +312,9 @@ export function AccountClient(): React.ReactElement {
                           : "Sign to verify"}
                     </button>
                     <p className="t-micro mt-3 text-muted">
-                      Signing proves you hold the key. It is not a transaction and it moves no funds.
+                      {isMockMode
+                        ? "Signing is a request to prove you hold the key, and this deployment cannot answer it: the signature is made in your wallet and checked nowhere. It is not a transaction and it moves no funds."
+                        : "Signing proves you hold the key. It is not a transaction and it moves no funds."}
                     </p>
                   </div>
 
@@ -330,8 +335,9 @@ export function AccountClient(): React.ReactElement {
             <section className="mt-12">
               <h2 className="h-section text-ink">The message you sign</h2>
               <p className="t-body mt-2 text-muted">
-                The backend rebuilds this message byte for byte to check the signature. Changing it
-                invalidates every nonce already in flight.
+                {isMockMode
+                  ? "A backend rebuilds this message byte for byte to check the signature, and this deployment has no backend: the string below is printed so you can read exactly what the wallet would be asked to sign."
+                  : "The backend rebuilds this message byte for byte to check the signature. Changing it invalidates every nonce already in flight."}
               </p>
               <pre className="figure t-meta mt-4 whitespace-pre-wrap break-words rounded-panel border border-line bg-inset p-6 text-ink">
                 {preview}

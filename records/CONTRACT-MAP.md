@@ -61,6 +61,16 @@ Plus one route that is not in the contract:
 program is deployed, and that no pricing model is registered. It is deliberately not
 under `/api`, so it cannot be mistaken for a contract endpoint.
 
+Three more surfaces are served and are not routes in `ROUTES`: the console at `/`, and two
+JSON projections of it, `GET /guidance.json` and `GET /devnet-record.json`. They are
+handled beside the console on purpose, so `/health.contract.routesImplemented` stays at 10
+and the contract block does not claim endpoints `API_CONTRACT.md` does not have.
+`/guidance.json` prints the console payload's refusals as plain sentences with their count;
+`/devnet-record.json` prints the same devnet artefact the console's chain slot reads, and
+says in its own body that this server asked no cluster. Neither replaces a contract route:
+a frontend panel that needs one of them reads it, and the contract's nine endpoints are
+unchanged. `records/VIDEO-EVIDENCE.md` describes both for a reader who is building one.
+
 ## 3. Query semantics, exactly
 
 | Parameter | Rule implemented | On violation |
@@ -87,7 +97,7 @@ ascending; the contract does not specify ticket order.
 | `name` | `string` | fixture store (says "Synthetic") | YES |
 | `description` | `string` | fixture store (says it is a fixture) | YES |
 | `venue` | `string` | fixture store | YES |
-| `city` | `string` | fixture store (`Toronto`) | YES |
+| `city` | `string` | fixture store (`London`) | YES |
 | `startsAt` | `string` | fixture store | YES |
 | `endsAt` | `string \| null` | fixture store; null on the upcoming event | YES |
 | `imageUrl` | `string \| null` | no media exists | STUB: always `null` |
@@ -425,7 +435,9 @@ command's own last line is the authority). The contract-facing subset:
 2. **The forecast has no home in the contract.** Adding `/api/events/:id/price-guidance`
    (or similar) is a frontend-contract change, so it is not made here. The seam is
    registered and answers (a rule-based bounded estimator, `fitted: false`); the wire into
-   the frontend contract is not, and the console at `/` is where that output is read.
+   the frontend contract is not, and the console at `/` is where a person reads that output.
+   A program reads the same payload as refusals and a count at `/guidance.json`, which is
+   served beside the console and is not a contract endpoint either.
 3. **Cap enforcement is on-chain or it is marketing.** `resalePriceCapBps` in the
    payload currently reads as a policy claim, not an enforced fact. The transfer-hook
    design in `docs/ON-CHAIN-DESIGN.md` §3.9 is what turns the claim into a guarantee.

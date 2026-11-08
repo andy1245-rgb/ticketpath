@@ -57,9 +57,9 @@ test("a null signature is a row with no on-chain counterpart", () => {
   };
 
   assert.equal(entry.signature, null, "the contract has to represent a row with no transaction");
-  assert.equal(signatureLabel(entry.signature), "Not on chain");
-  assert.equal(signatureLabel(undefined), "Not on chain");
-  assert.equal(signatureLabel(""), "Not on chain");
+  assert.equal(signatureLabel(entry.signature), "Fixture");
+  assert.equal(signatureLabel(undefined), "Fixture");
+  assert.equal(signatureLabel(""), "Fixture");
   assert.equal(
     signatureLabel("4EjLt3UAXcHzQ1MU4nt1vQbp8boLBH7k2VTqpJfiwtVA1RbtCsvET6cS1wHeBUxE4GjTmfM7m6kSYf5invrBLGkE"),
     "4EjLt3UAXcHzQ1MU4nt1vQbp8boLBH7k2VTqpJfiwtVA1RbtCsvET6cS1wHeBUxE4GjTmfM7m6kSYf5invrBLGkE",
