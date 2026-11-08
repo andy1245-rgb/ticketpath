@@ -1,0 +1,119 @@
+{
+  "schema": "build-provenance/1",
+  "generated_at": "2026-11-08T13:38:28Z",
+  "generated_by": "tools/build_provenance.py write",
+  "verify_with": "python3 tools/build_provenance.py verify",
+  "program_dir": "programs/cap_hook",
+  "toolchain": {
+    "cargo_build_sbf": "cargo-build-sbf 4.4.0",
+    "platform_tools": "platform-tools v1.57",
+    "rustc": "rustc 1.95.0",
+    "solana_cli": "solana-cli 4.3.2 (src:0f131d36; feat:c9ad34d2, client:Agave)"
+  },
+  "build": {
+    "command": "CARGO_BUILD_JOBS=2 nice -n 10 cargo-build-sbf --offline --sbf-out-dir <out-dir>",
+    "out_dir_note": "--sbf-out-dir only chooses where the .so and a program keypair are copied; the bytes do not depend on it, and the two measured builds wrote to scratch directories and were then copied to binary.path. It is kept off its default here because cargo-build-sbf writes a program keypair beside the .so and programs/cap_hook/target/deploy/cap_hook-keypair.json is the frozen devnet keypair path",
+    "reproducibility": "measured, not proven: the command was re-run in independent directories and every .so it produced is recorded under that version's rebuilds. `reproducible` is true only when there is at least one rebuild and every one of them hashes to the recorded binary, and write refuses to record a rebuild that did not: verify recomputes the claim from the hashes on every run"
+  },
+  "dependency_resolution": {
+    "lockfile": "programs/cap_hook/Cargo.lock",
+    "lockfile_sha256": "263cb4a80e1fd076c03bb0ecffd38d4cf9fa29fc684b25695776589e99568bbc",
+    "lockfile_tracked": false,
+    "note": "cargo-build-sbf generates this pin file and .gitignore keeps it out of the tree, so the dependency set is not committed. The two measured builds resolved to the same lockfile on one machine, which is part of why the bytes agree; a rebuild after the registry moves could resolve different versions and is the one way the same source can produce different bytes."
+  },
+  "verify_checks": {
+    "rederived": [
+      "each recorded source file's sha256, from the commit for a commit-scoped version and from disk for a tree-scoped one",
+      "the compiled file set, so a `.rs` the record omits is a violation",
+      "that the recorded source commit still resolves",
+      "each binary's sha256 and byte size",
+      "each version's program id, from the same symbol write read it from",
+      "every rebuild's sha256 against the binary, and `reproducible` from those",
+      "the toolchain version lines, when both binaries are on PATH so they can be run, and a printed note that they were not when they are not",
+      "the git-ignored lockfile's sha256, whenever the file is on disk"
+    ],
+    "not_rederived": [
+      "the build itself: verify never compiles anything, so `build.command` is a quoted instruction and re-running it is the reader's own check",
+      "the toolchain version lines on a machine that does not have the Solana toolchain installed; they are quoted at write time and verify says so rather than implying it checked them",
+      "`dependency_resolution` when the lockfile is absent: the pins are generated and git-ignored, so a fresh clone has none to compare"
+    ]
+  },
+  "programs": [
+    {
+      "program": "cap_hook",
+      "version": "v1",
+      "source_commit": "33d95b30c9e95aad8ff0f33ef8d7059324cec5f4",
+      "source_commit_short": "33d95b3",
+      "source_commit_subject": "Add the cap-check transfer hook, the devnet publish script and the verified read-back",
+      "source_scope": "commit",
+      "source_files": {
+        "programs/cap_hook/Cargo.toml": "11edc1a86e52b24b5ee85bd969d6d74d1646f8cc4b3c4e58ef57d2743ab7225c",
+        "programs/cap_hook/src/lib.rs": "92c5a5f0adfc3de7727c331ee3bc554254fc4156dc2b6ccaa48fed27639bbdcb"
+      },
+      "program_id": "5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva",
+      "program_id_source": "records/devnet-artefacts.json#programId",
+      "program_id_note": "the program id is a property of the deploy keypair, not of the crate: lib.rs says so and the Rust source declares none. This is the id the tree states for this version, read from records/devnet-artefacts.json#programId, and verify re-reads that same symbol, so an edit to it fails the check",
+      "source_extraction": "the files above were read out of the commit with `git show <commit>:<path>` into a scratch crate directory, Cargo.toml and src/ at its root, and the command above was run with cwd set to that directory. Their repo paths, which are the keys of source_files, are the paths the same files have in the commit",
+      "binary": {
+        "path": "programs/cap_hook/target/deploy/cap_hook-v1.so",
+        "sha256": "a0dcc48d95b8fc22e0c5b60f296e6ec487a747f4d3c74b0e277658978b43e94d",
+        "bytes": 85784
+      },
+      "rebuilds": [
+        {
+          "sha256": "a0dcc48d95b8fc22e0c5b60f296e6ec487a747f4d3c74b0e277658978b43e94d",
+          "bytes": 85784,
+          "identical": true
+        },
+        {
+          "sha256": "a0dcc48d95b8fc22e0c5b60f296e6ec487a747f4d3c74b0e277658978b43e94d",
+          "bytes": 85784,
+          "identical": true
+        }
+      ],
+      "reproducible": true
+    },
+    {
+      "program": "cap_hook",
+      "version": "v2",
+      "source_commit": "b8620417bef940b714c1fc4954f4457bbf31cd53",
+      "source_commit_short": "b862041",
+      "source_commit_subject": "Run six agents on a local validator and record the aggregate",
+      "source_scope": "tree",
+      "source_files": {
+        "programs/cap_hook/Cargo.toml": "11edc1a86e52b24b5ee85bd969d6d74d1646f8cc4b3c4e58ef57d2743ab7225c",
+        "programs/cap_hook/src/error.rs": "6beea4c053df32a6220e497bd9222d4b226fa2268e5d6ee12e0fa1d7062d40c9",
+        "programs/cap_hook/src/lib.rs": "2d783ce421f624b779125cbfb728b8ac2d3696c308c36058ba8895c7cbbe88de",
+        "programs/cap_hook/src/state.rs": "d285701708d9644b094fbb21cc03e3888158c1b4055bd607bb26999e35a75f74",
+        "programs/cap_hook/src/tests.rs": "f9ec20a537a09591ce4b98ab7d13468325fd1de1d8224f7392dfa72a6e3a6fdd"
+      },
+      "program_id": "CTEnej2b5cgJ7uQ185k7yWZChe8GasAgPYCc4BHFB67w",
+      "program_id_source": "market_swarm/gateway.py#PROGRAM_IDS[\"v2\"]",
+      "program_id_note": "the program id is a property of the deploy keypair, not of the crate: lib.rs says so and the Rust source declares none. This is the id the tree states for this version, read from market_swarm/gateway.py#PROGRAM_IDS[\"v2\"], and verify re-reads that same symbol, so an edit to it fails the check",
+      "source_extraction": "built in place from the working tree, cwd programs/cap_hook",
+      "binary": {
+        "path": "programs/cap_hook/target/deploy/cap_hook.so",
+        "sha256": "de89af3cf0831bc6bad181ee7762c83e6486c4b9d0facb6f99cd7cfa6e949cac",
+        "bytes": 111504
+      },
+      "rebuilds": [
+        {
+          "sha256": "de89af3cf0831bc6bad181ee7762c83e6486c4b9d0facb6f99cd7cfa6e949cac",
+          "bytes": 111504,
+          "identical": true
+        },
+        {
+          "sha256": "de89af3cf0831bc6bad181ee7762c83e6486c4b9d0facb6f99cd7cfa6e949cac",
+          "bytes": 111504,
+          "identical": true
+        },
+        {
+          "sha256": "de89af3cf0831bc6bad181ee7762c83e6486c4b9d0facb6f99cd7cfa6e949cac",
+          "bytes": 111504,
+          "identical": true
+        }
+      ],
+      "reproducible": true
+    }
+  ]
+}

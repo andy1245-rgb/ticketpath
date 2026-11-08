@@ -170,6 +170,17 @@ class FakeChain(gw.ChainGateway):
             instructions, payer=payer, signer_path=signer_path, skip_preflight=skip_preflight
         )
 
+    def _send_multi(self, instructions, *, payer, signer_paths, skip_preflight=False):
+        """The same record-then-send for the two-signature paths, which is all of v2's sales.
+
+        `_send_multi` is the real one: the fake replaces the cluster, not the signer check, so a
+        test here still fails when the message and the keypair paths disagree.
+        """
+        self.instructions.append(list(instructions))
+        return super()._send_multi(
+            instructions, payer=payer, signer_paths=signer_paths, skip_preflight=skip_preflight
+        )
+
     def _sign(self, keypair_path: Path, message: bytes) -> bytes:
         self.signed.append(message)
         self.signers.append(keypair_path)
@@ -227,7 +238,7 @@ class FakeChain(gw.ChainGateway):
     def _apply_system_transfers(self, wire: str) -> None:
         """Credit a funded wallet, so "is it funded" is a real question on the second look."""
         transaction = base64.b64decode(wire)
-        message = decode_message(transaction[65:])
+        message = decode_message(transaction[1 + 64 * transaction[0]:])
         for instruction in message["instructions"]:
             if message["keys"][instruction["program"]] != gw.dp.SYSTEM_PROGRAM:
                 continue
@@ -352,6 +363,37 @@ class SystemTransferTest(unittest.TestCase):
         for bad in (0, -1, 2**64, True, 1.5, "1"):
             with self.subTest(lamports=bad), self.assertRaises(ValueError):
                 gw.system_transfer_instruction(source=address(1), destination=address(2), lamports=bad)
+
+
+class RefusalCodeTest(unittest.TestCase):
+    """The program's own code, out of whatever spelling the cluster used for it.
+
+    A refusal written as an unbranded `error` row is a refusal a reader cannot count, so the two
+    spellings a preflight or a confirmed transaction can produce are both read. The hex form is
+    what a simulation failure quotes; the decimal one is what some RPC shapes print.
+    """
+
+    def test_hex_form(self) -> None:
+        text = (
+            "Transaction simulation failed: Error processing Instruction 0: "
+            "custom program error: 0x177a"
+        )
+        self.assertEqual(gw._code_from_text(text), 6010)
+
+    def test_decimal_form(self) -> None:
+        self.assertEqual(
+            gw._code_from_text("Transaction simulation failed: custom program error: 6010"),
+            6010,
+        )
+
+    def test_hex_wins_when_a_message_carries_both(self) -> None:
+        self.assertEqual(
+            gw._code_from_text("custom program error: 0x177a ... custom program error: 6021"),
+            6010,
+        )
+
+    def test_a_message_with_no_code_returns_none_rather_than_a_guess(self) -> None:
+        self.assertIsNone(gw._code_from_text("blockhash not found"))
 
 
 class CapDecisionTest(unittest.TestCase):
@@ -821,36 +863,40 @@ class ProgramTest(NoSocket, unittest.TestCase):
             self.assertEqual(chain_gateway.program, "v1")
             self.assertEqual(chain_gateway.status()["program"], "v1")
 
-    def test_the_dry_gateway_is_the_one_place_v2_can_run(self):
+    def test_the_dry_gateway_runs_v2_without_a_chain(self):
         # v2's cap and policy rules are the same predicate as v1's for the part this harness
         # models, nothing a dry run reports is an observation, and every row says `simulated`.
+        # A labelled simulation is what `--dry-run --program v2` still gives, and it is the one
+        # v2 path that needs no validator.
         with tempfile.TemporaryDirectory() as tmp:
             chain_gateway = gw.make_gateway("local", run_dir=Path(tmp), dry_run=True, program="v2")
             self.assertTrue(chain_gateway.simulated)
             self.assertEqual(chain_gateway.status()["program"], "v2")
             self.assertIn("v2", repr(chain_gateway))
 
-    def test_a_real_v2_run_is_refused_at_start_with_the_reason(self):
-        # Before a validator boots: the missing piece is the signer on tag 2, not the cluster.
-        # Nothing here starts a process, and the whole path is refused before `atexit` is armed.
+    def test_a_v2_run_starts_like_a_v1_run(self):
+        # v2's stage is authorised by the record's authority and the house holds that key, so the
+        # refusal that stood here is gone: `start()` may not raise for v2 any more. Today's code
+        # raised before it ever looked at `_started`; `FakeChain` is already up, so reaching its
+        # status is the whole difference. `test_v2_authority_signing` drives the body below that.
         with tempfile.TemporaryDirectory() as tmp:
-            chain_gateway = gw.ChainGateway("local", run_dir=Path(tmp), program="v2")
-            with self.assertRaises(gw.ChainUnavailable) as caught:
-                chain_gateway.start()
-            message = str(caught.exception)
-            self.assertIn("SetPendingPrice", message)
-            self.assertIn("6026", message)
-            self.assertIn("seller", message)
-            self.assertFalse(chain_gateway._started)
+            chain_gateway = FakeChain(Path(tmp), program="v2")
+            status = chain_gateway.start()
+            self.assertEqual(status["program"], "v2")
+            self.assertIsNotNone(status["program_id"])
+            self.assertEqual(
+                [call for call in chain_gateway.calls if call[0] == "run"], [],
+                "nothing may be generated or spawned to start a run that is already up",
+            )
             chain_gateway.stop()
 
 
 class V2TransferTest(FakeCase):
-    """The v2 shapes through the same fake cluster: what the seller's transaction would carry.
+    """The v2 shapes through the same fake cluster: what the seller's transaction carries.
 
-    The real gateway refuses to start v2 (`ProgramTest`), so the encode path is exercised here,
-    against `FakeChain(program="v2")`. A regression to v1's encoders fails: v1 stages with the
-    record alone, and its transfer makes the record read-only.
+    A regression to v1's encoders fails: v1 stages with the record alone and one signature, and
+    its transfer makes the record read-only. A regression to a seller-signed v2 stage fails too:
+    the record's authority is the house, and a stage naming the seller is refused `6026` on chain.
     """
 
     def setUp(self):
@@ -864,9 +910,11 @@ class V2TransferTest(FakeCase):
 
     def message(self) -> dict:
         transaction = base64.b64decode(self.chain_gateway.sent[-1]["wire"])
-        return decode_message(transaction[65:])
+        # A compact-u16 signature count, that many 64-byte signatures, then the message. A v2
+        # plain sale has two, so the offset is read rather than assumed.
+        return decode_message(transaction[1 + 64 * transaction[0]:])
 
-    def test_the_stage_names_the_seller_as_a_signer(self):
+    def test_the_stage_names_the_house_as_a_signer(self):
         result = self.event.transfer(from_label="seller", to_label="buyer", price_lamports=CEILING)
         self.assertEqual(result.status, "ok")
         message = self.message()
@@ -876,15 +924,15 @@ class V2TransferTest(FakeCase):
         self.assertEqual(
             [message["keys"][index] for index in stage["accounts"]],
             [
-                self.chain_gateway._addresses["seller"],
+                self.chain_gateway._addresses[gw.HOUSE_LABEL],
                 self.chain_gateway.record_account,
                 self.event.mint,
             ],
-            "v2 stages with [authority, record, mint]",
+            "v2 stages with [authority, record, mint] and the authority is the record's",
         )
-        # The first key in a compiled message is the fee payer, which is the seller here; the
-        # header says how many keys must sign, and one is enough for a v2 staging plus transfer.
-        self.assertEqual(message["header"][0], 1)
+        # The first key in a compiled message is the fee payer, which is the seller; the header
+        # says how many keys must sign, and a v2 plain sale needs the seller and the house.
+        self.assertEqual(message["header"][0], 2)
         self.assertEqual(message["keys"][0], self.chain_gateway._addresses["seller"])
 
     def test_the_transfer_record_is_writable_so_the_hook_can_write_the_hold(self):

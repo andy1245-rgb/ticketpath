@@ -161,7 +161,7 @@ implements the feature is claimed in this pass.
 | 4 | Forecast log on chain plus off-chain scoring | **tested** | `programs/cap_hook/src/lib.rs` (tags 5 and 6), `ticketpath/onchain/v2.py`, `ticketpath/core/forecast_score.py` | `tests/test_forecast_score.py` (18 tests) and `tests/test_onchain_v2.py` (45 tests), both `OK`. The live local-validator half is `tests/test_onchain_v2_live.py`, 26 tests, **skipped** by the documentation pass (the gate is `TP_ONCHAIN_V2_LIVE=1` and the run rewrites the run's artefact). The rebuilt artefact (111,504 bytes, sha256 `de89af3c…`) carries proofs `a` to `g` and thirteen tag 4..6 proofs, and proof `g` is the two non-authority refusals `6026` |
 | 5 | Artist fee via `TransferFeeConfig` | **built** | `market_swarm/artist_fee.py` (the seller-paid lamport leg: the assessment, the instruction and the order it sits in); `market_swarm/config.py`, `market_swarm/gateway.py`, `market_swarm/runner.py` and `market_swarm/ledger.py` (the per-event option, the leg in the sale transaction and the row's columns); `tools/artist_fee_proof.py` | **Built as a seller-paid lamport leg; the token-fee form is dead.** `records/findings/42-artist-fee-at-checkout.md` is the measurement, PASS 9/9 on a throw-away local validator, and `tools/artist_fee_proof.py` is the tool. The ceiling that killed the token-fee form is unchanged: at `decimals 0`, `amount 1`, any rate from 1 to 9999 bps withholds the whole ticket, `records/findings/36-transfer-fee-on-a-one-unit-ticket.md`. Off unless an event turns it on, the chain does not enforce it, and no live harness run can charge it (§0A feature 7 states the same limit for both legs) |
 | 6 | Price floor | **tested** | `programs/cap_hook/src/state.rs` (`band_low_lamports`), `programs/cap_hook/src/lib.rs` (`6021`, `6022`), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`) for the field and the wire format. The predicate's proof is the local-validator run recorded at `records/onchain-v2.local.json`: `899,999,999` refused `6021`, `900,000,000` admitted. Not re-run by this pass. **That artefact is git-ignored (`.gitignore:65`, 32,679 bytes on disk here) and stays local: it is not in the repository and a reader will not find it** |
-| 7 | Flip tax | **tested** | `market_swarm/flip_tax.py` (the schedule, the assessment, the 70-byte record decoder, the leg and the instruction order); `market_swarm/config.py`, `market_swarm/gateway.py`, `market_swarm/runner.py`, `market_swarm/ledger.py` and `market_swarm/datasets.py` (the per-event option, the leg in the sale transaction, the row's three columns and the dataset check); `programs/cap_hook/src/lib.rs` step 7, which writes `held_since_unix`, is the input this build reads | Off chain: `market_swarm/tests/test_flip_tax.py`, `market_swarm/tests/test_flip_tax_mutation.py` and `market_swarm/tests/test_flip_tax_wiring.py`. On chain: `tools/flip_tax_proof.py`, with `tests/test_flip_tax_proof.py` for the tool itself and the run quoted in `records/findings/43-flip-tax-at-checkout.md`. **The charging half only:** the tax is a seller-paid lamport leg in the sale transaction, 15% under an hour falling to 0 at 30 days by default and off unless an event turns it on, and the chain does not enforce it (a sale can move the ticket and pay nothing). **The pool half is not built**: the money goes to the artist wallet, a refund-to-holders pool is documented as a future option in `docs/ON-CHAIN-DESIGN.md` §16.6, `ClaimRebate` (tag 7) is absent from `lib.rs`, `6027` and `6028` are raised by nothing, and `state.rs`'s `HOLD_FULL_SECONDS = 60` is that unbuilt curve's demo number, not this schedule. **No live harness run can charge it either:** `market_swarm/gateway.py:45-56` states that `start()` refuses `program=v2`, and that the fee and tax paths build v2 instruction shapes on a v1 run too, because the record those paths write is the one that carries the hold clock and the v2 authority, so a fee or tax event is a v2-record event whatever `program` says and cannot complete a live run under either program. The legs are measured by `tools/flip_tax_proof.py` and `tools/artist_fee_proof.py` on a throw-away local validator, not by a harness run. **[Corrected 2026-11-08T12:00Z: this cell described the charging half and not the limit on driving it. The build and the measurement are unchanged, and `market_swarm/CONTRACT.md:52-71` already carried the limit.]** |
+| 7 | Flip tax | **tested** | `market_swarm/flip_tax.py` (the schedule, the assessment, the 70-byte record decoder, the leg and the instruction order); `market_swarm/config.py`, `market_swarm/gateway.py`, `market_swarm/runner.py`, `market_swarm/ledger.py` and `market_swarm/datasets.py` (the per-event option, the leg in the sale transaction, the row's three columns and the dataset check); `programs/cap_hook/src/lib.rs` step 7, which writes `held_since_unix`, is the input this build reads | Off chain: `market_swarm/tests/test_flip_tax.py`, `market_swarm/tests/test_flip_tax_mutation.py` and `market_swarm/tests/test_flip_tax_wiring.py`. On chain: `tools/flip_tax_proof.py`, with `tests/test_flip_tax_proof.py` for the tool itself and the run quoted in `records/findings/43-flip-tax-at-checkout.md`. **The charging half only:** the tax is a seller-paid lamport leg in the sale transaction, 15% under an hour falling to 0 at 30 days by default and off unless an event turns it on, and the chain does not enforce it (a sale can move the ticket and pay nothing). **The pool half is not built**: the money goes to the artist wallet, a refund-to-holders pool is documented as a future option in `docs/ON-CHAIN-DESIGN.md` §16.6, `ClaimRebate` (tag 7) is absent from `lib.rs`, `6027` and `6028` are raised by nothing, and `state.rs`'s `HOLD_FULL_SECONDS = 60` is that unbuilt curve's demo number, not this schedule. **No live harness run can charge it either:** `market_swarm/gateway.py:45-56` states that `start()` refuses `program=v2`, and that the fee and tax paths build v2 instruction shapes on a v1 run too, because the record those paths write is the one that carries the hold clock and the v2 authority, so a fee or tax event is a v2-record event whatever `program` says and cannot complete a live run under either program. The legs are measured by `tools/flip_tax_proof.py` and `tools/artist_fee_proof.py` on a throw-away local validator, not by a harness run. **[Corrected 2026-11-08T12:00Z: this cell described the charging half and not the limit on driving it. The build and the measurement are unchanged, and `market_swarm/CONTRACT.md:52-71` already carried the limit.]** **[CORRECTED 2026-11-08T13:20Z: the sentence above that says no live harness run can charge either leg rests on `start()` refusing `program=v2`, and it no longer does. On branch `swarm/live-onchain` a v2 run stages a price with the record's authority's signature and deploys v2's own `.so` and keypair. A fee or tax event is still a v2-record event; it was not in the run that has now happened (6 agents, 10 rounds, 2 events, 56 rows, 4 refused `6010`, `records/swarm-live-onchain.json`), and this cell does not claim one has been driven live.]** |
 | 8 | Public price feed | **tested** | `programs/cap_hook/src/lib.rs` (tag 4), `programs/cap_hook/src/state.rs` (`band_seeds`), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`). The account was published and read back on the local validator (`low 900000000`, `high 1100000000`, `sample_n 42`); **no third-party consumer**, so composability is unproven. The run is the same local-only one behind feature 6: the artefact `records/onchain-v2.local.json` is git-ignored and stays local, so the numbers are the record and the artefact is not |
 | 9 | Live deepseek agent adapter, tiny budgets | **tested** | `market_swarm/forge_policy.py`, `market_swarm/budget.py`; opt-in on `MARKET_SWARM_LIVE_LLM=1` | `market_swarm/tests/test_feature9_fixes.py` and `test_forge_policy.py` (89 tests, `OK`); the whole package is 489 tests, `OK (skipped=2)` (re-measured 2026-11-08T09:22Z, was 436). The documentation gate's feature check reads both test roots as of 2026-11-08, so this row is `tested` on the suite that exercises it |
 | 10 | Per-event jurisdiction field | **tested** | `programs/cap_hook/src/state.rs` (`jurisdiction`, `policy`), `programs/cap_hook/src/lib.rs` (log line, the `policy == 1` skip), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`). The local run initialised `jurisdiction ZZ`, admitted a transfer with `jurisdiction=ZZ` in the log and refused `policy 2` with `6023`. The wire carries neither field. **This program records the code and does not interpret it**; the jurisdiction-to-policy table is a separate piece of work in this same tree by another session (D11 there, `ticketpath/core/region_caps.py`), the two must be reconciled by the operator, and any such reconciliation is nation-level only because the record is two bytes while 72 of the table's 82 codes are subdivisions (§A6 item 7) |
@@ -745,6 +745,63 @@ would cost money is deliberately switched off — `forge_policy.py` implements a
 LLM policy, refuses to construct without an explicit cost acknowledgement, and is not run
 against live agents here.
 
+**[SUPERSEDED 2026-11-08T13:20Z by a run, on branch `swarm/live-onchain`. The paragraph above is
+kept because it was true when it was written; three of its four clauses are now false. There is a
+committed run config, `market_swarm/example-live-onchain.json`: six agents, one per policy, ten
+rounds, a `capped` and a `monitored` event at the same intended cap. The `plan` and `run` verbs are
+exercised by it. And a validator run of this package exists — the first one — on v2, on a local
+validator, with no devnet and no spend:
+
+| reading | value |
+|---|---|
+| agents, rounds, events | 6, 10, 2 (`capped` ceiling 1,250,000,000; `monitored` 7,553,500,000) |
+| rows | 56 per run: 24 executed trades, 18 listings, 4 refused on chain, 10 bids no ask met |
+| refusals carrying a code | 4, all `6010` `E_CAP_EXCEEDED`, each with its own signature |
+| cost | $0.00 — scripted policies, no model call, and a validator funded at genesis |
+| wall | 33.2 s, no kill, 25.8 of 80 SOL notional committed (the run before it: 28.8 s, same counts) |
+
+It exists because v2's live path was broken in four places, found by running it rather than
+reading it: the stage signer, the deploy's `.so` and program keypair not following the program
+name, `start()` deadlocking on a second call, and `_record_until` comparing a v2 record with v1's
+field names. `records/swarm-live-onchain.json` is the aggregate a panel reads, written by
+`tools/swarm_summary.py` from the two datasets, which stay git-ignored.
+
+**[CORRECTED 2026-11-08T14:30Z, after three independent reviews. Four readings in the table above were
+wrong and they are replaced, not footnoted. `42 executed` counted 18 `list` rows, which carry a price
+and `status: ok` and no chain instruction behind them — `cap_hook` has no listing surface, and the
+row's own rationale says nothing moved. `10 asks no bid met` inverted the side of the book: all ten
+rows are `action: buy`, and each says in its own words that it is a censored bid. `28.8 s` was the
+first run's wall; the committed aggregate is a re-run at 33.2 s, and a re-run of the same config and
+seeds reproduced both events' counts exactly — 28 rows each, identical action-by-status counts — so
+the numbers are reproducible and not one draw. The reviews also found two things this branch had
+broken that no green suite caught: the summary tool drew a listing as a clearing price in four
+capped rounds that had no sale at all, and the second event's sidecar claimed every row of the run
+(`rows: 56` beside a 28-row file) because the runner wrote run-wide counters into a per-event file.
+Both are fixed, and the aggregate now names the program id the rows were produced against. The first version of this note had itself claimed these corrections while the
+table beside it still read 42 — one commit changed the note and not the table, which is the failure
+this record exists to catch, so the table is corrected in place here.]**
+
+**One gap this branch found and did not close, because it is shared tooling and not this branch's
+to change.** `tools/tp.py gate` runs `unittest discover -s tests` and the documentation check; it
+does not run `market_swarm/tests`, which is 801 tests, and it does not run
+`tools/build_provenance.py verify`. The pre-commit hook's code trigger matches `ticketpath/`,
+`tests/` and `tools/`, so a commit touching only `programs/cap_hook/**` or `market_swarm/**` runs
+no gate at all. Every "green at this commit" claim in this branch's messages therefore rests on
+both suites and `verify` having been run by hand, which they were, at each commit; it does not
+rest on the hook. Adding two discovery roots and one verb to the gate is a change to the
+repository's shared tooling and belongs with whoever owns it, not with a branch about the swarm.
+
+**What the `/pricing` panel should read, and its fields.** `records/swarm-live-onchain.json`, one
+file, under 20 KB: `agents`, `rounds` (`configured`, `completed`), `executed` (trades only — a
+listing is not one), `refused` with `refused_on_chain`, `declined_by_policy` and `refused_by_code`
+(code, name, count), `unfilled_bids` and `unfilled_asks` kept apart because they are opposite sides
+of the book, `run` (`wall_seconds`, `budget`), `cost` (`usd`, `basis`), `validator`
+(`cluster`, `chain`, `program`, `program_id`, `dry_run`), and `price_paths` — two series per event, `asked` and
+`cleared`, one point per round with `median_lamports` (a lower median), `max_lamports` and `n`,
+beside the event's `ceiling_lamports` so the cap can be drawn as a line. A round with no trade in it
+appears with `median_lamports: null` and `n: 0` rather than being dropped, so a chart draws a gap. The aggregate is E-class: SYNTHETIC, scripted
+agents, a validator this machine started, evidence about no real market.]**
+
 **The label, which is the whole point of the package's existence: every number it produces is
 synthetic and is E-class evidence about nothing real.** `records/findings/31` states it, the
 dataset writer enforces it row by row, and nothing in `records/` may quote a `market_swarm`
@@ -876,6 +933,12 @@ Listed so nobody mistakes silence for a measurement.
    The deployed program is 36 bytes of account data at the loader, which is the loader's record
    of the program, not the bytecode; the bytecode hash comparison would settle it and was not run.
 6. **The `market_swarm` harness on a validator** — never run: no run config in the tree.
+   **[CORRECTED 2026-11-08T13:20Z: run, on branch `swarm/live-onchain`, on v2 and on a local
+   validator: 56 rows, 4 refused `6010`, $0.00. The aggregate is
+   `records/swarm-live-onchain.json`; the readings are in the A9 correction above. 14:05Z: this
+   line first said "42 executed, 10 asks unfilled", which counted 18 listings as trades and
+   inverted the side of the book — the ten are bids no ask met. Both were found by independent
+   review and are corrected in A9.]**
 7. **The capture directory beside `tools/shot.py`** holds **12** PNGs, newest 18:04Z. The pack's
    claim of a thirteenth capture at 18:40Z is not supported by that directory now. *Unverified*;
    the claim may be true of a different path.

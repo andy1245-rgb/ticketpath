@@ -176,7 +176,7 @@ def _cmd_plan(args: argparse.Namespace) -> int:
         + (
             "  (deployed on devnet, four instruction tags)"
             if config.program == "v1"
-            else "  (local only, seven instruction tags; a real run cannot be driven yet)"
+            else "  (local only, seven instruction tags; a sale is signed by both keys)"
         )
     )
     print(f"kill-after {'none' if config.kill_after_seconds is None else config.kill_after_seconds}")

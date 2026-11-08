@@ -53,11 +53,12 @@ omits the field still loads as the run it always was. What each pairing proves, 
 |---|---|---|
 | v1 | devnet | Every row is an observation of the frozen deployed program, at the id a devnet reader reads. |
 | v1 | local | Every row is an observation of a v1 build this machine deployed, at the same id. |
-| v2 | local | Admitted by the config and encoded by `wire.py`. This harness cannot drive it end to end yet: v2's `SetPendingPrice` is authorised by the record's authority, which v2's `InitializeRecord` pins to the mint's authority, while the swarm stages a price inside the seller's own signed transaction. `ChainGateway.start()` refuses with that sentence instead of writing a dataset of `6026` rows, and `--dry-run` is a labelled simulation. |
+| v2 | local | Every row is an observation of a locally built v2 program at v2's own id, from its own keypair and its own `.so`. A v2 plain sale is one transaction signed by two keys: the seller pays for it and authorises the move, and the record's authority -- the mint's authority, which is the house key -- authorises `SetPendingPrice`, because v2 refuses `6026` for any other signer. The fee and flip-tax paths already needed both keys and are unchanged. |
 | v2 | devnet | Refused at load. v2 has never been deployed on devnet, so a v2 run there would read the v1 program's answers and record them as v2's. |
 
-The switch is not a label on the dataset. It selects the program id the gateway connects to and
-the keypair it deploys with (`gateway.PROGRAM_IDS`, checked against the keypairs beside the `.so`),
+The switch is not a label on the dataset. It selects the program id the gateway connects to, the
+keypair it deploys with and the `.so` it deploys (`gateway.PROGRAM_IDS`, `PROGRAM_KEYPAIRS`,
+`PROGRAM_BINARIES`, checked against the keypairs beside the `.so`),
 and the bytes a plain sale is built from (`market_swarm/wire.py`, where the program is an
 argument with no default and the two shapes differ in four places: the record argument on
 `InitializeExtraAccountMetaList`, the size and signer on `InitializeRecord`, the signer on

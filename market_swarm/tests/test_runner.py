@@ -16,7 +16,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from market_swarm.agents import Intent, MarketView, build_policy
@@ -711,6 +711,62 @@ class TestNoGatewayImport(unittest.TestCase):
             timeout=60,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
+
+
+class TestTheSidecarDescribesItsOwnDataset(RunnerCase):
+    """One dataset per sidecar, counted for that dataset and not for the run.
+
+    Measured on the first live run: the second event's sidecar said `rows: 56, ok: 42` beside a
+    file holding 28 rows, because the runner's run-wide counters were written into a per-event
+    sidecar. A reader taking the sidecar for a description of the file beside it was told the last
+    event contained the whole run.
+    """
+
+    def sidecar(self, dataset_path: str) -> dict:
+        path = Path(str(dataset_path).replace(".jsonl", ".meta.json"))
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def two_events(self) -> list[str]:
+        first, second = _event("ev-a", rounds=2), _event("ev-b", rounds=2)
+        config = replace(_config(self.out, _agents("a1"), first), events=(first, second))
+        policies = {
+            "a1": ScriptedPolicy({1: (("buy", FACE),), 2: (("buy", FACE),)})
+        }
+        summary, _ = self.run_swarm(config, policies)
+        self.assertEqual(len(summary.dataset_paths), 2)
+        return list(summary.dataset_paths)
+
+    def test_each_sidecar_counts_its_own_rows(self) -> None:
+        total = 0
+        for dataset in self.two_events():
+            rows = _rows(dataset)
+            meta = self.sidecar(dataset)
+            self.assertEqual(
+                meta["rows"], len(rows),
+                f"{Path(dataset).name}: the sidecar claims {meta['rows']} rows and the file has "
+                f"{len(rows)}",
+            )
+            counts: dict[str, int] = {}
+            for row in rows:
+                counts[row["status"]] = counts.get(row["status"], 0) + 1
+            self.assertEqual(meta["by_status"], counts)
+            total += len(rows)
+        self.assertEqual(total, 4, "two events of two buys each")
+
+    def test_the_deployed_program_id_is_on_the_sidecar(self) -> None:
+        """Nothing row-level tells v1 from v2, so the id is what makes the claim checkable."""
+        config = _config(self.out, _agents("a1"), _event(rounds=1))
+        gateway = FakeGateway()
+        gateway.program_id = "CTEnej2b5cgJ7uQ185k7yWZChe8GasAgPYCc4BHFB67w"
+        summary, _ = self.run_swarm(config, {"a1": ScriptedPolicy({1: (("buy", FACE),)})}, gateway)
+        meta = self.sidecar(summary.dataset_paths[0])
+        self.assertEqual(meta["program_id"], gateway.program_id)
+
+    def test_a_gateway_with_no_deployed_program_says_so(self) -> None:
+        # A dry run builds no transaction and has no id to name. Null, not a borrowed one.
+        config = _config(self.out, _agents("a1"), _event(rounds=1), dry_run=True)
+        summary, _ = self.run_swarm(config, {"a1": ScriptedPolicy({1: (("buy", FACE),)})})
+        self.assertIsNone(self.sidecar(summary.dataset_paths[0])["program_id"])
 
 
 if __name__ == "__main__":
