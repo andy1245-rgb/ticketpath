@@ -5,6 +5,7 @@ import { Card, Chip, Rule } from "@/components/ui";
 import { StatTile } from "@/components/StatTile";
 import {
   bpsLabel,
+  buyerSummary,
   LAW_PROVENANCE,
   lawReasonSentence,
   regionRow,
@@ -13,6 +14,7 @@ import {
   type Ceiling,
   type EventConfig,
   type ResaleMode,
+  type TicketOverride,
 } from "@/lib/demoState";
 import { REGIONS } from "@/lib/demoRegions";
 import { RESALE_MODE_LABEL } from "@/lib/resaleMode";
@@ -190,6 +192,78 @@ function SolField({ id, label, value, onCommit }: { id: string; label: string; v
   );
 }
 
+function TicketOverrides({ event, onChange }: { event: EventConfig; onChange: Props["onChange"] }) {
+  const id = useId();
+  const [serial, setSerial] = useState("");
+  const [max, setMax] = useState("");
+  const [note, setNote] = useState<string | null>(null);
+  const overrides = event.ticketOverrides ?? {};
+
+  function put(key: string, value: TicketOverride | null) {
+    const next = { ...overrides };
+    if (value) next[key] = value;
+    else delete next[key];
+    onChange({ ticketOverrides: next });
+  }
+
+  function add(frozen: boolean) {
+    const key = serial.trim().toUpperCase();
+    if (!key) {
+      setNote("Enter a ticket serial, for example DMO-0001 (shown on the buyer side).");
+      return;
+    }
+    const parsed = max.trim() === "" ? null : Number(max);
+    if (parsed != null && (!Number.isFinite(parsed) || parsed <= 0)) {
+      setNote("The maximum is an amount in SOL above 0, or blank for none.");
+      return;
+    }
+    setNote(null);
+    put(key, { frozen, maxLamports: parsed == null ? null : Math.round(parsed * SOL) });
+  }
+
+  return (
+    <Card>
+      <h3 className="h-section text-ink">Manual overrides, per ticket</h3>
+      <p className="t-meta mt-2 text-muted">
+        Freeze one ticket&apos;s resale or set a maximum for it. Applied by this demo on top of the
+        event ceiling and never above it; app policy, not a chain rule.
+      </p>
+      <div className="mt-4 flex flex-wrap items-end gap-3">
+        <Field label="Ticket serial" htmlFor={`${id}-serial`}>
+          <input id={`${id}-serial`} className={`${INPUT} w-36`} value={serial} onChange={(e) => setSerial(e.target.value)} placeholder="DMO-0001" />
+        </Field>
+        <Field label="Max price, SOL (optional)" htmlFor={`${id}-max`}>
+          <input id={`${id}-max`} className={`${INPUT} w-40`} inputMode="decimal" value={max} onChange={(e) => setMax(e.target.value)} />
+        </Field>
+        <button type="button" onClick={() => add(true)} className="u-transition inline-flex h-11 items-center rounded-pill border border-ink bg-ink px-5 t-meta text-on-accent">
+          Freeze resale
+        </button>
+        <button type="button" onClick={() => add(false)} className="u-transition inline-flex h-11 items-center rounded-pill border border-line bg-surface px-5 t-meta text-ink hover:border-ink">
+          Set max only
+        </button>
+      </div>
+      {note && <p className="t-micro mt-2 text-danger">{note}</p>}
+      {Object.keys(overrides).length === 0 ? (
+        <p className="t-meta mt-4 text-muted">No overrides set.</p>
+      ) : (
+        <ul className="mt-4 grid gap-2">
+          {Object.entries(overrides).map(([key, o]) => (
+            <li key={key} className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-2">
+              <span className="t-body text-ink">
+                {key}: {o.frozen ? "resale frozen" : "not frozen"}
+                {o.maxLamports != null ? `, max ${sol(o.maxLamports)}` : ""}
+              </span>
+              <button type="button" onClick={() => put(key, null)} className="t-meta min-h-11 text-muted underline-offset-4 hover:text-ink hover:underline">
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 export function OrganiserView({ event, ceiling, onChange }: Props) {
   const row = regionRow(event.region);
   const ids = useId();
@@ -283,6 +357,7 @@ export function OrganiserView({ event, ceiling, onChange }: Props) {
                 {REGIONS.map((r) => (
                   <option key={r.jurisdiction} value={r.jurisdiction}>
                     {r.jurisdiction} · {r.resalePolicy}
+                    {r.resalePolicy === "capped" && r.resaleCapBps != null ? ` · law ${bpsLabel(r.resaleCapBps)}` : ""}
                   </option>
                 ))}
               </select>
@@ -373,6 +448,8 @@ export function OrganiserView({ event, ceiling, onChange }: Props) {
             changing these fields proves nothing about an on-chain record.
           </p>
         </Card>
+
+        <TicketOverrides event={event} onChange={onChange} />
       </section>
 
       <aside className="grid gap-6 self-start" aria-labelledby="rule-result">
@@ -441,14 +518,18 @@ export function OrganiserView({ event, ceiling, onChange }: Props) {
           </Card>
 
           <Card>
-            <p className="t-meta text-muted">What the buyer side allows now</p>
-            <p className="t-body mt-2 text-ink">
-              {ceiling.closed
-                ? ceiling.closed.reason
-                : `A listing is admitted up to ${sol(ceiling.ceilingLamports)}. One lamport above that is refused with 6010 E_CAP_EXCEEDED — computed here; the code is the one devnet returned.`}
+            <p className="t-meta text-muted">What the buyer will be allowed to do now</p>
+            <ul className="t-body mt-2 grid list-disc gap-2 pl-5 text-ink">
+              {buyerSummary(event, ceiling).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <p className="t-micro mt-3 text-muted">
+              Simulated in this browser. The deployed devnet program enforces the cap only. The
+              fee and flip tax ride the sale in this app, and the ban, freeze and region rule are
+              app policy plus the region table.
             </p>
           </Card>
-
           <Card>
             <div className="grid gap-4 sm:grid-cols-2">
               <StatTile

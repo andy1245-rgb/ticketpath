@@ -150,6 +150,12 @@ export default async function OrganizerPage({
           >
             Door
           </Link>
+          <Link
+            href="/demo"
+            className="u-transition inline-flex h-11 items-center rounded-pill border border-control bg-surface px-5 t-meta text-ink hover:border-ink"
+          >
+            Event settings (simulated demo)
+          </Link>
         </div>
       </header>
 
