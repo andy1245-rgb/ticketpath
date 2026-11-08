@@ -14,6 +14,8 @@ type Outcome = { ticketId: string; priceLamports: number; result: ListingOutcome
 
 type Props = {
   state: DemoState;
+  /** Set when resale cannot be listed at any price (BANNED, or an unresolved region law). */
+  closed: { code: string; reason: string } | null;
   capBps: number;
   ceilingLamports: number;
   binding: "law" | "platform";
@@ -74,15 +76,31 @@ function PriceInput({
  * desktop. It holds no ids, because the same card appears twice in the tree and the
  * aside's `aria-labelledby` must stay unique.
  */
-function OutcomeCard({ outcome }: { outcome: Outcome }) {
+function OutcomeCard({ outcome, state }: { outcome: Outcome; state: DemoState }) {
   if (outcome.result.ok) {
     return (
       <Card>
         <Chip>Admitted</Chip>
         <p className="h-section mt-3 text-ink">Listed at {sol(outcome.priceLamports)}</p>
-        <p className="t-body mt-2 text-muted">
-          Flip tax at this hold: {bpsLabel(outcome.result.taxBps)} ={" "}
-          {sol(outcome.result.taxLamports)}. Artist fee: {sol(outcome.result.feeLamports)}.
+        <dl className="t-body mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
+          <dt className="text-muted">Sale price</dt>
+          <dd className="u-num text-ink">{sol(outcome.priceLamports)}</dd>
+          <dt className="text-muted">Flip tax at this hold ({bpsLabel(outcome.result.taxBps)}), seller-paid</dt>
+          <dd className="u-num text-ink">- {sol(outcome.result.taxLamports)}</dd>
+          <dt className="text-muted">Artist fee, seller-paid</dt>
+          <dd className="u-num text-ink">
+            {state.event.artistFee.on ? `- ${sol(outcome.result.feeLamports)}` : "off"}
+          </dd>
+          <dt className="text-ink">Seller receives</dt>
+          <dd className="u-num text-ink">
+            {sol(outcome.priceLamports - outcome.result.taxLamports - outcome.result.feeLamports)}
+          </dd>
+        </dl>
+        <p className="t-meta mt-2 text-muted">
+          Cap check passed: {outcome.priceLamports} x 10000 = {outcome.priceLamports * 10_000} is at
+          most {state.event.faceLamports} x (10000 + {outcome.result.ceiling.capBps}) ={" "}
+          {state.event.faceLamports * (10_000 + outcome.result.ceiling.capBps)}. The tax (15 percent
+          falling to 0 over 30 days) and the fee are lamport legs in the same transaction.
         </p>
         <Perforation className="my-4" width={300} />
         <p className="t-meta text-muted">
@@ -117,7 +135,7 @@ function OutcomeCard({ outcome }: { outcome: Outcome }) {
 }
 
 export function BuyerView(props: Props) {
-  const { state, capBps, ceilingLamports, binding, lawSentence, outcome, onBuy, onList } = props;
+  const { state, closed, capBps, ceilingLamports, binding, lawSentence, outcome, onBuy, onList } = props;
   const { event, tickets } = state;
   const mobileOutcome = useRef<HTMLDivElement>(null);
 
@@ -132,9 +150,9 @@ export function BuyerView(props: Props) {
   return (
     <div>
       {outcome ? (
-        <div ref={mobileOutcome} aria-live="polite" className="lg:hidden">
+        <div ref={mobileOutcome} aria-live="polite" className="scroll-mt-20 lg:hidden">
           <div className="mb-8">
-            <OutcomeCard outcome={outcome} />
+            <OutcomeCard outcome={outcome} state={state} />
           </div>
         </div>
       ) : null}
@@ -184,6 +202,16 @@ export function BuyerView(props: Props) {
 
               <Rule className="my-4" />
 
+              {closed ? (
+                <div className="mb-4" role="status">
+                  <Chip>{closed.code === "RESALE_DISABLED" ? "RESALE BANNED" : "RESALE LOCKED"}</Chip>
+                  <p className="t-body mt-2 text-ink">
+                    {closed.code === "RESALE_DISABLED"
+                      ? "You cannot list this ticket: the organiser set resale to BANNED for this event. This is a policy switch, not a price cap, so no price would be accepted."
+                      : `You cannot list this ticket: the region rule here is unresolved or forbids resale (${closed.reason}) This is a jurisdiction lock, not a price cap.`}
+                  </p>
+                </div>
+              ) : null}
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <PriceInput
                   ticketId={ticket.id}
@@ -242,12 +270,12 @@ export function BuyerView(props: Props) {
             <p className="t-body mt-3 text-muted">{lawSentence}</p>
             <Rule className="my-3" />
             <p className="t-meta text-muted">Resale mode</p>
-            <p className="t-body text-ink">{event.resaleMode}</p>
+            <p className="t-body text-ink">{event.resaleMode.toUpperCase()}</p>
           </Card>
 
           {outcome ? (
             <div className="hidden lg:block">
-              <OutcomeCard outcome={outcome} />
+              <OutcomeCard outcome={outcome} state={state} />
             </div>
           ) : null}
         </aside>

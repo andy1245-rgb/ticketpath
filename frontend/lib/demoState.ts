@@ -56,10 +56,10 @@ export const WALLET = "DemoWa11et7dByerQK3zVn9xLm4sT2pR8hJ6cF1a";
  *
  * The venue is in Chicago, so the jurisdiction is US and not CA-ON: a screen that prints
  * `platform binds · CA-ON` under a Chicago venue reads as the law table wired to the wrong
- * field. It is also the only row that demonstrates the rule this demo is about. US is
- * monitored with no price cap in force, so the platform's 2500 bps is the binding ceiling
- * at 1.25 SOL on a 1 SOL face. CA-ON caps at 0 bps, which makes every price above face
- * refused and never lets the 25 percent platform cap be seen doing anything.
+ * field. It is also the row this demo wants: US is monitored with no price cap in force,
+ * so the platform's 2500 bps is the binding ceiling at 1.25 SOL on a 1 SOL face. CA-ON
+ * caps at 0 bps, which makes every price above face refused and never lets the 25 percent
+ * platform cap be seen doing anything.
  */
 export function defaultEvent(): EventConfig {
   return {
@@ -132,7 +132,7 @@ export function ceilingFor(event: EventConfig): Ceiling {
     row.resalePolicy === "unresolved"
       ? { code: "LAW_UNRESOLVED", reason: `${event.region} resolves to unresolved (${row.lawReason}).` }
       : event.resaleMode === "banned"
-        ? { code: "RESALE_DISABLED", reason: "The organizer switched resale off for this event." }
+        ? { code: "RESALE_DISABLED", reason: "The organizer set resale to BANNED for this event." }
         : null;
   return {
     row,
@@ -186,7 +186,7 @@ export function evaluateListing(args: {
     return {
       ok: false,
       code: ceiling.closed.code as "LAW_UNRESOLVED" | "RESALE_DISABLED",
-      title: ceiling.closed.code === "RESALE_DISABLED" ? "Resale is off for this event" : "The law here does not resolve",
+      title: ceiling.closed.code === "RESALE_DISABLED" ? "Resale is BANNED for this event" : "The law here does not resolve",
       detail: ceiling.closed.reason,
       ceiling,
       priceLamports,

@@ -130,7 +130,7 @@ export default function DemoPage() {
       {role === "buyer" ? (
         <BuyerView
           state={state}
-
+          closed={ceiling.closed}
           capBps={ceiling.capBps}
           ceilingLamports={ceiling.ceilingLamports}
           binding={ceiling.binding}
