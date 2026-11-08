@@ -7,6 +7,8 @@ import { BuyerView } from "@/components/demo/BuyerView";
 import { OrganiserView } from "@/components/demo/OrganiserView";
 import { RoleToggle } from "@/components/RoleToggle";
 import { getRole, subscribeRole, type Role } from "@/lib/roleStore";
+import artefact from "@/data/devnet-artefacts.json";
+import { shortAddress } from "@/lib/format";
 import {
   applyListing,
   ceilingFor,
@@ -22,14 +24,14 @@ import {
   type ListingOutcome,
 } from "@/lib/demoState";
 
-/** The recorded devnet leg that was refused, from `records/devnet-artefacts.json`. */
-const DEVNET_PROOF = {
-  programId: "5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva",
-  acceptedLamports: 1_250_000_000,
-  refusedLamports: 1_250_000_001,
-  error: "custom program error: 0x177a (6010 E_CAP_EXCEEDED)",
-  slot: 519_846_008,
-};
+/**
+ * The recorded devnet legs, read from `data/devnet-artefacts.json` at build
+ * time. It used to be five hand-typed constants, which is a copy that can drift
+ * from the record it claims to quote without anything failing: the file is the
+ * source, so the file is what is read.
+ */
+const ACCEPTED = artefact.transfers.acceptedAtCap;
+const REFUSED = artefact.transfers.refusedOverCap;
 
 export default function DemoPage() {
   const [mounted, setMounted] = useState(false);
@@ -141,20 +143,68 @@ export default function DemoPage() {
       <Card>
         <h2 className="h-section text-ink">The refusal is the real code</h2>
         <p className="t-body mt-3 max-w-[76ch] text-muted">
-          This page simulates the environment, not the rule. The cap program is deployed on solana
-          devnet, and its record carries both legs: one resale at exactly the ceiling that was
-          admitted, and one lamport higher that the program refused.
+          This page simulates the environment, not the rule. The v1 cap program is deployed on
+          Solana devnet, and its record carries both legs: one resale at exactly the ceiling that
+          was admitted, and one lamport higher that the program refused.
         </p>
-        <div className="mt-4 grid gap-2">
-          <p className="t-meta text-muted">program {DEVNET_PROOF.programId}</p>
-          <p className="t-meta text-muted">
-            admitted {sol(DEVNET_PROOF.acceptedLamports)} · refused{" "}
-            {sol(DEVNET_PROOF.refusedLamports)} with {DEVNET_PROOF.error} · slot{" "}
-            {DEVNET_PROOF.slot}
-          </p>
-        </div>
+        <dl className="mt-4 grid gap-2">
+          <div>
+            <dt className="t-micro-caps text-muted">program v1</dt>
+            <dd className="mt-1">
+              <a
+                href={artefact.explorer.program}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={artefact.programId}
+                className="figure t-meta u-transition text-accent underline underline-offset-2 hover:text-accent-press"
+              >
+                {shortAddress(artefact.programId, 8, 8)}
+              </a>
+            </dd>
+          </div>
+          <div>
+            <dt className="t-micro-caps text-muted">the two legs</dt>
+            <dd className="figure t-meta mt-1 text-ink">
+              admitted {sol(ACCEPTED.priceLamports)} in{" "}
+              <a
+                href={ACCEPTED.explorer}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={ACCEPTED.signature}
+                className="u-transition text-accent underline underline-offset-2 hover:text-accent-press"
+              >
+                {shortAddress(ACCEPTED.signature ?? null, 8, 8)}
+              </a>{" "}
+              (slot {ACCEPTED.slot?.toLocaleString("en-US") ?? "—"})
+            </dd>
+          </div>
+          <div>
+            <dt className="t-micro-caps text-muted">the refusal</dt>
+            <dd className="figure t-meta mt-1 text-ink">
+              refused {sol(REFUSED.priceLamports)} with{" "}
+              <code className="rounded bg-inset px-1 py-0.5">{REFUSED.error}</code> in{" "}
+              <a
+                href={REFUSED.explorer}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={REFUSED.signature}
+                className="u-transition text-accent underline underline-offset-2 hover:text-accent-press"
+              >
+                {shortAddress(REFUSED.signature ?? null, 8, 8)}
+              </a>{" "}
+              (slot {REFUSED.slot?.toLocaleString("en-US") ?? "—"})
+            </dd>
+          </div>
+        </dl>
+        <p className="t-body mt-4 text-muted">
+          Both signatures open the transaction on the Solana explorer, so the refusal can be read
+          from the cluster rather than from this page.
+        </p>
         <p className="t-body mt-4">
-          <Link href="/rules" className="text-accent underline-offset-4 hover:underline">
+          <Link
+            href="/rules#enforcement-today"
+            className="text-accent underline-offset-4 hover:underline"
+          >
             The recorded devnet proof is on the rules page
           </Link>
         </p>
