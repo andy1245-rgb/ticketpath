@@ -33,7 +33,9 @@ aggregate whose every number is derived and none is retyped.
 a chain refusal carries the program's own error code (`6010` is `E_CAP_EXCEEDED`), and a policy
 declining its own cap has no code and is counted separately rather than folded into the chain
 refusals. The two are different events and a panel that adds them together is reporting one
-number for two things.
+number for two things. `unfilled_asks` is the third outcome and the one a capped market produces
+most of: an ask no bid met, or a seller with nothing to transfer. It is neither a trade nor a
+refusal, and folding it into either would make the cap look busier than it is.
 
 `price_paths` is two series per event, one value per round: `asked` is the median price the
 agents staged, refusals included, and `cleared` is the median price that actually transacted.
@@ -158,6 +160,7 @@ def _event_block(path: Path, meta: dict) -> dict:
     executed = 0
     refused = 0
     declined = 0
+    unfilled = 0
     codes: dict[int, int] = {}
     asked: dict[int, list[int]] = {}
     cleared: dict[int, list[int]] = {}
@@ -186,6 +189,11 @@ def _event_block(path: Path, meta: dict) -> dict:
             # counting it as a chain refusal would report an answer the chain never gave.
             declined += 1
             refused_by_agent[agent] = refused_by_agent.get(agent, 0) + 1
+        elif status == "skipped" and action in PRICE_ACTIONS:
+            # An ask no bid met, or a seller with nothing to transfer. A third outcome, and the
+            # one a capped market produces most of: it is neither a trade nor a refusal, and
+            # folding it into either would make the cap look busier than it is.
+            unfilled += 1
         if action in PRICE_ACTIONS and isinstance(price, int) and isinstance(rnd, int):
             asked.setdefault(rnd, []).append(price)
 
@@ -233,6 +241,7 @@ def _event_block(path: Path, meta: dict) -> dict:
         "refused": refused + declined,
         "refused_on_chain": refused,
         "declined_by_policy": declined,
+        "unfilled_asks": unfilled,
         "refused_by_code": {
             str(code): {"count": count, "name": CODE_NAMES.get(code, "unrecognised")}
             for code, count in sorted(codes.items())
@@ -256,10 +265,18 @@ def _event_block(path: Path, meta: dict) -> dict:
                 "points": series(cleared),
             },
         },
-        # Cost: the run's own accounting, carried rather than recomputed, and null says so.
+        # Cost: the run's own accounting where it has one. A scripted run costs nothing and the
+        # number says so rather than leaving a reader to guess: no model was called, and the
+        # cluster is a validator this machine funded at genesis, so no money was spent anywhere.
+        # `llm` carries the spend block when a model decided, and null when none did.
         "cost": {
-            "usd": None if not llm else llm.get("usd"),
-            "basis": "scripted policies, no model calls" if not llm else "llm",
+            "usd": 0.0 if not llm else llm.get("usd"),
+            "basis": (
+                "scripted policies: no model calls, and no cluster spend -- the validator is "
+                "funded at genesis and nothing is rented"
+            )
+            if not llm
+            else "llm",
             "llm": llm,
         },
         "budget": meta.get("budget"),
@@ -299,6 +316,7 @@ def build(datasets: list[Path], out: Path | None) -> dict:
     meta = first_meta or {}
     executed = sum(event["executed"] for event in events)
     refused = sum(event["refused"] for event in events)
+    unfilled = sum(event["unfilled_asks"] for event in events)
     codes: dict[str, dict] = {}
     for event in events:
         for code, entry in event["refused_by_code"].items():
@@ -329,10 +347,16 @@ def build(datasets: list[Path], out: Path | None) -> dict:
         },
         "executed": executed,
         "refused": refused,
+        "unfilled_asks": unfilled,
         "refused_by_code": dict(sorted(codes.items())),
         "cost": {
-            "usd": None if not meta.get("llm") else meta["llm"].get("usd"),
-            "basis": "scripted policies, no model calls" if not meta.get("llm") else "llm",
+            "usd": 0.0 if not meta.get("llm") else meta["llm"].get("usd"),
+            "basis": (
+                "scripted policies: no model calls, and no cluster spend -- the validator is "
+                "funded at genesis and nothing is rented"
+            )
+            if not meta.get("llm")
+            else "llm",
         },
         "provenance": meta.get("provenance"),
         "events": events,

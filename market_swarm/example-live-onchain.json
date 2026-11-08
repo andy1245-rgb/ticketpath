@@ -46,12 +46,13 @@
       "budget_actions": 60
     },
     {
-      "agent_id": "flipper-1",
-      "policy": "flipper",
-      "wallet_label": "flipper-1",
-      "seed": 31,
-      "budget_lamports": 8000000000,
-      "budget_actions": 60
+      "agent_id": "greater-fool-1",
+      "policy": "greater_fool",
+      "wallet_label": "greater-fool-1",
+      "seed": 71,
+      "budget_lamports": 20000000000,
+      "budget_actions": 60,
+      "max_holdings": 8
     },
     {
       "agent_id": "scalper-1",

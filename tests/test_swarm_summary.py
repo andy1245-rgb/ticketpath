@@ -148,6 +148,28 @@ class TestTheCounts(unittest.TestCase):
         event = summary["events"][0]
         self.assertEqual(event["refused_on_chain"], 1)
         self.assertEqual(event["declined_by_policy"], 1)
+        # This fixture has no censored ask, so the third bucket is empty here; the next test is
+        # the one that fills it.
+        self.assertEqual(event["unfilled_asks"], 0)
+
+    def test_an_ask_no_bid_met_is_its_own_outcome(self) -> None:
+        """Not a trade and not a refusal: the third thing a capped market produces."""
+        with tempfile.TemporaryDirectory() as tmp:
+            rows = _mixed_rows() + [
+                _row(
+                    agent_id="scalper-1", action="resell", round=3, status="skipped",
+                    price_lamports=1_300_000_000, markup_bps=3000, signature=None,
+                    rationale="ask 1300000000 met no bid; a censored ask",
+                )
+            ]
+            path = _write(Path(tmp), rows)
+            summary = swarm_summary.build([path], None)
+
+        event = summary["events"][0]
+        self.assertEqual(event["unfilled_asks"], 1)
+        self.assertEqual(event["refused"], 2, "the censored ask is not a refusal")
+        self.assertEqual(event["executed"], 2, "and it is not a trade either")
+        self.assertEqual(summary["unfilled_asks"], 1)
 
     def test_the_refusal_carries_the_programs_own_code(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -176,13 +198,17 @@ class TestTheCounts(unittest.TestCase):
         self.assertEqual(summary["agent_policies"], ["buyer", "scalper"])
         self.assertEqual(summary["rounds"], {"configured": 3, "completed": 3})
 
-    def test_a_scripted_run_reports_no_dollars_and_says_why(self) -> None:
+    def test_a_scripted_run_reports_a_measured_zero_and_says_why(self) -> None:
+        # Not `null`: nothing was billed, so the number is known and it is zero. `null` would read
+        # as "unknown", and a panel showing an unknown cost for a run that spent nothing is wrong
+        # in the direction that makes a reader suspicious of the rest of the file.
         with tempfile.TemporaryDirectory() as tmp:
             path = _write(Path(tmp), _mixed_rows())
             summary = swarm_summary.build([path], None)
 
-        self.assertIsNone(summary["cost"]["usd"])
+        self.assertEqual(summary["cost"]["usd"], 0.0)
         self.assertIn("scripted", summary["cost"]["basis"])
+        self.assertIsNone(summary["events"][0]["cost"]["llm"])
 
     def test_the_validator_block_names_a_cluster_and_never_a_port(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

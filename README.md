@@ -472,6 +472,17 @@ program. What measured the two legs is the two proof tools on a throw-away local
 harness's own fee path is unit-tested against a fake cluster and is not measured on a validator
 (finding 42 §8). `market_swarm/CONTRACT.md:52-71` already says all of this; this section did not.]**
 
+**[CORRECTED 2026-11-08T13:20Z, on branch `swarm/live-onchain`. The paragraph above is kept because
+it was true when it was written, and one of its load-bearing sentences is no longer true:
+`ChainGateway.start()` no longer refuses `program=v2`. Two keys now sign one v2 sale — the seller pays
+and authorises the move, the record's authority (the mint's authority, the house key) authorises
+`SetPendingPrice` — and v2 deploys the program's own `.so` and keypair rather than v1's. So a fee or
+tax event is still a v2-record event, and v2 is now drivable, which is the opposite of what the
+paragraph concludes. What has been run is a live v2 run **without** a fee or tax event: 6 scripted
+agents, 10 rounds, 2 events, 56 rows, 4 of them refused `6010`, one aggregate at
+`records/swarm-live-onchain.json`. **A fee or tax event has not been run live and this note does not
+claim it has**; the two proof tools remain what measures those two legs.]**
+
 Token-2022 computes a transfer fee on the base-unit amount and rounds it **up**. At `decimals 0`,
 `amount 1`, any rate from 1 to 9999 bps withholds the whole ticket: `withheldAmount = 1`, the
 recipient receives 0. The ceiling is proven by `ceil(10 x 1500 / 10 000) = 2` on a ten-unit transfer,
