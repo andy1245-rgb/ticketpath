@@ -1,0 +1,86 @@
+{
+  "run_id": "sw-llm-example",
+  "cluster": "local",
+  "seed": 3,
+  "dry_run": false,
+  "kill_after_seconds": 240,
+  "out_dir": ".swarm-runs",
+  "total_budget_lamports": 30000000000,
+  "total_budget_actions": 60,
+  "llm": {
+    "enabled": false,
+    "tier": "low",
+    "per_agent_token_budget": 40000,
+    "total_token_budget": 200000,
+    "max_concurrent": 3,
+    "timeout_seconds": 90,
+    "cost_cap_usd": 0.1,
+    "usd_per_mtok": {
+      "input": 0.15,
+      "output": 0.6,
+      "cache_read": 0.003,
+      "cache_write": 0
+    }
+  },
+  "events": [
+    {
+      "event_id": "evt_llm",
+      "face_lamports": 1000000000,
+      "mode": "capped",
+      "cap_bps": 2500,
+      "tickets": 6,
+      "rounds": 2,
+      "round_seconds": 1
+    }
+  ],
+  "agents": [
+    {
+      "agent_id": "buyer",
+      "policy": "buyer",
+      "wallet_label": "buyer",
+      "seed": 11,
+      "budget_lamports": 4000000000,
+      "budget_actions": 10
+    },
+    {
+      "agent_id": "holder",
+      "policy": "holder",
+      "wallet_label": "holder",
+      "seed": 21,
+      "budget_lamports": 4000000000,
+      "budget_actions": 10
+    },
+    {
+      "agent_id": "flipper",
+      "policy": "flipper",
+      "wallet_label": "flipper",
+      "seed": 31,
+      "budget_lamports": 4000000000,
+      "budget_actions": 10
+    },
+    {
+      "agent_id": "scalper",
+      "policy": "scalper",
+      "wallet_label": "scalper",
+      "seed": 41,
+      "budget_lamports": 6000000000,
+      "budget_actions": 10
+    },
+    {
+      "agent_id": "sniper",
+      "policy": "sniper",
+      "wallet_label": "sniper",
+      "seed": 51,
+      "budget_lamports": 4000000000,
+      "budget_actions": 10
+    },
+    {
+      "agent_id": "panic",
+      "policy": "panic",
+      "wallet_label": "panic",
+      "seed": 61,
+      "budget_lamports": 4000000000,
+      "budget_actions": 10
+    }
+  ]
+}
