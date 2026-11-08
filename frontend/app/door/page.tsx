@@ -7,7 +7,7 @@ import { AddressPill } from "@/components/AddressPill";
 import { Chip, DataSourceNote, Panel, Unavailable } from "@/components/ui";
 import { formatDateTime } from "@/lib/format";
 
-export const metadata = { title: "Door" };
+export const metadata = { title: "Door check" };
 
 /**
  * The door screen reads real fields and stops there. It does not admit anyone,
@@ -41,8 +41,8 @@ function doorState(ticket: Ticket): { label: string; tone: Tone } {
   if (ticket.status === "redeemed" || ticket.redeemedAt !== null) {
     return { label: "Already redeemed", tone: "neutral" };
   }
-  if (ticket.status === "valid") return { label: "Valid, not redeemed", tone: "positive" };
-  return { label: STATUS_LABEL[ticket.status], tone: "neutral" };
+  if (ticket.status === "valid") return { label: "Valid, no redemption recorded (not an admission decision)", tone: "neutral" };
+  return { label: `${STATUS_LABEL[ticket.status]} (held for resale; the holder may change)`, tone: "neutral" };
 }
 
 /**
@@ -91,6 +91,7 @@ function TicketLookupForm({ defaultValue }: { defaultValue?: string }) {
             type="text"
             required
             autoComplete="off"
+            placeholder="ticket id or mint address, as printed on the ticket"
             spellCheck={false}
             defaultValue={defaultValue ?? ""}
             className="figure t-meta h-12 w-full rounded-input border border-control bg-surface px-4 text-ink"
@@ -162,7 +163,20 @@ export default async function DoorPage({
 
   return (
     <div className="box py-12">
-      <h1 className="h-section">Door</h1>
+      <h1 className="h-section">Door check</h1>
+      <p className="t-body mt-3 max-w-2xl text-muted">
+        Read a ticket&rsquo;s own status and redemption time. This build admits nobody, mints no
+        door code and records nothing. On the static site the lookup below only works for a
+        ticket id carried in the address when the page was built; other ids show the empty form.
+      </p>
+      <div className="mt-6 max-w-2xl rounded-panel border border-dashed border-line p-6">
+        <p className="t-micro-caps text-muted">Specimen, not scanned, not a real code</p>
+        <p className="t-body mt-2 text-ink">
+          A door code would carry the ticket mint, the serial, the current holder and an expiry,
+          signed by the organiser&rsquo;s key. No such code exists in this build and nothing at
+          this screen can verify one.
+        </p>
+      </div>
 
       {result === null ? (
         // No id: the form and nothing else. No pretend scan, no sample ticket.

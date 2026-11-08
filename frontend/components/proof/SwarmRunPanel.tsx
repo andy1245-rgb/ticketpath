@@ -2,6 +2,7 @@ import { Chip } from "@/components/ui";
 import { shortAddress } from "@/lib/format";
 import live from "@/data/swarm-live-onchain.json";
 import totals from "@/data/swarm-totals.json";
+import llm from "@/data/swarm-llm.json";
 
 /**
  * The six-agent run, printed from the record it wrote.
@@ -129,6 +130,35 @@ export function SwarmRunPanel(): React.ReactElement {
         </dl>
         <p className="t-micro mt-4 text-muted">{totals.dryRunNote}</p>
         <p className="t-micro mt-2 text-muted">{totals.validatorNote}</p>
+      </div>
+
+      <div className="mt-6 rounded-panel border border-line bg-surface p-6">
+        <p className="t-micro-caps text-muted">Live-model swarm and later batches · {llm.label}</p>
+        <p className="t-body mt-3 text-ink">
+          Dry gateway, live model: {llm.liveModelDry.runs} runs, {llm.liveModelDry.agents} agents,{" "}
+          {n(llm.liveModelDry.decisions)} decisions, {llm.liveModelDry.fills} fills,{" "}
+          {n(llm.liveModelDry.tokens)} tokens, ${llm.liveModelDry.usd.toFixed(4)}.{" "}
+          {llm.liveModelDry.fallbackDecisions} of {llm.liveModelDry.decisions} decisions had no
+          usable reply and used the scripted fallback.
+        </p>
+        <p className="t-micro mt-2 text-muted">{llm.liveModelDry.note}</p>
+        <p className="t-body mt-4 text-ink">
+          Second dry batch (snapshot, {llm.liveModelDrySecondBatch.completeRunEvents} of{" "}
+          {llm.liveModelDrySecondBatch.runEvents} run events complete):{" "}
+          {n(llm.liveModelDrySecondBatch.decisions)} decisions,{" "}
+          {n(llm.liveModelDrySecondBatch.tokens)} tokens, $
+          {llm.liveModelDrySecondBatch.usd.toFixed(4)}.
+        </p>
+        <p className="t-micro mt-2 text-muted">{llm.liveModelDrySecondBatch.note}</p>
+        <p className="t-body mt-4 text-ink">
+          Scripted batch: {llm.scriptedSecondBatch.runs} runs ({llm.scriptedSecondBatch.runsValidator}{" "}
+          validator, {llm.scriptedSecondBatch.runsDry} dry), {n(llm.scriptedSecondBatch.decisions)}{" "}
+          decisions, {n(llm.scriptedSecondBatch.executed)} executed, {llm.scriptedSecondBatch.refused}{" "}
+          refused with code 6010.
+        </p>
+        <p className="t-micro mt-2 text-muted">
+          Source: {llm.source}. {llm.disclaimer}
+        </p>
       </div>
     </section>
   );
