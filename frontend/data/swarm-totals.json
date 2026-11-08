@@ -11,7 +11,7 @@
   "executed": 3458,
   "listings": 4634,
   "refused": 967,
-  "refusedOnChain": 967,
+  "refusedDryAndValidatorUnsplit": 967,
   "declinedByPolicy": 0,
   "usd": 0.044776,
   "validatorRuns": { "scripted": 17, "liveModel": 3 },

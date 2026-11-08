@@ -111,8 +111,11 @@ export function SwarmRunPanel(): React.ReactElement {
           {totals.validatorRuns.scripted} scripted, {totals.validatorRuns.liveModel} with a live
           model) and {n(totals.runsDry)} dry. {n(totals.decisions)} decisions,{" "}
           {n(totals.executed)} trades executed, {n(totals.listings)} listings with no chain
-          instruction behind them, {n(totals.refused)} refusals of which {n(totals.refusedOnChain)}{" "}
-          carry code 6010, and {n(totals.declinedByPolicy)} policy declines. Model spend $
+          instruction behind them, {n(totals.refused)} refusals coded 6010 in total, which is not
+          a count of refusals on chain: {n(totals.runsDry)} of {n(totals.runs)} runs used the
+          simulated gateway, the total does not split dry from validator, and only validator runs
+          carry the program&apos;s own refusals. The validator-backed figure this page leads with is the
+          six-agent run above. There were also {n(totals.declinedByPolicy)} policy declines. Model spend $
           {totals.usd.toFixed(4)} across the three live-model runs; every other run is scripted and
           spent nothing.
         </p>

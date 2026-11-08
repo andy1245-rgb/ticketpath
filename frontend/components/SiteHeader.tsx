@@ -19,6 +19,7 @@ const NAV = [
   { href: "/my-tickets", label: "My tickets" },
   { href: "/organizer", label: "For organizers" },
   { href: "/rules", label: "How the cap works" },
+  { href: "/rules#enforcement-today", label: "Proof on devnet" },
   { href: "/pricing", label: "Pricing and data" },
   { href: "/door", label: "Door" },
   { href: "/demo", label: "Live demo" },
@@ -89,7 +90,7 @@ export function SiteHeader() {
           </nav>
 
           <div className="col-start-3 flex items-center justify-end gap-3">
-            {pathname !== "/demo" ? <RoleToggle navigate /> : null}
+            {pathname !== "/demo" && pathname !== "/demo/" ? <RoleToggle navigate /> : null}
             <Link
               href="/account"
               className="u-transition hidden items-center t-body text-ink hover:text-accent sm:inline-flex"

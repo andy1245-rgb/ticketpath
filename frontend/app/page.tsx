@@ -4,6 +4,7 @@ import { Chip, DataSourceNote, Panel, Pill, Rule } from "@/components/ui";
 import { getDevnetRecord, getEvents, getResaleHistory, getTickets } from "@/lib/api";
 import { capCeilingLamports } from "@/lib/cap";
 import { formatDate, formatDateTime, formatLamports } from "@/lib/format";
+import DEV from "@/data/devnet-artefacts.json";
 import { PROGRAM_ID, explorerProgramUrl } from "@/lib/solana";
 
 /*
@@ -521,13 +522,28 @@ export default async function HomePage() {
             )}
           </div>
           {artefact && (
-            <p className="t-micro pb-6 text-muted">
-              Deployed on {artefact.cluster ?? "devnet"}: a verified run recorded signature{" "}
-              <span className="figure">{artefact.signature ?? "—"}</span> at slot{" "}
-              {formatLamports(artefact.slot)} on {formatDateTime(artefact.checkedAt)}. Read from the
-              artefact file at build time, not from a cluster: this build asked no cluster, so the
-              strip prints what that run wrote.
-            </p>
+            <div className="t-micro pb-6 text-muted">
+              <p>
+                Deployed on {artefact.cluster ?? "devnet"}. Read from the recorded artefact file at
+                build time, not from a cluster. The two transactions on the Solana explorer:
+              </p>
+              <ul className="mt-2 grid gap-1">
+                <li className="break-all">
+                  Accepted, {formatLamports(DEV.transfers.acceptedAtCap.priceLamports)} lamports
+                  (1.25 SOL, exactly the ceiling), slot {formatLamports(DEV.transfers.acceptedAtCap.slot)}:{" "}
+                  <a className="underline" target="_blank" rel="noopener noreferrer" href={DEV.transfers.acceptedAtCap.explorer}>
+                    {DEV.transfers.acceptedAtCap.signature}
+                  </a>
+                </li>
+                <li className="break-all">
+                  Refused with 6010 E_CAP_EXCEEDED, {formatLamports(DEV.transfers.refusedOverCap.priceLamports)} lamports
+                  (one lamport over), slot {formatLamports(DEV.transfers.refusedOverCap.slot)}:{" "}
+                  <a className="underline" target="_blank" rel="noopener noreferrer" href={DEV.transfers.refusedOverCap.explorer}>
+                    {DEV.transfers.refusedOverCap.signature}
+                  </a>
+                </li>
+              </ul>
+            </div>
           )}
           {/* Two records sit next to each other on this screen and they do not
               describe the same event: the strip above is the recorded devnet

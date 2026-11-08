@@ -33,7 +33,7 @@
     "executed": 141,
     "listings": 242,
     "refused": 10,
-    "refusedOnChain": 10,
+    "refusedDryAndValidatorUnsplit": 10,
     "usd": 0.0,
     "note": "Scripted policies, no model spend. The source totals mix 4 dry and 4 validator runs and do not split the 10 refusals by kind; read them as dry-or-validator unsplit, not as 10 validator refusals."
   },

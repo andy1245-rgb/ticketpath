@@ -63,7 +63,7 @@ in reality; ban, freeze, region, fee and tax are application policy in the demo.
 - Resale ban and region geo-lock are application policy (the app refuses to list); the chain only
   enforces the cap.
 - Region rules: `ticketpath/data/region-caps.json` (version 2026-11-08.1, 82 jurisdiction codes) resolves
-  each to `capped`, `monitored` or `unresolved`. Measured on 2026-12-01: 6 capped, 8 monitored, 68
+  each to `capped`, `monitored` or `unresolved`. Computed by the resolver at an as-of date of 2026-12-01: 6 capped, 8 monitored, 68
   unresolved. Unresolved means no primary source was read; an event there may not claim lawfulness, and a
   fixed money cap is not converted to basis points without a sourced FX snapshot. Design:
   `records/REGION-CAPS-DESIGN.md`.
@@ -80,7 +80,7 @@ are synthetic.
 |---|---|---|
 | Runs (scripted agents) | 124 | 20 |
 | Total across both | 144 runs, 49,684 decisions, 3,458 executed trades, 4,634 listings, 1,351 agents | |
-| Cap refusals | 967 across both, all `6010`; the dry/validator split of refusals is not separated in the total | |
+| Cap refusals | 967 coded `6010` across both. The total is not split dry from validator, 124 of 144 runs used the simulated gateway, and so it is **not** a count of refusals on chain. The validator-backed figure is the six-agent local-validator run: 4 refused by the program | |
 
 Second validator sweep: 8 runs (4 dry, 4 validator), 1,312 decisions, 141 executed, 10 refused (`6010`), 66 agents.
 
@@ -143,6 +143,7 @@ cd frontend && npm run typecheck && npm run lint && npm test
 
 ## Honest limits and what is next
 
+- The hook checks the price the seller declares for the transfer, so a side payment made off our app can bypass the cap. The artist fee and flip tax bind only sales that our app builds.
 - All market data is synthetic. No claim of predictive accuracy, willingness-to-pay or revenue
   uplift is made; those need a real resale ledger, which we do not have.
 - The pricing engine is bounded arithmetic over fixture prices, not a fitted model. With no real

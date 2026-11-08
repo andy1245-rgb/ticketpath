@@ -217,7 +217,10 @@ export default async function RulesPage(): Promise<React.ReactElement> {
                     <dt className="figure t-micro text-muted">program v1</dt>
                     <dd className="mt-1 break-words text-ink">
                       {artefact.programId ? (
-                        <AddressPill address={artefact.programId} label="program address" />
+                        <>
+                          <AddressPill address={artefact.programId} label="program address" />
+                          <span className="figure t-micro mt-1 block break-all text-muted">{artefact.programId}</span>
+                        </>
                       ) : (
                         "—"
                       )}
