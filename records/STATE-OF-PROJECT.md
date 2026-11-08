@@ -906,8 +906,11 @@ Listed so nobody mistakes silence for a measurement.
    of the program, not the bytecode; the bytecode hash comparison would settle it and was not run.
 6. **The `market_swarm` harness on a validator** — never run: no run config in the tree.
    **[CORRECTED 2026-11-08T13:20Z: run, on branch `swarm/live-onchain`, on v2 and on a local
-   validator: 56 rows, 42 executed, 4 refused `6010`, 10 asks unfilled, $0.00. The aggregate is
-   `records/swarm-live-onchain.json`; the readings are in the A9 correction above.]**
+   validator: 56 rows, 4 refused `6010`, $0.00. The aggregate is
+   `records/swarm-live-onchain.json`; the readings are in the A9 correction above. 14:05Z: this
+   line first said "42 executed, 10 asks unfilled", which counted 18 listings as trades and
+   inverted the side of the book — the ten are bids no ask met. Both were found by independent
+   review and are corrected in A9.]**
 7. **The capture directory beside `tools/shot.py`** holds **12** PNGs, newest 18:04Z. The pack's
    claim of a thirteenth capture at 18:40Z is not supported by that directory now. *Unverified*;
    the claim may be true of a different path.

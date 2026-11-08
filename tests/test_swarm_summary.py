@@ -27,6 +27,11 @@ CAP_BPS = 2500
 CEILING = FACE * (10_000 + CAP_BPS) // 10_000  # 1_250_000_000
 RUN_ID = "summary-test"
 
+#: A listing's price: above face, below the ceiling, and above the round-1 buy so that a series
+#: which wrongly drew it as cleared would show a different number, not merely a different count.
+LISTING_PRICE = 1_150_000_000
+LISTING_ROUND = 1
+
 
 def _row(**overrides) -> TradeRow:
     """One row with every required field set, then whatever the test is about."""
@@ -112,10 +117,23 @@ def _write(tmp: Path, rows: list[TradeRow], *, name: str = "evt_capped", **meta)
 
 
 def _mixed_rows() -> list[TradeRow]:
-    """Four rows that exercise every bucket the summary separates."""
+    """Five rows that exercise every bucket the summary separates."""
     return [
         # executed primary buy in round 1
         _row(round=1, price_lamports=FACE, markup_bps=0),
+        # a listing in round 1. `cap_hook` has no listing instruction, so this row has
+        # status "ok" and a price and no signature: nothing on chain recorded it and no unit
+        # moved. It is an ask an agent named, and it is neither an execution nor a clearing.
+        _row(
+            agent_id="holder-1", action="list", round=LISTING_ROUND,
+            price_lamports=LISTING_PRICE, markup_bps=1500, signature=None,
+            slot=None, block_time=None, latency_ms=None, hop_index=1,
+            from_wallet=None, to_wallet=None,
+            rationale=(
+                f"listing at {LISTING_PRICE} is a harness record only: cap_hook has no "
+                "listing instruction, so nothing on chain recorded it and no unit moved"
+            ),
+        ),
         # executed resale in round 2, at the ceiling
         _row(
             agent_id="scalper-1", action="resell", round=2,
@@ -263,6 +281,187 @@ class TestTheTwoPricePaths(unittest.TestCase):
         self.assertTrue(summary["synthetic"])
         self.assertEqual(summary["label"], "SYNTHETIC")
         self.assertIn("Synthetic data only", summary["note"])
+
+
+class TestAListingIsAnAskAndNotATrade(unittest.TestCase):
+    """Bug the fixture could not see: an `ok` listing has a price and no chain instruction."""
+
+    def test_executed_does_not_count_a_listing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write(Path(tmp), _mixed_rows())
+            summary = swarm_summary.build([path], None)
+
+        # One buy and one resell moved; the listing did not, so it is not an execution.
+        self.assertEqual(summary["executed"], 2)
+        self.assertEqual(summary["events"][0]["executed"], 2)
+
+    def test_cleared_does_not_include_a_listing_price(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write(Path(tmp), _mixed_rows())
+            summary = swarm_summary.build([path], None)
+
+        cleared = {
+            point["round"]: point
+            for point in summary["events"][0]["price_paths"]["cleared"]["points"]
+        }
+        # Round 1 traded once, at face. The listing in that same round is at a higher price and
+        # must not reach the series: a holder's asking price drawn as a clearing price is the
+        # exact error this test exists to catch, so assert the number and not just the count.
+        self.assertEqual(cleared[LISTING_ROUND]["n"], 1)
+        self.assertEqual(cleared[LISTING_ROUND]["median_lamports"], FACE)
+        self.assertEqual(cleared[LISTING_ROUND]["max_lamports"], FACE)
+        self.assertNotIn(
+            LISTING_PRICE,
+            [point["median_lamports"] for point in cleared.values()],
+        )
+        self.assertNotIn(
+            LISTING_PRICE,
+            [point["max_lamports"] for point in cleared.values()],
+        )
+
+    def test_asked_keeps_the_listing(self) -> None:
+        """A listing is a price an agent asked for, even with no instruction behind it."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write(Path(tmp), _mixed_rows())
+            summary = swarm_summary.build([path], None)
+
+        asked = {
+            point["round"]: point
+            for point in summary["events"][0]["price_paths"]["asked"]["points"]
+        }
+        self.assertEqual(asked[LISTING_ROUND]["n"], 2)
+        self.assertEqual(asked[LISTING_ROUND]["max_lamports"], LISTING_PRICE)
+
+    def test_the_published_rules_match_what_is_counted(self) -> None:
+        """A series that publishes a rule it breaks is worse than one with no rule at all."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write(Path(tmp), _mixed_rows())
+            summary = swarm_summary.build([path], None)
+
+        paths = summary["events"][0]["price_paths"]
+        asked_rule = paths["asked"]["rule"].lower()
+        cleared_rule = paths["cleared"]["rule"].lower()
+
+        # `asked` holds listings, so its rule says so instead of calling them "staged" -- which
+        # was the word that made a listing read as a trade while the series was lying about it.
+        self.assertIn("asked", asked_rule)
+        self.assertIn("listing", asked_rule)
+        self.assertNotIn("staged", asked_rule)
+        # `cleared` holds trades only, and says which actions those are.
+        self.assertIn("trades only", cleared_rule)
+        self.assertIn("buy", cleared_rule)
+        self.assertIn("resell", cleared_rule)
+
+
+class TestTheTwoSidesOfTheUnfilledBook(unittest.TestCase):
+    """A censored bid and an unfilled ask are opposite sides and opposite market conditions."""
+
+    def _rows_with_one_of_each(self) -> list[TradeRow]:
+        return _mixed_rows() + [
+            # a buy intent no ask met: a censored bid
+            _row(
+                action="buy", round=3, status="skipped", price_lamports=1_500_000_000,
+                markup_bps=5000, signature=None, slot=None, block_time=None,
+                latency_ms=None, rationale=(
+                    "no ask at or below the bid 1500000000 lamports was offered this round, "
+                    "so the unit did not move and this row is a censored bid, not a filled one"
+                ),
+            ),
+            # a resale ask no bid met: the other side of the same book
+            _row(
+                agent_id="scalper-1", action="resell", round=3, status="skipped",
+                price_lamports=1_300_000_000, markup_bps=3000, signature=None,
+                slot=None, block_time=None, latency_ms=None, error_code=None,
+                rationale="ask 1300000000 met no bid; a censored ask",
+            ),
+        ]
+
+    def test_a_censored_bid_is_not_counted_as_an_unfilled_ask(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write(Path(tmp), self._rows_with_one_of_each())
+            summary = swarm_summary.build([path], None)
+
+        event = summary["events"][0]
+        self.assertEqual(event["unfilled_bids"], 1)
+        self.assertEqual(event["unfilled_asks"], 1)
+        # Neither is a trade and neither is a refusal.
+        self.assertEqual(event["executed"], 2)
+        self.assertEqual(event["refused"], 2)
+
+    def test_both_sides_are_kept_at_the_top_level_too(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write(Path(tmp), self._rows_with_one_of_each())
+            summary = swarm_summary.build([path], None)
+
+        self.assertEqual(summary["unfilled_bids"], 1)
+        self.assertEqual(summary["unfilled_asks"], 1)
+
+    def test_a_skipped_buy_alone_leaves_unfilled_asks_at_zero(self) -> None:
+        """The real run's shape: ten censored bids and not one unfilled ask."""
+        with tempfile.TemporaryDirectory() as tmp:
+            rows = _mixed_rows() + [
+                _row(
+                    action="buy", round=3, status="skipped", price_lamports=1_500_000_000,
+                    markup_bps=5000, signature=None, slot=None, block_time=None,
+                    latency_ms=None, rationale="no ask at or below the bid; a censored bid",
+                )
+            ]
+            path = _write(Path(tmp), rows)
+            summary = swarm_summary.build([path], None)
+
+        self.assertEqual(summary["unfilled_bids"], 1)
+        self.assertEqual(summary["unfilled_asks"], 0)
+
+
+class TestTheSameDatasetTwice(unittest.TestCase):
+    """One file named twice is one event, and the tool must say so instead of doubling it."""
+
+    def test_the_same_path_twice_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write(Path(tmp), _mixed_rows())
+            with self.assertRaises(swarm_summary.SummaryError) as caught:
+                swarm_summary.build([path, path], None)
+
+        message = str(caught.exception)
+        self.assertIn(path.name, message)
+        self.assertIn("twice", message)
+
+    def test_the_same_file_under_another_path_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write(Path(tmp), _mixed_rows())
+            same_file = path.parent / "sub" / ".." / path.name
+            self.assertNotEqual(str(path), str(same_file))
+            with self.assertRaises(swarm_summary.SummaryError) as caught:
+                swarm_summary.build([path, same_file], None)
+
+        self.assertIn("twice", str(caught.exception))
+
+    def test_the_same_file_reached_through_a_symlink_is_refused(self) -> None:
+        """Two paths, one file: a census that counts it twice invents an event."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write(Path(tmp), _mixed_rows())
+            side = Path(str(path).replace(".jsonl", ".meta.json"))
+            alias_dir = Path(tmp) / "alias"
+            alias_dir.mkdir()
+            alias = alias_dir / path.name
+            alias.symlink_to(path)
+            Path(str(alias).replace(".jsonl", ".meta.json")).symlink_to(side)
+            with self.assertRaises(swarm_summary.SummaryError) as caught:
+                swarm_summary.build([path, alias], None)
+
+        message = str(caught.exception)
+        self.assertIn("twice", message)
+        self.assertIn(str(path.resolve()), message)
+
+    def test_the_cli_refuses_it_and_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write(Path(tmp), _mixed_rows())
+            out = Path(tmp) / "summary.json"
+            code = swarm_summary.main(
+                ["build", "--dataset", str(path), "--dataset", str(path), "--out", str(out)]
+            )
+            self.assertEqual(code, 1)
+            self.assertFalse(out.exists(), "a refused build must not leave a file behind")
 
 
 class TestTheRefusals(unittest.TestCase):

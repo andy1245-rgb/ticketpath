@@ -258,6 +258,12 @@ class _EventContext:
         # What the sidecar reports so a half-finished event cannot pass for a finished one.
         self.completed = False
         self.rounds_completed = 0
+        # This event's own row count and statuses. The runner also keeps run-wide counters for its
+        # summary, and writing those here made the second event's sidecar claim every row of the
+        # run -- measured: `evt_monitored`'s sidecar said `rows: 56, ok: 42` beside a file with 28
+        # rows in it. A sidecar describes one dataset, so it counts one dataset.
+        self.rows = 0
+        self.by_status: dict[str, int] = {}
         # The round every row written during the current pass belongs to. Kept on the context
         # so no action has to thread it through, and no row can silently omit it.
         self.round_no: int | None = None
@@ -1510,7 +1516,9 @@ class SwarmRunner:
         )
         ctx.writer.write(row)
         self._rows += 1
+        ctx.rows += 1
         self._by_status[status] = self._by_status.get(status, 0) + 1
+        ctx.by_status[status] = ctx.by_status.get(status, 0) + 1
         self._by_agent[agent_id] = self._by_agent.get(agent_id, 0) + 1
         if status == "ok" and action in ("buy", "resell") and price is not None:
             self._notional += price
@@ -1539,6 +1547,11 @@ class SwarmRunner:
             "mode": ctx.event.mode,
             "cluster": self._config.cluster,
             "program": self._program_name(),
+            # The id the rows were produced against, so the run's central claim is checkable from
+            # the sidecar rather than from a config file beside it. Nothing row-level distinguishes
+            # the two programs -- both enforce a cap -- so without this a reader has to take
+            # `program: v2` on trust. A dry run has no deployed id and says null.
+            "program_id": getattr(self._gateway, "program_id", None),
             "dry_run": self._config.dry_run,
             "face_lamports": ctx.event.face_lamports,
             "cap_bps": ctx.cap_bps,
@@ -1563,8 +1576,11 @@ class SwarmRunner:
             # to "scripted agents", which for a live ForgePolicy was simply false.
             "provenance": label,
             "llm": llm,
-            "rows": self._rows,
-            "by_status": dict(sorted(self._by_status.items())),
+            # Per-event, not run-wide: this sidecar is read as a description of the file beside
+            # it, and a cumulative count there makes the last event claim every earlier event's
+            # rows. `RunSummary` is where the run's own totals live.
+            "rows": ctx.rows,
+            "by_status": dict(sorted(ctx.by_status.items())),
             "kill_reason": self._kill_reason,
             "wall_seconds": max(0.0, self._clock() - self._started),
             "note": self._provenance_note(label),
