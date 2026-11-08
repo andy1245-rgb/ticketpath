@@ -440,7 +440,7 @@ def make_server(port: int, host: str = DEFAULT_HOST, orchestrator: Orchestrator 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python3 -m ticketpath.server",
-        description="ticketpath backend: contract endpoints over a ledger, computed by the core.",
+        description="SeatPass backend: contract endpoints over a ledger, computed by the core.",
     )
     parser.add_argument("--port", type=int, default=None, help=f"port to bind (default {DEFAULT_PORT})")
     parser.add_argument("--host", default=DEFAULT_HOST, help=f"address to bind (default {DEFAULT_HOST})")
@@ -450,7 +450,7 @@ def main(argv: list[str] | None = None) -> int:
     server = make_server(port, args.host, orchestrator)
     source = orchestrator.data_source()
     print(
-        f"ticketpath {__version__} listening on http://{args.host}:{port} "
+        f"SeatPass (python package ticketpath) {__version__} listening on http://{args.host}:{port} "
         f"dataSource={source['mode']} synthetic={source['synthetic']} "
         f"cluster={orchestrator.cluster} routes={implemented_route_count()}",
         flush=True,

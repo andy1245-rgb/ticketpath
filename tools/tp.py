@@ -927,7 +927,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         prog="tools/tp.py",
-        description="The Ticketpath backend from a terminal: every route as a verb, plus the commit gate.",
+        description="The SeatPass backend from a terminal: every route as a verb, plus the commit gate.",
         epilog=(
             "exit codes: 0 ok, 1 a check failed or the route refused, 2 usage, "
             "3 the server did not answer"

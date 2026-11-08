@@ -61,7 +61,7 @@ class ConsoleRouteTest(unittest.TestCase):
         self.assertIn("text/html", content_type)
         self.assertIn(labels.render("T1"), body)
         self.assertLess(body.index('<div class="banner"'), body.index("<h1"))
-        self.assertIn("Ticketpath — organizer pricing console", body)
+        self.assertIn("SeatPass — organizer pricing console", body)
 
     def test_the_console_is_not_a_contract_route(self) -> None:
         status, body, content_type = self.get("/api/events")
@@ -226,7 +226,7 @@ class TestAnUnmeasuredClusterStillServes(unittest.TestCase):
     def test_the_console_answers_two_hundred_on_a_cluster_it_cannot_name(self) -> None:
         status, body, _ = self.get("/")
         self.assertEqual(status, 200, body[:300])
-        self.assertIn("ticketpath", body.lower())
+        self.assertIn("seatpass", body.lower())
 
     def test_a_measured_cluster_still_names_its_id(self) -> None:
         # The guard that keeps the test above from passing on a field somebody deleted: the

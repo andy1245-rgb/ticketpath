@@ -79,6 +79,11 @@ export default function DemoPage() {
     setState((current) => ({ ...current, tickets: [] }));
   }
 
+  function resetEvent() {
+    setOutcome(null);
+    setState(defaultState());
+  }
+
   if (!mounted) {
     return (
       <div className="box py-16">
@@ -108,7 +113,14 @@ export default function DemoPage() {
             onClick={reset}
             className="u-transition t-meta text-muted underline-offset-4 hover:text-ink hover:underline"
           >
-            Clear tickets
+            Clear tickets only
+          </button>
+          <button
+            type="button"
+            onClick={resetEvent}
+            className="u-transition t-meta text-muted underline-offset-4 hover:text-ink hover:underline"
+          >
+            Reset the event to defaults
           </button>
         </div>
       </header>

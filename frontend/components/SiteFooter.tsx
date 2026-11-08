@@ -12,6 +12,8 @@ const LINKS = [
   { href: "/rules#security", label: "Security model" },
   { href: "/verify", label: "Verify your wallet" },
   { href: "/demo", label: "Live demo" },
+  { href: "/pricing", label: "The pricing engine" },
+  { href: "/about", label: "About" },
 ];
 
 /** The public repository: the research record and the proof are all in it. */

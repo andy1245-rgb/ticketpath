@@ -328,7 +328,7 @@ class TestStatesRender(unittest.TestCase):
             payload, html = render(**state)
             with self.subTest(state=state):
                 self.assertIn("<!doctype html>", html)
-                self.assertIn("Ticketpath — organizer pricing console", html)
+                self.assertIn("SeatPass — organizer pricing console", html)
                 self.assertEqual(payload["tiers"][0]["refusal"]["saleProbability"], None)
 
     def test_an_error_renders_as_a_page_not_a_traceback(self) -> None:

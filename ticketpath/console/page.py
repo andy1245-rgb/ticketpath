@@ -24,7 +24,7 @@ from ticketpath.console import blocks, units
 from ticketpath.console.units import esc, num, plural, value_of
 from ticketpath.core import labels
 
-TITLE = "Ticketpath — organizer pricing console"
+TITLE = "SeatPass — organizer pricing console"
 
 STYLE = """
 :root { color-scheme: light; }
