@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { RoleToggle } from "@/components/RoleToggle";
 
 /**
  * The five pages a reader uses, plus the buyer's own screen. `/my-tickets` and
@@ -58,10 +59,10 @@ function NavLinks({ pathname }: { pathname: string }) {
  * breakpoint and on its own wrapping row below it. Opaque surface and one
  * hairline, no blur, no avatar, no tab bar.
  *
- * There is no role toggle here. It writes a browser-local role that only `/demo`
- * reads, so on any other route it navigated away and changed nothing; `/demo`
- * renders its own. That also returns ~150px to the 360px header, which used to
- * overflow with the toggle, the account link and the pill on one row.
+ * The Buyer / Organizer toggle is in the header on every route except `/demo`,
+ * which renders its own. Here it writes the browser-local role and moves to
+ * `/events` or `/organizer`; it is a view switch in a simulated demo, not a
+ * sign-in. The Browse events pill is hidden below `sm` so the 360px row fits.
  *
  * One navigation landmark, not two. The desktop row and the mobile row used to
  * be separate `<nav aria-label="Primary">` elements hidden at different
@@ -88,6 +89,7 @@ export function SiteHeader() {
           </nav>
 
           <div className="col-start-3 flex items-center justify-end gap-3">
+            {pathname !== "/demo" ? <RoleToggle navigate /> : null}
             <Link
               href="/account"
               className="u-transition hidden items-center t-body text-ink hover:text-accent sm:inline-flex"
@@ -105,7 +107,7 @@ export function SiteHeader() {
 
         {/* Below the breakpoint the navigation drops to its own row and wraps
             onto a second line rather than scrolling sideways with no hint. */}
-        <nav aria-label="Primary" className="-mt-1 flex flex-wrap gap-x-6 pb-2 lg:hidden">
+        <nav aria-label="Primary, mobile" className="-mt-1 flex flex-wrap gap-x-6 pb-2 lg:hidden">
           <NavLinks pathname={pathname} />
         </nav>
       </div>

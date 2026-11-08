@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { getRole, setRole, type Role } from "@/lib/roleStore";
 
 // The stored value stays `organiser` because it is the key in an existing
@@ -21,7 +22,9 @@ const OPTIONS: { value: Role; label: string }[] = [
  * with no announcement. The navigation is now the navigation, and this control
  * only writes what the page underneath re-renders against.
  */
-export function RoleToggle() {
+export function RoleToggle({ navigate = false }: { navigate?: boolean }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [role, setLocalRole] = useState<Role>("buyer");
 
   useEffect(() => {
@@ -31,12 +34,17 @@ export function RoleToggle() {
   function choose(value: Role) {
     setLocalRole(value);
     setRole(value);
+    // In the header the choice also moves you to that side of the site, because
+    // only /demo reads the stored role. On /demo the page re-renders in place.
+    if (navigate && pathname !== "/demo") {
+      router.push(value === "organiser" ? "/organizer" : "/events");
+    }
   }
 
   return (
     <div
       role="group"
-      aria-label="Demo view as"
+      aria-label="View the site as"
       className="inline-flex items-center rounded-pill border border-line bg-surface-2 p-1"
     >
       {OPTIONS.map((option) => {
