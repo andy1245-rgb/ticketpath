@@ -117,8 +117,10 @@ here with `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788` (`docs/BACKEND.md`), 
 what the data is. No hosted demo, no deploy URL.
 
 **[Added 2026-11-08: this paragraph said the frontend was outside this tree, which the import
-in `frontend/` makes false. The import is staged and uncommitted; see
-`records/F-decision-log.md` D19. Nothing else in this section changed.]**
+in `frontend/` makes false. See `records/F-decision-log.md` D19. Nothing else in this section
+changed. [Corrected 2026-11-08T11:41Z: the sentence above also said the import was staged and
+uncommitted. It is committed: `009f103`, on `release/prep`, authored and committed by the same
+person. Nothing has been pushed, which was the part of the sentence that mattered.]]**
 
 ## Why the chain
 

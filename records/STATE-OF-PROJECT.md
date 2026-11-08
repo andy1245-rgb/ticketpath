@@ -223,7 +223,7 @@ text, which is kept above so the false claim is visible rather than erased.
 | Publish script | **WORKS, AND RESUMABLE** | `tools/devnet_publish.py`: nine steps, each reads the cluster before it writes; transport retries 4× with 0.5/1/2 s backoff; resume file `records/devnet-progress.json` (git-ignored, 0600); `--inject` faults armed only by an explicit flag; `--local` runs a validator it kills on every exit path |
 | `market_swarm/` | **IN PROGRESS, SEPARATE PACKAGE** | 11 modules + 7 test modules, standard library only, imports nothing from `ticketpath/` and is imported by nothing in it. 274 tests green. No run config file in the tree, so `python3 -m market_swarm plan --config <path>` is the only entry point and there is nothing to point it at yet (§A9) |
 | Public-safety check | **WORKS AS A TOOL, AND CLEAN ON THE TRACKED TREE SINCE `aea1cbe`** (`64 hits in 9 tracked files` was the reading on 2026-11-08T03:30Z; see the correction below the table) | `python3 tools/public_safety.py check --tracked` re-measured 2026-11-08T09:22Z → `public_safety: clean, tracked tree, 285 file(s)`, exit 0. Detail in §A6 |
-| Frontend (`frontend/`) | **IN THE TREE, STAGED, NOT COMMITTED; ITS OWN CHECKS RE-RUN FROM THE NEW PATH** | the SeatPass app, 81 files and 1,097,001 bytes as staged (1,093,317 as copied) **[corrected 2026-11-08T11:30Z: 82 files and 1,097,690 bytes in the index, the difference being `frontend/.env.example`, 689 bytes, staged by another pass at 11:18Z; see §A10]**. Listed from `git ls-files` in its own checkout. From the new path, in a throwaway copy under the system temp dir with `node_modules` symlinked: `npm run typecheck` exit 0, `npm run lint` exit 0, `npm test` → `tests 15, pass 15, fail 0`, `bash tools/greps.sh` → `8.5 GREPS: ALL ZERO`, `node tools/contrast.mjs` → `28 pairs, 0 below 4.5:1`. `npm run build` was not run and `frontend/tools/verify-landing.cjs` was not re-run. Detail in §A10, provenance and the operator's statement in `records/F-decision-log.md` D19 |
+| Frontend (`frontend/`) | **IN THE TREE AND COMMITTED, AT `009f103`; ITS OWN CHECKS RE-RUN FROM THE NEW PATH** | the SeatPass app, 82 files and 1,097,690 bytes **[corrected 2026-11-08T11:41Z: the cell read STAGED, NOT COMMITTED and 81 files / 1,097,001 bytes, which was the index before the commit and before `frontend/.env.example`; see §A10]** (1,093,317 as copied). Listed from `git ls-files` in its own checkout. From the new path, in a throwaway copy under the system temp dir with `node_modules` symlinked: `npm run typecheck` exit 0, `npm run lint` exit 0, `npm test` → `tests 15, pass 15, fail 0`, `bash tools/greps.sh` → `8.5 GREPS: ALL ZERO`, `node tools/contrast.mjs` → `28 pairs, 0 below 4.5:1`. `npm run build` was not run and `frontend/tools/verify-landing.cjs` was not re-run. Detail in §A10, provenance and the operator's statement in `records/F-decision-log.md` D19 |
 | Frontend attach | **PARTIAL** | 43 checks against a copy, last green at 18:40Z; **not re-run in this pass** — `tools/check_frontend_attach.py` needs a backend on the documented port and none was running (*unverified this pass*) |
 
 **Corrected 2026-11-08T08:25Z: the `market_swarm/` row in the table above is stale in four
@@ -667,6 +667,8 @@ for them. One commit of explicit paths closes it; this pass did not make it.
 
 **Added 2026-11-08, on the frontend import.** `frontend/` is in the index and not in any commit: 81 files, 1,097,001 bytes as staged, `frontend/.gitignore` included. `git ls-files frontend | wc -l` reads 81 once the index is written. Nothing was pushed, and the push gate reads commits, so no reader of the public repository sees these files until the operator makes the commit.
 
+**[Corrected 2026-11-08T11:41Z: the commit is made, `009f103`, and the paragraph above describes the state before it. `git ls-tree -r --name-only 009f103 frontend | wc -l` reads 82, the eighty-second being `frontend/.env.example`, 689 bytes, which the import had excluded. 1,097,690 bytes by `git ls-files frontend | xargs -d '\n' du -cb | tail -1`. The last sentence is now the one that still applies: nothing was pushed, so no reader of the public repository sees these files until the operator pushes.]**
+
 ## A8. Performance, measured this pass
 
 One instance of the server, started by this pass on a scratch loopback port and killed at the
@@ -1028,7 +1030,7 @@ against the naming document's own directory, because eleven true references like
 
 ---
 
-*Nothing committed or pushed by the 03:30Z pass this file measures, and nothing committed or pushed by the 2026-11-08 frontend import: that import is staged in the index. Nothing here was written by a build.* No code touched by the documentation edit. The
+*Nothing committed or pushed by the 03:30Z pass this file measures, and nothing committed or pushed by the 2026-11-08 frontend import until 11:41Z, when the import was committed as `009f103`; nothing at all has been pushed. Nothing here was written by a build.* No code touched by the documentation edit. The
 six document files this pass edited each carry a dated note saying what changed.*
 
 ## Appended 2026-11-08T09:15Z: feature 5's status moved, and the table above is not rewritten

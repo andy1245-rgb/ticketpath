@@ -994,6 +994,12 @@ features.
 **Staged, not committed.** The import is in the index and no commit is made by this pass. The
 commit is the operator's, and so is the author on it.
 
+**[Corrected 2026-11-08T11:41Z: the import is committed, as `009f103` on `release/prep`. The
+sentence above was true when it was written and is kept because it records who decided. The
+operator's call was the author, and the author is the contributor whose checkout it came from;
+the commit's author and committer are the same person, as they are on every commit on this
+branch. Nothing has been pushed.]**
+
 ## D26: The artist fee is a lamport transfer the seller makes inside the sale transaction, and the chain does not enforce it (2026-11-08)
 
 **Decision.** Feature 5 ships as a **seller-paid lamport fee inside the checkout's sale
