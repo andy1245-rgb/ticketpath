@@ -8,7 +8,7 @@ came from. Committed by this pass: **nothing.** The files this pass edited are t
 
 **[Corrected 2026-11-08T09:22Z: the sentence above, "Committed by this pass: **nothing**", was
 true of the 03:30Z pass that wrote it and is false of the repository today. This file is committed
-in `4c1b23b`, and `docs/charts/`, `docs/CHARTS.md`, `market_swarm/` and `records/devnet-artefacts.json`
+in `7906339`, and `docs/charts/`, `docs/CHARTS.md`, `market_swarm/` and `records/devnet-artefacts.json`
 are committed in this branch. Read it as a record of what the 03:30Z pass did, not as a claim about
 the tree. `git ls-files records/STATE-OF-PROJECT.md` returns the path.]**
 
@@ -18,7 +18,7 @@ git (this file is untracked), so nothing published is contradicted by the replac
 re-measure is marked *unverified* rather than carried silently.
 
 **[Corrected 2026-11-08T09:22Z: "this file is untracked" was true at 03:30Z and is false now.
-The file is tracked as of `4c1b23b`. The reasoning it supports still holds, because the 18:25Z
+The file is tracked as of `7906339`. The reasoning it supports still holds, because the 18:25Z
 edition was never committed; only the word "untracked" describes a state the repository has left.]**
 
 **[Extended 2026-11-08T05:54Z by the feature-1 documentation pass: this file, `README.md`,
@@ -35,7 +35,7 @@ package are **untracked**, and `.gitignore`, `tests/test_devnet_publish.py`,
 repository yet**. That gap is the first thing to fix, and it is one commit of explicit paths.
 
 **[Corrected 2026-11-08T09:22Z: that paragraph describes the tree at 03:30Z and is now the
-opposite of it. `HEAD` is `948b5d5` on `release/prep`, the working tree is clean, and everything
+opposite of it. `HEAD` is `259f561` on `release/prep`, the working tree is clean, and everything
 it calls untracked is committed in this branch: `records/devnet-artefacts.json`, findings `20` and
 `23`-`31`, `market_swarm/`, `docs/charts/` and `docs/CHARTS.md`. Measured: `git status --porcelain`
 prints nothing, `git ls-files market_swarm | wc -l` is 35, `git ls-files docs/charts | wc -l` is 6.
@@ -57,7 +57,7 @@ with appended corrections in `records/A-research-ledger.md`, `records/CONTRACT-M
 review of `release/prep` and edits documents only. It corrects the chart-verifier quotation in
 feature 3 (§0A) and in §A4, which named an output and an exit code the shipped tool cannot produce;
 re-measures every count in §A4 and in §0's findings row; records that the public-safety gate is
-clean on the tracked tree since `aea1cbe`; says that the local-validator artefact behind features 6
+clean on the tracked tree since `56d9dc0`; says that the local-validator artefact behind features 6
 and 8 stays local; and marks the time-stamped sentences at the top of this file that the branch's
 own commits made false. Files this pass edited: this one, `AGENTS.md`, `docs/PUBLIC-SAFETY.md`,
 `records/SUBMISSION-PACK.md`, `records/FINAL-PROOF.md`, `records/video/inputs/build-state-matrix.md`.
@@ -87,7 +87,7 @@ defects, and the absence of a hosted demo.
 
 **[Corrected 2026-11-08T09:22Z: the fourth item in that list is no longer true. The public-safety
 gate is clean on the tracked tree, measured `python3 tools/public_safety.py check --tracked` →
-`public_safety: clean, tracked tree, 285 file(s)`, exit 0. Commit `aea1cbe` ("Redact the machine
+`public_safety: clean, tracked tree, 285 file(s)`, exit 0. Commit `56d9dc0` ("Redact the machine
 handles from the published proof files") is what changed it. The other four items in the list stand.]**
 
 **Corrected 2026-11-08T08:25Z: four counts in the table above moved, and three of them are mine to
@@ -102,11 +102,11 @@ of the ten features: `33-a-region-cap-law.md` and `33-b-region-cap-law-sources/`
 `37-program-v2-review-fixes.md`, `38-region-caps-local-validator.md`, `39-visitor-identity.md`,
 `40-memo-program-id.md` and `41-deepseek-live-adapter.md`.
 
-**Corrected 2026-11-08T09:22Z, at `HEAD 948b5d5`: the 08:25Z counts above moved again, and rows 3,
+**Corrected 2026-11-08T09:22Z, at `HEAD 259f561`: the 08:25Z counts above moved again, and rows 3,
 4 and 7 of the table are stale for a second time.** Every number below is this pass's own reading
 at 09:20-09:22Z on a clean tree, quoted with the command that produced it:
 
-| Row | 08:25Z said | Measured at `948b5d5` 09:22Z | Command |
+| Row | 08:25Z said | Measured at `259f561` 09:22Z | Command |
 |---|---|---|---|
 | 3, `tests/` | 1076 | **1079 tests** (`Ran 1079 tests in 30.321s`, `OK (skipped=26)`) | `python3 -m unittest discover -s tests` |
 | 3, `market_swarm/tests/` | 436 | **489 tests** (`Ran 489 tests in 1.990s`, `OK (skipped=2)`) | `python3 -m unittest discover -s market_swarm/tests` |
@@ -118,14 +118,14 @@ at 09:20-09:22Z on a clean tree, quoted with the command that produced it:
 | 7, tests green | 436 | **489**, `OK (skipped=2)` | `python3 -m unittest discover -s market_swarm/tests` |
 
 **Why the 08:25Z pair was never true of the commit that carried it, and this pair is.**
-`git diff --name-only 4c1b23b..HEAD -- tests market_swarm/tests` prints nothing, so the test tree
-committed in `4c1b23b` is the tree measured here; the 1076/436 reading was taken on a working tree
+`git diff --name-only 7906339..HEAD -- tests market_swarm/tests` prints nothing, so the test tree
+committed in `7906339` is the tree measured here; the 1076/436 reading was taken on a working tree
 that was never committed, which is the one thing this file exists not to do. `tests/test_event_jurisdiction.py`
-has had 12 test methods since `0266570`, two commits before the records commit. The 57/57 findings
+has had 12 test methods since `1349442`, two commits before the records commit. The 57/57 findings
 count is the first reading in this file where tracked and on disk agree, because every finding is
 committed in this branch. §A4 carries the same numbers with the same commands.
 
-**Final reading at the release head, 2026-11-08T09:48Z.** The two commits after `948b5d5` add tests
+**Final reading at the release head, 2026-11-08T09:48Z.** The two commits after `259f561` add tests
 (`tests/test_doc_check.py`, `tests/test_region_caps.py`, `tests/test_onchain_v2.py`,
 `tests/test_swarm_charts.py`), so the count moved once more and the pair above is short of it.
 Measured on the committed tree: `Ran 1092 tests` / `OK (skipped=26)` for `tests/`, `Ran 489 tests` /
@@ -136,7 +136,7 @@ this file stays where it is, tagged with the tree it was taken on.
 **Read again at 2026-11-08T11:27-11:30Z, after the release merge: `Ran 1251 tests` (`OK
 (skipped=27)`) in `tests/` and `Ran 771 tests` (`OK (skipped=2)`) in `market_swarm/tests/`, with
 `doc_check` clean and `public_safety: clean, tracked tree, 367 file(s)`. §A4 carries that table with
-the command behind every number. The 1092/489 pair above was a reading of `dd42348` and is not
+the command behind every number. The 1092/489 pair above was a reading of `4430fb1` and is not
 superseded by assertion: it is superseded by measurement, at the later instant, on a tree the merge
 and three parallel agents had moved.**
 
@@ -187,7 +187,7 @@ the table above, and both are corrections of a claim rather than of a number:
    "PASS LABELS ONLY"` and returns 3 otherwise, and its own docstring says it prints exactly that
    when the datasets are absent. They are absent: `.swarm-runs/` is not in the repository and
    `docs/CHARTS.md:48` says the datasets are not in it. The status stays `tested` on
-   `tests/test_swarm_charts.py` (41 tests, `OK`, measured on a clean tree at `948b5d5`; a parallel
+   `tests/test_swarm_charts.py` (41 tests, `OK`, measured on a clean tree at `259f561`; a parallel
    pass has since made it 44 in the uncommitted working tree), which is what justifies it; what that
    verifies is the label and the internal consistency, not the data series.
 2. **Features 6 and 8 rest on an artefact that stays local.** `records/onchain-v2.local.json` is
@@ -241,8 +241,8 @@ this note does not move row 7.
 | CLI (`tools/tp.py`) | **WORKS** | 8 verbs, exit codes 0/1/2/3 **[corrected 2026-11-08T12:00Z: 10 verbs, `timeout 60 python3 tools/tp.py --help` → `health events event tickets history price page sweep gate doc-check`, and the exit codes are unchanged. `docs/CLI.md:19-30` already tabulated all ten]** |
 | Publish script | **WORKS, AND RESUMABLE** | `tools/devnet_publish.py`: nine steps, each reads the cluster before it writes; transport retries 4× with 0.5/1/2 s backoff; resume file `records/devnet-progress.json` (git-ignored, 0600); `--inject` faults armed only by an explicit flag; `--local` runs a validator it kills on every exit path |
 | `market_swarm/` | **IN PROGRESS, SEPARATE PACKAGE** | 11 modules + 7 test modules, standard library only, imports nothing from `ticketpath/` and is imported by nothing in it. 274 tests green. No run config file in the tree, so `python3 -m market_swarm plan --config <path>` is the only entry point and there is nothing to point it at yet (§A9) |
-| Public-safety check | **WORKS AS A TOOL, AND CLEAN ON THE TRACKED TREE SINCE `aea1cbe`** (`64 hits in 9 tracked files` was the reading on 2026-11-08T03:30Z; see the correction below the table) | `python3 tools/public_safety.py check --tracked` re-measured 2026-11-08T09:22Z → `public_safety: clean, tracked tree, 285 file(s)`, exit 0. Detail in §A6 |
-| Frontend (`frontend/`) | **IN THE TREE AND COMMITTED, AT `009f103`; ITS OWN CHECKS RE-RUN FROM THE NEW PATH** | the SeatPass app, 82 files and 1,097,690 bytes **[corrected 2026-11-08T11:41Z: the cell read STAGED, NOT COMMITTED and 81 files / 1,097,001 bytes, which was the index before the commit and before `frontend/.env.example`; see §A10]** (1,093,317 as copied). Listed from `git ls-files` in its own checkout. From the new path, in a throwaway copy under the system temp dir with `node_modules` symlinked: `npm run typecheck` exit 0, `npm run lint` exit 0, `npm test` → `tests 15, pass 15, fail 0`, `bash tools/greps.sh` → `8.5 GREPS: ALL ZERO`, `node tools/contrast.mjs` → `28 pairs, 0 below 4.5:1`. `npm run build` was not run and `frontend/tools/verify-landing.cjs` was not re-run. Detail in §A10, provenance and the operator's statement in `records/F-decision-log.md` D19 |
+| Public-safety check | **WORKS AS A TOOL, AND CLEAN ON THE TRACKED TREE SINCE `56d9dc0`** (`64 hits in 9 tracked files` was the reading on 2026-11-08T03:30Z; see the correction below the table) | `python3 tools/public_safety.py check --tracked` re-measured 2026-11-08T09:22Z → `public_safety: clean, tracked tree, 285 file(s)`, exit 0. Detail in §A6 |
+| Frontend (`frontend/`) | **IN THE TREE AND COMMITTED, AT `eaf4ab7`; ITS OWN CHECKS RE-RUN FROM THE NEW PATH** | the SeatPass app, 82 files and 1,097,690 bytes **[corrected 2026-11-08T11:41Z: the cell read STAGED, NOT COMMITTED and 81 files / 1,097,001 bytes, which was the index before the commit and before `frontend/.env.example`; see §A10]** (1,093,317 as copied). Listed from `git ls-files` in its own checkout. From the new path, in a throwaway copy under the system temp dir with `node_modules` symlinked: `npm run typecheck` exit 0, `npm run lint` exit 0, `npm test` → `tests 15, pass 15, fail 0`, `bash tools/greps.sh` → `8.5 GREPS: ALL ZERO`, `node tools/contrast.mjs` → `28 pairs, 0 below 4.5:1`. `npm run build` was not run and `frontend/tools/verify-landing.cjs` was not re-run. Detail in §A10, provenance and the operator's statement in `records/F-decision-log.md` D19 |
 | Frontend attach | **PARTIAL** | 43 checks against a copy, last green at 18:40Z; **not re-run in this pass** — `tools/check_frontend_attach.py` needs a backend on the documented port and none was running (*unverified this pass*) |
 
 **Corrected 2026-11-08T08:25Z: the `market_swarm/` row in the table above is stale in four
@@ -255,13 +255,13 @@ for the committed assets. The row's status, "in progress", is also out of date i
 package's own suite is green and the live LLM path is opt-in, but a live validator run of the whole
 harness is still not in the record.
 
-**Corrected 2026-11-08T09:22Z, at `HEAD 948b5d5`, on the release-record correction pass. Two rows
+**Corrected 2026-11-08T09:22Z, at `HEAD 259f561`, on the release-record correction pass. Two rows
 above are stale, and one of them was stale in the other direction.**
 
 1. **The public-safety row.** It read **WORKS AS A TOOL, STILL FAILING AS A GATE**, with
    `64 hits in 9 tracked files`, carried forward from 03:30Z. That is no longer true of the tree:
    `python3 tools/public_safety.py check --tracked` → `public_safety: clean, tracked tree, 285 file(s)`,
-   exit 0. Commit `aea1cbe` ("Redact the machine handles from the published proof files",
+   exit 0. Commit `56d9dc0` ("Redact the machine handles from the published proof files",
    2026-11-08T09:03Z) is what changed it: it redacted the eight records that carried the hits and
    left `.public-denylist` unchanged, so no exception was bought to make the number go away. The
    64-in-9 reading is kept here because a reader comparing this file to an older one needs to know
@@ -408,16 +408,16 @@ tree they were taken on.
 | `ls tests/test_*.py \| wc -l` | **51 test modules under `tests/`** | 51 |
 | `ls market_swarm/*.py \| wc -l` | **15 Python files in `market_swarm/`** | 15 |
 | `ls market_swarm/tests/test_*.py \| wc -l` | **23 test modules there** | 23 |
-| `find market_swarm -name '*.py' \| xargs wc -l` | **24,147 lines with its tests** | 24,147 **[corrected 2026-11-08T12:00Z: 24,153, by the same command at `HEAD 3ad15bb`]** |
+| `find market_swarm -name '*.py' \| xargs wc -l` | **24,147 lines with its tests** | 24,147 **[corrected 2026-11-08T12:00Z: 24,153, by the same command at `HEAD a921ecf`]** |
 | `git ls-files frontend \| wc -l` | **82 files in the index** | 82, and 1,097,690 bytes by `du -cb`; the 81 / 1,097,001 in §A1 and §A10 was the reading before `frontend/.env.example` was staged at 11:18Z, and it is 689 bytes |
 
-**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. Four rows above are readings of an instant at
+**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. Four rows above are readings of an instant at
 which the tree they describe did not exist. The commits that built the merged tree are timestamped
-2026-11-08 11:38:37 to 11:41:29 (`git log --format='%h %ci' dd42348..HEAD`), and the first of them,
-`df02ea2` at 11:38:37, is eight minutes after the last reading in this table. So 367 was the index at
-that moment, with 285 committed files at `HEAD 948b5d5` beside 82 staged frontend files -- which the
+2026-11-08 11:38:37 to 11:41:29 (`git log --format='%h %ci' 4430fb1..HEAD`), and the first of them,
+`ab9cc94` at 11:38:37, is eight minutes after the last reading in this table. So 367 was the index at
+that moment, with 285 committed files at `HEAD 259f561` beside 82 staged frontend files -- which the
 table itself half-admits where it says "which is the commit and not the index" -- and findings 42 and
-43 were untracked because their commit `7df7597` landed at 11:39:08. The readings were true of the
+43 were untracked because their commit `1c93e91` landed at 11:39:08. The readings were true of the
 index they were taken on and nothing that was measured at 11:27-11:30Z became the released tree.
 Re-measured at `HEAD`, with the commands in the rows: `git ls-files | wc -l` → **394 tracked**;
 `git ls-tree -r --name-only HEAD | wc -l` → **394 at `HEAD`**;
@@ -432,7 +432,7 @@ flip tax at 43. They were written there as 38 and 39, and both numbers were alre
 `38-region-caps-local-validator.md` and `39-visitor-identity.md`. The directory holds 59 markdown files
 in all, because the five cluster records under `33-b-region-cap-law-sources/` are `.md` too.
 
-**Re-measured 2026-11-08T09:20-09:22Z at `HEAD 948b5d5`, on a clean tree, by the release-record
+**Re-measured 2026-11-08T09:20-09:22Z at `HEAD 259f561`, on a clean tree, by the release-record
 correction pass.** These supersede every count below where they overlap. Every number is a reading
 taken in this pass, with the command that produced it; nothing here is copied from a review or from
 the table below.
@@ -457,15 +457,15 @@ the table below.
 | `find market_swarm -name '*.py' \| xargs wc -l` | **16,425 lines with its tests** | 16,425 |
 
 **Two counts were never true of the commit that carried them, and this is the distinction the file
-exists to keep.** `git diff --name-only 4c1b23b..HEAD -- tests market_swarm/tests` prints nothing, so
-the test tree committed in `4c1b23b` is the tree measured above; the 1076 and 436 readings in the
+exists to keep.** `git diff --name-only 7906339..HEAD -- tests market_swarm/tests` prints nothing, so
+the test tree committed in `7906339` is the tree measured above; the 1076 and 436 readings in the
 table below were taken at 08:13Z on a working tree that was never committed. `tests/test_event_jurisdiction.py`
-has had 12 test methods since `0266570`, two commits before that records commit, so the `11 tests`
+has had 12 test methods since `1349442`, two commits before that records commit, so the `11 tests`
 row below was already wrong when it was written. The counts here are of committed code.
 
 **The tree moved under these readings, again, and this is the second half of the same point.**
 `git status --porcelain` printed nothing when the table above was taken at 09:20-09:22Z, so every
-number in it is a reading of the committed tree at `948b5d5`. A parallel pass editing `tools/doc_check.py`,
+number in it is a reading of the committed tree at `259f561`. A parallel pass editing `tools/doc_check.py`,
 `tools/swarm_charts.py`, `ticketpath/core/region_caps.py` and five test modules then added tests to
 the working tree without committing. The same commands at 09:27Z read `Ran 1091 tests` for `-s tests`
 and `Ran 44 tests` for `tests.test_swarm_charts`. Neither of those is a HEAD number and neither should
@@ -488,14 +488,14 @@ than overwritten. The suite is green; every count is quoted with the command tha
 | `python3 -m unittest tests.test_onchain_v2` | **45 tests** | `OK` |
 | `python3 -m unittest tests.test_onchain_v2 -k TicketRecord` and `-k band` and `-k jurisdiction` | **6, 2, 2** | `OK` each |
 | `python3 -m unittest tests.test_onchain_v2_live` | **26 tests** | `OK (skipped=26)`: gated on `TP_ONCHAIN_V2_LIVE=1`, and the run writes the run's own artefact |
-| `python3 -m unittest tests.test_event_jurisdiction` | **11 tests** | `OK`. **[CORRECTED 2026-11-08T09:22Z: 12 tests today (`Ran 12 tests in 0.204s`, `OK`); the file has had 12 methods since `0266570`, so 11 was wrong when written]** |
+| `python3 -m unittest tests.test_event_jurisdiction` | **11 tests** | `OK`. **[CORRECTED 2026-11-08T09:22Z: 12 tests today (`Ran 12 tests in 0.204s`, `OK`); the file has had 12 methods since `1349442`, so 11 was wrong when written]** |
 | `python3 -m unittest discover -s market_swarm/tests -t .` | **436 tests** | `Ran 436 tests in 1.864s`, `OK (skipped=2)`. **[CORRECTED 2026-11-08T09:22Z: 489 tests, `Ran 489 tests in 1.996s`, `OK (skipped=2)`]** |
 | `python3 -m unittest market_swarm.tests.test_forge_policy market_swarm.tests.test_feature9_fixes` | **89 tests** | `OK` |
 | `python3 tools/swarm_charts.py verify --out docs/charts` | **5 assets + index** | **[CORRECTED 2026-11-08T09:22Z: this row read `PASS`, series rebuilt from the dataset and matched on all 5, exit 0, which the tool cannot print. Re-measured: `PASS LABELS ONLY`, `series rebuilt from the dataset on 0 of 5 asset(s)`, `note: exit 3, labels and internal consistency only; nothing about the data was checked`, exit 3. The datasets are absent (`.swarm-runs/` is not in the repository; `docs/CHARTS.md:48`)]** |
 | `python3 tools/tp.py doc-check` | **0 violations on this pass's documents, 6 checks** | green at 07:24Z, red at 07:27Z only on `programs/cap_hook/README.md:18` (a finding not yet written), and green again at 07:30Z: `doc_check: clean, 6 check(s), <repo root>; 21 allowed absence(s) suppressed by ALLOWED_ABSENCES`, exit 0 (§F item 20). **[CORRECTED 2026-11-08T09:22Z: the check count is now 7 and the allowed absences 24, `doc_check: clean, 7 check(s), <repo root>; 24 allowed absence(s) suppressed by ALLOWED_ABSENCES`, exit 0]** |
 
 The two suites together are **1,494 tests** on disk, the `tests/` half and the `market_swarm` half both
-measured by this pass. **[CORRECTED 2026-11-08T09:22Z: 1,568 tests on disk at `HEAD 948b5d5`, 1079 +
+measured by this pass. **[CORRECTED 2026-11-08T09:22Z: 1,568 tests on disk at `HEAD 259f561`, 1079 +
 489, both halves re-measured then. The 1,494 was 1058 + 436.]** The 26 skips are the live v2 half; the 2 in `market_swarm` are its two live
 gates. **Never quote the count without the command**: it has moved 293 → 306 → 309 → 352 → 453 → 546 →
 610 → 626 → 671 → 834 → 971 → 1007 → 1053 → 1058 in one day, and this table's own first reading was 971 at
@@ -526,7 +526,7 @@ this edition adds; the 03:45Z rows below are kept as the earlier reading rather 
 | `python3 -m unittest discover -s tests` | **610 tests, 36 modules** | `Ran 610 tests in 23.958s`, `OK` |
 | `python3 -m unittest tests.test_devnet_publish` | **56 tests** | `Ran 56 tests in 0.974s`, `OK`, before feature 1's tests were added |
 | `python3 -m unittest discover -s market_swarm/tests` | **274 tests** | `Ran 274 tests in 1.028s`, `OK`, not re-run in this pass |
-| `tools/public_safety.py check --tracked` | 64 hits in 9 files | see §A6, not re-run in this pass. **[CORRECTED 2026-11-08T09:22Z: clean at `HEAD 948b5d5`, `public_safety: clean, tracked tree, 285 file(s)`, exit 0, since `aea1cbe`]** |
+| `tools/public_safety.py check --tracked` | 64 hits in 9 files | see §A6, not re-run in this pass. **[CORRECTED 2026-11-08T09:22Z: clean at `HEAD 259f561`, `public_safety: clean, tracked tree, 285 file(s)`, exit 0, since `56d9dc0`]** |
 | `tools/build_fixture_store.py --check` | store invariants and determinism | `matches a fresh build exactly`, not re-run |
 | `tools/console-check.py` | **not run** | needs a running backend; last reading 113 assertions, 0 failed, at 18:40Z |
 | `tools/check_frontend_attach.py` | **not run** | same reason; last reading 43 passed, 0 failed, at 18:40Z |
@@ -616,9 +616,9 @@ touch those files never sees them. `AGENTS.md` now states this accurately (it wa
 that is the operator's call, not a tool's.
 
 **[CORRECTED 2026-11-08T09:22Z: this defect is closed, and the paragraph above is kept as the
-record of it. The removal it calls the operator's call was made in commit `aea1cbe`, forward and
+record of it. The removal it calls the operator's call was made in commit `56d9dc0`, forward and
 not by rewriting history: the eight records were redacted and `.public-denylist` was not touched,
-so no exception was bought. Re-measured at `HEAD 948b5d5`: `python3 tools/public_safety.py check
+so no exception was bought. Re-measured at `HEAD 259f561`: `python3 tools/public_safety.py check
 --tracked` → `public_safety: clean, tracked tree, 285 file(s)`, exit 0. The nine files named above
 are still published; what they no longer carry is the process handles. The sentence that the hook
 only checks `--staged` remains true of the hook.]**
@@ -691,7 +691,7 @@ number.** Re-measured with `git diff --numstat`: `.gitignore` **+25 / -0**,
 deletions are now stated for every file. The line above that reads "`market_swarm/` (11 modules, 7
 test modules) | 9,228 lines with tests" is superseded by the A1 correction: twelve Python files,
 fifteen test modules, 15,037 lines. **[CORRECTED 2026-11-08T09:22Z: thirteen Python files, sixteen
-test modules, 16,425 lines, measured at `HEAD 948b5d5`.]**
+test modules, 16,425 lines, measured at `HEAD 259f561`.]**
 
 `git rev-list --count origin/main..HEAD` → `0`. Nothing has been pushed, and `HEAD` `33d95b3`
 is the commit that put the hook, the publisher and the read-back into the tree — before the
@@ -701,7 +701,7 @@ for them. One commit of explicit paths closes it; this pass did not make it.
 
 **Added 2026-11-08, on the frontend import.** `frontend/` is in the index and not in any commit: 81 files, 1,097,001 bytes as staged, `frontend/.gitignore` included. `git ls-files frontend | wc -l` reads 81 once the index is written. Nothing was pushed, and the push gate reads commits, so no reader of the public repository sees these files until the operator makes the commit.
 
-**[Corrected 2026-11-08T11:41Z: the commit is made, `009f103`, and the paragraph above describes the state before it. `git ls-tree -r --name-only 009f103 frontend | wc -l` reads 82, the eighty-second being `frontend/.env.example`, 689 bytes, which the import had excluded. 1,097,690 bytes by `git ls-files frontend | xargs -d '\n' du -cb | tail -1`. The last sentence is now the one that still applies: nothing was pushed, so no reader of the public repository sees these files until the operator pushes.]**
+**[Corrected 2026-11-08T11:41Z: the commit is made, `eaf4ab7`, and the paragraph above describes the state before it. `git ls-tree -r --name-only eaf4ab7 frontend | wc -l` reads 82, the eighty-second being `frontend/.env.example`, 689 bytes, which the import had excluded. 1,097,690 bytes by `git ls-files frontend | xargs -d '\n' du -cb | tail -1`. The last sentence is now the one that still applies: nothing was pushed, so no reader of the public repository sees these files until the operator pushes.]**
 
 ## A8. Performance, measured this pass
 
@@ -1000,7 +1000,7 @@ all in `test_guidance_api`, `test_labels` and the console tests, against files
 earlier by the concurrent ten-feature build. This pass did not touch those files, and the four new
 modules pass on their own.
 
-**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. The 06:20Z inventory above is wrong in its
+**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. The 06:20Z inventory above is wrong in its
 terms, and the same section's table states a different set for the same four modules. This
 is the disagreement the claim matrix already carried as C15, "the region test counts disagree three
 ways". Measured now, one command per module: `python3 -m unittest tests.test_region_caps_table` →
@@ -1077,7 +1077,7 @@ against the naming document's own directory, because eleven true references like
 
 ---
 
-*Nothing committed or pushed by the 03:30Z pass this file measures, and nothing committed or pushed by the 2026-11-08 frontend import until 11:41Z, when the import was committed as `009f103`; nothing at all has been pushed. Nothing here was written by a build.* No code touched by the documentation edit. The
+*Nothing committed or pushed by the 03:30Z pass this file measures, and nothing committed or pushed by the 2026-11-08 frontend import until 11:41Z, when the import was committed as `eaf4ab7`; nothing at all has been pushed. Nothing here was written by a build.* No code touched by the documentation edit. The
 six document files this pass edited each carry a dated note saying what changed.*
 
 ## Appended 2026-11-08T09:15Z: feature 5's status moved, and the table above is not rewritten

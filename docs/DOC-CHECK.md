@@ -186,7 +186,7 @@ skips, with the reason, because a silent skip is indistinguishable from a pass.
   fixing happens; this checker will keep failing until that pass lands, and that is what a
   gate is for.
 
-  **[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. The state this bullet describes is not the
+  **[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. The state this bullet describes is not the
   state the check is in. `timeout 200 python3 tools/doc_check.py --root .` → `doc_check: clean, 7
   check(s)`, 24 allowed absences suppressed, exit 0, in this worktree and in a fresh clone of the
   branch tip; the checker does not keep failing. `tmp/doc-check-baseline.md` does not exist on disk

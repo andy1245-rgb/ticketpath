@@ -42,7 +42,7 @@ no record screen content is reproduced here, because this file lands in a public
 
 | Fact | Value | How |
 |---|---|---|
-| `HEAD` | `33d95b3`, on `main`, equal to `origin/main`, nothing unpushed | [M] `git log --oneline -12`, `git status`. **[At 2026-11-08T09:22Z `HEAD` is `948b5d5` on `release/prep`, nine commits ahead of `main`]** |
+| `HEAD` | `33d95b3`, on `main`, equal to `origin/main`, nothing unpushed | [M] `git log --oneline -12`, `git status`. **[At 2026-11-08T09:22Z `HEAD` is `259f561` on `release/prep`, nine commits ahead of `main`]** |
 | Working tree | **42 modified files, +7,873 / −660, and 55 untracked entries** | [M] `git diff --stat`, `git status --porcelain` |
 | The devnet proof | `records/devnet-artefacts.json` is **untracked** | [M] `git status --porcelain` |
 | The charts | `docs/charts/` and `docs/CHARTS.md` are **untracked** | [M] same |
@@ -53,7 +53,7 @@ no record screen content is reproduced here, because this file lands in a public
 | Consequence for a video | **A judge who clones the public repo today cannot see the artefact, the charts or the swarm.** `records/STATE-OF-PROJECT.md` §A7 says so and the file's own opening calls the gap "the first thing to fix" | [M] `records/STATE-OF-PROJECT.md:25` and `:347-357` |
 
 **[Corrected 2026-11-08T09:22Z: this table describes the tree at 08:00Z on 2026-11-08, and the
-branch has committed everything it calls invisible. Re-measured at `HEAD 948b5d5`: the working tree
+branch has committed everything it calls invisible. Re-measured at `HEAD 259f561`: the working tree
 is clean (`git status --porcelain` prints nothing); `records/devnet-artefacts.json`, `docs/charts/`
 (6 files), `docs/CHARTS.md`, `market_swarm/` (35 files) and `records/STATE-OF-PROJECT.md` are all
 tracked; findings are **57 tracked and 57 on disk** (`git ls-files records/findings | wc -l`,

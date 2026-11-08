@@ -119,7 +119,7 @@ what the data is. No hosted demo, no deploy URL.
 **[Added 2026-11-08: this paragraph said the frontend was outside this tree, which the import
 in `frontend/` makes false. See `records/F-decision-log.md` D19. Nothing else in this section
 changed. [Corrected 2026-11-08T11:41Z: the sentence above also said the import was staged and
-uncommitted. It is committed: `009f103`, on `release/prep`, authored and committed by the same
+uncommitted. It is committed: `eaf4ab7`, on `release/prep`, authored and committed by the same
 person. Nothing has been pushed, which was the part of the sentence that mattered.]]**
 
 ## Why the chain
@@ -173,8 +173,8 @@ command:
 
 **[Corrected 2026-11-08T12:00Z, at the branch tip. Every sentence above is false of `release/prep`
 now, and it is kept here because it records the tree the section was written against. On this branch
-`git log -1 --format='%H %s'` reads `3ad15bb Record the push plan, and that the import is committed`,
-the branch is a straight descendant of `33d95b3`, and the tree is clean at `3ad15bb`; so `HEAD` is not
+`git log -1 --format='%H %s'` reads `a921ecf Record the push plan, and that the import is committed`,
+the branch is a straight descendant of `33d95b3`, and the tree is clean at `a921ecf`; so `HEAD` is not
 `33d95b3` and carries all ten features. Measured on
 `git clone --no-hardlinks --branch release/prep <this repo> <a directory outside this tree>`, in
 that clone: `Ran 1251 tests in 29.639s`, `OK (skipped=31)`, exit 0; `git ls-files | wc -l` → 394; and
@@ -190,7 +190,7 @@ every file the paragraph lists as absent is present, `market_swarm/` included. T
 - Feature 9: `ImportError: Start directory is not importable: 'market_swarm/tests'`.
 - Feature 10: `tests/test_onchain_v2.py` is untracked, `FAILED (errors=1)`.
 
-**[Corrected 2026-11-08T12:00Z: none of those eight results reproduces at `3ad15bb`. Measured in the
+**[Corrected 2026-11-08T12:00Z: none of those eight results reproduces at `a921ecf`. Measured in the
 clone above, the two modules the list calls untracked are committed, `tools/swarm_charts.py`,
 `tools/doc_check.py`, `ticketpath/onchain/v2.py` and `ticketpath/core/forecast_score.py` are in the
 clone, `market_swarm/tests` is importable, and each command below runs there. The list is kept as the
@@ -199,7 +199,7 @@ record of what the base commit carried.]**
 So every count below is a count of the working tree; the clone's whole suite is **574 tests**.
 
 **[Corrected 2026-11-08T12:00Z: the clone's whole suite is 1251 tests, `OK (skipped=31)`. The working
-tree and the clone hold the same tracked content at `3ad15bb`; they differ only in the git-ignored
+tree and the clone hold the same tracked content at `a921ecf`; they differ only in the git-ignored
 local artefacts, which is why the clone skips four more tests than the worktree, 31 against 27.]**
 
 **When these commands were run.** Every command below was run on 2026-11-08 between 07:00Z and
@@ -211,7 +211,7 @@ is `python3 -m unittest discover -s tests -t .` → `Ran 1058 tests in 30.275s`,
 07:47Z **on the working tree; the clone of `HEAD` is 574 tests and `OK`**. If a command below fails
 for you, run `git status` before concluding a feature is missing.
 
-**[Corrected 2026-11-08T12:00Z: the clone of `HEAD` is 1251 tests, `OK (skipped=31)`, at `3ad15bb`.]**
+**[Corrected 2026-11-08T12:00Z: the clone of `HEAD` is 1251 tests, `OK (skipped=31)`, at `a921ecf`.]**
 
 ### 1. Memo program id, per cluster
 
@@ -280,7 +280,7 @@ Observed on this machine: `PASS docs/charts: 5 asset(s) and the index, 4 chart k
 followed by four more lines (the label and not-evidence sentence in every title and visible text, the
 series rebuilt from the dataset and matched on all five, and the two dataset digests re-checked), exit 0.
 
-**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. The two clauses above that say "matched on all
+**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. The two clauses above that say "matched on all
 five" and "the two dataset digests re-checked" are the opposite of what the tool returns, and `exit 0`
 is not the code. Measured on this machine with `timeout 120 python3 tools/swarm_charts.py verify --out
 docs/charts`, the output is seven lines and it does not begin with the bare `PASS` line:**
@@ -325,7 +325,7 @@ Observed: `Ran 63 tests`, `OK` (63 at 07:29Z; it was 56 at 07:05Z, because the t
 concurrent program edit). On the clone of `HEAD` these two modules are untracked and the whole suite
 is 574 tests.
 
-**[Corrected 2026-11-08T12:00Z: both modules are committed at `3ad15bb` and the clone's suite is 1251
+**[Corrected 2026-11-08T12:00Z: both modules are committed at `a921ecf` and the clone's suite is 1251
 tests, `OK (skipped=31)`.]**
 
 **The limit.** The program stores `interval_score_micro` as supplied and recomputes only `covered`.
@@ -357,7 +357,7 @@ python3 -m unittest tests.test_onchain_v2 -k TicketRecord
 Observed: `Ran 6 tests`, `OK`. On the clone of `HEAD` the module is untracked and the whole suite is
 574 tests.
 
-**[Corrected 2026-11-08T12:00Z: the module is committed at `3ad15bb` and the clone's suite is 1251
+**[Corrected 2026-11-08T12:00Z: the module is committed at `a921ecf` and the clone's suite is 1251
 tests, `OK (skipped=31)`.]**
 
 **The limit.** The predicate is in the Rust program, so the proof that it refuses is a chain run:
@@ -380,7 +380,7 @@ python3 -m unittest tests.test_onchain_v2 -k band
 Observed: `Ran 2 tests`, `OK`. On the clone of `HEAD` the module is untracked and the whole suite is
 574 tests.
 
-**[Corrected 2026-11-08T12:00Z: the module is committed at `3ad15bb` and the clone's suite is 1251
+**[Corrected 2026-11-08T12:00Z: the module is committed at `a921ecf` and the clone's suite is 1251
 tests, `OK (skipped=31)`.]**
 
 **The limit.** No third-party program consumes the feed today, so the composability claim is
@@ -402,7 +402,7 @@ python3 -m unittest discover -s market_swarm/tests -t .
 Observed: `Ran 436 tests`, `OK (skipped=2)`. On the clone of `HEAD` there is no `market_swarm/` and the
 `tests/` suite is 574 tests.
 
-**[Corrected 2026-11-08T12:00Z: `market_swarm/` is in the clone at `3ad15bb`, its suite there is 771
+**[Corrected 2026-11-08T12:00Z: `market_swarm/` is in the clone at `a921ecf`, its suite there is 771
 tests, `OK (skipped=4)`, and the `tests/` suite is 1251, not 574.]**
 
 **The limit.** The cap is parent-side: the child is spawned with no limit of its own, so a SIGKILLed
@@ -426,7 +426,7 @@ python3 -m unittest tests.test_onchain_v2 -k jurisdiction
 Observed: `Ran 2 tests`, `OK`. On the clone of `HEAD` the module is untracked and the whole suite is
 574 tests.
 
-**[Corrected 2026-11-08T12:00Z: the module is committed at `3ad15bb` and the clone's suite is 1251
+**[Corrected 2026-11-08T12:00Z: the module is committed at `a921ecf` and the clone's suite is 1251
 tests, `OK (skipped=31)`.]**
 
 **The limit.** The program does not interpret the country code and does not map a jurisdiction to a
@@ -457,7 +457,7 @@ holder held. As token fees both are dead, blocked by one measured fact about the
 As lamport legs charged by the checkout, both are built, and both are off unless an event turns
 them on.**
 
-**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. Both are built and both are measured, and that
+**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. Both are built and both are measured, and that
 claim is not weakened here. What the sentence above does not say is that no live harness run can
 charge either leg today, and a reader who takes "charged by the checkout" as a statement about a
 running swarm would be wrong. `market_swarm/gateway.py:45-56` states that `start()` refuses
@@ -747,12 +747,12 @@ The 57 tracked is 52 tracked finding files plus the five cluster records in
 `33-b-region-cap-law-sources/`, all of them `.md`. Two of the 54 on disk are the untracked pair
 above. Nothing earlier in this line was rewritten.]**
 
-**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. Re-measured, the pair the 11:20Z note calls
+**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. Re-measured, the pair the 11:20Z note calls
 untracked is committed, and the tree reads: `find records/findings -name '*.md' | wc -l` → 59,
 `ls records/findings/*.md | wc -l` → 54, `git ls-files records/findings | wc -l` → 59, and
 `git ls-files -o --exclude-standard records/findings | wc -l` → 0. The 59 tracked is the 54 top-level
 finding files plus the five cluster records in `33-b-region-cap-law-sources/`, and the untracked count
-is 0 because findings 42 and 43 landed in `7df7597`. The 11:20Z reading was taken at 11:27Z, twelve
+is 0 because findings 42 and 43 landed in `1c93e91`. The 11:20Z reading was taken at 11:27Z, twelve
 minutes before that commit existed, which is why it sees two files that are now in the tree. The
 54 top-level files on disk is the one number that did not move.]**
 - `STATE-OF-PROJECT.md` the read-only measurement of the tree, the chain and the console, rewritten at 2026-11-08T03:45Z.
@@ -894,7 +894,7 @@ that ships. The commit trailers name one of the tools on six of the repository's
 repository should be read as one. No generative model is implemented inside the product: the pricing
 engine is bounded arithmetic with declared parameters, and `/health` reports `fitted: false`.
 
-**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. It is ten of forty: `git rev-list --count HEAD` →
+**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. It is ten of forty: `git rev-list --count HEAD` →
 40 and `git log --format='%(trailers:only,unfold)' | grep -c .` → 10. All ten carry a
 `Co-authored-by` trailer naming `Claude Sonnet 5.5`. The sentence understated the machine involvement,
 which is the direction this file otherwise avoids. The six and the nineteen were read before the

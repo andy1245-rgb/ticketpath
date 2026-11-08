@@ -117,9 +117,9 @@ the difference between them is the whole story: read the coverage, not the inten
   the range.
 - **The whole tree.** `python3 tools/public_safety.py check --tracked` reads every tracked
   file from disk and is the only one of the three that looks at what is already there. It
-  passes. Measured 2026-11-08T09:22Z at `HEAD 948b5d5`: **clean over 285 tracked files**,
+  passes. Measured 2026-11-08T09:22Z at `HEAD 259f561`: **clean over 285 tracked files**,
   `public_safety: clean, tracked tree, 285 file(s)`, exit 0. That reading reversed by commit
-  `aea1cbe`, "Redact the machine handles from the published proof files". The paragraph
+  `56d9dc0`, "Redact the machine handles from the published proof files". The paragraph
   below is kept because it records how the tree got there and what the redaction cost.
   It was true as written at 2026-11-07T18:50Z: **64 hits in 9 tracked files, every one of them under
   `records/`** — 48 `live-service`, 14 `home-path`, 2 `fleet-repo`: `FINAL-PROOF-2.md` 26,
@@ -134,7 +134,7 @@ the difference between them is the whole story: read the coverage, not the inten
   staged one of them was refused until the file was redacted or a per-file exception with a
   reason was added to `.public-denylist`, and both were the operator's call: the record is the
   run's evidence, and history is never rewritten without his explicit yes. The first option is
-  what was taken, in `aea1cbe`, and `.public-denylist` is unchanged.
+  what was taken, in `56d9dc0`, and `.public-denylist` is unchanged.
 
 So a commit is gated, a push is gated, and the tree is not. The sentence this file used to
 carry, "It must pass before any commit and before any push", was true of the two gates and

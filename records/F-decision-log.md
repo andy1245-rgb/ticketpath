@@ -837,8 +837,8 @@ this question is what a reader would act on:
 1. **The author on the commit.** `--author` is a person, and this pass does not choose one. The
    import is staged and the commit command is in the handover to the operator.
 
-   **[Corrected 2026-11-08T12:00Z: the import is committed, as `009f103` on `release/prep` at
-   11:39:41Z (`git log -1 --format='%h %ci %s' 009f103`), and it is not in the index. The item above
+   **[Corrected 2026-11-08T12:00Z: the import is committed, as `eaf4ab7` on `release/prep` at
+   11:39:41Z (`git log -1 --format='%h %ci %s' eaf4ab7`), and it is not in the index. The item above
    was true when it was written and is kept for that reason. The author question it raises is closed:
    the author and the committer are the contributor whose checkout it came from, and the same person
    on every commit on the branch.]**
@@ -946,10 +946,10 @@ redaction notes; nothing was over 1 MB, so nothing
   copy plus this pass's edits. `python3 tools/public_safety.py check --tracked` →
   `clean, tracked tree, 366 file(s)`, exit 0.
 
-  **[Corrected 2026-11-08T12:00Z: the tracked-tree reading is 394 file(s) at `HEAD 3ad15bb`, by
+  **[Corrected 2026-11-08T12:00Z: the tracked-tree reading is 394 file(s) at `HEAD a921ecf`, by
   `python3 tools/public_safety.py check --tracked`. The 366 above is a reading taken on this pass's
   index and is kept with that date on it; it is not the current size of the tree, and neither is the
-  367 in `records/PUSH-PLAN.md` or the 285 in §A1 and §A6, which belongs to `HEAD 948b5d5`. The
+  367 in `records/PUSH-PLAN.md` or the 285 in §A1 and §A6, which belongs to `HEAD 259f561`. The
   command is the thing that produces the number, so run it rather than quoting any of the four.]**
 - `python3 tools/doc_check.py` → `clean, 7 check(s), ... 24 allowed absence(s) suppressed`, exit 0.
 
@@ -1028,7 +1028,7 @@ frontend/NOTES.md | grep -c '^|'` prints 8.]**
 **Staged, not committed.** The import is in the index and no commit is made by this pass. The
 commit is the operator's, and so is the author on it.
 
-**[Corrected 2026-11-08T11:41Z: the import is committed, as `009f103` on `release/prep`. The
+**[Corrected 2026-11-08T11:41Z: the import is committed, as `eaf4ab7` on `release/prep`. The
 sentence above was true when it was written and is kept because it records who decided. The
 operator's call was the author, and the author is the contributor whose checkout it came from;
 the commit's author and committer are the same person, as they are on every commit on this

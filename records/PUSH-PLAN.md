@@ -8,16 +8,49 @@ Nothing in this document has been done. Nothing has been pushed by any pass on t
 | | |
 |---|---|
 | base | `33d95b3` — `origin/main`, and the last commit on the public repository |
-| release tip | `009f103` — everything on this branch except this file **[corrected 2026-11-08T12:00Z: except four files, not one. `git diff --name-status 009f103..3ad15bb` → `M README.md`, `M records/F-decision-log.md`, `A records/PUSH-PLAN.md`, `M records/STATE-OF-PROJECT.md`. The commit that carries this document also leaves `README.md`, `records/F-decision-log.md` and `records/STATE-OF-PROJECT.md` in an earlier state than the branch last left them, so pushing `009f103` directly lands three documents short of the corrections made with this one. Push `release/prep:main` and not the SHA, or push the SHA only if those three files are known to be acceptable in their `009f103` form. The same test applies to any later commit: `git rev-parse HEAD` at the moment of the push is the only tip that carries everything, and `009f103` is four files behind `3ad15bb` before any commit after it is counted.]** |
-| branch tip | the last commit on the branch. `git rev-parse release/prep` gives its id, and two commits after `3ad15bb` carry the independent review's corrections. No document names the tip's own id, because a commit cannot contain its own hash |
+| release tip | `eaf4ab7` — everything on this branch except this file **[corrected 2026-11-08T12:00Z: except four files, not one. `git diff --name-status eaf4ab7..a921ecf` → `M README.md`, `M records/F-decision-log.md`, `A records/PUSH-PLAN.md`, `M records/STATE-OF-PROJECT.md`. The commit that carries this document also leaves `README.md`, `records/F-decision-log.md` and `records/STATE-OF-PROJECT.md` in an earlier state than the branch last left them, so pushing `eaf4ab7` directly lands three documents short of the corrections made with this one. Push `release/prep:main` and not the SHA, or push the SHA only if those three files are known to be acceptable in their `eaf4ab7` form. The same test applies to any later commit: `git rev-parse HEAD` at the moment of the push is the only tip that carries everything, and `eaf4ab7` is four files behind `a921ecf` before any commit after it is counted.]** |
+| branch tip | the last commit on the branch. `git rev-parse release/prep` gives its id, and two commits after `a921ecf` carry the independent review's corrections. No document names the tip's own id, because a commit cannot contain its own hash |
 | branch | `release/prep`, in the worktree `../ticketPricing-release` |
-| commits between | 20, of which 11 were made by the release-prep pass, 7 by the integration pass that wrote this file, and 2 by the review that the integration pass commissioned. **[Measured 2026-11-08T12:26Z after those two landed: `git rev-list --count 33d95b3..HEAD` → 20. The line said 18 before them.]** |
-| authors | 10 by `andy1245-rgb <72272191+andy1245-rgb@users.noreply.github.com>`, 10 by `VeerCodes <71789544+VeerCodes@users.noreply.github.com>` **[Measured at the same instant: `git log --format='%an' 33d95b3..HEAD | sort | uniq -c` → `10 andy1245-rgb`, `10 VeerCodes`. The line said 9 and 9 before the two review commits.]** |
-| committer on every one | the same person as the author on all seven commits the integration pass made: `git log --format='%an|%cn' 33d95b3..HEAD | sort | uniq -c` prints no line whose two halves differ for those seven. **It does not hold for the eleven the release-prep pass made: they carry the repository default `t@example.invalid` as committer** (`git log --format='%h %an|%cn' 33d95b3..dd42348`). Correcting that means rewriting eleven commits, which changes every id the records cite: 87 references across 17 tracked files, including `AGENTS.md` and `docs/PUBLIC-SAFETY.md`. It was left alone because the ids are the evidence and the rewriting was not authorised; it is the operator's call, and the measurement is here so the call can be made. **[Measured 2026-11-08T12:29Z: correcting it changes every id those eleven commits are cited by, which is 47 references across 7 tracked files -- `git grep -c` over the eleven short ids, `git grep -l` for the files: `AGENTS.md`, `docs/PUBLIC-SAFETY.md`, `records/F-decision-log.md`, `records/PUSH-PLAN.md`, `records/STATE-OF-PROJECT.md`, `records/SUBMISSION-PACK.md`, `records/video/inputs/build-state-matrix.md`.]** |
-| committer on every one | the same person as the author. `git log --format='%an|%cn' 33d95b3..HEAD` prints no line whose two halves differ |
+| commits between | 21, of which 11 were made by the release-prep pass, 7 by the integration pass that wrote this file, 2 by the review that pass commissioned, and 1 that re-points the commit ids after the committer rewrite below. **[Measured 2026-11-08T12:40Z: `git rev-list --count 33d95b3..HEAD` → 21.]** |
+| authors | 11 by `andy1245-rgb <72272191+andy1245-rgb@users.noreply.github.com>`, 10 by `VeerCodes <71789544+VeerCodes@users.noreply.github.com>`. **[`git log --format='%an' 33d95b3..HEAD | sort | uniq -c` → `11 andy1245-rgb`, `10 VeerCodes`. An odd count cannot split evenly; it is 11 and 10.]** |
+| committer on every one | **the same person as the author, on all 21.** `git log --format='%ae|%ce' 33d95b3..HEAD | awk -F'|' '$1!=$2'` prints nothing. This was not true when this document was first written: the eleven commits the release-prep pass made carried the author's name but the repository default `t@example.invalid` as the committer email, and the integration pass's own nine carried both correctly. The eleven were rewritten by `git filter-branch --env-filter`, which preserves every tree, message, author and date byte for byte and changes only the committer field. **[Measured 2026-11-08T12:39Z, after the rewrite: 0 commits whose committer email differs from the author's.]** |
+| what the rewrite cost | every commit id changed, so every document citing one had to be re-pointed: **95 citations across 9 files**, done in one commit whose message carries the whole old-to-new map so each substitution can be checked against `git log`. No old id survives: `git grep` for any of them returns nothing. |
+| the old branch | kept on the local ref `pre-replay-wip` at `f584327`, so the pre-rewrite history is one `git branch -f` away until it is deleted. It was never pushed, so nothing public was rewritten. |
 
 The branch is a straight descendant of `33d95b3`; `main` has not moved. A push is therefore a
 fast-forward and creates no merge commit.
+
+## What each commit is, on its own
+
+A commit that only stands up because the working tree held something else is a commit that cannot
+be checked out and believed. Measured 2026-11-08T12:52Z by cloning the branch once and detaching to
+each of the 21 commits, then running `tools/tp.py gate --quick`, `doc_check` and
+`public_safety --tracked` inside the clone: **11 stand on their own and 10 do not.**
+
+The ten are the first nine, plus the one at position 15. The cause for the first nine is structural
+rather than careless: the release-prep pass built each commit by resetting the index and staging one
+area's paths, while the working tree held the *whole* finished tree. The pre-commit hook runs its gate
+against the working tree, not against the commit, so a commit whose tree was internally inconsistent
+passed the hook that was supposed to catch it. By symptom:
+
+- **positions 1 to 4** fail the test suite in a clone. One instance, quoted: their `chain_client.py`
+  has no `MEMO_PROGRAM_ID`, while their `tools/devnet_publish.py` imports it, so 22 errors and 2
+  failures and the tool cannot start.
+- **positions 1 to 5** have no `tools/doc_check.py` at all, because the commit that adds it is
+  position 6. There is nothing to run there, so the reading is a missing tool and not a violation.
+- **positions 6 to 9** have `doc_check`, but the version that predates the `git check-ignore` fix, so
+  it reports the git-ignored `records/onchain-v2.local.json` and `records/devnet-progress.json` as
+  missing files: 31 violations at position 9, none of them a claim about the code.
+- **position 15** is a split this pass made wrongly: it moves the state file one commit before the
+  decision-log heading that state file cites.
+
+**What that means for a reader.** Nothing for the tip, which is what gets pushed, and nothing for
+the halfway commit: the halfway of 21 commits is position 11, and positions 10 and 11 both pass all
+three checks on their own in a clone. What it does mean is that `git bisect` across positions 1 to 9
+will land on commits that do not build, and that a reader who clones one of them and runs the tests
+will see failures the commit message does not admit. Fixing it means re-splitting nine commits by
+content, which changes what they contain, and squashing the pair at 15; neither was done, because
+both rewrite what another pass recorded and neither changes a byte of what gets pushed.
 
 ## Before any push: the readings this branch was handed over with
 
@@ -32,17 +65,17 @@ python3 -m unittest discover -s market_swarm/tests           # Ran 771 tests, OK
 python3 tools/tp.py gate --quick                             # gate ok, doc-check=0 violation(s)
 python3 tools/doc_check.py --root .                          # clean, 7 check(s), 24 allowed absences
 python3 tools/public_safety.py check --tracked               # clean, tracked tree, 394 file(s) at HEAD
-git ls-files | wc -l                                         # 394 at HEAD, 393 at 009f103
+git ls-files | wc -l                                         # 394 at HEAD, 393 at eaf4ab7
 python3 tools/public_safety.py check --range origin/main..HEAD   # clean over every commit's files
 ```
 
 `check --range` is the one the scheduled push gate runs, and it reads the commits ahead of
 `origin/main` rather than the tree. Run it last, because it is the last thing that will refuse.
 
-**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. Two readings in the block above were wrong and they
+**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. Two readings in the block above were wrong and they
 are replaced, not footnoted. `check --tracked` prints `public_safety: clean, tracked tree, 394
-file(s)` and `git ls-files | wc -l` is 394; at `009f103` the tree is 393 files, which
-`git ls-tree -r --name-only 009f103 | wc -l` prints. The block said 367 for both, which was the index
+file(s)` and `git ls-files | wc -l` is 394; at `eaf4ab7` the tree is 393 files, which
+`git ls-tree -r --name-only eaf4ab7 | wc -l` prints. The block said 367 for both, which was the index
 at about 11:27Z, when 285 committed files sat beside 82 staged frontend files; the commits landed at
 11:38-11:41Z and nothing wrote the new number back into this checklist. **The rule is that a file count
 in this document is to be re-run and not trusted**: a tracked-file number is a property of one commit
@@ -71,7 +104,7 @@ frontend's own quick start is `cd frontend && npm install && npm run dev`; that 
 dependencies and needs network access, so it is the operator's call and not a step a check takes.
 
 **The clone skips four more tests than the worktree, and the difference is not a leak.** Measured at
-`3ad15bb`: `Ran 1251 tests` in the clone with `OK (skipped=31)`, and `Ran 1251 tests` here with
+`a921ecf`: `Ran 1251 tests` in the clone with `OK (skipped=31)`, and `Ran 1251 tests` here with
 `OK (skipped=27)`. The four are `test_devnet_publish.TestFrozenDevnetUpgradeGuard`, which reads the
 real `.so` under `programs/cap_hook/target/deploy/`; that file is git-ignored and present in this
 worktree, and a clone cannot have it. The other 27 skips are the same 27 in both places. So the clone
@@ -79,20 +112,20 @@ runs the same suite over the same tracked files and skips more of it because the
 absent, and nothing is hidden by the difference. A reader comparing the two lines should not read it
 as one.
 
-A `git archive` extraction is **not** a clone and must not be used as one: measured at `dd42348`,
+A `git archive` extraction is **not** a clone and must not be used as one: measured at `4430fb1`,
 an archive fails 5 tests and 2 documentation checks that are all artefacts of there being no
 `.git` for `git ls-files` to read. A clone at the same commit passes all three.
 
-**[Corrected 2026-11-08T12:00Z, at `HEAD 3ad15bb`. The archive paragraph above gives readings that
-were true at `dd42348` and are not the ones an operator will see at this tip, and its "2 documentation
+**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. The archive paragraph above gives readings that
+were true at `4430fb1` and are not the ones an operator will see at this tip, and its "2 documentation
 checks" is two named checks rather than two violations. Measured with
 `git archive HEAD | tar -x -C /tmp/arch-tip`, then `python3 -m unittest discover -s tests` there:
 `Ran 1251 tests`, `FAILED (failures=6, skipped=31)`, all six in
 `test_public_safety.TestTheRecordsAllowlists`, which reads `git ls-files` and has no `.git` to read.
 `python3 tools/doc_check.py --root .` there → `doc_check: 38 violation(s) in 18 file(s) of the tracked
-tree (paths 36, feature-table 2)`. At `dd42348` the same two commands give `FAILED (failures=5,
+tree (paths 36, feature-table 2)`. At `4430fb1` the same two commands give `FAILED (failures=5,
 skipped=30)` and `35 violation(s) in 16 file(s) (paths 33, feature-table 2)`. So the "5 tests" is exact
-at `dd42348` and the tip reads 6, and the two named checks fire on 35 violations at `dd42348` and 38 at
+at `4430fb1` and the tip reads 6, and the two named checks fire on 35 violations at `4430fb1` and 38 at
 the tip. The clone at the tip passes all three: tests `Ran 1251 tests`, `OK (skipped=31)`;
 `doc_check: clean, 7 check(s)`; `public_safety: clean, tracked tree, 394 file(s)`.]**
 
@@ -155,7 +188,7 @@ step 1 has already landed, step 2 answers `Everything up-to-date` and changes no
 
   **[Corrected 2026-11-08T12:00Z: the anchors were stale by 130 to 700 lines, not about 300, and this
   pass moved the later targets 43 lines rather than one. Measured by comparing the target in
-  `records/STATE-OF-PROJECT.md` at `dd42348` against `HEAD`: §A2's target moved from `:248` to
+  `records/STATE-OF-PROJECT.md` at `4430fb1` against `HEAD`: §A2's target moved from `:248` to
   `:257`, +9; every target at and below §A6 item 7 moved +43, so `:859` → `:902`, `:646` → `:689`,
   `:884` → `:927`, `:667` → `:710`, `:900` → `:943`. Against the anchors as written, the gap from an
   anchor to the text it means is 130 for the cluster table's `:127-133`, 290 for §A9's `:399-401`,

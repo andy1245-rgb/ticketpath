@@ -181,7 +181,7 @@ Three consequences, stated rather than implied:
    pids and absolute paths while `AGENTS.md` says they may not be there. That is now written
    in `AGENTS.md` and here, and it is a fact about the tree rather than about the next commit.
    **[CORRECTED 2026-11-08T09:22Z: this was true at 18:50Z on 2026-11-07 and is false at
-   `HEAD 948b5d5`. The tree passes. See the section at the end of this file.]**
+   `HEAD 259f561`. The tree passes. See the section at the end of this file.]**
 2. **The gates are real but narrower than the tree.** A commit is checked on the files it
    carries and a push on the commits ahead of `origin/main`. Neither one re-reads a file it
    does not touch, so already-published hits pass both indefinitely.
@@ -198,7 +198,7 @@ checker, the denylist and the exceptions are unchanged by this pass.
 `python3 tools/public_safety.py check --tracked` → `public_safety: clean, tracked tree, 285
 file(s)`, exit 0.
 
-Commit `aea1cbe`, "Redact the machine handles from the published proof files", is what changed it.
+Commit `56d9dc0`, "Redact the machine handles from the published proof files", is what changed it.
 It took the first of the two remedies the 18:45Z section offered: the nine files named above were
 redacted on disk, the identification each handle carried was kept where it was the evidence, and
 `.public-denylist` was not touched, so no exception was bought to make the number go away. The
