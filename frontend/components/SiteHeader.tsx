@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { RoleToggle } from "@/components/RoleToggle";
 
 const NAV = [
   { href: "/events", label: "Events" },
@@ -10,6 +11,8 @@ const NAV = [
   // The pricing page has a route now. Before this it existed and nothing in the
   // app linked to it, so a person could only reach it by typing the path.
   { href: "/pricing", label: "Pricing and data" },
+  // The interactive demo: both sides of a resale, held in the browser.
+  { href: "/demo", label: "Live demo" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -65,6 +68,7 @@ export function SiteHeader() {
           </nav>
 
           <div className="col-start-3 flex items-center justify-end gap-3">
+            <RoleToggle />
             <Link
               href="/account"
               className="u-transition hidden items-center t-body text-ink hover:text-accent sm:inline-flex"
