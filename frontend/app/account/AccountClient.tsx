@@ -302,15 +302,21 @@ export function AccountClient(): React.ReactElement {
                       onClick={() => {
                         void verify();
                       }}
-                      disabled={verifying}
+                      disabled={verifying || isMockMode}
+                      aria-busy={verifying}
                       className="u-transition inline-flex h-12 items-center justify-center rounded-pill border border-accent bg-accent px-6 t-meta text-on-accent hover:border-accent-press hover:bg-accent-press disabled:opacity-60"
                     >
-                      {verifying
-                        ? "Waiting for the wallet"
-                        : verification.verified
-                          ? "Verify again"
-                          : "Sign to verify"}
+                      {isMockMode
+                        ? "Signing disabled: this deployment has no backend"
+                        : verifying
+                          ? "Waiting for the wallet"
+                          : verification.verified
+                            ? "Verify again"
+                            : "Sign to verify"}
                     </button>
+                    <p role="status" aria-live="polite" className="t-micro mt-2 text-muted">
+                      {verifying ? "Waiting for the wallet to sign." : ""}
+                    </p>
                     <p className="t-micro mt-3 text-muted">
                       {isMockMode
                         ? "Signing is a request to prove you hold the key, and this deployment cannot answer it: the signature is made in your wallet and checked nowhere. It is not a transaction and it moves no funds."
