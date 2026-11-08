@@ -15,6 +15,7 @@ import eventsFixture from "./mock/events.json";
 import ticketsFixture from "./mock/tickets.json";
 import ledgerFixture from "./mock/ledger.json";
 import walletsFixture from "./mock/wallets.json";
+import devnetArtefact from "@/data/devnet-artefacts.json";
 
 import { ApiError, buildQuery, paginate, requestJson } from "./http";
 import { CLUSTER } from "./solana";
@@ -23,6 +24,7 @@ import type {
   ChallengeResponse,
   DataSource,
   DestinationRow,
+  DevnetArtefact,
   DevnetRecord,
   Event,
   EventAnalytics,
@@ -475,13 +477,18 @@ export async function getHealth(): Promise<Health> {
  */
 export async function getDevnetRecord(): Promise<DevnetRecord> {
   if (!isMockMode) return request<DevnetRecord>("/devnet-record.json");
+  // This build has no backend, so the record it prints travels inside the build:
+  // `tools/site_records.py` copies `records/devnet-artefacts.json` into `data/`
+  // byte for byte, and its `--check` proves the copy is still that record. It is a
+  // recorded verification and not a live read, which is why the pages that print
+  // it say no cluster was asked.
   return settle({
-    source: "",
-    loaded: false,
-    record: null,
-    reason:
-      "This build reads its bundled fixtures. No backend origin is configured, so there is no artefact file to read.",
-    note: MOCK_DATA_SOURCE.label,
+    source: "records/devnet-artefacts.json",
+    loaded: true,
+    record: devnetArtefact as DevnetArtefact,
+    note:
+      "Bundled with the build by tools/site_records.py: this is the record a verified run " +
+      "wrote, copied from the repository, not a read of any cluster.",
   });
 }
 
