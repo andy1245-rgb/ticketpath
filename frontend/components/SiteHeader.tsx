@@ -2,21 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { RoleToggle } from "@/components/RoleToggle";
 
+/**
+ * The five pages a reader uses, plus the buyer's own screen. `/my-tickets` and
+ * `/door` shipped as routes that nothing linked to, so both could only be
+ * reached by typing the path: the buyer's holdings after "the ticket lands in a
+ * wallet", and the organiser's scan-and-redeem screen.
+ *
+ * "organizer" is spelled one way here, in the footer, in the role toggle and on
+ * `/organizer`. It used to be three spellings across four files, which reads as
+ * two products.
+ */
 const NAV = [
   { href: "/events", label: "Events" },
+  { href: "/my-tickets", label: "My tickets" },
   { href: "/organizer", label: "For organizers" },
   { href: "/rules", label: "How the cap works" },
-  // The pricing page has a route now. Before this it existed and nothing in the
-  // app linked to it, so a person could only reach it by typing the path.
   { href: "/pricing", label: "Pricing and data" },
-  // The interactive demo: both sides of a resale, held in the browser.
+  { href: "/door", label: "Door" },
   { href: "/demo", label: "Live demo" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/events") return pathname === "/events" || pathname.startsWith("/events/");
+  if (href === "/my-tickets")
+    return pathname === "/my-tickets" || pathname.startsWith("/tickets/");
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -30,7 +40,7 @@ function NavLinks({ pathname }: { pathname: string }) {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`u-transition inline-flex h-11 items-center border-b-2 pt-px t-meta ${
+            className={`u-transition inline-flex h-11 shrink-0 items-center border-b-2 pt-px t-meta ${
               active ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"
             }`}
           >
@@ -43,10 +53,20 @@ function NavLinks({ pathname }: { pathname: string }) {
 }
 
 /**
- * One header at every width: 1fr auto 1fr so the navigation's centre sits on
- * the content box's centre (x=720 at 1440), wordmark on the left edge at 120
- * and the right cluster on 1320. Opaque surface and one hairline, no blur, no
- * avatar, no tab bar.
+ * One header at every width: wordmark on the left edge, the right cluster on the
+ * right edge, the navigation centred on the content box at the desktop
+ * breakpoint and on its own wrapping row below it. Opaque surface and one
+ * hairline, no blur, no avatar, no tab bar.
+ *
+ * There is no role toggle here. It writes a browser-local role that only `/demo`
+ * reads, so on any other route it navigated away and changed nothing; `/demo`
+ * renders its own. That also returns ~150px to the 360px header, which used to
+ * overflow with the toggle, the account link and the pill on one row.
+ *
+ * One navigation landmark, not two. The desktop row and the mobile row used to
+ * be separate `<nav aria-label="Primary">` elements hidden at different
+ * breakpoints, which doubles every link in the tree for anything that ignores
+ * `display:none`.
  */
 export function SiteHeader() {
   const pathname = usePathname();
@@ -54,7 +74,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-surface shadow-card">
       <div className="box">
-        <div className="grid h-16 grid-cols-[1fr_auto_1fr] items-center">
+        <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-3">
           <Link
             href="/"
             className="u-transition justify-self-start text-ink hover:text-accent"
@@ -63,29 +83,29 @@ export function SiteHeader() {
             <span className="text-[14px] font-semibold tracking-[0.08em]">SEATPASS</span>
           </Link>
 
-          <nav aria-label="Primary" className="hidden justify-center gap-8 lg:flex">
+          <nav aria-label="Primary" className="hidden justify-center gap-6 lg:flex">
             <NavLinks pathname={pathname} />
           </nav>
 
           <div className="col-start-3 flex items-center justify-end gap-3">
-            <RoleToggle />
             <Link
               href="/account"
               className="u-transition hidden items-center t-body text-ink hover:text-accent sm:inline-flex"
             >
-              Sign in
+              Account
             </Link>
             <Link
               href="/events"
-              className="u-transition inline-flex h-10 items-center justify-center rounded-pill border border-accent bg-accent px-5 t-meta text-on-accent hover:border-accent-press hover:bg-accent-press"
+              className="u-transition hidden h-10 items-center justify-center rounded-pill border border-accent bg-accent px-5 t-meta text-on-accent hover:border-accent-press hover:bg-accent-press sm:inline-flex"
             >
               Browse events
             </Link>
           </div>
         </div>
 
-        {/* Below the breakpoint the navigation drops to its own row, in the gutter. */}
-        <nav aria-label="Primary" className="-mt-1 flex gap-6 overflow-x-auto pb-3 lg:hidden">
+        {/* Below the breakpoint the navigation drops to its own row and wraps
+            onto a second line rather than scrolling sideways with no hint. */}
+        <nav aria-label="Primary" className="-mt-1 flex flex-wrap gap-x-6 pb-2 lg:hidden">
           <NavLinks pathname={pathname} />
         </nav>
       </div>
