@@ -116,7 +116,7 @@ visible but are not, and content that pushes a button or link off-screen.
 
 | Port | What |
 |---|---|
-| 8788 | Ticketpath console (default page) |
+| 8788 | SeatPass console (default page) |
 | 3001 | frontend copy |
 | 3002 | second frontend copy, when running |
 
@@ -146,7 +146,7 @@ unsuffixed names resolve to nothing.
 Two captures taken while proving the tool, recorded here so the numbers are not
 lost with the session.
 
-At 1280 the console is clean: title *Ticketpath — organizer pricing console*,
+At 1280 the console is clean: title *SeatPass — organizer pricing console*,
 no horizontal overflow, no page errors, one centred column about 990px wide.
 
 At 390 both pages overflow horizontally:

@@ -89,7 +89,7 @@ a deployed program.
 
 ## What is no longer true of this repository
 
-If a sentence anywhere says the Ticketpath program has an escrow, a listing account, a
+If a sentence anywhere says the SeatPass program has an escrow, a listing account, a
 `set_cap` instruction, or a nullifier, that sentence is describing the superseded design.
 `records/ON-CHAIN-RECONCILIATION.md` lists every such line that the reconciliation pass found
 outside this file, for the orchestrator to fix. Nothing has been deployed in either design.

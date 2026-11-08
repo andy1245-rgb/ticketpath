@@ -63,7 +63,7 @@ Structural removals the brief requires, all done:
 
 ## Assumptions
 
-- **SeatPass vs Ticketpath.** SeatPass is the product name, so every user-facing
+- **SeatPass vs ticketpath.** SeatPass is the product name, so every user-facing
   string says SeatPass. The repo, the package name and the backend package
   (`ticketpath`) are untouched, per "touch nothing else".
 - **The featured event** is `getEvents({status:"on_sale", limit:1})` — the first

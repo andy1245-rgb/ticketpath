@@ -1,4 +1,4 @@
-# Ticketpath: the minimum on-chain surface
+# SeatPass: the minimum on-chain surface
 
 **Status:** a design document that the deployed programs partly implement. The cap program is deployed
 on devnet (`5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, and v2 `Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF`);
@@ -159,7 +159,7 @@ them, on purpose (D16).
 
 ### 1.1 The one sentence
 
-> **A ticket minted by Ticketpath cannot change hands without the program writing that hop into
+> **A ticket minted by SeatPass cannot change hands without the program writing that hop into
 > the ticket's own on-chain record, and the program refuses to write a hop priced above the
 > organizer's cap: so the resale record the pricing engine reads is complete and cap-compliant
 > by construction, not by the API's good faith.**
@@ -171,7 +171,7 @@ Said shorter, and this is the version to put on a slide:
 
 ### 1.2 Why that is the right invariant for *this* product
 
-Ticketpath is an organizer revenue-management tool. It prices **primary** tickets off the
+SeatPass is an organizer revenue-management tool. It prices **primary** tickets off the
 secondary record. It has no listing, bid, buy or checkout endpoint, and it must not grow one.
 So the thing the product needs from a chain is not a marketplace. It is **the integrity of its
 own input**.
@@ -312,7 +312,7 @@ figure for that exact size at slot 519,638,900 (`getMinimumBalanceForRentExempti
 
 ### 2.1 `EventPolicy`
 
-- **Owner:** Ticketpath program. **PDA seeds:** `["event", slug_bytes]`, where `slug_bytes` is
+- **Owner:** SeatPass program. **PDA seeds:** `["event", slug_bytes]`, where `slug_bytes` is
   the event slug as UTF-8, left-aligned and zero-padded to 32. One per event, created once.
 - **Vocabulary:** `slug` is `Event.slug`. The backend resolves `Event.id` (route accepts either)
   and the two are 1:1 in the store.
@@ -474,7 +474,7 @@ permanent allow-list, and the difference between a check and a souvenir is wheth
 - **Mint.** Address is a program PDA: `["mint", slug_bytes, tier_index_le_u16, serial_le_u32]`,
   so serial uniqueness inside an event tier is structural and there is no registry to keep in
   sync. `decimals = 0`, `supply = 1`, `mint_authority = ["issuer", slug]` PDA, `freeze_authority
-  = None`, extension `TransferHook { program_id = Ticketpath, authority = None }`. The
+  = None`, extension `TransferHook { program_id = SeatPass, authority = None }`. The
   extension's authority is None because the hook can never be changed, which is the honest
   consequence of the program id being fixed at creation.
   Size is **151 bytes** by the arithmetic (82 base mint + 1 account-type + 4 TLV header + 64
@@ -747,7 +747,7 @@ the tests and this document cannot drift; §8.2 uses the same table.
 | 6006 | `E_CAP_OUT_OF_RANGE` | create_event | "The resale cap is above the maximum this program accepts." |
 | 6007 | `E_TICKET_EXISTS` | issue_ticket | "That serial is already issued." |
 | 6008 | `E_AMOUNT_NOT_ONE` | hook | "A ticket is one indivisible token." |
-| 6009 | `E_TRANSFER_NOT_STAGED` | hook | "Transfers go through Ticketpath. This one did not." |
+| 6009 | `E_TRANSFER_NOT_STAGED` | hook | "Transfers go through SeatPass. This one did not." |
 | 6010 | `E_CAP_EXCEEDED` | transfer_ticket | "Above the organizer's resale cap. The chain refused it." |
 | 6011 | `E_RESALE_DISABLED` | transfer_ticket | "This event does not allow transfers." |
 | 6012 | `E_DEST_UNVERIFIED` | transfer_ticket, issue | "That wallet has not been verified for this event." |
@@ -758,7 +758,7 @@ the tests and this document cannot drift; §8.2 uses the same table.
 | 6017 | `E_DEST_MISMATCH` | hook | "The transfer does not match what was recorded for it." |
 | 6018 | `E_VERIFICATION_EXPIRED` | transfer_ticket | "That wallet's verification has expired." |
 | 6019 | `E_WRONG_TOKEN_PROGRAM` | any token CPI | "This mint is a Token-2022 mint." |
-| 6020 | `E_NOT_A_TICKET` | any | "That address is not a Ticketpath ticket." |
+| 6020 | `E_NOT_A_TICKET` | any | "That address is not a SeatPass ticket." |
 
 6010 is decimal 6010 = hex `0x177A`. **UNVERIFIED-FROM-THIS-MACHINE:** the exact `Custom(N)`
 rendering and the log line shape. The corpus verified `custom program error: 0x25` and
@@ -827,11 +827,11 @@ stop six, and says what each of the six would need.
    instruction and a sysvar parse.
 5. **A mint created without the hook.** The guarantee is a property of hooked mints. A ticket
    minted by `issue_ticket` always has the extension, and the extension's program id cannot be
-   changed afterwards, so a Ticketpath ticket cannot be un-hooked. But a *different* mint, made
+   changed afterwards, so a SeatPass ticket cannot be un-hooked. But a *different* mint, made
    by anyone with `spl-token create-token`, is an ordinary transferable Token-2022 token that the
    record knows nothing about, and a buyer who accepts one has been defrauded by a mint, not by
-   Ticketpath. What it would need: buyers checking that the mint's hook program id is the
-   Ticketpath program before paying anything, which is a client-side check the *verification*
+   SeatPass. What it would need: buyers checking that the mint's hook program id is the
+   SeatPass program before paying anything, which is a client-side check the *verification*
    page can do (`/verify` exists in the frontend), plus the issuer's public mint list. This is
    the honest weakness of every hook design and it should be on a slide rather than in a
    footnote.
@@ -927,7 +927,7 @@ Only after the runbook runs. Nothing in this subsection has happened.
 2. **A hooked mint that a stranger can inspect.** `spl-token display <mint>` lists the
    `TransferHook` extension and names the program. This is the check that distinguishes "we
    deployed a program" from "we deployed a program and the ticket is actually attached to it".
-3. **The refusal, as a real failed transaction.** A direct `spl-token transfer` of a Ticketpath
+3. **The refusal, as a real failed transaction.** A direct `spl-token transfer` of a SeatPass
    ticket fails, the log shows the hook program invoked *inside* the Token-2022 CPI, and the
    error is 6009. That single transaction is the anti-fraud claim, executed: not "the API
    declined", but "the runtime refused, and here is the signature".
@@ -1450,7 +1450,7 @@ pub enum TicketpathError {
     #[msg("The resale cap is out of range.")]                 CapOutOfRange = 6006,
     #[msg("That serial is already issued.")]                  TicketExists = 6007,
     #[msg("A ticket is one indivisible token.")]              AmountNotOne = 6008,
-    #[msg("Transfers go through Ticketpath.")]                TransferNotStaged = 6009,
+    #[msg("Transfers go through SeatPass.")]                TransferNotStaged = 6009,
     #[msg("Above the organizer's resale cap.")]               CapExceeded = 6010,
     #[msg("This event does not allow transfers.")]            ResaleDisabled = 6011,
     #[msg("That wallet has not been verified.")]              DestUnverified = 6012,
@@ -1461,7 +1461,7 @@ pub enum TicketpathError {
     #[msg("The transfer does not match the record.")]         DestMismatch = 6017,
     #[msg("That wallet's verification has expired.")]         VerificationExpired = 6018,
     #[msg("This mint is a Token-2022 mint.")]                 WrongTokenProgram = 6019,
-    #[msg("That address is not a Ticketpath ticket.")]        NotATicket = 6020,
+    #[msg("That address is not a SeatPass ticket.")]        NotATicket = 6020,
 }
 ```
 
@@ -1607,7 +1607,7 @@ Stdlib only. Save it anywhere and run `python3 tp_sim.py`. It mirrors §2's acco
 arbitrary-precision integers to hide the question.
 
 ```python
-"""SIMULATED mirror of the Ticketpath on-chain state machine. NOT a Solana program.
+"""SIMULATED mirror of the SeatPass on-chain state machine. NOT a Solana program.
 
 Same account fields, same instruction names, same error codes, same integer
 arithmetic as docs/ON-CHAIN-DESIGN.md. Python ints do not overflow, so the width
@@ -2169,7 +2169,7 @@ chosen rather than under-built.
 
 The last row is the one worth saying out loud on camera: the earlier direction in this repo was
 `NonTransferable`, which refuses every transfer and therefore cannot produce a resale record at
-all. Ticketpath needs the record, so it needs transfers to succeed under a ceiling, which is
+all. SeatPass needs the record, so it needs transfers to succeed under a ceiling, which is
 what a hook plus a staged price buys and what `NonTransferable` structurally cannot.
 
 ---

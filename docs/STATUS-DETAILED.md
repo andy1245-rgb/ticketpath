@@ -6,9 +6,9 @@ current output, `README.md` and the command win. Statements in it such as "nothi
 demo" or "nothing pushed" are historical and are superseded: the cap program is on devnet and the demo is
 hosted (see `README.md`).
 
-# Ticketpath (historical README)
+# SeatPass (historical README)
 
-Ticketpath is a tool for the organizer of a live event who sets a primary ticket price and
+SeatPass is a tool for the organizer of a live event who sets a primary ticket price and
 then has no view of what the same seat changes hands for afterwards. It reads the platform's
 own resale record and computes what that record supports: the markup on every recorded sale
 measured against that ticket's own tier's face value, the custody path of a single ticket
