@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RoleToggle } from "@/components/RoleToggle";
@@ -16,13 +17,17 @@ import { RoleToggle } from "@/components/RoleToggle";
  */
 const NAV = [
   { href: "/events", label: "Events" },
-  { href: "/my-tickets", label: "My tickets" },
-  { href: "/organizer", label: "For organizers" },
-  { href: "/rules", label: "How the cap works" },
+  { href: "/demo", label: "Live demo" },
   { href: "/rules#enforcement-today", label: "Proof on devnet" },
   { href: "/pricing", label: "Pricing and data" },
+  { href: "/organizer", label: "For organizers" },
+];
+
+/** Reachable from the menu below xl and from the footer; not in the bar. */
+const MORE = [
+  { href: "/my-tickets", label: "My tickets" },
   { href: "/door", label: "Door" },
-  { href: "/demo", label: "Live demo" },
+  { href: "/rules", label: "How the cap works" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -72,45 +77,71 @@ function NavLinks({ pathname }: { pathname: string }) {
  */
 export function SiteHeader() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-surface shadow-card">
       <div className="box">
-        <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-3">
+        <div className="flex h-16 items-center gap-4">
           <Link
             href="/"
-            className="u-transition justify-self-start text-ink hover:text-accent"
+            className="u-transition shrink-0 text-ink hover:text-accent xl:mr-8"
             aria-label="SeatPass, home"
           >
             <span className="text-[14px] font-semibold tracking-[0.08em]">SEATPASS</span>
           </Link>
 
-          <nav aria-label="Primary" className="hidden justify-center min-w-0 gap-4 lg:flex">
+          <nav aria-label="Primary" className="hidden min-w-0 items-center gap-6 xl:flex">
             <NavLinks pathname={pathname} />
           </nav>
 
-          <div className="col-start-3 flex items-center justify-end gap-3">
+          <div className="ml-auto flex shrink-0 items-center gap-3">
             {pathname !== "/demo" && pathname !== "/demo/" ? <RoleToggle navigate /> : null}
             <Link
-              href="/account"
-              className="u-transition hidden items-center t-body text-ink hover:text-accent 2xl:inline-flex"
-            >
-              Account
-            </Link>
-            <Link
               href="/events"
-              className="u-transition hidden h-10 items-center justify-center rounded-pill border border-accent bg-accent px-5 t-meta text-on-accent hover:border-accent-press hover:bg-accent-press sm:inline-flex"
+              className="u-transition hidden h-10 items-center justify-center rounded-pill border border-accent bg-accent px-5 t-meta text-on-accent hover:border-accent-press hover:bg-accent-press md:inline-flex xl:ml-3"
             >
               Browse events
             </Link>
+            <button
+              type="button"
+              aria-expanded={open}
+              aria-controls="site-menu"
+              onClick={() => setOpen((v) => !v)}
+              className="u-transition inline-flex h-10 items-center rounded-pill border border-line px-4 t-meta text-ink hover:border-ink xl:hidden"
+            >
+              {open ? "Close" : "Menu"}
+            </button>
           </div>
         </div>
 
-        {/* Below the breakpoint the navigation drops to its own row and wraps
-            onto a second line rather than scrolling sideways with no hint. */}
-        <nav aria-label="Primary, mobile" className="-mt-1 flex flex-wrap gap-x-6 pb-2 lg:hidden">
-          <NavLinks pathname={pathname} />
-        </nav>
+        {open ? (
+          <nav id="site-menu" aria-label="Menu" className="flex flex-wrap gap-x-6 gap-y-1 border-t border-line py-3 xl:hidden">
+            {[...NAV, ...MORE].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive(pathname, item.href) ? "page" : undefined}
+                className="u-transition inline-flex h-11 items-center t-meta text-ink hover:text-accent"
+              >
+                {item.label}
+              </Link>
+            ))}
+            <Link href="/account" className="u-transition inline-flex h-11 items-center t-meta text-ink hover:text-accent">
+              Account
+            </Link>
+          </nav>
+        ) : null}
       </div>
     </header>
   );

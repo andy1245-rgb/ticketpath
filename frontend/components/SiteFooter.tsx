@@ -7,6 +7,8 @@ import Link from "next/link";
  */
 const LINKS = [
   { href: "/events", label: "All events" },
+  { href: "/my-tickets", label: "My tickets" },
+  { href: "/door", label: "Door" },
   { href: "/organizer", label: "Organizer guide" },
   { href: "/rules", label: "Resale rules" },
   { href: "/rules#security", label: "Security model" },
