@@ -79,7 +79,8 @@ ls -a /home/friend/ticketpath-demo | grep env   -> .env.example only
 **Operational gotcha, worth writing down:** the wiring is a shell export, not a file. Restart :3001
 with no `.env.local` in that tree and it silently returns to `lib/mock` with the mock banner. Also,
 because `NEXT_PUBLIC_*` is inlined at compile time, a production `:3000` needs a rebuild *and* a
-restart, not a reload (`records/FRONTEND-INTEGRATION.md` §5.1, `NIGHT-QUEUE.md:72`).
+restart, not a reload. `records/FRONTEND-INTEGRATION.md` §5.1 says so, and so does a local
+handover note (not published).
 
 It is a `next dev` server, so new files under `app/` hot-reload. That matters for §4: the implement
 phase needs no restart of :3001 and therefore no touching of :3000.

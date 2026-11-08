@@ -47,7 +47,8 @@ Searched and found nothing: every top level directory under `/home/friend` (incl
 `ticketPricing`, `ticketpath-demo`, `ticketing-frontend`, several other sibling projects and tooling trees,
 `.pi`, `.local`, `.claude`, `.config`, `.cache`, `.npm`, `.nvm`),
 plus `/opt`, `/srv`, `/usr/local`, `/usr/bin`, `/usr/local/bin`, `/root`, `/etc/skel`.
-`/home/andrew` does not exist, and neither does `/home/friend/mnt` (a network mount is gone).
+Another user home directory was checked and does not exist, and neither does `/home/friend/mnt`
+(a network mount is gone).
 
 A literal `find / -name vh.py` could not be run: the bashguard blocks any recursive walk that reaches the
 sshfs mount, and it fires on `find` from `/` or from `/home/friend` regardless of `-prune`. Every search

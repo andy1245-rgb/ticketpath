@@ -190,8 +190,8 @@ def hardened_flags(provider_extension: str | None = None) -> tuple[str, ...]:
 
     Each entry is here for a specific reason:
 
-    - `--no-extensions` drops every installed extension, which on this machine is subforge,
-      jobs and loginsw as well as the model provider.
+    - `--no-extensions` drops every installed extension, which on this machine includes several
+      unrelated ones as well as the model provider.
     - `-e <provider>` then re-adds exactly one of them. Without the provider extension the
       child has no `commandcode/...` provider, and `--model commandcode/...` cannot resolve,
       so the child never starts.

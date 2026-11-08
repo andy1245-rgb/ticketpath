@@ -11,9 +11,9 @@ Nothing in this document has been done. Nothing has been pushed by any pass on t
 | release tip | `eaf4ab7` — everything on this branch except this file **[corrected 2026-11-08T12:00Z: except four files, not one. `git diff --name-status eaf4ab7..a921ecf` → `M README.md`, `M records/F-decision-log.md`, `A records/PUSH-PLAN.md`, `M records/STATE-OF-PROJECT.md`. The commit that carries this document also leaves `README.md`, `records/F-decision-log.md` and `records/STATE-OF-PROJECT.md` in an earlier state than the branch last left them, so pushing `eaf4ab7` directly lands three documents short of the corrections made with this one. Push `release/prep:main` and not the SHA, or push the SHA only if those three files are known to be acceptable in their `eaf4ab7` form. The same test applies to any later commit: `git rev-parse HEAD` at the moment of the push is the only tip that carries everything, and `eaf4ab7` is four files behind `a921ecf` before any commit after it is counted.]** |
 | branch tip | the last commit on the branch. `git rev-parse release/prep` gives its id, and two commits after `a921ecf` carry the independent review's corrections. No document names the tip's own id, because a commit cannot contain its own hash |
 | branch | `release/prep`, in the worktree `../ticketPricing-release` |
-| commits between | 21, of which 11 were made by the release-prep pass, 7 by the integration pass that wrote this file, 2 by the review that pass commissioned, and 1 that re-points the commit ids after the committer rewrite below. **[Measured 2026-11-08T12:40Z: `git rev-list --count 33d95b3..HEAD` → 21.]** |
-| authors | 11 by `andy1245-rgb <72272191+andy1245-rgb@users.noreply.github.com>`, 10 by `VeerCodes <71789544+VeerCodes@users.noreply.github.com>`. **[`git log --format='%an' 33d95b3..HEAD | sort | uniq -c` → `11 andy1245-rgb`, `10 VeerCodes`. An odd count cannot split evenly; it is 11 and 10.]** |
-| committer on every one | **the same person as the author, on all 21.** `git log --format='%ae|%ce' 33d95b3..HEAD | awk -F'|' '$1!=$2'` prints nothing. This was not true when this document was first written: the eleven commits the release-prep pass made carried the author's name but the repository default `t@example.invalid` as the committer email, and the integration pass's own nine carried both correctly. The eleven were rewritten by `git filter-branch --env-filter`, which preserves every tree, message, author and date byte for byte and changes only the committer field. **[Measured 2026-11-08T12:39Z, after the rewrite: 0 commits whose committer email differs from the author's.]** |
+| commits between | 23, of which 11 were made by the release-prep pass, 7 by the integration pass that wrote this file, 2 by the review that pass commissioned, 1 that re-points the commit ids after the committer rewrite below, and 2 redaction commits written after this document. **[Measured 2026-11-08T12:40Z: `git rev-list --count 33d95b3..HEAD` → 21. Re-measured at the tip that carries this line: → 23.]** |
+| authors | 12 by `andy1245-rgb <72272191+andy1245-rgb@users.noreply.github.com>`, 11 by `VeerCodes <71789544+VeerCodes@users.noreply.github.com>`. **[`git log --format='%an' 33d95b3..HEAD | sort | uniq -c` → `12 andy1245-rgb`, `11 VeerCodes`.]** |
+| committer on every one | **the same person as the author, on all 23.** `git log --format='%ae|%ce' 33d95b3..HEAD | awk -F'|' '$1!=$2'` prints nothing. This was not true when this document was first written: the eleven commits the release-prep pass made carried the author's name but the repository default `t@example.invalid` as the committer email, and the integration pass's own nine carried both correctly. The eleven were rewritten by `git filter-branch --env-filter`, which preserves every tree, message, author and date byte for byte and changes only the committer field. **[Measured 2026-11-08T12:39Z, after the rewrite: 0 commits whose committer email differs from the author's.]** |
 | what the rewrite cost | every commit id changed, so every document citing one had to be re-pointed: **95 citations across 9 files**, done in one commit whose message carries the whole old-to-new map so each substitution can be checked against `git log`. No old id survives: `git grep` for any of them returns nothing. |
 | the old branch | kept on the local ref `pre-replay-wip` at `f584327`, so the pre-rewrite history is one `git branch -f` away until it is deleted. It was never pushed, so nothing public was rewritten. |
 
@@ -59,7 +59,7 @@ is not automatically a defect, but it is a question to answer before pushing, no
 
 ```bash
 git status --short                                          # empty
-git log --oneline 33d95b3..HEAD | wc -l                      # 21
+git log --oneline 33d95b3..HEAD | wc -l                      # 23
 python3 -m unittest discover -s tests                        # Ran 1251 tests, OK (skipped=27)
 python3 -m unittest discover -s market_swarm/tests           # Ran 771 tests, OK (skipped=2)
 python3 tools/tp.py gate --quick                             # gate ok, doc-check=0 violation(s)
@@ -74,9 +74,18 @@ python3 tools/public_safety.py check --range origin/main..HEAD   # clean over ev
 
 **[Added 2026-11-08, at `HEAD 501c8ae`: the readings above are the branch as handed over at that tip,
 and one redaction commit -- sibling-project names, a hostname and process ids taken out of two findings
--- sits on top of it, so at the tip that carries this line `git log --oneline 33d95b3..HEAD | wc -l`
-is 22, the author split is 11 `andy1245-rgb` and 11 `VeerCodes`, and the committer check still prints
-nothing.]**
+-- sits on top of it, so at that tip `git log --oneline 33d95b3..HEAD | wc -l` is 22, the author split
+is 11 `andy1245-rgb` and 11 `VeerCodes`, and the committer check still prints nothing.]**
+
+**[Measured at the tip that carries this line: `git rev-list --count 33d95b3..HEAD` → 23, and
+`git log --format='%an' 33d95b3..HEAD | sort | uniq -c` → `12 andy1245-rgb`, `11 VeerCodes`. The two
+commits added since `501c8ae` are both redactions: `7fef7a4`, which took sibling-project names, a
+hostname and process ids out of two findings, and one that takes another user home directory out of
+`records/findings/15-visionhelper.md`, a handover-note citation out of
+`records/findings/14-frontend-attach-explore.md`, and a project name out of a comment in
+`market_swarm/llm.py` with no code change. Both carry the same author and committer. The
+standalone-commit analysis above was measured over the 21 commits present at 12:52Z and has not been
+re-run over the two added since.]**
 
 **[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. Two readings in the block above were wrong and they
 are replaced, not footnoted. `check --tracked` prints `public_safety: clean, tracked tree, 394
