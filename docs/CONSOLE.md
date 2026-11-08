@@ -6,7 +6,7 @@ control is a query parameter, so every state has a URL. `docs/RUN.md` has the co
 
 ## The order of the page, and why
 
-1. **Banner.** T1 verbatim, then the sentence about no program being deployed, then the
+1. **Banner.** T1 verbatim, then the sentence that the chain slot prints only what a verified devnet artefact records, then the
    SHA-256 of the store the numbers came from. A screenshot names its own source.
 2. **Controls.** Event, tier, `asOf`, `capBps`, `feeLamports`, `tau`, `Recompute`, and
    `Show the refusal` (which submits `sim=1` — it is a button, not a script). The

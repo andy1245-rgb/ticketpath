@@ -117,26 +117,13 @@ the difference between them is the whole story: read the coverage, not the inten
   the range.
 - **The whole tree.** `python3 tools/public_safety.py check --tracked` reads every tracked
   file from disk and is the only one of the three that looks at what is already there. It
-  passes. Measured 2026-11-08T09:22Z at `HEAD 259f561`: **clean over 285 tracked files**,
-  `public_safety: clean, tracked tree, 285 file(s)`, exit 0. That reading reversed by commit
-  `56d9dc0`, "Redact the machine handles from the published proof files". The paragraph
-  below is kept because it records how the tree got there and what the redaction cost.
-  It was true as written at 2026-11-07T18:50Z: **64 hits in 9 tracked files, every one of them under
-  `records/`** — 48 `live-service`, 14 `home-path`, 2 `fleet-repo`: `FINAL-PROOF-2.md` 26,
-  `FINAL-PROOF.md` 14, `DEMO-PROOF.md` 11, `findings/07-engine-review.md` 4,
-  `findings/10-final-review.md` 3, `FRONTEND-HONESTY-PATCH.md` 2, `REPO-CONSISTENCY.md` 2,
-  `CONTRACT-CONFORMANCE.md` 1, `FIXTURE-STORE.md` 1. An hour earlier, at `8a5e5e6`, the same
-  command read **77 hits in 11 files**; `findings/12-final-audit.md` and `DELIVERABLE.md` left
-  that list only because the stale-claims pass had to redact a home path or a process id to
-  commit a correction to them, and both correction notes say what went. Those hits are quoted
-  measurements in the research record — a pid in a state table, an absolute path inside a
-  command's output — and they are published. None of the 9 carried an `allow` line, so a run that
-  staged one of them was refused until the file was redacted or a per-file exception with a
-  reason was added to `.public-denylist`, and both were the operator's call: the record is the
-  run's evidence, and history is never rewritten without his explicit yes. The first option is
-  what was taken, in `56d9dc0`, and `.public-denylist` is unchanged.
+  passes. Measured 2026-11-08T16:00Z on `build/docs`, branched from `b5784c5`:
+  `public_safety: clean, tracked tree, 421 file(s)`. The tree went from 77 hits (at `8a5e5e6`) to 64
+  to clean when commit `56d9dc0`, "Redact the machine handles from the published proof files",
+  redacted the quoted pids and home paths in `records/`; `.public-denylist` was not loosened. The
+  history of those readings is in `docs/PUBLIC-SAFETY.md`.
 
-So a commit is gated, a push is gated, and the tree is not. The sentence this file used to
+So a commit is gated, a push is gated, and the tree has a check you run by hand (it is clean today). The sentence this file used to
 carry, "It must pass before any commit and before any push", was true of the two gates and
 false of the tree, and it is quoted here rather than deleted. Rules and their reasons are in
 `.public-denylist`, exceptions are per path glob and per class with a reason each, and

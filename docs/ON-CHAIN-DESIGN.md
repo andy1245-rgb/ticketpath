@@ -1,7 +1,8 @@
 # Ticketpath: the minimum on-chain surface
 
-**Status:** design only. No program is deployed. No address in this document is invented, and
-no test result is claimed. **Written:** 2026-11-07. **Scope:** the on-chain anti-fraud
+**Status:** a design document that the deployed programs partly implement. The cap program is deployed
+on devnet (`5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, and v2 `Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF`);
+sections not marked built are design. No address in this document is invented. **Written:** 2026-11-07. **Scope:** the on-chain anti-fraud
 invariant, the accounts and instructions that carry it, the threat model, and the runbook the
 operator runs on a machine that has Agave.
 
