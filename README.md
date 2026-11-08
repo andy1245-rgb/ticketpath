@@ -1,931 +1,153 @@
-# Ticketpath
+# SeatPass
 
-Ticketpath is a tool for the organizer of a live event who sets a primary ticket price and
-then has no view of what the same seat changes hands for afterwards. It reads the platform's
-own resale record and computes what that record supports: the markup on every recorded sale
-measured against that ticket's own tier's face value, the custody path of a single ticket
-with a price on each hop, the roll up an organizer needs (volume, median price, markup
-distribution, where the tickets ended up), and a recommended primary price where the record
-can carry one. It is not a marketplace: there is no listing, bid, buy or checkout path here,
-none is served by the backend, and none is planned. Resale value, how it moves, and the
-chance a ticket sells are specified rather than fitted, and today the honest output is a
-refusal naming the missing observation, because nothing records what an unsold ticket asked.
+SeatPass prices primary-market event tickets off the secondary market's own resale record, and
+caps resale on chain. A Token-2022 transfer hook on Solana refuses any resale above
+`face * (1 + cap)`; the artist fee, a falling flip tax and region rules sit around that cap. It was
+built for the MLH Solana Hackathon, 6-8 November 2026, by Andrew Radu and Veer Srivastava.
 
-## What works today
+The repository slug and the Python package keep the historical name `ticketpath`; the product is SeatPass.
 
-Measured 2026-11-07T11:54Z on this machine, Python 3.12.3, standard library only. Run
-every command from the repository root.
+Live demo (static build, simulated in the browser): https://seatpass-ticketpath.pages.dev
 
-**[CORRECTED 2026-11-08T03:45Z. Five statements below were true when written and are not true of the
-tree now; each is corrected in place with its command, and this note is the index: the test count
-(546 → 610, §"Run the tests"); the finding count (29 → 32 tracked, 42 on disk, §"How the research is
-organised"); "no program is deployed on any cluster" and "no mint, no transaction, no signature in
-this repository" (§"Deployed on devnet, in part", which the deployment rewrote); "this machine has no
-Solana toolchain" (it has one, in a login shell); and the closing "Nothing is deployed". The
-measurements in this section that were not re-taken are marked as of their date. Nothing in this
-edit changes code or a number that was not re-measured.]**
+## What is real, what is simulated, what is not built
 
-**[Added 2026-11-08T11:20Z: the finding count in the index above is corrected again at its own line
-in §"How the research is organised", after the release merge: 54 on disk, 2 of them untracked, with
-the commands that produced both numbers named there.]**
+| | Status | Evidence |
+|---|---|---|
+| Cap program on Solana devnet (v1) | **Real** | program `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, `records/devnet-artefacts.json` |
+| Cap program v2 (staged price, floor, forecast log, authority checks) | **Real**, devnet | program `Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF`, `records/onchain-v2-devnet.json` |
+| Recorded devnet transfers | **Real** | 1.25 SOL on a 1 SOL face (25% cap) accepted; 1 lamport more refused with `6010 E_CAP_EXCEEDED` |
+| Swarm runs against a local validator | **Real transactions, local chain** | 20 of 144 harness runs; counts below |
+| Region-cap program (`programs/region_gate`) | Real on a **local validator only**, not on devnet | `records/findings/34-region-caps-build.md` |
+| Ticket sales, events, resale history | **Synthetic fixture** (`fixtures/`), generated, not market data | every API response says `synthetic: true` |
+| In-browser demo (Buyer / Organiser) | **Simulated**: no server, wallet, RPC or chain | the cap predicate and fee/tax formulas are the real code, transcribed |
+| Dry swarm runs | **Simulated gateway**: nothing is built, signed or sent | counts below, split from validator runs |
+| Pricing model | **Not built as a fitted model.** The engine is a rule-based bounded estimator (`fitted: false`); with no real resale ledger there is nothing to fit | `/health` of the backend |
+| Live backend serving real data | **Not built.** The backend serves the synthetic fixture | `docs/BACKEND.md` |
+| Wallet verification | Ed25519 signature check on a nonce exists in the backend; no wallet-bound login or purchase flow | `docs/BACKEND.md` |
+| Artist fee, flip tax enforcement on chain | **Not enforced by the program.** They are seller-paid lamport legs in the same transaction; the chain does not check them. The refund-to-holders pool is not built | `docs/ON-CHAIN-DESIGN.md` section 16 |
+| Payments, checkout, real resale marketplace | **Not built** | frontend marks them Unavailable |
 
-**[Added 2026-11-08T08:15Z: a sixth statement joins the five above. The console banner no longer says
-"no program is deployed"; the page prints "The chain slot at the bottom prints what a verified devnet
-artefact records, and the [DESIGN] block is a design; neither is a deployed guarantee." The sentence is
-corrected in §"Open the console page" and measured at 17,380 bytes on the same reading.]**
+Nothing here is a claim about a real ticket market. No accuracy number is claimed anywhere.
 
-**Start the backend.** It binds `127.0.0.1:8788`; `TICKETPATH_PORT` overrides, and 8787 is
-refused because another process owns it.
+## The demo
+
+Open https://seatpass-ticketpath.pages.dev/demo/ . Everything runs in your browser; state is kept in
+`localStorage`, so clearing site data ends the run.
+
+- The header toggle switches **Buyer** and **Organiser**.
+- Buyer: buy a ticket at face, then list it at a price you type. The listing is admitted or refused
+  before any hop is recorded; each ticket keeps a hop history (price, wallet, instant).
+- Organiser: face price, platform cap, manual override, resale mode (open, monitored, banned), region,
+  artist fee and flip tax. Changes move the buyer view, because both read one state object.
+- `/rules/` shows the cap predicate and the recorded devnet transfers; `/pricing/`, `/door/` and
+  `/verify/` are the other proof pages. What each page does is in `frontend/DEMO.md` and `frontend/README.md`.
+
+Real inside the demo: the cap predicate, the `6010` code, the flip-tax and artist-fee formulas and the
+region table output. Simulated: the wallet, the sale, the clock, all money. Nothing is charged.
+
+## How the cap works
+
+- Predicate, evaluated by the hook on every transfer: `price * 10000 <= face * (10000 + cap_bps)`.
+  Integer lamports only. At face 1,000,000,000 and 2500 bps the ceiling is 1,250,000,000.
+- Why a hook and not a Token-2022 transfer fee: Token-2022 rounds the fee up, so on an indivisible 1-unit ticket
+  a 5% or 15% fee withholds the whole ticket; measured in `records/findings/36-transfer-fee-on-a-one-unit-ticket.md`.
+- Artist fee: `price * fee_bps // 10000`, paid by the seller as a lamport leg in the same
+  transaction. Flip tax: 15% (1500 bps) when resold under one hour after acquisition, falling linearly to
+  0 at 30 days, also a seller-paid leg; off unless the event turns it on. Neither is enforced by the chain.
+- Resale ban and region geo-lock are application policy (the app refuses to list); the chain only
+  enforces the cap.
+- Region rules: `ticketpath/data/region-caps.json` (version 2026-11-08.1, 82 jurisdiction codes) resolves
+  each to `capped`, `monitored` or `unresolved`. Measured on 2026-12-01: 6 capped, 8 monitored, 68
+  unresolved. Unresolved means no primary source was read; an event there may not claim lawfulness, and a
+  fixed money cap is not converted to basis points without a sourced FX snapshot. Design:
+  `records/REGION-CAPS-DESIGN.md`.
+
+## The swarm
+
+`market_swarm/` is a trading-agent harness: scripted and LLM-driven agents buy, list and resell a
+synthetic ticket through a gateway, and the harness logs every decision. The gateway is either a **dry**
+simulation (nothing signed or sent; it predicts the hook with the same predicate) or a **local validator**
+running the real program. Raw datasets are git-ignored; only the numbers below are quoted. All rows
+are synthetic.
+
+| Measured by the harness | Dry | Validator |
+|---|---|---|
+| Runs (scripted agents) | 124 | 20 |
+| Total across both | 144 runs, 49,684 decisions, 3,458 executed trades, 4,634 listings, 1,351 agents | |
+| Cap refusals | 967 across both, all `6010`; the dry/validator split of refusals is not separated in the total | |
+
+Second validator sweep: 8 runs (4 dry, 4 validator), 1,312 decisions, 141 executed, 10 refused (`6010`), 66 agents.
+
+LLM-driven agents (deepseek flash, three parallel runs, all on the dry gateway because the local
+validator would not boot in that window): 18 agents, 150 decisions, 19 fills, 170,121 tokens, $0.0723 in
+total. 49 of the 150 decisions (32.7%) got no usable model reply and fell back to a scripted policy; no
+agent asked above the ceiling, so that run produced zero refusals and does not test the cap.
+Details of the live on-chain swarm run (6 agents, 10 rounds, 56 rows, 4 refused `6010`):
+`records/swarm-live-onchain.json`.
+
+## Quickstart
+
+Requirements: Python 3.12 (standard library only for the backend, tests and tools); Node and npm for
+the frontend.
 
 ```bash
-python3 -m ticketpath.server
-```
+# backend + console (synthetic fixture); then open http://127.0.0.1:8788/
+python3 -m ticketpath.server --port 8788
 
-Observed on an instance bound to 8793, because 8788 was already serving on this machine:
+# frontend static export (writes frontend/out/);
+cd frontend && npm ci && npm run build
+python3 -m http.server 4599 --directory out        # then open /demo/
 
-```
-ticketpath 0.1.0 listening on http://127.0.0.1:8793 dataSource=synthetic-fixture synthetic=True cluster=devnet routes=10
-  SYNTHETIC FIXTURE DATA. Generated for tests and demonstration, not real ticket data.
-```
-
-**Open the console page.** The backend serves one server rendered HTML page at `/`.
-
-```bash
-curl -s -o /dev/null -w '%{http_code} %{size_download}\n' http://127.0.0.1:8788/
-```
-
-Observed `200`, and a page of **17,380 bytes** at `/` (`17,307` at the pinned `[DEVNET]` state),
-measured on a fresh instance at 2026-11-08T08:07Z. The status code is the invariant; the byte count
-moves whenever the console is edited, so it is dated here and not quoted as if it were fixed. The
-page opens with a banner whose first sentence is `SYNTHETIC FIXTURE DATA: every number on this page
-is computed from a synthetic fixture generated in this repository. Not real ticket data. No accuracy
-claim is made or implied.`, followed by `The chain slot at the bottom prints what a verified devnet
-artefact records, and the [DESIGN] block is a design; neither is a deployed guarantee.` It then
-lists all eight events with the pricing regime each is in. It shows the
-evidence counts behind the decision, then the decision or a refusal. On the default selection
-it prints a recommended primary price of at least 1.38 SOL
-per ticket tagged `[UNVALIDATED]`, and says that is a floor, not an estimate, with no upper
-bound stated. `?sim=1` runs the simulated state machine: five lines, including a transfer a
-lamport above the cap refused with 6010 and an unstaged move refused with 6009.
-
-**Query the API.**
-
-```bash
-curl -s 'http://127.0.0.1:8788/api/events?limit=100'   # 8 events
-curl -s 'http://127.0.0.1:8788/api/tickets?limit=200'  # 76 tickets
-curl -s 'http://127.0.0.1:8788/health'
-```
-
-Observed 8 events, 76 tickets, 9 of 9 contract endpoints over 10 routes,
-`dataSource.synthetic: true`, `chain.programDeployed: false`, `chain.programId: null`, and
-`pricingModel.available: true` with `modelVersion: engine-2026-11-07`, `kind:
-rule-based-bounded-estimator` and `fitted: false`. The analytics route for
-`evt_syn_02` returns volume, sale count, average markup, median price, resold share, holders
-and a daily series. Wallet verification is the one real cryptographic operation: the
-challenge endpoint returned a nonce, and an Ed25519 signature is checked against the public
-key it is given. The console and `/health` now tell one story: the number the console prints
-is bounded arithmetic over fixture prices, and `/health` says the same thing in the model
-block, naming no fitted model because there is none.
-
-**Run the tests.**
-
-```bash
+# tests and checks, from the repository root
+python3 tools/tp.py gate                  # tests plus console checks (use --quick for the fast set)
+python3 tools/tp.py doc-check             # docs agree with code and with each other
+python3 tools/public_safety.py check --tracked
 python3 -m unittest discover -s tests
+python3 -m unittest discover -s market_swarm/tests
+cd frontend && npm run typecheck && npm run lint && npm test
 ```
 
-Observed at 2026-11-08T03:35Z: `python3 -m unittest discover -s tests` reports `Ran 610 tests in
-23.958s`, `OK`. The count moves as the backend grows, so the command's own output is the number that
-matters, not this line. It was 546 at 18:11Z, 453 at 17:36Z, 306 at 12:12Z and 293 twenty minutes before
-that. The swarm harness carries its own suite, which this command does not collect:
-`python3 -m unittest discover -s market_swarm/tests` → `Ran 274 tests in 1.028s`, `OK`.
-
-**Regenerate the fixtures.**
-
-```bash
-python3 tools/build_fixture_store.py --check   # verify, writes nothing
-python3 tools/build_fixture_store.py           # rewrite fixtures/synthetic_store.json
-```
-
-Observed with `--check`: `seed 20261107, 8 events, 76 tickets, 147 ledger rows`, ending with
-`fixtures/synthetic_store.json matches a fresh build exactly`. 61 of those rows are priced
-sales. The generator opens no socket and reads no clock; two runs write identical files.
-
-**The frontend.** The platform's own Next.js app was the one piece of the product outside this
-tree; it is now imported, file for file, into `frontend/` (see *The frontend* below). It points
-here with `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788` (`docs/BACKEND.md`), and
-`docs/frontend-honesty.patch` is the text only patch that makes an older copy's screens state
-what the data is. No hosted demo, no deploy URL.
-
-**[Added 2026-11-08: this paragraph said the frontend was outside this tree, which the import
-in `frontend/` makes false. See `records/F-decision-log.md` D19. Nothing else in this section
-changed. [Corrected 2026-11-08T11:41Z: the sentence above also said the import was staged and
-uncommitted. It is committed: `eaf4ab7`, on `release/prep`, authored and committed by the same
-person. Nothing has been pushed, which was the part of the sentence that mattered.]]**
-
-## Why the chain
-
-The cap is a promise the platform cannot quietly break and anyone can verify. It is not a claim
-that scalping is impossible.
-
-1. **It binds us too.** The cap is written into the ticket's own record, and the program has no
-   instruction that changes it afterwards. The platform cannot raise a cap quietly, and neither can
-   we.
-2. **The sale record is public and tamper-proof.** Every transfer of a hooked ticket, and the price
-   it declares, is a ledger entry nobody can edit afterwards. The pricing engine reads that record,
-   and so would a monitor-only mode where resale is legal, watching the market instead of capping it
-   (the direction is decided by `records/F-decision-log.md` D11 for the region-cap work; the mapping
-   from a jurisdiction to a policy is not built in this program, which records the code and does not
-   interpret it, D16).
-3. **Anyone can check the rule without trusting us.** The program, its arithmetic and every
-   transaction are public, so a reader verifies the boundary instead of taking this file's word.
-
-The limit is the price: the program checks the price a transfer declares, so the claim is that the
-chain refuses over-cap resales through the platform, not that scalping is impossible. What else the
-design does not stop is listed in `programs/cap_hook/README.md`.
-
-## The ten features: eight tested, two built on the lamport route
-
-**Added 2026-11-08.** One entry per feature of the ten-feature build. Each names one command that
-runs it, the surface it is verified on, and the limit it carries. Features 5 and 7 were **not built
-and blocked by a measured mechanism fact** when this section was written; each now has a built
-route, described in "5 and 7" below, and each one's token-fee form is still dead. The full record
-is `records/findings/36-transfer-fee-on-a-one-unit-ticket.md`.
-
-**[Corrected 2026-11-08T11:20Z, at the release merge. This heading read "eight tested, two
-blocked", and the sentence above said the two were not built. That was true of the token-fee
-mechanism and is not true of the tree: `market_swarm/artist_fee.py` and `market_swarm/flip_tax.py`
-are the two lamport legs, `tools/artist_fee_proof.py` and `tools/flip_tax_proof.py` are their
-proofs, and `records/findings/42-artist-fee-at-checkout.md` and
-`records/findings/43-flip-tax-at-checkout.md` are the measurements, moving the pair off the 38 and
-39 the other checkout wrote them under. The section below was rewritten on the other checkout to
-say they are built; this heading and that sentence were not, and a reader meets the contradiction
-before the prose. What is still not built is the refund-to-holders pool, and neither leg is
-enforced by the chain, which the section below states. The measurement in finding 36 that blocked
-the token-fee form is unchanged.]**
-
-**These commands run against the working tree, not against a clone.** Nothing here is committed, by
-the operator's instruction. `HEAD` is `33d95b3` and carries none of the ten features: a fresh clone of
-`HEAD` runs **574 tests**, `memo_program_id` does not exist in it, `tools/swarm_charts.py`,
-`tools/doc_check.py`, `ticketpath/onchain/v2.py`, `ticketpath/core/forecast_score.py` and the whole
-`market_swarm/` package are absent, and every command below fails there. Measured on a
-`git clone --no-hardlinks` of this tree: `Ran 574 tests in 23.262s`, `OK`. The eight results, one per
-command:
-
-**[Corrected 2026-11-08T12:00Z, at the branch tip. Every sentence above is false of `release/prep`
-now, and it is kept here because it records the tree the section was written against. On this branch
-`git log -1 --format='%H %s'` reads `a921ecf Record the push plan, and that the import is committed`,
-the branch is a straight descendant of `33d95b3`, and the tree is clean at `a921ecf`; so `HEAD` is not
-`33d95b3` and carries all ten features. Measured on
-`git clone --no-hardlinks --branch release/prep <this repo> <a directory outside this tree>`, in
-that clone: `Ran 1251 tests in 29.639s`, `OK (skipped=31)`, exit 0; `git ls-files | wc -l` → 394; and
-every file the paragraph lists as absent is present, `market_swarm/` included. The `Ran 574 tests in
-23.262s`, `OK` quoted above is a clone of `33d95b3`, the base commit, not of this branch.]**
-
-- Feature 1: `ImportError: cannot import name 'memo_program_id' from 'ticketpath.adapters.chain_client'`.
-- Feature 2: `KeyError: 'matchesCurrentQuote'`.
-- Feature 3: `can't open file 'tools/swarm_charts.py': [Errno 2] No such file or directory`.
-- Feature 4: `tests/test_forecast_score.py` and `tests/test_onchain_v2.py` are untracked, `FAILED (errors=2)`.
-- Feature 6: `tests/test_onchain_v2.py` is untracked, `FAILED (errors=1)`.
-- Feature 8: the same file, `FAILED (errors=1)`.
-- Feature 9: `ImportError: Start directory is not importable: 'market_swarm/tests'`.
-- Feature 10: `tests/test_onchain_v2.py` is untracked, `FAILED (errors=1)`.
-
-**[Corrected 2026-11-08T12:00Z: none of those eight results reproduces at `a921ecf`. Measured in the
-clone above, the two modules the list calls untracked are committed, `tools/swarm_charts.py`,
-`tools/doc_check.py`, `ticketpath/onchain/v2.py` and `ticketpath/core/forecast_score.py` are in the
-clone, `market_swarm/tests` is importable, and each command below runs there. The list is kept as the
-record of what the base commit carried.]**
-
-So every count below is a count of the working tree; the clone's whole suite is **574 tests**.
-
-**[Corrected 2026-11-08T12:00Z: the clone's whole suite is 1251 tests, `OK (skipped=31)`. The working
-tree and the clone hold the same tracked content at `a921ecf`; they differ only in the git-ignored
-local artefacts, which is why the clone skips four more tests than the worktree, 31 against 27.]**
-
-**When these commands were run.** Every command below was run on 2026-11-08 between 07:00Z and
-07:30Z and re-run at 08:07-08:12Z with the same output, and that output is quoted as it printed. The tree was being edited by another agent while this
-section was written, and one intermediate run caught that edit in flight: the suite at 07:22Z reported
-`Ran 993 tests`, `FAILED (failures=77, errors=223, skipped=19)` in the console and
-artefact-verification modules. The last reading in this pass, after that edit and a second one landed,
-is `python3 -m unittest discover -s tests -t .` → `Ran 1058 tests in 30.275s`, `OK (skipped=26)`, at
-07:47Z **on the working tree; the clone of `HEAD` is 574 tests and `OK`**. If a command below fails
-for you, run `git status` before concluding a feature is missing.
-
-**[Corrected 2026-11-08T12:00Z: the clone of `HEAD` is 1251 tests, `OK (skipped=31)`, at `a921ecf`.]**
-
-### 1. Memo program id, per cluster
-
-The memo instruction that commits a quote runs under a program whose id differs by cluster, so
-`ticketpath/adapters/chain_client.py` carries a table and not a constant: `devnet` and `localnet`
-resolve to `Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH`, and `mainnet-beta` and `testnet` have no
-entry at all. The publisher asserts the id in the transaction the cluster landed against the table's
-id for the run's cluster, on both the fresh-send and the reuse path.
-
-```bash
-python3 -c "from ticketpath.adapters.chain_client import memo_program_id; print(memo_program_id('devnet'))"
-```
-
-Observed: `Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH`.
-
-**The limit.** Mainnet-beta's id has not been measured, so it is not in the table: `memo_program_id`
-raises `UnknownCluster` rather than borrowing devnet's, and the console answers `chain.memoProgram:
-null` for such a cluster instead of failing the page. The `MemoSq4gq…` literal stays in the file
-because documents quote it and the `ids` gate compares against it, but it is not a mapping for any
-cluster. A local validator cannot land a memo under the measured id at all: its genesis holds that
-address as a program-data stub that cannot execute, and no clone replaces it. That is measured and
-quoted in `records/findings/40-memo-program-id.md`.
-
-### 2. The console renders the recorded devnet artefact as recorded
-
-The `[DEVNET]` block on the console prints the artefact's own fields (its instant, slot, block time,
-signature, mint, program, memo program, the recommended lamports, both transfer legs and the
-refusal's `6010`) and then, separately, whether the quote on screen is the one the chain recorded.
-The two questions are two fields: `chain.state` says the file verified, `chain.matchesCurrentQuote`
-says the number on the page is that number.
-
-```bash
-python3 tools/guidance.py --event evt_syn_02 --as-of 2026-11-07T18:34:29.183Z | python3 -c "import json,sys; c=json.load(sys.stdin)['chain']; print(c['state'], c['matchesCurrentQuote'], c['recorded']['asOf'])"
-```
-
-Observed: `verified True 2026-11-07T18:34:29.183Z`. At any other instant the same command prints
-`verified False 2026-11-07T18:34:29.183Z`, and the page then says the quote it commits is not the
-quote the file records, naming both ids and both instants. It prints both recommended numbers only
-where they differ.
-
-**The limit.** Recorded, not independently re-read: the page recomputes the quote hash from the
-fields it prints and asks no cluster. `rpc_adapter.program_status` still answers
-`programDeployed: false` with `askedCluster: false`, because it asked none, and carries the recorded
-program id in a separate block with its source.
-
-**[Corrected 2026-11-08T07:45Z. Two sentences above were stale and one claim was wrong. (1) The page
-no longer says "the number on this page is computed now and is not the number the chain recorded":
-that sentence printed on a page showing the same 1.38 SOL twice. The agreement sentence is now about
-the quote, with both quote ids and both instants, and the recommendation is printed twice only where
-it differs. (2) `TICKETPATH_RPC_ENABLED=1` does not enable a live re-read, and no flag on this server
-does: the adapter opens no socket, and the page says so in its own sentence. The line that named the
-flag is kept above because it is what the edit replaced.]**
-
-### 3. Chart and animation assets, every one labelled SYNTHETIC
-
-`tools/swarm_charts.py` generates five SVG assets and one index into `docs/charts/` from a
-`market_swarm` dataset, and `verify` rebuilds each series from that dataset and compares. Every asset
-carries the word `SYNTHETIC`, the dataset file name, the run id and the not-evidence sentence in its
-`<title>` and in its visible text.
-
-```bash
-python3 tools/swarm_charts.py verify --out docs/charts
-```
-
-Observed on this machine: `PASS docs/charts: 5 asset(s) and the index, 4 chart kind(s), mode(s) capped, monitored`,
-followed by four more lines (the label and not-evidence sentence in every title and visible text, the
-series rebuilt from the dataset and matched on all five, and the two dataset digests re-checked), exit 0.
-
-**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. The two clauses above that say "matched on all
-five" and "the two dataset digests re-checked" are the opposite of what the tool returns, and `exit 0`
-is not the code. Measured on this machine with `timeout 120 python3 tools/swarm_charts.py verify --out
-docs/charts`, the output is seven lines and it does not begin with the bare `PASS` line:**
-
-```
-PASS LABELS ONLY docs/charts: 5 asset(s) and the index, 4 chart kind(s), mode(s) capped, monitored
-     label SYNTHETIC and the not-evidence sentence in every title and in every visible text; the bytes are what this tool renders from the provenance each asset carries
-     series rebuilt from the dataset on 0 of 5 asset(s): no dataset was present for the rest, so their numbers were not checked against any data file. Pass --dataset <path.jsonl> to check them
-     dataset digests: 0 re-checked against the file, 2 not present (named below, and not claimed)
-     dataset sw20261108T054830Z6297-evt_capped-SYNTHETIC.jsonl: not present, so its digest and its series were not re-checked against the file
-     dataset sw20261108T054830Z6297-evt_monitored-SYNTHETIC.jsonl: not present, so its digest and its series were not re-checked against the file
-     note: exit 3, labels and internal consistency only; nothing about the data was checked
-```
-
-**The exit code is 3.** The reason is that the datasets are not in the tree: they live in `.swarm-runs/`,
-which is git-ignored and uncommitted, so `verify` has no file to rebuild a series from. `status` in
-`tools/swarm_charts.py` is `PASS` only when `all_rebuilt` is true and `PASS LABELS ONLY` otherwise, and
-`all_rebuilt` needs a dataset it can locate beside the assets or receive with `--dataset`; none is in
-this tree, so the command prints `PASS LABELS ONLY` here and exits 3. What it verifies is the
-`SYNTHETIC` label and the internal consistency of the five assets and the index, which it does verify;
-what it does not verify is any number on them. `records/STATE-OF-PROJECT.md` §0A feature 3 and §A4
-carry the same reading at 09:22Z.]**
-
-**The limit.** Every number on them is class E: scripted agents against a simulated gateway, not
-observed prices. The datasets live in `.swarm-runs/`, which is git-ignored, so on a clone with none
-present `verify` exits 3 with `PASS LABELS ONLY`: the labels and the internal consistency were
-checked, the numbers were not. `docs/CHARTS.md` is the full account.
-
-### 4. Forecast log on chain, scored off chain
-
-`LogForecast` (tag 5) creates `["forecast", mint, as_of_unix]` once and refuses a second write with
-`6024`. `ScoreForecast` (tag 6) creates `["score", forecast]` once (`6025`) and does not touch the
-forecast account, whose sha256 is quoted before and after in the run's record. Only the record's
-`authority` may write either (`6026`). `ticketpath/core/forecast_score.py` is the rule the forecast
-commits by hash: the Winkler interval score at alpha = 1/5, integer arithmetic only.
-
-```bash
-python3 -m unittest tests.test_forecast_score tests.test_onchain_v2
-```
-
-Observed: `Ran 63 tests`, `OK` (63 at 07:29Z; it was 56 at 07:05Z, because the test file grew with a
-concurrent program edit). On the clone of `HEAD` these two modules are untracked and the whole suite
-is 574 tests.
-
-**[Corrected 2026-11-08T12:00Z: both modules are committed at `a921ecf` and the clone's suite is 1251
-tests, `OK (skipped=31)`.]**
-
-**The limit.** The program stores `interval_score_micro` as supplied and recomputes only `covered`.
-Nothing on chain recomputes the penalty, so a score above the band's width is a well-formed account
-on the authority's word; this is a log with an arithmetic rule beside it, not an on-chain scorer. `ScoreForecast`
-recomputes `covered` from the forecast's own ends and refuses a score below the band's width, but it
-does not recompute the penalty term: `interval_score_micro` above that floor is the authority's
-assertion, not a number the chain verified. The end-to-end proof ran on a local validator, not on a
-public cluster.
-
-**The v1 hole, which changes what the devnet deployment proves.** v1's `SetPendingPrice` and
-`SetStatus` take no signer, so on the deployed devnet program any keypair can stage a price and flip a
-ticket's status; an immutable deploy has no upgrade path, so that hole is in v1's bytes permanently,
-and the devnet refusals prove the price predicate on prices the deploy key chose, not that a stranger
-was kept from choosing them. v2 authenticates both instructions and refuses the exploit with `6026`;
-the deployed v1 never will. `records/findings/37-program-v2-review-fixes.md` is the measurement.
-
-### 6. Price floor
-
-`TicketRecord.band_low_lamports` is the floor, and `0` means no floor. The hook refuses a staged
-price below it with `6021 E_BELOW_FLOOR`, admits one exactly at it, and `InitializeRecord` refuses a
-floor above the ceiling with `6022 E_BAND_UNSATISFIABLE` rather than creating a record no price could
-satisfy.
-
-```bash
-python3 -m unittest tests.test_onchain_v2 -k TicketRecord
-```
-
-Observed: `Ran 6 tests`, `OK`. On the clone of `HEAD` the module is untracked and the whole suite is
-574 tests.
-
-**[Corrected 2026-11-08T12:00Z: the module is committed at `a921ecf` and the clone's suite is 1251
-tests, `OK (skipped=31)`.]**
-
-**The limit.** The predicate is in the Rust program, so the proof that it refuses is a chain run:
-on a local validator, 899,999,999 lamports was refused `6021` and 900,000,000 was admitted with the
-jurisdiction in the log line, recorded at `records/onchain-v2.local.json` (git-ignored). That run is
-the build's and the documentation pass did not re-run it, because the live test rewrites that file.
-A record with `policy = 1` skips both price predicates, so no floor is enforced there.
-
-### 8. Public price feed
-
-`PublishBand` (tag 4) writes `["band", mint]`: low, high, as-of slot, published slot, sample size, a
-refusal flag, a model hash and the authority that signed it. It is rewritable on purpose, because it
-is a head and not a history: the history is the forecast log, and a score is a separate account so it
-can never rewrite what it scores.
-
-```bash
-python3 -m unittest tests.test_onchain_v2 -k band
-```
-
-Observed: `Ran 2 tests`, `OK`. On the clone of `HEAD` the module is untracked and the whole suite is
-574 tests.
-
-**[Corrected 2026-11-08T12:00Z: the module is committed at `a921ecf` and the clone's suite is 1251
-tests, `OK (skipped=31)`.]**
-
-**The limit.** No third-party program consumes the feed today, so the composability claim is
-unproven: what exists is a readable account with its own uncertainty fields, and this repository is
-the only reader. `refused` is stored, not enforced, and `low > high` is refused `6022` rather than
-written. The account is authority-signed (`6026`), which is a permission and not a guarantee about
-the number.
-
-### 9. A live agent adapter, on tiny budgets
-
-`market_swarm/forge_policy.py` is an opt-in path that lets one capped child model make a decision.
-The scripted policies remain the default, and a budget is reserved before a child exists and settled
-at the observed usage afterwards.
-
-```bash
-python3 -m unittest discover -s market_swarm/tests -t .
-```
-
-Observed: `Ran 436 tests`, `OK (skipped=2)`. On the clone of `HEAD` there is no `market_swarm/` and the
-`tests/` suite is 574 tests.
-
-**[Corrected 2026-11-08T12:00Z: `market_swarm/` is in the clone at `a921ecf`, its suite there is 771
-tests, `OK (skipped=4)`, and the `tests/` suite is 1251, not 574.]**
-
-**The limit.** The cap is parent-side: the child is spawned with no limit of its own, so a SIGKILLed
-parent can leak a child with no wall clock and no token cap on it. The provider usage log is also
-structurally blind to `--no-extensions` children, so 38 children spawned by another session rest on
-their own session files alone. The live path is off unless `MARKET_SWARM_LIVE_LLM=1`; the measured
-spend was one decision at 22,838 in, 157 out, 4,096 cache-read, $0.003532, and four children at
-$0.011581380 in total, recorded in `records/findings/41-deepseek-live-adapter.md`. This pass spent
-nothing.
-
-### 10. Per-event jurisdiction and policy on the record
-
-`TicketRecord.jurisdiction` is two bytes, an ISO-3166-1 alpha-2 code in uppercase, with `ZZ` for
-unspecified, and `TicketRecord.policy` is `0` (capped) or `1` (monitored). The hook logs the
-jurisdiction on every admitted transfer and skips both price predicates when the policy is monitored.
-
-```bash
-python3 -m unittest tests.test_onchain_v2 -k jurisdiction
-```
-
-Observed: `Ran 2 tests`, `OK`. On the clone of `HEAD` the module is untracked and the whole suite is
-574 tests.
-
-**[Corrected 2026-11-08T12:00Z: the module is committed at `a921ecf` and the clone's suite is 1251
-tests, `OK (skipped=31)`.]**
-
-**The limit.** The program does not interpret the country code and does not map a jurisdiction to a
-policy. It does not validate the code either: there is no list on chain to check it against, so a
-wrong code is a wrong statement by the issuer, not a malformed account. Neither of the record's own
-two bytes is on the wire contract: the event-level `jurisdiction` and `resalePolicy` fields in
-`lib/types.ts` (under the comment "additive fields the live backend serves") are a different pair at a
-different level, and D16 is the decision that says so.
-
-**Where the mapping lives, and the conflict a reader should know about.** The program's part is the
-two bytes and a policy flag; that is all this feature ships. The mapping from a jurisdiction to a
-policy is a separate piece of work in this same repository by another session: a dated table of
-instruments (`ticketpath/data/region-caps.json`), a resolver (`ticketpath/core/region_caps.py`), its
-own decision entry (D11 in `records/F-decision-log.md`), its own design
-(`records/REGION-CAPS-DESIGN.md`) and its own local-only program (`programs/region_gate/`). Both are
-in the tree, and they are not yet reconciled: no instruction compares the record's two bytes with the
-table's resolved policy, and nothing forces an issuer to write the code the table resolved. **The
-reconciliation can only be nation-level**, because the record's field is `[u8; 2]` and 72 of the
-table's 82 codes are subdivisions (`CA-ON`, `AU-NSW`, `US-CA`) that do not fit two bytes; the finer
-mapping has nowhere to be written on the v2 record. Which of the two is the platform's answer is the
-operator's to decide; this entry does not settle it, and nothing here deletes D11.
-
-### 5 and 7: the artist fee and the flip tax, built as seller-paid lamport legs
-
-**Feature 5 was an artist fee of 500 to 1000 bps paid to the artist's wallet from a
-`TransferFeeConfig`; feature 7 was a flip tax at 1500 bps into a pool, rebated on how long the
-holder held. As token fees both are dead, blocked by one measured fact about the token program.
-As lamport legs charged by the checkout, both are built, and both are off unless an event turns
-them on.**
-
-**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. Both are built and both are measured, and that
-claim is not weakened here. What the sentence above does not say is that no live harness run can
-charge either leg today, and a reader who takes "charged by the checkout" as a statement about a
-running swarm would be wrong. `market_swarm/gateway.py:45-56` states that `start()` refuses
-`program=v2`, because v2's `SetPendingPrice` is authorised by the record's authority, which this
-harness cannot sign; the same place states that the fee and tax paths build v2 instruction shapes "on
-a v1 run too", because the record those paths write is the one that carries the hold clock and the v2
-authority. A fee or tax event is therefore a v2-record event whatever `program` says, and a plain sale
-on a v1 run keeps the v1 encoders, so a fee or tax event cannot complete a live run under either
-program. What measured the two legs is the two proof tools on a throw-away local validator,
-`tools/artist_fee_proof.py` (PASS 9/9) and `tools/flip_tax_proof.py`, recorded in
-`records/findings/42-artist-fee-at-checkout.md` and `records/findings/43-flip-tax-at-checkout.md`. The
-harness's own fee path is unit-tested against a fake cluster and is not measured on a validator
-(finding 42 §8). `market_swarm/CONTRACT.md:52-71` already says all of this; this section did not.]**
-
-**[CORRECTED 2026-11-08T13:20Z, on branch `swarm/live-onchain`. The paragraph above is kept because
-it was true when it was written, and one of its load-bearing sentences is no longer true:
-`ChainGateway.start()` no longer refuses `program=v2`. Two keys now sign one v2 sale — the seller pays
-and authorises the move, the record's authority (the mint's authority, the house key) authorises
-`SetPendingPrice` — and v2 deploys the program's own `.so` and keypair rather than v1's. So a fee or
-tax event is still a v2-record event, and v2 is now drivable, which is the opposite of what the
-paragraph concludes. What has been run is a live v2 run **without** a fee or tax event: 6 scripted
-agents, 10 rounds, 2 events, 56 rows, 4 of them refused `6010`, one aggregate at
-`records/swarm-live-onchain.json`. **A fee or tax event has not been run live and this note does not
-claim it has**; the two proof tools remain what measures those two legs.]**
-
-Token-2022 computes a transfer fee on the base-unit amount and rounds it **up**. At `decimals 0`,
-`amount 1`, any rate from 1 to 9999 bps withholds the whole ticket: `withheldAmount = 1`, the
-recipient receives 0. The ceiling is proven by `ceil(10 x 1500 / 10 000) = 2` on a ten-unit transfer,
-and the same 1500 bps on `decimals 9` and 10^9 base units withholds exactly 150,000,000, so the
-arithmetic scales with the amount and not with a price. On this mint the only two fees it can express
-are 0 and the entire ticket, and a 5% artist fee is not one of them.
-
-**What was built instead, and it is the first of the three survivors.** A **seller-paid lamport leg
-inside the sale transaction**: `SetPendingPrice`, the artist fee, the flip tax, the Token-2022 move,
-one blockhash and one signature set, so a failure in any leg reverts all of them. The artist fee is
-`price * fee_bps // 10_000`, per event. The flip tax is a second leg whose rate falls with the hold:
-`held_since_unix` is read at checkout from the 70-byte v2 record, which the hook writes itself on
-every admitted transfer, and the default schedule is 15% of the sale price under an hour, falling
-linearly to 0% at 30 days, configurable per event. Both are **off unless an event names them**, both
-are charged on resales, and neither is enforced by the chain: a transaction can stage a price, move
-the ticket and pay nothing, and the hook admits it. That is measured rather than conceded in
-passing, and no sentence in this file says the chain charges either.
-
-The two buildings are `records/findings/42-artist-fee-at-checkout.md` (nine validator legs, PASS
-9/9) and `records/findings/43-flip-tax-at-checkout.md`, with `tools/artist_fee_proof.py` and
-`tools/flip_tax_proof.py` as the proofs, `market_swarm/artist_fee.py` and `market_swarm/flip_tax.py`
-as the code, and `docs/ON-CHAIN-DESIGN.md` section 15 and section 16 as the design.
-
-**Still not built, and the reason is unchanged.** The refund-to-holders pool: `ClaimRebate` (tag 7)
-is not implemented, the two error names reserved for it (`6027`, `6028`) are declared in the source
-and raised by nothing, and the pool's `["rebate-pool", mint]` seed is derived by `state.rs` and used
-by no instruction. One measurement bears on that gap and it does not close it: on a mint carrying
-both a transfer fee and the transfer hook, `WithdrawWithheldTokensFromAccounts` succeeds without the
-hook's accounts and does not invoke the hook, so a pool fed by a **token** fee has working plumbing;
-what it withholds is a whole ticket rather than a rate, which is why the tax built above is lamports
-and not a token fee. The token-fee measurement, the four legs and the quoted RPC objects are
-`records/findings/36-transfer-fee-on-a-one-unit-ticket.md`.
-
-## Region-aware resale caps
-
-Resale law is not one rule. Ireland caps a secondary sale at the original price including fees,
-Ontario added a cap in April 2026, New South Wales caps at face plus the fees actually paid (counted
-at no more than 10% of face), and the United Kingdom has announced a cap that is **not law**. A
-platform that applies one number everywhere is either breaking a law somewhere or refusing a lawful
-sale somewhere. This is the feature that resolves that per event.
-
-Three policies, decided by a table rather than by a model:
-
-| policy | the law says | on chain |
-|---|---|---|
-| `capped` | resale above a limit is restricted | the hook refuses a staged price above the limit |
-| `monitored` | a law in force establishes no price limit | the hook admits and logs the jurisdiction and the price |
-| `unresolved` | the law could not be established from a primary source | the hook admits, logs `unresolved`, and the event may not claim lawfulness |
-
-Run it:
-
-```bash
-python3 tools/region_harness.py --help
-python3 tools/region_harness.py market_swarm/example-run.json --on-date 2026-12-01 --check     # resolve, write nothing
-python3 tools/region_harness.py market_swarm/example-run.json --on-date 2026-12-01 --out tmp/run.json --run --dry-run
-python3 -c "from ticketpath.core import region_caps as r; print(r.describe(r.resolve(['AU-NSW'], on_date='2026-12-01')))"
-python3 -m unittest tests.test_region_caps tests.test_region_caps_table tests.test_event_jurisdiction tests.test_region_harness -q
-```
-
-`tools/region_harness.py` takes a draft run config that may name a `jurisdiction` per event and
-writes the config the swarm's loader already accepts, plus a `.law.json` sidecar carrying the table
-version, its SHA-256 and the reason for each event. **[Corrected 2026-11-08T08:15Z: the two commands
-above used to name `draft-run.json`, which exists nowhere in the tree and which nothing creates. They
-now name `market_swarm/example-run.json`, the file the swarm ships, which resolves cleanly and says
-`no_jurisdiction_declared` for both its events; a draft that wants a jurisdiction adds
-`"jurisdiction": "CA-ON"` (or any table code) inside an event object. Both commands were re-run at
-08:09Z, exit 0.]** A hand-typed cap that is looser than the law is
-**refused**, naming both ceilings; an unresolved jurisdiction is refused unless the operator passes
-`--accept-unresolved`, which records that the law was not established.
-
-The table is `ticketpath/data/region-caps.json` (version `2026-11-08.1`, 82 jurisdiction codes, 84
-instruments), the resolver is `ticketpath/core/region_caps.py`, the design is
-`records/REGION-CAPS-DESIGN.md`, and the law behind every row is
-`records/findings/33-a-region-cap-law.md` with its five cluster records beside it. Each row carries its
-instrument, a quoted provision, its dates, its coverage and a confidence grade; `announced_policy` is
-a first-class kind and never binds.
-
-**Verified on a local validator, not on devnet.** `programs/region_gate/` is a separate, local-only
-crate (the proven devnet program `5EJ1GU3M4vn…` is untouched and is not this feature's program).
-`python3 tools/region_local_proof.py` boots a `solana-test-validator`, deploys it, and runs eleven
-legs as real transactions: the capped ceiling admitted, ceiling + 1 refused `6010`, monitored at 3×
-face admitted and logged, unresolved admitted and labelled, a tightening 1000 → 500 landing and then
-binding, an upward tighten refused `6042`, monitored → capped allowed, a non-authority refused `6040`,
-and a two-ticket transfer refused `6008`. Result: **PASS 11/11**, evidence in
-`records/findings/34-region-caps-build.md`.
-
-**The limits, stated where they can be read.** The table is not a survey: most jurisdictions are
-`unresolved` because no primary source was read, and an unresolved event is the platform declining to
-claim a rule it cannot show. A fixed money cap (Florida's $1 margin) is never converted into basis
-points without an FX snapshot with a source and a time; without one it stays unresolved. The chain
-sees the ticket it is asked to move and not a side payment outside the product (D9). And a law that
-repeals a cap does not loosen an issued ticket: the chain can only tighten, because it cannot tell a
-repeal from an organiser's convenience.
-
-## Deployed on devnet, in part
-
-The chain work is one invariant:
-
-> A ticket cannot move without the program recording the hop, and the program will not
-> record a price above the organizer's cap.
-
-A transfer the program never sees is missing data, not just a policy breach, so the value
-here is the integrity of the engine's own input, not a marketplace. The design is a Token-2022
-mint with a transfer hook, plus a per-ticket record the program owns and appends to on every
-custody move. Layout, instruction set, cap check, error codes and threat model are in
-`docs/ON-CHAIN-DESIGN.md`, sections 2 and 3.
-
-**What is deployed, and what that proves.** `programs/cap_hook/` is a native Rust program with
-no Anchor in it, and it is on devnet at `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, with a
-Token-2022 mint at `6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV` carrying the transfer hook,
-a metadata pointer and token metadata. At face 1.0 SOL and cap 2,500 bps, a transfer at
-1,250,000,000 lamports landed and one at 1,250,000,001 was refused by the cluster with
-`6010`, as a failed transaction carrying its own signature and block time. The three
-signatures, the memo, the slots and the refusal's error are recorded in
-`records/devnet-artefacts.json`, and the console renders them when the page is on the exact
-state that artefact commits to (see below). What the program does **not** do is written out in
-`programs/cap_hook/README.md`: no hop record, no destination check, no verified-wallet gate, no
-escrow, no nullifier. So the sentence the deployment earns is the second half of the invariant
-above, and not the first.
-
-**What the devnet pair does not prove, stated 2026-11-08T07:45Z.** v1's `SetPendingPrice` and
-`SetStatus` take no signer, and an immutable deploy has no upgrade path, so on the deployed program any
-keypair can stage a price and flip a ticket's status. The devnet refusals prove the price predicate on
-prices the deploy key chose; they do not prove that a stranger was kept from choosing them. v2 closes
-the hole with `6026` and the sealed artefact re-runs the reviewer's exploit as two refused
-transactions, and v2 has run only on a local validator. `docs/ON-CHAIN-DESIGN.md` §0 states this in
-the same section as the instruction table.
-
-**The memo program id is a property of the cluster, not a constant.** The memo that commits a
-quote runs on devnet at `Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH`, measured from the proven
-transaction on 2026-11-08, while the `solana` CLI's own memo program, which this repository names
-for mainnet-beta, is `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr`. `chain_client.MEMO_PROGRAMS`
-maps each cluster to its id, an unmeasured cluster raises rather than borrowing a neighbour's id,
-and the publisher reads the id back out of the transaction it landed and refuses a mismatch.
-`records/findings/40-memo-program-id.md` is the measurement, with the quoted account keys.
-
-**[CORRECTED 2026-11-08T08:30Z. The sentence above names `MemoSq4gq…` for mainnet-beta and says the
-table maps each cluster. Both halves are now false against the code, and this note is the correction
-rather than an edit, so the earlier claim stays legible. `mainnet-beta` is not in `MEMO_PROGRAMS`:
-nothing was ever read off mainnet, and the installed CLI was later measured building a
-`Memo4c2p…` memo, which contradicts the row that used to sit there. `testnet` is not in the table
-either. Both clusters are refused, and the two surfaces refuse differently: `memo_program_id` raises
-`UnknownCluster` naming the clusters the table covers, and the console answers
-`chain.memoProgram: null` for the server's cluster instead of failing the page. The two literals stay
-in `chain_client.py` because this file and `docs/ON-CHAIN-DESIGN.md` quote them and the `ids` gate
-compares quoted ids against them.]**
-
-The cap is checked inside the hook, against a price staged into the program's own record
-account by `SetPendingPrice` immediately before the transfer, and the transfer and the stage are
-sent in one transaction so the staging cannot be clobbered between the two. That is a departure
-from `docs/ON-CHAIN-DESIGN.md` §3.9, which puts the check in a `transfer_ticket` instruction;
-the program's README states the departure and why it is the smallest arrangement that can still
-refuse. A direct `spl-token transfer` of a hooked ticket therefore fails inside the hook rather
-than bypassing the cap.
-
-**`/health` still reports `programDeployed: false`, `programId: null`, `rpcEnabled: false`, and
-that is not in tension with the deployment.** The chain adapter opens no socket: it reports what
-it has asked the cluster, which is nothing. The `[DEVNET]` block on the console is rendered from
-`records/devnet-artefacts.json` after recomputing the quote hash from the fields on the page, and
-it says in its own sentence that it is recorded rather than independently re-read. A live read
-would need `TICKETPATH_RPC_ENABLED=1`. **[This paragraph replaces "No program is deployed on any
-cluster. There is no mint, no transaction and no signature in this repository", 2026-11-08T03:45Z.
-Verified by reading the cluster: `getAccountInfo` on the program id returns
-`executable: true`, and `getTransaction` on the refused leg returns
-`InstructionError [0, Custom 6010]` with the program's own log line.]**
-
-**[Corrected 2026-11-08T07:45Z. The last sentence above is wrong: `TICKETPATH_RPC_ENABLED=1` does not
-cause a live read, because `rpc_adapter` opens no socket on any flag, and the page now prints "A live
-re-read is not implemented in this build, so no flag on this server makes the page read the chain."
-The flag is still configuration the adapter reports; it is not a switch. And the `[DEVNET]` block no
-longer renders only "when the page is on the exact state that artefact commits to": it renders the
-recorded block at every state the file verifies, and says separately whether the quote on screen is
-the recorded quote.]**
-
-**The toolchain is installed here.** Agave CLI 4.3.2, `spl-token` 5.6.1 and `cargo-build-sbf`
-4.4.0 under one install root and rustc 1.99.1 under the usual cargo home, all reachable from a
-login shell (`bash -lc 'which solana spl-token cargo-build-sbf rustc cargo'` resolves all five).
-A non-login shell still prints nothing for them, which is why an earlier reading of this file said
-there was no toolchain. **[Corrected 2026-11-08T03:45Z; versions measured this pass.]**
-`ticketpath/onchain/sim.py`, the Python mirror of the same state machine with the same error
-codes, is still what the console renders under a `[SIMULATED]` label: it proves the arithmetic and
-the ordering, and nothing about any cluster.
-
-`tools/devnet_publish.py` is how the deployment is made and remade. Nine steps, each of which
-reads the cluster before it writes, so a run that dies halfway is finished by running it again: the
-mint's address is written down before the transaction that creates it, a transfer's signature is
-recorded the instant it is sent, a rerun asks the cluster rather than resending, and transport
-failures are retried four times before the run stops and says so. `records/findings/28` is the
-account of that fix and `tests/test_devnet_publish.py` is its test, 81 tests over the publisher,
-the resume file and the instruction bytes. `records/devnet-progress.json` is the resume file: git
-ignored, mode 0600, public identifiers and integers only. `docs/ON-CHAIN-DESIGN.md` section 6 is the
-remaining runbook for the parts that are design rather than code.
-
-**[Corrected 2026-11-08T08:15Z: the count above read 56. Measured at 08:07Z,
-`python3 -m unittest tests.test_devnet_publish` is `Ran 81 tests`, `OK`; 56 was the 03:45Z figure and
-is kept as the sentence's history.]**
-
-One stale pointer, fixed: `/health`'s `chain.designDoc` named `docs/ON-CHAIN-FOR-LAPTOP.md`,
-the superseded one-page pointer. It now names `docs/ON-CHAIN-DESIGN.md`, the design.
-`records/ON-CHAIN-RECONCILIATION.md` records why, and `records/REPO-CONSISTENCY.md` records the
-change and the command that shows it. **A server started before that change keeps the old value
-in memory**, so restart it before reading `/health` and expecting the new one.
-
-## What this data is
-
-`fixtures/synthetic_store.json` is a generated fixture, not ticket data. It is produced by
-`tools/build_fixture_store.py` from event specifications in that same file, with seed
-`20261107`. Every payload the backend serves from it carries a `dataSource` label saying it
-is synthetic, and the console prints that label in a banner at the top of the page.
-
-It is deliberately over-sampled for demonstration. On the five events that have resales, 62%
-to 77% of tickets resold at least once, against roughly 5.1% in the real market: twelve to
-fifteen times the real rate, because a resale record has to contain resales for a resale
-computation to be shown on it. Each event's description states that ratio in its own text,
-computed from its own rows at build time.
-
-Do not conclude any of the following:
-
-- That any markup, price or distribution here is evidence about tickets. Markups were drawn
-  from rules per regime so three cases could be shown; nothing was fitted or calibrated.
-- That the series is a price path. The draws are independent of time to event, so there is no
-  decline and no end game uptick, and a trend read off it is noise.
-- That any event, venue, organizer or city describes something that happened.
-- That any ticket, price or custody row here is on chain. The cap hook is deployed (see
-  "Deployed on devnet, in part"), and every one of the fixture's 147 ledger rows still carries
-  `signature: null` and `slot: null`: no cluster knows any ticket in this repository.
-- That any accuracy figure exists. No model has been fitted; the console's recommendation is a bound
-  with a declared width whose parameters are declared, not estimated from real data.
-
-## How the research is organised
-
-Every conclusion carries an evidence class, A to E: A is direct ticket market evidence, B is
-evidence from a related market, C is mathematical or statistical theory, D is a plausible
-hypothesis with a mechanism and no evidence, E is a speculative opportunity recorded so it
-is not lost. `SIM` marks something established by simulation here under stated assumptions,
-and `UNVALIDATED` marks a claim whose validation needs data the programme does not have.
-Findings are append only, conflicts are recorded rather than resolved quietly, and
-`records/README.md` holds the conventions in full.
-
-One line per record file:
-
-- `README.md` the index: the six records, the evidence classes, the writing rules.
-- `00-data-situation.md` the Phase 0 audit of what data actually exists on this machine.
-- `00-prior-direction-index.md` the earlier direction documents and the decisions they fix.
-- `A-research-ledger.md` every research question, its status, finding, class and sources.
-- `B-mathematical-kb.md` formulations, assumptions, derivations, parameters, failure modes.
-- `C-variable-registry.md` every candidate feature, its mechanism, availability and leakage risk.
-- `D-model-registry.md` every model considered, its data cost, evidence and recommended role.
-- `E-data-source-registry.md` providers, depth, frequency, licence, cost and reliability.
-- `F-decision-log.md` decisions, rejected approaches, conflicts, open and closed questions.
-- `FIXTURE-STORE.md` what the synthetic store contains, what it must not be read as, its invariants.
-- `CONTRACT-MAP.md` the endpoint contract field by field, and what this backend can answer.
-- `CONTRACT-CONFORMANCE.md` the contract as a test that addresses every route over a socket.
-- `CORRECTIONS-APPLIED.md` what an independent verification round found and what changed.
-- `DEMO-PROOF.md` which screens served backend numbers, measured, written at a time when no screenshot existed; there is a headless browser on the build machine now, `docs/SHOTS.md` is the account of it and `tools/shot.py` is the helper that captures a page (`README.md` corrected 2026-11-07T18:45Z, see the pack's §2.5 item five).
-- `FRONTEND-INTEGRATION.md` what the frontend renders and which numbers are ours; partly superseded.
-- `FRONTEND-HONESTY-PATCH.md` the text only patch that makes the frontend say what the data is.
-- `ON-CHAIN-RECONCILIATION.md` why the design document replaced its earlier sibling.
-- `BUILD-SPEC-NIGHT.md` what the overnight build was told to build, module by module.
-- `SUBMISSION-PACK.md` the video script, submission text, field checklist and last hour checks.
-- `findings/` per investigation reports, append only, the primary record the six index (`git ls-files records/findings | wc -l` → 32 tracked, and 42 on disk at 2026-11-08T03:35Z: numbers 20 and 23 to 31 are written and uncommitted. This line said twenty-nine, and twenty-seven before that). **[Corrected 2026-11-08T08:15Z: measured now, `ls records/findings/*.md | wc -l` is 52 on disk and 20 of them are untracked, not 42 and 10. The ten extra entries are the ten-feature and region-cap evidence: `33-a-region-cap-law.md` with its `33-b-region-cap-law-sources/` directory, `34-region-caps-build.md`, `35-live-llm-agents.md`, `36-transfer-fee-on-a-one-unit-ticket.md`, `37-program-v2-review-fixes.md`, `38-region-caps-local-validator.md`, `39-visitor-identity.md`, `40-memo-program-id.md` and `41-deepseek-live-adapter.md`. Eight of the ten features rest on evidence that is not committed.]**
-
-**[Corrected 2026-11-08T11:20Z, after the release merge. Measured on the merged tree:
-`ls records/findings/*.md | wc -l` → 54, `git ls-files records/findings | wc -l` → 57 and
-`git ls-files --others --exclude-standard -- records/findings | wc -l` → 2. The count on disk rose
-by two because this merge brought the artist fee and the flip tax in, as
-`42-artist-fee-at-checkout.md` and `43-flip-tax-at-checkout.md`; they were written as 38 and 39 on the
-other checkout, and those numbers were already taken here by
-`38-region-caps-local-validator.md` and `39-visitor-identity.md`, so the newcomers moved. The
-untracked count fell from 20 to 2 for a reason that is not a loss: the 08:15Z reading was taken
-against `main`, and the eighteen findings it counted as uncommitted are committed on this branch.
-The 57 tracked is 52 tracked finding files plus the five cluster records in
-`33-b-region-cap-law-sources/`, all of them `.md`. Two of the 54 on disk are the untracked pair
-above. Nothing earlier in this line was rewritten.]**
-
-**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. Re-measured, the pair the 11:20Z note calls
-untracked is committed, and the tree reads: `find records/findings -name '*.md' | wc -l` → 59,
-`ls records/findings/*.md | wc -l` → 54, `git ls-files records/findings | wc -l` → 59, and
-`git ls-files -o --exclude-standard records/findings | wc -l` → 0. The 59 tracked is the 54 top-level
-finding files plus the five cluster records in `33-b-region-cap-law-sources/`, and the untracked count
-is 0 because findings 42 and 43 landed in `1c93e91`. The 11:20Z reading was taken at 11:27Z, twelve
-minutes before that commit existed, which is why it sees two files that are now in the tree. The
-54 top-level files on disk is the one number that did not move.]**
-- `STATE-OF-PROJECT.md` the read-only measurement of the tree, the chain and the console, rewritten at 2026-11-08T03:45Z.
-- `BUILD-REPORT-CONSOLE.md` what the console pass built and where it departed from its spec.
-- `FINAL-PROOF.md` the end-to-end proof run: what was executed, what it showed, what it did not.
-- `FINAL-PROOF-2.md` the second proof run: the README's own commands, the live frontend's write check, and the
-  64-state sweep.
-- `DELIVERABLE.md` the Phase 8 integrated specification, 22 sections, assembled at 12:40Z. It was a
-  stub marked NOT WRITTEN YET before that time and is not one after it; `records/README.md` was
-  corrected on 2026-11-07T14:00Z and this line was not (**corrected 2026-11-08T03:45Z**; the
-  correction record is `DELIVERABLE.md` §R2-31).
-- `REPO-CONSISTENCY.md` the consistency pass over this tree: every change, its evidence, and the
-  claims that could not be fixed.
-
-## Layout
-
-```
-ticketpath/    the backend. server.py is the route table and nothing else
-  api/         one module per contract area: events, tickets, analytics, wallets, health
-  core/        pure functions: no network, no clock except an injected now()
-  adapters/    the only paths to the ledger file, Solana RPC and the pricing model seam
-  console/     the server rendered page served at /
-  onchain/     the Python mirror of the state machine, simulated only
-programs/      cap_hook/, the native Rust transfer-hook program that is deployed on devnet; its
-               target/ directory is generated, git-ignored, and never committed
-market_swarm/  a separate package: a bounded agent swarm that trades synthetic tickets through that
-               program on a local validator and writes synthetic-labelled datasets. Imports nothing
-               from ticketpath/ and is imported by nothing in it. See records/findings/31
-tests/         unittest tests over 51 test modules, plus store_arithmetic.py; the run prints the count
-               (`ls tests/test_*.py | wc -l` → 51 at 2026-11-08T11:20Z; this line said 36, which was
-               already short of the 48 the branch's `HEAD` carried before this merge added three
-               proof tests for the artist fee, the flip tax and the v2 publisher)
-fixtures/      synthetic_store.json and the note saying what it is not
-tools/         build_fixture_store.py the deterministic fixture generator, guidance.py the console
-               payload as JSON, devnet_publish.py the idempotent publisher, solana_sign.py the
-               out-of-process signer, public_safety.py the tree check, shot.py the capture helper
-docs/          backend notes, the on-chain design and runbook, the frontend labelling patch
-records/       the six research records, the build and submission packs, findings/, and the devnet
-               artefact the console's chain slot reads
-frontend/      the SeatPass web app: fifteen routes, its own package.json and lock, its own lint,
-               typecheck and test scripts, its own build-copy and render-check tools, and its own
-               records (NOTES.md, VERIFY.md, DECISIONS.md, COVERAGE.md, API_CONTRACT.md)
-```
-
-**Layout corrected 2026-11-08T03:45Z: `programs/` and `market_swarm/` were missing and the test
-module count was 34. Every other line in this block was re-checked against the tree.**
-
-**[Added 2026-11-08: `frontend/` was not in the tree when this block was written; it is the
-import described under *The frontend* and in `records/F-decision-log.md` D19, is 81 files and
-1,097,001 bytes (1.05 MB) staged, and brings its own tooling and records with it.]**
-
-**[Corrected 2026-11-08T11:30Z: the file total moved by one. `git ls-files frontend | wc -l`
-→ 82 and the byte total is 1,097,690, because `frontend/.env.example` (689 bytes) was
-staged by another pass at 11:18Z; this note said 81 files and 1,097,001 bytes. Nothing else
-in the addendum changed.]**
-
-The root also holds `AGENTS.md` and `RESEARCH-PROGRAM.md`, the brief and the research
-standard this work was held to, and `NIGHT-BRIEF.md`, `NIGHT-LOG.md`, `NIGHT-QUEUE.md`, the
-overnight build's working log.
-
-## The frontend
-
-`frontend/` is the SeatPass web app, the surface an attendee or an organizer actually sees:
-fifteen routes under the Next.js 15 App Router, React 19, TypeScript in strict mode, Tailwind 4,
-one design system in `frontend/app/theme.css`, and one data seam in `frontend/lib/api.ts`. No
-component fetches anything. Seven capabilities are false in `frontend/lib/capabilities.ts`
-(purchase, listings, door code, event creation, transfers, refunds, auth), and each renders one
-panel naming what is missing rather than a mock success.
-
-It is a copy of the platform's own frontend checkout, taken file for file from `git ls-files` at
-its last commit: 81 files, 1,097,001 bytes as staged and 1,093,317 as copied, the largest being the
-522,393 byte `package-lock.json` **[corrected 2026-11-08T11:30Z: the index now carries 82 files and
-1,097,690 bytes. `frontend/.env.example`, 689 bytes, was the one tracked file the import left out
-and another pass staged it at 11:18Z, so the paragraph below this one is no longer true of the
-index either. It carries four variable names with empty values and no secret]**. Nothing in it was over 1 MB, so nothing was dropped for size.
-`.env.example` was the one tracked file left out, because the import excluded `.env*` by name;
-every variable it listed is below.
-Where those files came from, and the operator's statement about when they were written, is
-`records/F-decision-log.md` D19. The app's own records travel with it: `frontend/NOTES.md` for the
-decisions, the assumptions and the demo copy that still needs a second pass, `frontend/VERIFY.md`
-for every command and the numbers it printed, `frontend/DECISIONS.md`, `frontend/COVERAGE.md` and
-`frontend/API_CONTRACT.md`.
-
-**Run it**, from the repository root:
-
-```bash
-cd frontend && npm install
-npm run dev                                                  # bundled fixtures
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788 npm run dev    # against this backend
-```
-
-`npm run dev` takes the port Next uses by default. Unset `NEXT_PUBLIC_API_BASE_URL` and the app
-serves the fixtures in `frontend/lib/mock/`, which are synthetic payloads built to render the UI:
-not evidence, and nothing here is estimated from them. Next inlines `NEXT_PUBLIC_*` at build
-time, so a changed value needs a restart. The four it reads:
-
-| Variable | Default | What it does |
-|---|---|---|
-| `NEXT_PUBLIC_API_BASE_URL` | empty | empty or unset serves the bundled fixtures; an origin points the same screens at this backend |
-| `NEXT_PUBLIC_SOLANA_CLUSTER` | `devnet` | cluster the wallet adapter and the explorer links target |
-| `NEXT_PUBLIC_SOLANA_RPC_URL` | the cluster's public endpoint | overrides that endpoint |
-| `NEXT_PUBLIC_PROGRAM_ID` | empty | empty on purpose: the on-chain strip reads "Program not deployed yet" and the copy and explorer controls stay disabled until an address is configured |
-
-**Its checks**, from `frontend/`, none of which write to the tree:
-
-```bash
-npm run typecheck        # tsc --noEmit
-npm run lint             # eslint .
-npm test                 # node --test over lib/**/*.test.ts
-bash tools/greps.sh      # the brief's forbidden-string and colour sweeps
-node tools/contrast.mjs  # every pair the palette uses
-```
-
-Measured on 2026-11-08 from the new path, in a throwaway copy under the system temp dir with
-`node_modules` symlinked to the builder's install: `npm run typecheck` exit 0; `npm run lint`
-exit 0, no warnings; `npm test` → `tests 15, pass 15, fail 0`; `bash tools/greps.sh` →
-`8.5 GREPS: ALL ZERO`; `node tools/contrast.mjs` → `28 pairs, 0 below 4.5:1`. `npm run build` was
-not run here, and `frontend/tools/verify-landing.cjs` needs a browser and a served copy.
-
-**Do not run `next build` in place while anything is serving that checkout's `.next`.** It
-replaces the bundle under the running server. `frontend/tools/build-copy.sh` mirrors the checkout
-into a throwaway directory instead, symlinks `node_modules` into it, and builds or serves there;
-`SEATPASS_BUILD_DIR` moves the copy, `PORT` moves the serve port (3010 by default):
-
-```bash
-cd frontend
-tools/build-copy.sh build     # sync, then next build
-tools/build-copy.sh start     # serve the built copy, foreground
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788 tools/build-copy.sh dev
-```
-
-## How this was built
-
-Most of the code and the documents in this repository were written by AI coding agents, orchestrated by
-the operator: agents wrote the backend, the engine, the console, the test suite and the research records,
-and he set the briefs, checked the claims against the commands that produced them, and made every decision
-that ships. The commit trailers name one of the tools on six of the repository's nineteen commits
-(`git log --format='%(trailers)'`). This is not a claim of solo human authorship and no part of this
-repository should be read as one. No generative model is implemented inside the product: the pricing
-engine is bounded arithmetic with declared parameters, and `/health` reports `fitted: false`.
-
-**[Corrected 2026-11-08T12:00Z, at `HEAD a921ecf`. It is ten of forty: `git rev-list --count HEAD` →
-40 and `git log --format='%(trailers:only,unfold)' | grep -c .` → 10. All ten carry a
-`Co-authored-by` trailer naming `Claude Sonnet 5.5`. The sentence understated the machine involvement,
-which is the direction this file otherwise avoids. The six and the nineteen were read before the
-release merge added the commits. Every commit that carries the trailer is listed by
-`git log --format='%h %(trailers:only,unfold)'`, which is the command to run rather than trusting
-either number.]**
-
-## Licence and status
-
-MIT. The text is in `LICENSE`, and the copyright line names the holder:
-`Copyright (c) 2026 Andrew Radu`.
-
-Status: a local build with one deployed program. The cap hook is on devnet and its boundary is
-proven there by a landed transfer and a refused one, recorded in `records/devnet-artefacts.json`;
-the design's hop record, destination check and verification gate are not built. There is no hosted
-demo and no deploy URL, so the console and the frontend are loopback surfaces. Every price and
-every custodian in this repository comes from a synthetic fixture. The pricing seam is populated by
-a rule-based bounded estimator with no fitted model behind it, and `/health` says so in those words
-(`kind`, `fitted`, `note`). The research records say what is established, what is designed and what
-is still a hypothesis, and `records/DELIVERABLE.md` is the Phase 8 specification with a status per
-section. **[Corrected 2026-11-08T03:45Z: this paragraph read "Nothing is deployed, no program exists
-on any cluster", which the deployment made false. The hosted-demo and no-fitted-model sentences are
-unchanged and still true.]**
+## Repository map
+
+| Path | What |
+|---|---|
+| `ticketpath/` | Python package: backend (`server`), pricing engine, region-cap resolver, console renderer |
+| `programs/cap_hook/` | the Rust Token-2022 transfer-hook program deployed to devnet |
+| `programs/region_gate/` | region-aware cap program, local validator only |
+| `market_swarm/` | trading-agent harness, datasets, flip tax and artist fee modules |
+| `frontend/` | Next.js app and the static demo (`/demo/`) |
+| `fixtures/` | the synthetic event, ticket and ledger store |
+| `tools/` | `tp.py` (CLI and gate), `doc_check.py`, `public_safety.py`, devnet publish and proof scripts |
+| `tests/` | the main test suite |
+| `docs/` | reference docs (`docs/CLI.md`, `docs/BACKEND.md`, `docs/ON-CHAIN-DESIGN.md`, `docs/STATUS-DETAILED.md`, ...) |
+| `records/` | dated research record and evidence: ledger, registries, findings, devnet artefacts. Not rewritten after the fact |
+| `RESEARCH-PROGRAM.md`, `AGENTS.md` | the research brief and the run conventions |
+
+## Verify our claims
+
+- v1 program: https://explorer.solana.com/address/5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva?cluster=devnet
+- v2 program: https://explorer.solana.com/address/Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF?cluster=devnet
+- Accepted at cap (1.25 SOL): https://explorer.solana.com/tx/E5RCrLwWikWCdHSd5MfqEBowXsmLn2n9fwYjnSwn8NhPi9j7weahbuRhgofu8ca8MVXzQUbvPrJqENDLNab7pJf?cluster=devnet
+- Refused, 1 lamport over (`6010`): https://explorer.solana.com/tx/22dqSriig968nx8aA3YaFVt4CErgNbkwvxFtDKn2MWpcCdnA2KQhFYvhwTWZSpP64wzQjoBeMUKEZLRW1e7jKe79?cluster=devnet
+- Ids, slots and block times: `records/devnet-artefacts.json`, `records/onchain-v2-devnet.json`.
+- Docs agree with code: `python3 tools/doc_check.py --root .` (see `docs/DOC-CHECK.md`).
+- Nothing unsafe is published: `python3 tools/public_safety.py check --tracked` (see `docs/PUBLIC-SAFETY.md`).
+- Tests: `python3 tools/tp.py gate`.
+- Evidence classes A to E (the research standard) are defined in `RESEARCH-PROGRAM.md` and `records/README.md`.
+
+## Honest limits and what is next
+
+- All market data is synthetic. No claim of predictive accuracy, willingness-to-pay or revenue
+  uplift is made; those need a real resale ledger, which we do not have.
+- The pricing engine is bounded arithmetic over fixture prices, not a fitted model. With no real
+  listings that never sold, sale probability is specified, not estimated.
+- The chain enforces the cap only. Fee, tax, ban and geo-lock are application policy; a seller
+  can bypass the legs by trading outside the product.
+- The region table is mostly `unresolved`; it is a design with sourced rows for a minority, not a legal survey.
+- Devnet only. No audit, no mainnet deployment.
+- Next: fit the price path and sale hazard on a real ledger; make the over-cap check mandatory on
+  the checkout path; the refund-to-holders pool; deploy the region program to devnet.
+
+## Team and licence
+
+Andrew Radu and Veer Srivastava, MLH Solana Hackathon 2026. MIT licence, see `LICENSE`.

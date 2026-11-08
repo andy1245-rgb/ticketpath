@@ -239,6 +239,9 @@ KNOWN_PROGRAM_IDS = frozenset(
         "So11111111111111111111111111111111111111112",
         "MetaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s",
         "11111111111111111111111111111111",
+        # This project's v2 cap program, deployed on devnet (records/onchain-v2-devnet.json,
+        # deployAddress). The artefact above records only v1, so v2 is listed here to be quotable.
+        "Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF",
     }
 )
 
