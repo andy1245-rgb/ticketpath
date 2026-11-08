@@ -1,24 +1,25 @@
 # Push plan
 
-How `release/prep` would land on `main`, what to run before it does, and the two ways to send it.
-Nothing in this document has been done. Nothing has been pushed by any pass on this branch.
+How `release/prep` lands on `main`, what to run before it does, and the two steps that send it.
+Step 1 has been done: the first 11 commits are published on `origin/main` as `4430fb1`. The commits
+after it are step 2, and Veer pushes them from his own terminal.
 
 ## The two commits
 
 | | |
 |---|---|
-| base | `33d95b3` — `origin/main`, and the last commit on the public repository |
+| base | `33d95b3` — the base this branch was cut from, and the commit `origin/main` pointed at then. **`origin/main` is now `4430fb1`**: the first 11 commits of this branch, pushed 2026-11-08 at 13:07Z by the deploy key, as Andrew's half |
 | release tip | `eaf4ab7` — everything on this branch except this file **[corrected 2026-11-08T12:00Z: except four files, not one. `git diff --name-status eaf4ab7..a921ecf` → `M README.md`, `M records/F-decision-log.md`, `A records/PUSH-PLAN.md`, `M records/STATE-OF-PROJECT.md`. The commit that carries this document also leaves `README.md`, `records/F-decision-log.md` and `records/STATE-OF-PROJECT.md` in an earlier state than the branch last left them, so pushing `eaf4ab7` directly lands three documents short of the corrections made with this one. Push `release/prep:main` and not the SHA, or push the SHA only if those three files are known to be acceptable in their `eaf4ab7` form. The same test applies to any later commit: `git rev-parse HEAD` at the moment of the push is the only tip that carries everything, and `eaf4ab7` is four files behind `a921ecf` before any commit after it is counted.]** |
 | branch tip | the last commit on the branch. `git rev-parse release/prep` gives its id, and two commits after `a921ecf` carry the independent review's corrections. No document names the tip's own id, because a commit cannot contain its own hash |
 | branch | `release/prep`, in the worktree `../ticketPricing-release` |
-| commits between | 23, of which 11 were made by the release-prep pass, 7 by the integration pass that wrote this file, 2 by the review that pass commissioned, 1 that re-points the commit ids after the committer rewrite below, and 2 redaction commits written after this document. **[Measured 2026-11-08T12:40Z: `git rev-list --count 33d95b3..HEAD` → 21. Re-measured at the tip that carries this line: → 23.]** |
-| authors | 12 by `andy1245-rgb <72272191+andy1245-rgb@users.noreply.github.com>`, 11 by `VeerCodes <71789544+VeerCodes@users.noreply.github.com>`. **[`git log --format='%an' 33d95b3..HEAD | sort | uniq -c` → `12 andy1245-rgb`, `11 VeerCodes`.]** |
-| committer on every one | **the same person as the author, on all 23.** `git log --format='%ae|%ce' 33d95b3..HEAD | awk -F'|' '$1!=$2'` prints nothing. This was not true when this document was first written: the eleven commits the release-prep pass made carried the author's name but the repository default `t@example.invalid` as the committer email, and the integration pass's own nine carried both correctly. The eleven were rewritten by `git filter-branch --env-filter`, which preserves every tree, message, author and date byte for byte and changes only the committer field. **[Measured 2026-11-08T12:39Z, after the rewrite: 0 commits whose committer email differs from the author's.]** |
+| commits between | 24, of which 11 were made by the release-prep pass, 7 by the integration pass that wrote this file, 2 by the review that pass commissioned, 1 that re-points the commit ids after the committer rewrite below, 2 redaction commits written after this document, and 1 that corrects this document once the first half was published. **[Measured 2026-11-08T12:40Z: `git rev-list --count 33d95b3..HEAD` → 21. Re-measured at the tip that carries this line: `git rev-list --count 33d95b3..HEAD` → 24, of which 11 are the ones `4430fb1` names and `git rev-list --count 4430fb1..HEAD` → 13 are step 2.]** |
+| authors | 12 by `andy1245-rgb <72272191+andy1245-rgb@users.noreply.github.com>`, 12 by `VeerCodes <71789544+VeerCodes@users.noreply.github.com>`. **[`git log --format='%an' 33d95b3..HEAD | sort | uniq -c` → `12 andy1245-rgb`, `12 VeerCodes`. Split by half: `33d95b3..4430fb1` is 6 `andy1245-rgb` and 5 `VeerCodes`, which is what is published; `4430fb1..HEAD` is the mirror of it, 6 `andy1245-rgb` and 7 `VeerCodes`, which is what step 2 carries.]** |
+| committer on every one | **the same person as the author, on all 24.** `git log --format='%ae|%ce' 33d95b3..HEAD | awk -F'|' '$1!=$2'` prints nothing. This was not true when this document was first written: the eleven commits the release-prep pass made carried the author's name but the repository default `t@example.invalid` as the committer email, and the integration pass's own nine carried both correctly. The eleven were rewritten by `git filter-branch --env-filter`, which preserves every tree, message, author and date byte for byte and changes only the committer field. **[Measured 2026-11-08T12:39Z, after the rewrite: 0 commits whose committer email differs from the author's.]** |
 | what the rewrite cost | every commit id changed, so every document citing one had to be re-pointed: **95 citations across 9 files**, done in one commit whose message carries the whole old-to-new map so each substitution can be checked against `git log`. No old id survives: `git grep` for any of them returns nothing. |
 | the old branch | kept on the local ref `pre-replay-wip` at `f584327`, so the pre-rewrite history is one `git branch -f` away until it is deleted. It was never pushed, so nothing public was rewritten. |
 
-The branch is a straight descendant of `33d95b3`; `main` has not moved. A push is therefore a
-fast-forward and creates no merge commit.
+The branch is a straight descendant of `33d95b3`, and `origin/main` has moved *along* it, to
+`4430fb1`. What is left is still a fast-forward from `4430fb1`, so step 2 creates no merge commit.
 
 ## What each commit is, on its own
 
@@ -59,26 +60,35 @@ is not automatically a defect, but it is a question to answer before pushing, no
 
 ```bash
 git status --short                                          # empty
-git log --oneline 33d95b3..HEAD | wc -l                      # 23
+git log --oneline 33d95b3..HEAD | wc -l                      # 24
 python3 -m unittest discover -s tests                        # Ran 1251 tests, OK (skipped=27)
 python3 -m unittest discover -s market_swarm/tests           # Ran 771 tests, OK (skipped=2)
 python3 tools/tp.py gate --quick                             # gate ok, doc-check=0 violation(s)
 python3 tools/doc_check.py --root .                          # clean, 7 check(s), 24 allowed absences
 python3 tools/public_safety.py check --tracked               # clean, tracked tree, 394 file(s) at HEAD
 git ls-files | wc -l                                         # 394 at HEAD, 393 at eaf4ab7
-python3 tools/public_safety.py check --range origin/main..HEAD   # clean over every commit's files
+python3 tools/public_safety.py check --range origin/main..HEAD   # clean; reads only the 13 commits after 4430fb1
 ```
 
 `check --range` is the one the scheduled push gate runs, and it reads the commits ahead of
 `origin/main` rather than the tree. Run it last, because it is the last thing that will refuse.
 
+**The range reading no longer covers the whole branch.** Since step 1, `origin/main` is `4430fb1`,
+so `origin/main..HEAD` is the 13 commits after it and the 11 already published are not read at all.
+The whole-branch form is `check --range 33d95b3..HEAD`; run that one when the question is what the
+branch contains rather than what is still to be sent. Every reading in this section that counts from
+`33d95b3` is a whole-branch reading: counted from the base, not from `origin/main`, so it moves when
+the branch grows and not when `main` does.
+
 **[Added 2026-11-08, at `HEAD 501c8ae`: the readings above are the branch as handed over at that tip,
 and one redaction commit -- sibling-project names, a hostname and process ids taken out of two findings
--- sits on top of it, so at that tip `git log --oneline 33d95b3..HEAD | wc -l` is 22, the author split
-is 11 `andy1245-rgb` and 11 `VeerCodes`, and the committer check still prints nothing.]**
+-- sits on top of it, so at that tip the whole-branch reading `git log --oneline 33d95b3..HEAD | wc -l`
+is 22, the author split is 11 `andy1245-rgb` and 11 `VeerCodes`, and the committer check still
+prints nothing.]**
 
-**[Measured at the tip that carries this line: `git rev-list --count 33d95b3..HEAD` → 23, and
-`git log --format='%an' 33d95b3..HEAD | sort | uniq -c` → `12 andy1245-rgb`, `11 VeerCodes`. The two
+**[Measured at the tip that carries this line, as whole-branch readings from `33d95b3`:
+`git rev-list --count 33d95b3..HEAD` → 24, and
+`git log --format='%an' 33d95b3..HEAD | sort | uniq -c` → `12 andy1245-rgb`, `12 VeerCodes`. The two
 commits added since `501c8ae` are both redactions: `7fef7a4`, which took sibling-project names, a
 hostname and process ids out of two findings, and one that takes another user home directory out of
 `records/findings/15-visionhelper.md`, a handover-note citation out of
@@ -144,37 +154,42 @@ at `4430fb1` and the tip reads 6, and the two named checks fire on 35 violations
 the tip. The clone at the tip passes all three: tests `Ran 1251 tests`, `OK (skipped=31)`;
 `doc_check: clean, 7 check(s)`; `public_safety: clean, tracked tree, 394 file(s)`.]**
 
-## Step 1: the deploy key
+## Step 1: the deploy key — done
 
-The remote named `origin` is already configured with the ssh form and the deploy key this machine
-holds, so the command is the whole command:
+Step 1 happened on 2026-11-08 at 13:07Z. The deploy key that `origin` already holds pushed
+`release/prep:main`, and the first 11 commits are now `4430fb1` on
+`git@github.com:andy1245-rgb/ticketpath.git`. That is Andrew's half, it is public, and it is not
+repeated.
+
+The command that sent it, kept so the two halves can be named together:
 
 ```bash
 git push origin release/prep:main
 ```
 
 `release/prep:main` is deliberate: it sends the branch's commits to `main` and leaves the remote
-branch `release/prep` uncreated. If you would rather the remote kept a branch, drop the `:` half
-and push `release/prep` on its own, then open a pull request.
+branch `release/prep` uncreated. Do not re-run it. There is nothing left for it to carry, so it would
+answer `Everything up-to-date` and move nothing.
 
-If `main` has moved since `33d95b3`, this push is refused as non-fast-forward. That refusal is
-correct. Merge `origin/main` into `release/prep` and push again; do not force.
+## Step 2: HTTPS, with the credential prompt — Veer's half
 
-## Step 2: HTTPS, with the credential prompt
-
-For a push from an account other than the one the deploy key belongs to. This is the form to hand
-to Veer, because it asks for the credential rather than assuming a key on the machine:
+Step 2 is the commits after `4430fb1`, and Veer runs it from his own terminal. The exact command,
+with the credential helper turned off so that the prompt is the only source of the credential:
 
 ```bash
-git push https://github.com/andy1245-rgb/ticketpath.git release/prep:main
+git -c credential.helper= push https://github.com/andy1245-rgb/ticketpath.git release/prep:main
 ```
 
-It prompts twice: `Username` is the GitHub account name, and `Password` is a personal access token
-with write access to this repository, not the account password. A token pasted at that prompt
-stays out of the shell history and out of this repository. Nothing in this tree needs to hold it.
+It prompts twice. `Username` is `VeerCodes`. `Password` is a classic personal access token with
+repository scope on `andy1245-rgb/ticketpath`, typed at the prompt. The token is never in the
+command, never in the shell history, never in a file in this tree. Nothing here needs to hold it.
 
-**Only one of the two steps runs, not both.** They send the same commits to the same branch. If
-step 1 has already landed, step 2 answers `Everything up-to-date` and changes nothing.
+**The two steps do not send the same commits.** Step 1 sent the 11 that `4430fb1` names. Step 2 sends
+the ones after it: `git rev-list --count 4430fb1..HEAD` → 13 at this tip. Step 2 is the push that
+moves `main` to the branch tip.
+
+If `main` has moved again since `4430fb1`, step 2 is refused as non-fast-forward. That refusal is
+correct. Merge `origin/main` into `release/prep` and push again; do not force.
 
 ## What must not happen during either step
 
