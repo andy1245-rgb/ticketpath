@@ -5,6 +5,29 @@ no test result is claimed. **Written:** 2026-11-07. **Scope:** the on-chain anti
 invariant, the accounts and instructions that carry it, the threat model, and the runbook the
 operator runs on a machine that has Agave.
 
+**[Status corrected 2026-11-08T07:45Z: "No program is deployed" is false of the project. A program is
+deployed on devnet at `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva` and proven there, and a second
+program has run on a local validator; §0 is what the source implements and the block below lists what
+stayed design. The sentence is kept because it was the status when the document was written.]**
+
+> **[CORRECTED 2026-11-08T03:45Z. The first sentence above is now true of this document and false
+> of the project, so read it with this block. `programs/cap_hook/` implements §1.3, §3.9 and §3.10's
+> cap check as a native Rust transfer hook, and it is deployed on devnet at
+> `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, with a Token-2022 mint at
+> `6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV` carrying the hook, a metadata pointer and token
+> metadata. At face 1.0 SOL and cap 2,500 bps a transfer at 1,250,000,000 lamports landed and one at
+> 1,250,000,001 was refused by the cluster with `6010`, both legs carrying their own signature and
+> block time; the whole record is `records/devnet-artefacts.json`, re-read from the cluster on
+> 2026-11-08. What stays design-only is everything else in §2 and §3: `EventPolicy`, `TierPolicy`,
+> `HopRecord`, the destination check, the verified-wallet gate, `redeem` and `revoke`.
+> `programs/cap_hook/README.md` is the authoritative list of what the deployed program does not do,
+> and it is shorter than §3 reads. §6's steps 0 to 3 are corrected below to the paths and commands
+> the tooling in this repository actually uses. §10 is left exactly as written: it is the record of
+> what could not be checked from this machine on 2026-11-07, and three of its rows — the toolchain,
+> the deploy and the boundary pair — were settled afterwards by `records/findings/18`,
+> `records/findings/21` and the devnet artefact. Read §10 as a dated list, not as the current
+> boundary.]**
+
 **Evidence discipline used throughout this file.** Every statement is one of four kinds, and
 the kind is visible in the sentence:
 
@@ -37,6 +60,87 @@ corpus claimed a verified devnet spike whose mints and signatures now return `nu
 local ledger is gone. So no mechanism fact below is presented as having been executed. Where a
 behaviour is only asserted by that reading, it is marked **UNVERIFIED-FROM-THIS-MACHINE** and
 §6 gives the command that would settle it.
+
+---
+
+## 0. Implemented today, and where the design stops
+
+**Written 2026-11-08. This section is a claim about the code, not about the design.** It reads
+`programs/cap_hook/src/` and states what that source actually has. `tools/doc_check.py` check 4
+compares the table below with the source both ways, so an error number, an instruction tag or a seed
+literal that the program has and the table lacks is a failing check, and so is a row the program no
+longer has. Section 1 onward is the design; where a design sentence and this table disagree, the
+table is the truth about the tree and the design sentence is a statement about intent.
+
+**Two programs, two clusters, and they are not interchangeable.** v1 is deployed on devnet at
+`5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva` and is frozen evidence: no upgrade, no re-sign, no
+edit (D13). v2 is a different program id, `CTEnej2b5cgJ7uQ185k7yWZChe8GasAgPYCc4BHFB67w`, and has
+only ever run on a local `solana-test-validator`; its record is `records/onchain-v2.local.json`,
+which is git-ignored, and it is not evidence about any public cluster. The source implements the v2
+instruction set: seven tags where v1 had four, the floor and the jurisdiction and policy bytes, and
+the hold clock. A devnet reader is reading v1's deployed bytes, which do not have tags 4 to 6.
+
+| kind | name | value | where |
+|---|---|---|---|
+| error | `AmountNotOne` | 6008 | `execute`, `amount != 1`; a hook is handed a transfer amount and no price |
+| error | `TransferNotStaged` | 6009 | `execute`, `pending_price_lamports == 0`: there is no price to police |
+| error | `CapExceeded` | 6010 | `execute`, staged price above `face * (10_000 + cap_bps) / 10_000`, `policy == 0` only |
+| error | `TicketNotValid` | 6013 | `execute`, `status != 1` |
+| error | `WrongExtraAccount` | 6020 | any instruction handed a PDA that is not the one it derives; the design spells the same predicate `E_NOT_A_TICKET` |
+| error | `BelowFloor` | 6021 | `execute`, `band_low_lamports > 0` and the staged price below it, `policy == 0` only |
+| error | `BandUnsatisfiable` | 6022 | `InitializeRecord` with a floor above the ceiling; `PublishBand` and `LogForecast` with `low > high` |
+| error | `PolicyInvalid` | 6023 | `InitializeRecord`, `policy` neither 0 (capped) nor 1 (monitored) |
+| error | `ForecastExists` | 6024 | `LogForecast`, the `["forecast", mint, as_of_unix]` account already exists. Immutability, not a race |
+| error | `AlreadyScored` | 6025 | `ScoreForecast`, the `["score", forecast]` account already exists |
+| error | `NotAuthority` | 6026 | a signer that is not the key the write requires: tags 2, 3, 4 and 5 need the record's `authority`, tag 1 needs the **mint's authority**, and tag 6 needs the **forecast's `authority`** |
+| error | `RebateNotDue` | 6027 | declared for `ClaimRebate`, and **no instruction raises it**: tag 7 is not implemented, because feature 7 is blocked (`records/findings/36-transfer-fee-on-a-one-unit-ticket.md`) |
+| error | `RebateUnavailable` | 6028 | declared for `ClaimRebate`, and **no instruction raises it**, for the same reason |
+| error | `ForecastBackdated` | 6029 | `LogForecast`, `as_of_unix` earlier than the clock minus `FORECAST_BACKDATE_TOLERANCE_SECONDS` (300 s). A forecast dated in the future is allowed: that is a pre-registration, not a backdated claim |
+| error | `ScoreBelowWidth` | 6030 | `ScoreForecast`, `interval_score_micro` below `(high - low) * 1_000_000`, which no honest score can be, since the width term is the score's floor |
+| error | `BandTooWide` | 6031 | **`LogForecast` only**: a forecast wider than `MAX_BAND_WIDTH_LAMPORTS`, whose width term could not be stored in the `u64` score field. `PublishBand` does not refuse it, because a band is never scored |
+| error | `BandEmpty` | 6032 | `PublishBand` with `sample_n == 0` and `refused == 0`: a band resting on no observations that is not itself a refusal |
+| error | `AsOfAhead` | 6033 | `PublishBand` with `as_of_slot` above the slot the write lands in: an estimate dated from the future |
+| instruction | `InitializeExtraAccountMetaList` | 0 | signed by the payer; **no argument, the record is derived from the mint**; creates `["extra-account-metas", mint]`, idempotent, and never rewrites a v1 list |
+| instruction | `InitializeRecord` | 1 | signed by the **mint's authority**, which becomes the record's `authority` (`6026` on any other key); the payer pays rent; creates `["record", mint]` with face, cap_bps, band_low, jurisdiction, policy. A second call on an existing record is a **no-op whatever the signer**: the emptiness check returns `Ok(())` before the signer is examined |
+| instruction | `SetPendingPrice` | 2 | signed by the record's `authority` (`6026` on anyone else); writes `pending_price_lamports`, and is a staging scaffold rather than a listing (`programs/cap_hook/README.md`) |
+| instruction | `SetStatus` | 3 | signed by the record's `authority`, for the same reason; writes `status` |
+| instruction | `PublishBand` | 4 | signed by the record's `authority` (`6026`); creates or rewrites `["band", mint]`, which is rewritable on purpose (D14); refuses `6022`, `6032` and `6033` only, because a band is never scored |
+| instruction | `LogForecast` | 5 | signed by the record's `authority` (`6026`); creates `["forecast", mint, as_of_unix]` once, refusing a second write `6024`, a backdated instant `6029` and an unstorable width `6031` |
+| instruction | `ScoreForecast` | 6 | signed by the **forecast's `authority`** (`6026`), the key that logged it; accounts are `[scorer (signer), forecast, score (writable), system program]` and **no record account is passed**; creates `["score", forecast]` once (`6025`), refuses a score below the band's width `6030`, and writes nothing into the forecast |
+| seed | `record_seeds` | record | `["record", mint]`, the per-mint record PDA |
+| seed | `extra_metas_seeds` | extra-account-metas | `["extra-account-metas", mint]`, fixed by the SPL interface |
+| seed | `band_seeds` | band | `["band", mint]`, the public feed's head |
+| seed | `forecast_seeds` | forecast | `["forecast", mint, as_of_unix_le]`, one forecast per mint and instant |
+| seed | `score_seeds` | score | `["score", forecast]`, one score per forecast |
+| seed | `fee_authority_seeds` | fee-authority | `["fee-authority", mint]`, derived and unit-tested; **no implemented instruction uses it**, because tag 7 is blocked |
+| seed | `rebate_pool_seeds` | rebate-pool | `["rebate-pool", mint]`, derived and unit-tested; **no implemented instruction uses it**, for the same reason |
+
+The rebate arithmetic (`rebate_bps`, `rebate_lamports`, `HOLD_FULL_SECONDS` and `REBATE_FEE_BPS`)
+is in `state.rs` and unit-tested. It is a curve, not a feature: there is no instruction that pays it,
+so the flip tax is not built and this table does not list it as one.
+
+**Two facts the table cannot carry, and they narrow what the evidence proves.** Added
+2026-11-08T07:45Z from `records/findings/37-program-v2-review-fixes.md`, which measured both:
+
+> v1's `SetPendingPrice` and `SetStatus` take no signer, so on the deployed devnet program any keypair
+> can stage a price and flip a ticket's status; an immutable deploy has no upgrade path, so that hole
+> is in v1's bytes permanently, and the devnet refusals prove the price predicate on prices the deploy
+> key chose, not that a stranger was kept from choosing them.
+
+> `ScoreForecast` recomputes `covered` from the forecast's own ends and refuses a score below the
+> band's width, but it does not recompute the penalty term: `interval_score_micro` above that floor is
+> the authority's assertion, not a number the chain verified.
+
+The first is measured by re-running the reviewer's own exploit against the patched v2 (proof `g`: two
+`6026` refusals, record bytes unchanged) and by reading v1's source and its landed deploy. The second
+is measured by the live refusals `6030` and by the unit test that `u64::MAX` is still accepted for a
+width of 1. Neither sentence is a defect list: both are limits on what the program can ever prove.
+
+**What this table does not say.** It does not say the program is deployed on a public cluster with
+these seven tags: v1 on devnet is four. It does not say a third party consumes the band feed: no
+program other than this one reads `["band", mint]` today, so the composability claim is unproven
+(feature 8). And it does not say the price predicates run on a monitored record: `policy == 1` skips
+them, on purpose (D16).
 
 ---
 
@@ -138,6 +242,26 @@ program-derived state.**
 **What the three add up to.** A and C are not alternatives; they are the *teeth* and the
 *truth*. B is the natural next step the day the product takes money on-chain, and it is not
 this weekend's job.
+
+**Not a candidate, but a dependency: the quote memo.** The console's commitment to a quote is a
+memo instruction, and the memo program is a third-party program whose id is a property of the
+cluster. On devnet it is `Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH`, measured from the proven
+memo transaction on 2026-11-08 (`records/findings/40-memo-program-id.md`, class A). On mainnet-beta
+this repository names the `solana` CLI's shipped memo program,
+`MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr`, which is class D: the CLI's id, not a measurement
+from mainnet. `testnet` has no measured id, and the client refuses it rather than borrowing one.
+
+> **[CORRECTED 2026-11-08T08:30Z. Three sentences above are stale against the code, and the text is
+> kept because it is what the table said when it was written. (1) The row for `mainnet-beta` left
+> `chain_client.MEMO_PROGRAMS`: no mainnet read was ever made, and the installed CLI was measured
+> writing `Memo4c2p…` rather than `MemoSq4gq…`, so naming the CLI's id for mainnet was a guess the
+> evidence contradicts. Both ids stay as named literals in that file because this document quotes
+> them and the `ids` gate compares against them, but neither is a mapping for mainnet. (2)
+> `testnet` and `mainnet-beta` are both refused, and the surface that refuses is two different
+> surfaces: `memo_program_id(cluster)` raises `UnknownCluster` naming the clusters the table covers,
+> and the console answers `chain.memoProgram: null` for the server's cluster rather than failing the
+> page. (3) `--clone` does not make a local memo comparable to a devnet one, which is corrected at
+> §6's memo step.]**
 
 ### 1.4 The choice
 
@@ -725,7 +849,11 @@ Nothing below blurs the tiers. Tier (a) runs on this machine. Tier (b) exists on
 operator runs the runbook in §6 on a machine with a toolchain. Tier (c) is what a real
 deployment would need and is not attempted this weekend.
 
-### Tier (a): what runs here, with no toolchain, SIMULATED
+### Tier (a): what runs here without a toolchain, SIMULATED
+
+> **[Heading corrected 2026-11-08T03:45Z: it used to read "with no toolchain". There is a toolchain
+> on this machine now (§6 step 0), so what makes this tier simulated is the mirror being Python, not
+> the absence of Agave. The tier itself is unchanged and still proves nothing about any cluster.]**
 
 A Python mirror of the same state machine, same field names, same instruction names, same error
 codes, same integer arithmetic, standard library only. It is **not** a Solana program, it proves
@@ -764,6 +892,21 @@ extra accounts are wired correctly, that the sizes in §2 are the sizes the runt
 of that is tier (b).
 
 ### Tier (b): what a devnet deploy would show, if the operator runs §6
+
+> **[CORRECTED 2026-11-08T03:45Z: the deploy has run, and four of the six items below are now
+> measured on devnet rather than anticipated. Item 1 holds: the program id resolves and
+> `getAccountInfo` reports `executable: true` (owner the BPF upgradeable loader, 36 bytes of account
+> data). Item 2 holds for the extension, not for the CLI: `getAccountInfo` with `encoding:
+> jsonParsed` on the mint returns `decimals 0`, `supply 2` and the `transferHook`, `metadataPointer`
+> and `tokenMetadata` extensions; the executor of this correction did not run `spl-token display`
+> itself. Item 3 is *not* the shape the deployment took: the cap is checked against a staged price in
+> the hook, so the refusal is a failed Token-2022 transfer carrying 6010 rather than 6009, and the
+> runbook's `transfer_ticket` does not exist in the deployed program. Item 4 holds, and it is the
+> strongest one: 1,250,000,000 admitted, 1,250,000,001 refused with `InstructionError [0, Custom
+> 6010]`, each with its own signature, slot and block time, plus the program's own log line naming the
+> price, the face and the cap. Item 5 does not exist — the hop record is not in the program. Item 6,
+> the hookless negative control, is not recorded as having been run. `records/devnet-artefacts.json`
+> is the primary record; `records/STATE-OF-PROJECT.md` §A2 is the re-read.]**
 
 Only after the runbook runs. Nothing in this subsection has happened.
 
@@ -828,11 +971,19 @@ throwaway keypair; nothing here touches mainnet.
 has been executed by the author. Steps 1 to 3 are the ones that need the laptop; from 4 onwards
 everything is verification of what those three produced.
 
+> **[CORRECTED 2026-11-08T03:45Z on the first sentence only. The toolchain was installed here on
+> 2026-11-07 (Agave CLI 4.3.2, `spl-token` 5.6.1, `cargo-build-sbf` 4.4.0, rustc 1.99.1, all on a
+> login shell's `PATH`; `records/findings/18` is the install record), and steps 2 and 3 have since
+> been run by `tools/devnet_publish.py`, which is the supported path and does all three of them.
+> The commands in steps 1 to 3 below are the hand-run equivalents of 2026-11-07 and two of their
+> paths were wrong; each step now carries the corrected form. The step *numbers* are unchanged so
+> that §5 and `records/findings/18` still point at the right step.]**
+
 ### Step 0: confirm what you have
 
 ```bash
 solana --version && spl-token --version && cargo --version && rustc --version
-cargo build-sbf --version
+cargo-build-sbf --version
 ```
 
 **Proves:** which generation of the CLI you are on. `records/00-prior-direction-index.md` §3
@@ -841,8 +992,14 @@ pin `@solana/web3.js` and never install `@solana/kit` alongside it.
 **Verify:** all five print a version. `cargo build-sbf` is what turns Rust into a deployable
 `.so`; if it is missing, Agave is installed without the SBF tools and step 2 will fail.
 
-Install line, if the toolchain is absent (`UNVERIFIED-FROM-THIS-MACHINE`, quoted from the prior
-corpus, not tested here):
+**Run it from a login shell** (`bash -lc`): the install puts its binaries on the profile's `PATH`
+and nowhere else, so a plain non-login shell answers `command not found` for all five even when
+everything is installed. `tools/devnet_publish.py` refuses to start until it can see `solana`,
+`spl-token`, `solana-keygen` and `cargo-build-sbf`, and says exactly that.
+
+Install line, if the toolchain is absent (quoted from the prior corpus at the time it was written;
+the install that ran on this machine used the Agave installer it points at, and
+`records/findings/18` records the versions and the swap file it needed):
 
 ```bash
 sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
@@ -851,41 +1008,95 @@ rustup install stable && rustup default stable
 
 ### Step 1: a funded keypair
 
+**Corrected 2026-11-08T03:45Z.** The publisher reads the path from `TP_DEVNET_KEYPAIR` and
+otherwise defaults to `~/.config/ticketpath-devnet/authority.json`, which is *not* the path this
+step used to name; either works, and the publisher's default is the one its runs have used.
+
 ```bash
-solana-keygen new -o ~/.config/solana/ticketpath-devnet.json
-solana config set --url devnet --keypair ~/.config/solana/ticketpath-devnet.json
-solana address && solana balance
-solana airdrop 2
+solana-keygen new --silent -o ~/.config/ticketpath-devnet/authority.json   # 0700 dir, 0600 file
+export TP_DEVNET_KEYPAIR=~/.config/ticketpath-devnet/authority.json
+python3 tools/devnet_publish.py --dry-run        # prints the plan and the authority's address
 ```
 
 **Proves:** you have a payer and the cluster will talk to you.
-**Verify:** `solana balance` shows the airdrop. The faucet is rate-limited (the corpus records 2
-requests per 8 hours, **UNVERIFIED** here); if it refuses, use a web faucet rather than looping.
+**Verify:** the dry run prints an address and a balance. It needs **2 SOL**.
+
+**`solana airdrop` cannot fund it, and this is measured rather than suspected.** The devnet RPC
+faucet answers error **410**, *the RPC faucet is closed on this cluster*, so the airdrop in the
+older version of this step fails every time and retrying it wastes the only hour you have. Fund it
+once from the web faucet, signing in with the operator's own account: network devnet, the address
+the dry run printed. `tools/devnet_publish.py` refuses to proceed on a zero balance and prints
+those same three steps. **[Corrected 2026-11-08T03:45Z; the 410 and the exact refusal text are in
+`records/findings/21` §2.]**
 
 ### Step 2: build the program
 
+**Corrected 2026-11-08T03:45Z.** The crate is `programs/cap_hook`, not `programs/ticketpath`, the
+binary is `cargo-build-sbf` (a hyphen, and the `build-sbf` subcommand of `cargo` is the other form
+of the same tool), and the artefact is `cap_hook.so`.
+
 ```bash
-cargo build-sbf --manifest-path programs/ticketpath/Cargo.toml --sbf-out-dir target/deploy
-ls -l target/deploy/ticketpath.so
+cd programs/cap_hook
+cargo test --release                       # the cap arithmetic, no cluster
+cargo-build-sbf --sbf-out-dir target/deploy
+ls -l target/deploy/cap_hook.so
 ```
 
 **Proves:** the Rust in §8 is at least syntactically a program that the SBF toolchain accepts. It
 proves nothing about correctness.
-**Verify:** the `.so` exists and is order 10^5 bytes. A build that prints warnings is fine; a
-build that errors is step 2 failing, not step 4 failing.
+**Verify:** the `.so` exists and is order 10^5 bytes.
+**[Measured on this machine 2026-11-07: `cargo test --release` → 4 passed; a clean build 21.84 s;
+`target/deploy/cap_hook.so` 85,784 bytes; peak RSS 4,590 MB, and it ran with `CARGO_BUILD_JOBS=2
+nice -n 10` because the box has 7.9 GB of RAM and 12 GB of swap.]** A build that prints warnings is
+fine; a build that errors is step 2 failing, not step 4 failing.
 
 ### Step 3: deploy
 
+**Corrected 2026-11-08T03:45Z.** This has been done: the program is deployed on devnet at
+`5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`. What follows is the hand-run form, for a fresh
+deploy or a redeploy; the supported path is `python3 tools/devnet_publish.py`, which deploys the
+program, wires the mint, sends the memo, proves the boundary pair and writes the artefact, and
+skips every one of those if the cluster says it is already done.
+
 ```bash
-solana program deploy target/deploy/ticketpath.so
-solana program show <program_id printed above>
+cd programs/cap_hook
+solana program deploy target/deploy/cap_hook.so --program-id target/deploy/cap_hook-keypair.json
+solana program show 5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva
 ```
 
 **Proves:** the program exists on devnet at a real address.
-**Verify:** `program show` prints the authority, the balance and the data length. **Write the id
-down** in the runbook log and in the submission README. **Do not put any address in this
-document until that command has printed it**: there is no placeholder here to replace, on
-purpose, and the submission's README is where a resolving address belongs.
+**Verify:** `program show` prints the authority, the balance and the data length.
+**On the address, which this document deliberately did not hold:** the program id is a property of
+the deploy keypair, not of the crate, so a redeploy from a different keypair is a different program.
+The keypair lives at `programs/cap_hook/target/deploy/cap_hook-keypair.json`, which is git-ignored
+(the whole `target/` directory is) and is the secret that owns the program id. The address belongs
+in `records/devnet-artefacts.json`, which is where the console reads it from, and in
+`programs/cap_hook/README.md`, which points at that record; it does not belong in this design.
+
+**The memo step, and the id it runs under.** The publisher sends the quote memo as its own
+instruction, and the program that instruction invokes differs by cluster. This document names
+devnet's id because that is the cluster every step here uses:
+`Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH`, measured from the proven memo transaction on
+2026-11-08 (`records/findings/40-memo-program-id.md`, class A). Mainnet-beta's is the `solana`
+CLI's shipped memo program `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr`, class D: it is the
+CLI's id and was not measured from mainnet here. The local rehearsal's `--clone` pulls devnet's
+program from `--url <devnet>` so a run compares like with like, and that rehearsal path is
+untested here. `testnet` has no measured id and the code refuses it. `tools/devnet_publish.py`
+reads the id back out of the transaction the cluster landed and fails the run when it does not
+match the table.
+
+> **[CORRECTED 2026-11-08T08:30Z. The `--clone` sentence above is wrong, and it was measured wrong
+> rather than reasoned wrong. `--clone Memo4c2p…` into a local validator leaves that account a
+> program-data stub: the genesis account owns the address and the clone does not replace it, so the
+> runtime refuses the memo with `Program is not deployed` before any transaction lands. `--clone`
+> of the CLI's other id does replace the genesis account, which is why the two ids behave
+> differently and why a clone cannot be described as making a run "compare like with like". What
+> the local path's clone is for is to put devnet's account data where a run can read it; it cannot
+> make it execute. `--account <address> <file>` moves past that and hits the runtime's program
+> cache limit instead, so a local rehearsal cannot complete its memo step with this CLI, and the
+> local publish path still uses `--clone`. Measured four times on four fresh local ledgers, quoted
+> with the refusal and the two account dumps in `records/findings/40-memo-program-id.md`'s second
+> CORRECTION. Mainnet-beta's id is unmeasured and is not in the table.]**
 
 ### Step 4: create an event and two tiers
 
@@ -1100,7 +1311,7 @@ place in the backend.
 | the hop PDA's creating transaction | `LedgerEntry.signature`, `.slot` | `getSignaturesForAddress(hop_pda, limit 1)` |
 | *(not stored)* | `LedgerEntry.markupBps` | computed by `core/markup.py`, never read from chain |
 | `EventPolicy.slug` | `Event.slug`, `Event.id` | the backend's store maps `Event.id` to slug 1:1 |
-| `EventPolicy.cap_enabled` + `cap_bps` | `Event.resalePriceCapBps` | `null` when `cap_enabled == 0` |
+| `EventPolicy.cap_enabled` + `cap_bps` | `Event.resalePriceCapBps` | `null` when `cap_enabled == 0`. **The chain holds the *enforced* ceiling**, so when a law is stricter than the organiser's own cap, the chain's number is the law's and `Event.resalePriceCapBps` reports it; the organiser's configured number is in the additive `enforcedCap.platformCapBps` (§14.3). A mapping that assumed the two are always equal is wrong and this row says so |
 | `EventPolicy.resale_enabled` | `Event.resaleEnabled` | bool |
 | `EventPolicy.requires_verified_wallet` | `Event.requiresVerifiedWallet` | bool |
 | `EventPolicy.ticket_count` | `Event.issuedCount` | integer |
@@ -2046,9 +2257,110 @@ export TICKETPATH_PROGRAM_ID=<PROGRAM_ID>     # the id step 3 printed; never a p
 export TICKETPATH_RPC_ENABLED=1
 ```
 
+**[Corrected 2026-11-08T07:45Z: `TICKETPATH_RPC_ENABLED=1` does not make the console re-read the
+chain. The adapter opens no socket on any flag, and the page now says so in its own sentence ("A live
+re-read is not implemented in this build"). The variable is still read by the adapter's configuration
+and still reports `rpcEnabled`, so the line is kept as the environment a future build would need, not
+as a switch that works today.]**
+
 Two code paths must change in the same pass, and neither is written yet:
 `ticketpath/adapters/rpc_adapter.py` must read the mint account, deserialize its extensions and
 confirm the `TransferHook` program id equals `TICKETPATH_PROGRAM_ID` before returning
 `enforced: true`; and `ticketpath/adapters/ledger_adapter.py` needs the `getProgramAccounts` read
 over `HopRecord` PDAs that §6 step 11 walks by hand. Until both exist, the honest values remain
 `transferRestricted: false` and null provenance, which is what the backend returns today (§7.4).
+
+---
+
+## 14. The region-aware policy layer (2026-11-08)
+
+**What this section is.** The design in §1-§13 has one cap per ticket record, a number an organiser
+sets. That is the wrong shape once the same platform sells into jurisdictions whose law differs.
+`records/F-decision-log.md` Q4 asked the question, and **D11 decides the direction** for this
+region-cap work; the mapping from a jurisdiction to a policy is **not** built into `cap_hook`, which
+records the code and does not interpret it (D16), and the record's `[u8; 2]` can name a nation, not a
+subdivision, so any reconciliation is nation-level only. This section records the on-chain half of
+D11's answer. The full design is `records/REGION-CAPS-DESIGN.md`; the law
+behind every row is `records/findings/33-a-region-cap-law.md`.
+
+### 14.1 The record, and the one instruction §3.12 does not have
+
+`programs/region_gate/` is a **separate, local-validator-only crate, and it is parked**: built,
+compiled once, not deployed, not in the transaction path, kept in the tree as the design record of
+where the check could move if the table ever has to be enforced by something the platform cannot
+rewrite (`programs/region_gate/README.md`). It is not `cap_hook`, and the proven devnet program
+`5EJ1GU3M4vn…` is untouched by it. Its record is §2's record with three fields added:
+
+```
+base_lamports: u64        // the cap BASE, not necessarily the tier face (§14.2)
+jurisdiction: [u8; 2]     // the binding nation, ISO-3166-1 alpha-2; ZZ = unresolved
+                          // two bytes cannot hold CA-ON or AU-NSW: this field is nation-level
+policy: u8                // 0 capped, 1 monitored, 2 unresolved
+law_version: u32          // the rules-table generation the policy was stamped from
+authority: [u8; 32]       // the only signer that may stage a price, change status or tighten
+```
+
+and one instruction, `TightenPolicy { cap_bps, jurisdiction, law_version }`, which is the only way a
+policy may change after a ticket is issued. It is **monotone**: it may lower a cap, and it may move
+`monitored`/`unresolved` to `capped`; it refuses to raise a cap or to remove one, with `6042`. The
+reason is §2.1's: the chain cannot tell a repealed law from an organiser who raises a cap, sells, and
+lowers it again. A tightening is a legal obligation and is representable; a loosening is not applied
+to an issued ticket, and the event record carries the off-chain `relaxed_at`/`relaxed_to` instead.
+
+`policy = 2` (`unresolved`) exists so that "we could not establish the law" is a distinct state on
+the chain from "the law does not cap". Both admit any staged price, and only one of them permits the
+platform to say resale is lawful there. The v2 program in `programs/cap_hook/` implements
+`jurisdiction` and `policy` in its source and has run only on a local validator: it accepts `0` and
+`1` and refuses `2` with `6023`, and its `ZZ` means "unspecified". Adding `2` is additive and is
+what a merge would carry over; until then the parked `programs/region_gate/` is the only program
+that assigns it.
+
+### 14.2 The base is part of the law
+
+The predicate is unchanged from §3.10: `price * 10_000 <= base * (10_000 + cap_bps)`, in `u128`,
+no division, inclusive at the cap. What changes is what `base` means. Ireland and Ontario cap over
+the total price the first buyer paid, so the base includes the fees; Victoria and Quebec cap over the
+face with fees excluded; New South Wales caps at face plus the fees actually paid, counted at no more
+than 10% of face; Western Australia caps at 110% of a base that includes the booking fee. The
+program cannot tell one base from another, because the field is just a number. The intended guarantee
+is procedural: one creation path computes the base from the law's basis and the event record keeps the
+split (`faceLamports`, `feeLamports`) and the receipts. **That split does not exist yet.** There is no
+fee field on the event row, so every `face_plus_fees` law is currently applied with the base equal to
+the tier face, which is *stricter* than the law and refuses a sale that properly includes the first
+buyer's fees. Adding `feeLamports` to the event row and a test that the base equals face + fee to the
+lamport is the next step, and until it exists this paragraph is the one that says the gap is open.
+**There is also no chain-level guarantee, and this paragraph says that too.**
+
+### 14.3 What the wire gains, and what it must not claim
+
+`lib/types.ts` is unchanged; the backend serves additive keys beside the contract's own
+(`records/REGION-CAPS-DESIGN.md` §11, `records/CONTRACT-MAP.md` §7.9): `jurisdiction`,
+`resalePolicy`, `resalePolicyReason`, `lawTableVersion`, `lawAsOf`, `lawBasis`, and `enforcedCap`
+(`enforcedBaseLamports`, `enforcedCapBps`, `enforcedCeilingLamports`, `bindingRule`,
+`platformCapBps`, and `enforcedCapByTier` for the multi-tier case, because a cap is a multiple of
+the ticket's own face). `bindingRule` is `law` or `platform` and exists so a screen never attributes a
+product decision to a law, or a law to the product. The enforced ceiling is the stricter of the two
+in lamports — not the smaller basis-point number, because 500 bps over face + fees is looser than
+1000 bps over face.
+
+### 14.4 Error numbers: three blocks, and none of them may be renumbered
+
+| block | owner | meaning |
+|---|---|---|
+| 6000-6020 | §3.12 | the original design's codes; §3.10's `6010` is the cap refusal |
+| 6021-6028 | the v2 program in `programs/cap_hook/` | `E_BELOW_FLOOR`, `E_BAND_UNSATISFIABLE`, `E_POLICY_INVALID`, `E_FORECAST_EXISTS`, ... |
+| 6040-6043 | `programs/region_gate/` | `6040 NotAuthority`, `6041 PolicyInvalid`, `6042 PolicyLoosens`, `6043 JurisdictionCode` |
+
+The gap between 6028 and 6040 is deliberate. A number that means one thing in one program and
+another thing in the next is not branchable by a client, and a log is not evidence if its number is
+ambiguous.
+
+### 14.5 What was verified, and where
+
+Eleven legs on a real `solana-test-validator`, as real transactions with their own signatures:
+`PASS 11/11`, in `records/findings/34-region-caps-build.md` and reproducible with
+`python3 tools/region_local_proof.py`. Those legs are `programs/region_gate/`'s, and the crate is
+parked: they are the record of what the policy layer would enforce, not of anything in the
+transaction path. Not verified on devnet, and not intended to be: this is a local proof of the
+policy layer. The devnet artefact in `records/devnet-artefacts.json` describes the v1 cap-only
+program, and v2 has run only on a local validator.

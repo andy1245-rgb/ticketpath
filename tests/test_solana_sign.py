@@ -111,13 +111,24 @@ class TestSigner(unittest.TestCase):
     def test_a_keypair_path_that_is_not_a_file_does_not_stop_a_dry_run(self) -> None:
         # Behavioural version of the same rule, with no grep: the parent is handed a directory
         # where a keypair should be and still plans the whole run, so nothing in it opened it.
+        # `--program-id` is not the frozen devnet id on purpose: that id with the v2 build on
+        # disk is the refusal `tests/test_devnet_publish.py` covers, and this test is about
+        # the keypair path, not about the frozen-upgrade guard.
         trap = self.directory / "a-directory-not-a-keypair.json"
         trap.mkdir()
         environment = dict(os.environ)
         environment["TP_DEVNET_KEYPAIR"] = str(trap)
         out = self.directory / "never-written.json"
         completed = subprocess.run(
-            [sys.executable, str(REPO_ROOT / "tools" / "devnet_publish.py"), "--dry-run", "--out", str(out)],
+            [
+                sys.executable,
+                str(REPO_ROOT / "tools" / "devnet_publish.py"),
+                "--dry-run",
+                "--program-id",
+                "BMrcjbC2mq99YnFKkDGJDK9x1wchDmytotuhrSkfRLWQ",
+                "--out",
+                str(out),
+            ],
             capture_output=True, text=True, timeout=300, env=environment, cwd=str(REPO_ROOT),
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
