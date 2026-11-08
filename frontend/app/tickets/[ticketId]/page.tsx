@@ -8,7 +8,7 @@ import { AddressPill } from "@/components/AddressPill";
 import { OwnershipTrail } from "@/components/OwnershipTrail";
 import { PriceHistoryChart } from "@/components/PriceHistoryChart";
 import { StatRow, StatTile } from "@/components/StatTile";
-import { Chip, DataSourceNote, EmptyState, Pill, Unavailable } from "@/components/ui";
+import { Chip, DataSourceNote, EmptyState, Unavailable } from "@/components/ui";
 import { formatCompact, formatDateTime, formatMarkup, formatSol } from "@/lib/format";
 
 export const metadata = { title: "Ticket" };
@@ -184,7 +184,7 @@ export default async function TicketPage({
             <Row label="Issued to">
               <AddressPill address={ticket.issuedToWallet} label="issuing wallet" />
             </Row>
-            <Row label="Transfer restricted">
+            <Row label="Transfers">
               {ticket.transferRestricted ? "Restricted" : "Not restricted"}
             </Row>
           </dl>
@@ -254,14 +254,11 @@ export default async function TicketPage({
         <div className="space-y-6">
           <Unavailable title="Door code" capability={capabilities.doorCode} />
 
-          <div>
-            <Unavailable title="List for resale" capability={capabilities.listings} />
-            <div className="mt-4">
-              <Pill href={`/resale/list/${ticket.id}`} variant="secondary" size="sm">
-                Open the listing form
-              </Pill>
-            </div>
-          </div>
+          {/* The listing form has no control here. It was a button on this page
+              that opened a form nothing can submit, and an unavailable panel
+              that names the missing endpoint is the honest shape: a control
+              that only leads to it is a promise on screen. */}
+          <Unavailable title="List for resale" capability={capabilities.listings} />
 
           <Unavailable title="Transfer and refund" capability={TRANSFER_AND_REFUND} />
         </div>

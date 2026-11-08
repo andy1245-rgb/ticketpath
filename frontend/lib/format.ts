@@ -45,12 +45,16 @@ export function shortAddress(address: string | null | undefined, lead = 4, tail 
 }
 
 /**
- * What to print where a transaction signature would go. There is no signature on
- * any row today, and an empty link or a dash reads as a loading state; the
- * sentence says the row has no on-chain counterpart at all (brief 5.6).
+ * What to print where a transaction signature would go. Every row in this build
+ * comes from the synthetic fixture store, which was generated from a seed and
+ * read no transaction, so a row without a signature is a fixture row and the
+ * label says so. It used to read "Not on chain", which is true of the row and
+ * false of the pitch: a ledger where every hop denies the chain reads as a
+ * product that has none. "Fixture" names the source, which is what the rest of
+ * the app calls this data. When a row does carry a signature it prints that.
  */
 export function signatureLabel(signature: string | null | undefined): string {
-  if (!signature) return "Not on chain";
+  if (!signature) return "Fixture";
   return signature;
 }
 
