@@ -356,9 +356,15 @@ binaries already on disk, resolves each source commit with git (HEAD for v2, and
 that added `src/lib.rs` for v1, which is the only place those bytes still exist), hashes
 every `.rs` file and `Cargo.toml` the build used, quotes `cargo-build-sbf --version` and
 `solana --version`, and records the exact command. The same tool's `verify` verb re-derives
-all of it and exits 1 on any disagreement, one line per violation;
-`tests/test_build_provenance.py` proves it can fail by mutating a recorded hash and by
-deleting a binary, so a green run means something.
+the source hashes and the compiled file set, the source commit, both binaries' hashes and
+sizes, each version's program id from the code or the record that states it, and the rebuild
+hashes with the `reproducible` claim they imply, and exits 1 on any disagreement, one line
+per violation. It also compares the recorded toolchain lines with the installed tools when
+they are on `PATH`, says so when they are not, and it never re-runs the build —
+`build.command` is there so you can. The record's own `verify_checks` block says which field
+is which. `tests/test_build_provenance.py` proves it can fail by mutating a recorded hash, by
+deleting a binary, by changing the program id where the code states it and by adding a module
+after the build, so a green run means something.
 
 Measured here with cargo-build-sbf 4.4.0, platform-tools v1.57 and rustc 1.95.0. Each was
 built twice, the second time from an independent copy of the source in a different
