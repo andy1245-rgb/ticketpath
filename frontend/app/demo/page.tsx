@@ -96,8 +96,9 @@ export default function DemoPage() {
           <p className="t-deck mt-3 max-w-[70ch] text-muted">
             Buy a ticket, try to flip it, and watch the cap decide. Then switch to the organiser
             and change the event underneath the buyer: the face price, the cap, the resale mode,
-            the jurisdiction, the artist fee and the flip tax. Every number here is computed in
-            this browser from the same rules the repository ships.
+            the jurisdiction (a policy table, not enforced on chain), the artist fee and the flip tax. Every
+            number here is computed in this browser by a transcription of the repository&rsquo;s
+            rules, not by the chain.
           </p>
         </div>
         <div className="grid justify-items-end gap-3">
@@ -143,7 +144,7 @@ export default function DemoPage() {
       <Card>
         <h2 className="h-section text-ink">The refusal is the real code</h2>
         <p className="t-body mt-3 max-w-[76ch] text-muted">
-          This page simulates the environment, not the rule. The v1 cap program is deployed on
+          This page simulates the environment. The cap is the one rule the chain enforces, and only in v1; the artist fee and flip tax here are a browser transcription that v1 does not carry, and region and hold-clock rules belong to the v2 program, not v1. The v1 cap program is deployed on
           Solana devnet, and its record carries both legs: one resale at exactly the ceiling that
           was admitted, and one lamport higher that the program refused.
         </p>

@@ -163,7 +163,7 @@ export default async function DoorPage({
 
   return (
     <div className="box py-12">
-      <h1 className="h-section">Door check</h1>
+      <h1 className="h-section">Scan a ticket at the door</h1>
       <p className="t-body mt-3 max-w-2xl text-muted">
         Read a ticket&rsquo;s own status and redemption time. This build admits nobody, mints no
         door code and records nothing. On the static site the lookup below only works for a
