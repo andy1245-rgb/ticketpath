@@ -22,9 +22,16 @@ import {
   type ListingOutcome,
 } from "@/lib/demoState";
 
-/** The recorded devnet leg that was refused, from `records/devnet-artefacts.json`. */
+/**
+ * The recorded devnet legs, from `data/devnet-artefacts.json`.
+ *
+ * The file carries one program id, v1, at the top level, and no program field on either
+ * transfer. So the legs below are v1's, and the record does not attribute them per leg.
+ * v2 is deployed under an id of its own; neither transfer in that file names it.
+ */
 const DEVNET_PROOF = {
   programId: "5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva",
+  programIdV2: "Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF",
   acceptedLamports: 1_250_000_000,
   refusedLamports: 1_250_000_001,
   error: "custom program error: 0x177a (6010 E_CAP_EXCEEDED)",
@@ -146,11 +153,18 @@ export default function DemoPage() {
           admitted, and one lamport higher that the program refused.
         </p>
         <div className="mt-4 grid gap-2">
-          <p className="t-meta text-muted">program {DEVNET_PROOF.programId}</p>
+          <p className="t-meta break-all text-muted">program v1 {DEVNET_PROOF.programId}</p>
+          <p className="t-meta break-all text-muted">program v2 {DEVNET_PROOF.programIdV2}</p>
           <p className="t-meta text-muted">
             admitted {sol(DEVNET_PROOF.acceptedLamports)} · refused{" "}
             {sol(DEVNET_PROOF.refusedLamports)} with {DEVNET_PROOF.error} · slot{" "}
             {DEVNET_PROOF.slot}
+          </p>
+          <p className="t-meta text-muted">
+            The recorded admitted and refused legs were produced by v1: data/devnet-artefacts.json
+            names v1 as its programId, and neither transfer carries a program field of its own.
+            The record has no per-leg program field, so it does not say separately which program
+            signed each transfer; v1 is the only program it names for them.
           </p>
         </div>
         <p className="t-body mt-4">

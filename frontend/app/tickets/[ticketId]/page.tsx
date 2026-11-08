@@ -8,7 +8,7 @@ import { AddressPill } from "@/components/AddressPill";
 import { OwnershipTrail } from "@/components/OwnershipTrail";
 import { PriceHistoryChart } from "@/components/PriceHistoryChart";
 import { StatRow, StatTile } from "@/components/StatTile";
-import { Chip, DataSourceNote, EmptyState, Unavailable } from "@/components/ui";
+import { Chip, DataSourceNote, EmptyState, Pill, Unavailable } from "@/components/ui";
 import { formatCompact, formatDateTime, formatMarkup, formatSol } from "@/lib/format";
 
 export const metadata = { title: "Ticket" };
@@ -64,6 +64,35 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 /**
+ * A field the record does not carry. The glyph is decorative, so the sentence
+ * in sr-only is what a screen reader hears instead of the em dash being spelled
+ * out. Same pattern the rest of the app uses for an absent value.
+ */
+function Absent({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <span aria-hidden="true">{"\u2014"}</span>
+      <span className="sr-only">{children}</span>
+    </>
+  );
+}
+
+/**
+ * The clock this page measures an event against.
+ *
+ * This is a static export: the module is evaluated once, when the build renders
+ * every ticket page, and the HTML that ships carries that one answer. It does
+ * not tick, so the copy beside it says so instead of leaving a reader to assume
+ * a live countdown. A timer here would be dead code inside a static file, and a
+ * client hook would pull the whole page off the server for a value that cannot
+ * change.
+ */
+const BUILT_AT = new Date();
+
+/** Said once for every field that needs an event the read could not return. */
+const NO_EVENT = "Unavailable because this ticket's event could not be read";
+
+/**
  * Transfer and refund share one panel: both are one missing write path on the
  * same ticket, and the panel names both endpoints. The copy is the canonical
  * capabilities entries, joined, never rewritten.
@@ -116,6 +145,28 @@ export default async function TicketPage({
   const capCeiling = capCeilingFor(event, ticket.tierId);
   const hasLedger = history.entries.length > 0;
 
+  // The tier is resolved from the event's own list by id, never from the
+  // ticket's face value or from a name this file would have to guess.
+  const tier = event?.tiers.find((row) => row.id === ticket.tierId) ?? null;
+  const tierAbsent =
+    event === null
+      ? NO_EVENT
+      : "This ticket's tier is not listed on its event";
+
+  // An empty venue and an unreadable timestamp are the same em dash as a
+  // missing event, each with its own sentence behind it, so the glyph never
+  // stands for a guess and never reads "Invalid Date" either.
+  const venue = event && event.venue ? event.venue : null;
+  const venueAbsent = event === null ? NO_EVENT : "Venue not recorded on this event";
+
+  // Where the event sits against the build clock. An unreadable timestamp gets
+  // no verdict at all rather than the wrong one.
+  const startsAtMs = event ? new Date(event.startsAt).getTime() : null;
+  const startsAtKnown = startsAtMs != null && !Number.isNaN(startsAtMs);
+  const eventUpcoming = startsAtKnown && startsAtMs > BUILT_AT.getTime();
+  const startsAbsent =
+    event === null ? NO_EVENT : "Start time is not a readable timestamp on this event";
+
   // One ticket resells a handful of times, so each sale is its own point on the
   // plot rather than a daily average.
   const points = history.entries
@@ -149,6 +200,21 @@ export default async function TicketPage({
             <AddressPill address={ticket.ownerWallet} label="current owner" />
           </div>
 
+          {/* Whether the ticket is still good for entry is two facts, not one:
+              the chip above says whether the platform still honours it, this
+              line says where the event sits against the clock. The static
+              export renders the comparison once, at build, and the sentence
+              says so rather than leaving a reader to assume it ticks. */}
+          {event && startsAtKnown && (
+            <p className="t-meta mt-2 text-muted">
+              <span className="text-ink">
+                {eventUpcoming ? "Event starts " : "Event ended "}
+                <span className="figure">{formatDateTime(event.startsAt)}</span>
+              </span>
+              . Compared against the build time of this static export, so it does not tick.
+            </p>
+          )}
+
           {!event && (
             <p className="t-meta mt-3 text-muted">
               The event this ticket belongs to could not be read.
@@ -167,6 +233,17 @@ export default async function TicketPage({
               <span className="figure">{ticket.serial}</span>
             </Row>
             <Row label="Status">{ticketStatus.label}</Row>
+            <Row label="Tier">{tier ? tier.name : <Absent>{tierAbsent}</Absent>}</Row>
+            <Row label="Venue">
+              {venue === null ? <Absent>{venueAbsent}</Absent> : venue}
+            </Row>
+            <Row label="Starts">
+              {event && startsAtKnown ? (
+                <span className="figure">{formatDateTime(event.startsAt)}</span>
+              ) : (
+                <Absent>{startsAbsent}</Absent>
+              )}
+            </Row>
             <Row label="Face value">
               <span className="figure">{formatSol(ticket.faceValueLamports)}</span>
             </Row>
@@ -270,7 +347,20 @@ export default async function TicketPage({
               that opened a form nothing can submit, and an unavailable panel
               that names the missing endpoint is the honest shape: a control
               that only leads to it is a promise on screen. */}
-          <Unavailable title="List for resale" capability={capabilities.listings} />
+          <div>
+            <Unavailable title="List for resale" capability={capabilities.listings} />
+            {/* The one screen in this build that holds live cap validation is
+                /resale/list/<ticketId>, and it had no entry point from anywhere
+                in the product: reachable only by typing a ticket id. This link
+                is a read-only cap check for this ticket. It does not create a
+                listing and nothing on that screen submits one, so it is a
+                secondary pill under the panel rather than a listing control. */}
+            <div className="mt-3">
+              <Pill href={`/resale/list/${ticket.id}`} variant="secondary" size="sm">
+                See the cap rule for this ticket
+              </Pill>
+            </div>
+          </div>
 
           <Unavailable title="Transfer and refund" capability={TRANSFER_AND_REFUND} />
         </div>

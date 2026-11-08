@@ -607,7 +607,15 @@ export default async function HomePage() {
       {/* 6. PROOF BAND. No featured event means no band: the first figure is the
           one number here that is real. */}
       {featured && (
-        <section className="mt-24">
+        <section className="mt-24" aria-labelledby="proof-band-title">
+          {/* The three figures are display type with no heading and no
+              landmark, so a screen reader met "3 / resales blocked at the cap"
+              as body text after the step list. The heading is sr-only: the
+              design has no visible title here, and adding one would change the
+              layout to fix a reading-order problem. */}
+          <h2 id="proof-band-title" className="sr-only">
+            What the record and the fixture show
+          </h2>
           <Rule />
           <div className="box py-24">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">

@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, Chip, Perforation, Rule } from "@/components/ui";
 import {
   bpsLabel,
   sol,
+  SOL,
   type DemoState,
   type ListingOutcome,
 } from "@/lib/demoState";
+
+type Outcome = { ticketId: string; priceLamports: number; result: ListingOutcome };
 
 type Props = {
   state: DemoState;
@@ -15,13 +18,29 @@ type Props = {
   ceilingLamports: number;
   binding: "law" | "platform";
   lawSentence: string;
-  outcome: { ticketId: string; priceLamports: number; result: ListingOutcome } | null;
+  outcome: Outcome | null;
   onBuy: () => void;
   onList: (ticketId: string, priceLamports: number) => void;
 };
 
-function PriceInput({ ticketId, onList }: { ticketId: string; onList: (id: string, lamports: number) => void }) {
-  const [value, setValue] = useState("1.3");
+function PriceInput({
+  ticketId,
+  ceilingLamports,
+  onList,
+}: {
+  ticketId: string;
+  ceilingLamports: number;
+  onList: (id: string, lamports: number) => void;
+}) {
+  // The form opens at the ceiling, not above it. At a 1 SOL face and the platform's
+  // 2500 bps the ceiling is 1.25 SOL, so a prefilled 1.3 refuses the first click and the
+  // admitted path is never seen. At the ceiling the first click demonstrates admission
+  // and the refusal is the deliberate second click.
+  //
+  // `String(lamports / SOL)` keeps the prefill round-tripping through `Math.round` below,
+  // which is what the predicate reads. The display formatter rounds (to 4 dp here), and a
+  // rounded-up prefill would open one lamport above the ceiling it is supposed to sit on.
+  const [value, setValue] = useState(() => String(ceilingLamports / SOL));
   return (
     <form
       className="flex flex-wrap items-end gap-2"
@@ -50,140 +69,189 @@ function PriceInput({ ticketId, onList }: { ticketId: string; onList: (id: strin
   );
 }
 
+/**
+ * The verdict card, rendered once above the grid for phones and once in the aside for
+ * desktop. It holds no ids, because the same card appears twice in the tree and the
+ * aside's `aria-labelledby` must stay unique.
+ */
+function OutcomeCard({ outcome }: { outcome: Outcome }) {
+  if (outcome.result.ok) {
+    return (
+      <Card>
+        <Chip>Admitted</Chip>
+        <p className="h-section mt-3 text-ink">Listed at {sol(outcome.priceLamports)}</p>
+        <p className="t-body mt-2 text-muted">
+          Flip tax at this hold: {bpsLabel(outcome.result.taxBps)} ={" "}
+          {sol(outcome.result.taxLamports)}. Artist fee: {sol(outcome.result.feeLamports)}.
+        </p>
+        <Perforation className="my-4" width={300} />
+        <p className="t-meta text-muted">
+          Tax and fee are computed and shown, not charged. No money moves in a demo.
+        </p>
+      </Card>
+    );
+  }
+
+  // Only a cap breach is the code the devnet program returned. BAD_PRICE, LAW_UNRESOLVED
+  // and RESALE_DISABLED are refused by this page before any cap arithmetic runs, so the
+  // chain never saw them and they must not borrow 6010's provenance.
+  const capBreach = outcome.result.code === "E_CAP_EXCEEDED";
+
+  return (
+    <Card>
+      <Chip>Refused</Chip>
+      <p className="h-section mt-3 text-ink">{outcome.result.title}</p>
+      <p className="t-meta mt-2 break-words text-muted">{outcome.result.detail}</p>
+      {capBreach ? (
+        <p className="t-body mt-3 text-muted">
+          Computed in this browser from the same predicate the contract runs. The code is the
+          one the devnet program returned for the same breach.
+        </p>
+      ) : (
+        <p className="t-body mt-3 text-muted">
+          This is refused before any arithmetic; the chain was never asked.
+        </p>
+      )}
+    </Card>
+  );
+}
+
 export function BuyerView(props: Props) {
   const { state, capBps, ceilingLamports, binding, lawSentence, outcome, onBuy, onList } = props;
   const { event, tickets } = state;
+  const mobileOutcome = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!outcome) return;
+    // On a phone the listing form sits below the fold. Bring the verdict it just produced
+    // into view instead of leaving it above the viewport. The desktop copy lives in the
+    // aside, and this block is `display: none` at that width, so the call does nothing there.
+    mobileOutcome.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [outcome]);
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <section aria-labelledby="buyer-title" className="grid gap-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 id="buyer-title" className="h-section text-ink">
-              Buyer
-            </h2>
-            <p className="t-deck mt-2 max-w-[62ch] text-muted">
-              Buy at face, then try to resell it. The price you type is checked against the same
-              predicate the contract evaluates, in this browser, before any hop is recorded.
-            </p>
+    <div>
+      {outcome ? (
+        <div ref={mobileOutcome} aria-live="polite" className="lg:hidden">
+          <div className="mb-8">
+            <OutcomeCard outcome={outcome} />
           </div>
-          <button
-            type="button"
-            onClick={onBuy}
-            className="u-transition inline-flex h-11 items-center rounded-pill border border-accent bg-accent px-5 t-meta text-on-accent hover:border-accent-press hover:bg-accent-press"
-          >
-            Buy a ticket at {sol(event.faceLamports)}
-          </button>
         </div>
+      ) : null}
 
-        {tickets.length === 0 ? (
-          <Card>
-            <p className="t-body text-ink">No tickets yet.</p>
-            <p className="t-body mt-2 text-muted">
-              Buy one and it is issued to the demo wallet at the face price, with one custody hop.
-              Nothing leaves this browser and no money moves.
-            </p>
-          </Card>
-        ) : null}
-
-        {tickets.map((ticket) => (
-          <Card key={ticket.id}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="t-meta text-muted">Ticket {ticket.serial}</p>
-                <p className="t-body mt-1 text-ink">
-                  {ticket.tier} · face {sol(event.faceLamports)}
-                </p>
-              </div>
-              <Chip>{ticket.hops.length} hop{ticket.hops.length === 1 ? "" : "s"}</Chip>
-            </div>
-
-            <Rule className="my-4" />
-
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <PriceInput ticketId={ticket.id} onList={onList} />
-              <p className="t-meta text-muted">
-                Ceiling {sol(ceilingLamports)} ({bpsLabel(capBps)} over face, {binding} binds)
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <section aria-labelledby="buyer-title" className="grid gap-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 id="buyer-title" className="h-section text-ink">
+                Buyer
+              </h2>
+              <p className="t-deck mt-2 max-w-[62ch] text-muted">
+                Buy at face, then try to resell it. The price you type is checked against the same
+                predicate the contract evaluates, in this browser, before any hop is recorded.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={onBuy}
+              className="u-transition inline-flex h-11 items-center rounded-pill border border-accent bg-accent px-5 t-meta text-on-accent hover:border-accent-press hover:bg-accent-press"
+            >
+              Buy a ticket at {sol(event.faceLamports)}
+            </button>
+          </div>
 
-            <Rule className="my-4" />
+          {tickets.length === 0 ? (
+            <Card>
+              <p className="t-body text-ink">No tickets yet.</p>
+              <p className="t-body mt-2 text-muted">
+                Buy one and it is issued to the demo wallet at the face price, with one custody hop.
+                Nothing leaves this browser and no money moves.
+              </p>
+            </Card>
+          ) : null}
 
-            <h3 className="t-meta text-muted">Custody hops</h3>
-            <table className="mt-2 w-full text-left">
-              <thead>
-                <tr className="t-meta text-muted">
-                  <th className="py-1 font-medium">#</th>
-                  <th className="py-1 font-medium">Price</th>
-                  <th className="py-1 font-medium">Wallet</th>
-                  <th className="py-1 font-medium">Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ticket.hops.map((hop, index) => (
-                  <tr key={`${ticket.id}-${index}`} className="border-t border-line">
-                    <td className="py-2 t-body text-muted">{index + 1}</td>
-                    <td className="py-2 t-body u-num text-ink">{sol(hop.priceLamports)}</td>
-                    <td className="py-2 t-meta text-muted">
-                      {hop.wallet.slice(0, 6)}…{hop.wallet.slice(-4)}
-                    </td>
-                    <td className="py-2 t-meta text-muted">{hop.at.replace("T", " ").slice(0, 19)}Z</td>
+          {tickets.map((ticket) => (
+            <Card key={ticket.id}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="t-meta text-muted">Ticket {ticket.serial}</p>
+                  <p className="t-body mt-1 text-ink">
+                    {ticket.tier} · face {sol(event.faceLamports)}
+                  </p>
+                </div>
+                <Chip>{ticket.hops.length} hop{ticket.hops.length === 1 ? "" : "s"}</Chip>
+              </div>
+
+              <Rule className="my-4" />
+
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <PriceInput
+                  ticketId={ticket.id}
+                  ceilingLamports={ceilingLamports}
+                  onList={onList}
+                />
+                <p className="t-meta text-muted">
+                  Ceiling {sol(ceilingLamports)} ({bpsLabel(capBps)} over face, {binding} binds)
+                </p>
+              </div>
+
+              <Rule className="my-4" />
+
+              <h3 className="t-meta text-muted">Custody hops</h3>
+              <table className="mt-2 w-full text-left">
+                <thead>
+                  <tr className="t-meta text-muted">
+                    <th className="py-1 font-medium">#</th>
+                    <th className="py-1 font-medium">Price</th>
+                    <th className="py-1 font-medium">Wallet</th>
+                    <th className="py-1 font-medium">Time</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="t-meta mt-3 text-muted">
-              Every hop is a price, a wallet and an instant. On the platform each one is a ledger
-              entry; here it is a row in your own browser.
-            </p>
-          </Card>
-        ))}
-      </section>
+                </thead>
+                <tbody>
+                  {ticket.hops.map((hop, index) => (
+                    <tr key={`${ticket.id}-${index}`} className="border-t border-line">
+                      <td className="py-2 t-body text-muted">{index + 1}</td>
+                      <td className="py-2 t-body u-num text-ink">{sol(hop.priceLamports)}</td>
+                      <td className="py-2 t-meta text-muted">
+                        {hop.wallet.slice(0, 6)}…{hop.wallet.slice(-4)}
+                      </td>
+                      <td className="py-2 t-meta text-muted">{hop.at.replace("T", " ").slice(0, 19)}Z</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="t-meta mt-3 text-muted">
+                Every hop is a price, a wallet and an instant. On the platform each one is a ledger
+                entry; here it is a row in your own browser.
+              </p>
+            </Card>
+          ))}
+        </section>
 
-      <aside className="grid gap-6 self-start" aria-labelledby="rule-title">
-        <h2 id="rule-title" className="h-section text-ink">
-          What the rule said
-        </h2>
-        <Card>
-          <p className="t-meta text-muted">Face</p>
-          <p className="t-body u-num text-ink">{sol(event.faceLamports)}</p>
-          <Rule className="my-3" />
-          <p className="t-meta text-muted">Cap admitted</p>
-          <p className="t-body u-num text-ink">{bpsLabel(capBps)} over face</p>
-          <p className="t-meta mt-1 text-muted">{binding} binds · {event.region}</p>
-          <p className="t-body mt-3 text-muted">{lawSentence}</p>
-          <Rule className="my-3" />
-          <p className="t-meta text-muted">Resale mode</p>
-          <p className="t-body text-ink">{event.resaleMode}</p>
-        </Card>
-
-        {outcome && !outcome.result.ok ? (
+        <aside className="grid gap-6 self-start" aria-labelledby="rule-title">
+          <h2 id="rule-title" className="h-section text-ink">
+            What the rule said
+          </h2>
           <Card>
-            <Chip>Refused</Chip>
-            <p className="h-section mt-3 text-ink">{outcome.result.title}</p>
-            <p className="t-meta mt-2 break-words text-muted">{outcome.result.detail}</p>
-            <p className="t-body mt-3 text-muted">
-              Computed in this browser from the same predicate the contract runs. The code is the
-              one the devnet program returned for the same breach.
-            </p>
+            <p className="t-meta text-muted">Face</p>
+            <p className="t-body u-num text-ink">{sol(event.faceLamports)}</p>
+            <Rule className="my-3" />
+            <p className="t-meta text-muted">Cap admitted</p>
+            <p className="t-body u-num text-ink">{bpsLabel(capBps)} over face</p>
+            <p className="t-meta mt-1 text-muted">{binding} binds · {event.region}</p>
+            <p className="t-body mt-3 text-muted">{lawSentence}</p>
+            <Rule className="my-3" />
+            <p className="t-meta text-muted">Resale mode</p>
+            <p className="t-body text-ink">{event.resaleMode}</p>
           </Card>
-        ) : null}
 
-        {outcome && outcome.result.ok ? (
-          <Card>
-            <Chip>Admitted</Chip>
-            <p className="h-section mt-3 text-ink">Listed at {sol(outcome.priceLamports)}</p>
-            <p className="t-body mt-2 text-muted">
-              Flip tax at this hold: {bpsLabel(outcome.result.taxBps)} ={" "}
-              {sol(outcome.result.taxLamports)}. Artist fee: {sol(outcome.result.feeLamports)}.
-            </p>
-            <Perforation className="my-4" width={300} />
-            <p className="t-meta text-muted">
-              Tax and fee are computed and shown, not charged. No money moves in a demo.
-            </p>
-          </Card>
-        ) : null}
-      </aside>
+          {outcome ? (
+            <div className="hidden lg:block">
+              <OutcomeCard outcome={outcome} />
+            </div>
+          ) : null}
+        </aside>
+      </div>
     </div>
   );
 }

@@ -28,6 +28,18 @@ function lamportsFromSol(text: string): number | null {
   return Math.round(sol * LAMPORTS_PER_SOL);
 }
 
+/**
+ * The largest price this screen is willing to answer for.
+ *
+ * `isWithinCap` evaluates `price * 10000`, and above `Number.MAX_SAFE_INTEGER /
+ * 10_000` lamports that multiplication stops being exact in a double: the digit
+ * a comparison turns on is gone, and an absurd price can read as inside the cap.
+ * Below this bound every integer in the product is exact, so the predicate's
+ * answer is the contract's answer. The floor keeps the bound an integer, so the
+ * comparison itself needs no rounding.
+ */
+const MAX_CHECKABLE_LAMPORTS = Math.floor(Number.MAX_SAFE_INTEGER / 10_000);
+
 interface PriceState {
   /** The input's text, exactly as typed. */
   sol: string;
@@ -76,13 +88,33 @@ export function ListClient({ ticket, event }: { ticket: Ticket; event: Event }) 
         );
 
   const { lamports } = price;
+
+  /*
+   * Three ways the field can fail to answer, and each one is visible.
+   *
+   * `unreadable` is text that is not a decimal amount at all (`abc`, `1..2`,
+   * `.`): lamportsFromSol returned null, and before this the screen simply
+   * rendered nothing while the field looked accepted.
+   *
+   * `tooLarge` is a number so big the cap arithmetic stops being exact, so no
+   * answer here would be the contract's answer and none is offered.
+   *
+   * `checkableLamports` is what the cap predicate is actually run on, and it is
+   * null in both of the above cases so neither can reach `isWithinCap`.
+   */
+  const unreadable = price.sol !== "" && lamports === null;
+  const tooLarge = lamports !== null && lamports > MAX_CHECKABLE_LAMPORTS;
+  const checkableLamports =
+    lamports !== null && lamports <= MAX_CHECKABLE_LAMPORTS ? lamports : null;
+
   const overCeiling =
-    ceilingLamports != null && lamports != null && lamports > ceilingLamports;
+    ceilingLamports != null && checkableLamports != null && checkableLamports > ceilingLamports;
   const outsideCap =
     capBps != null &&
-    lamports != null &&
-    !isWithinCap(lamports, ticket.faceValueLamports, capBps);
+    checkableLamports != null &&
+    !isWithinCap(checkableLamports, ticket.faceValueLamports, capBps);
   const overCap = overCeiling || outsideCap;
+  const hasMessage = unreadable || tooLarge || overCap;
 
   return (
     <div className="mt-12">
@@ -92,18 +124,6 @@ export function ListClient({ ticket, event }: { ticket: Ticket; event: Event }) 
         </h2>
 
         <Panel className="mt-6 max-w-xl">
-          {overCap && (
-            <div id={warnId} className="mb-4 flex flex-wrap items-center gap-3">
-              <Chip tone="warning">Above the cap</Chip>
-              <p className="t-meta text-ink">
-                The contract would refuse <span className="figure">{formatSol(lamports)}</span>. The
-                ceiling for this ticket is{" "}
-                <span className="figure">{formatSol(ceilingLamports)}</span>{" "}
-                <span className="figure">({formatLamports(ceilingLamports)} lamports)</span>.
-              </p>
-            </div>
-          )}
-
           <label htmlFor={priceId} className="t-micro-caps block text-muted">
             Price (SOL)
           </label>
@@ -120,10 +140,57 @@ export function ListClient({ ticket, event }: { ticket: Ticket; event: Event }) 
                 lamports: lamportsFromSol(changeEvent.target.value),
               })
             }
-            aria-describedby={overCap ? `${capId} ${warnId}` : capId}
-            aria-invalid={overCap || undefined}
+            aria-describedby={hasMessage ? `${capId} ${warnId}` : capId}
+            aria-invalid={hasMessage || undefined}
             className="figure t-body mt-2 h-12 w-full rounded-input border border-control bg-surface px-3 text-ink"
           />
+
+          {/*
+           * The messages sit below the field they describe, inside one live
+           * region that is announced politely as it changes, and the region
+           * holds its height whether or not a message is in it: a warning that
+           * appeared above the input moved the field down the moment a typed
+           * price crossed the ceiling, which is how a form eats a keystroke.
+           * Each sentence is written to fit the reservation at this width, so a
+           * message changes nothing about where the field sits.
+           */}
+          <div id={warnId} role="status" aria-live="polite" className="min-h-[6rem] pt-3">
+            {unreadable && (
+              <div className="flex flex-wrap items-center gap-3">
+                <Chip tone="warning">Not a price</Chip>
+                <p className="t-meta text-ink">
+                  This field takes a decimal amount of SOL, so{" "}
+                  <span className="figure">{price.sol}</span> is not a price and has not been
+                  checked against the cap.
+                </p>
+              </div>
+            )}
+
+            {tooLarge && lamports !== null && (
+              <div className="flex flex-wrap items-center gap-3">
+                <Chip tone="warning">Too large to check</Chip>
+                <p className="t-meta text-ink">
+                  Above <span className="figure">{formatLamports(MAX_CHECKABLE_LAMPORTS)}</span>{" "}
+                  lamports the cap check&apos;s multiplication by 10,000 stops being exact, so{" "}
+                  <span className="figure">{formatLamports(lamports)}</span> is refused rather than
+                  read as within the cap.
+                </p>
+              </div>
+            )}
+
+            {overCap && checkableLamports !== null && (
+              <div className="flex flex-wrap items-center gap-3">
+                <Chip tone="warning">Above the cap</Chip>
+                <p className="t-meta text-ink">
+                  The contract would refuse{" "}
+                  <span className="figure">{formatSol(checkableLamports)}</span>, and the program
+                  returns 6010 E_CAP_EXCEEDED. The ceiling for this ticket is{" "}
+                  <span className="figure">{formatSol(ceilingLamports)}</span>{" "}
+                  <span className="figure">({formatLamports(ceilingLamports)} lamports)</span>.
+                </p>
+              </div>
+            )}
+          </div>
 
           <div id={capId} className="t-meta mt-3 text-muted">
             <p>
@@ -155,8 +222,26 @@ export function ListClient({ ticket, event }: { ticket: Ticket; event: Event }) 
         <p className="t-body mt-4 max-w-3xl text-muted">
           {overCap
             ? "This price is over the cap, so the contract would refuse it. It would not leave this screen anyway: there is no endpoint behind this field and no success state is drawn."
-            : "This price is checked against the rule as it is typed. It would not leave this screen: there is no endpoint behind this field and no success state is drawn."}
+            : tooLarge
+              ? "This price is too large for the cap check to answer, so the screen does not claim it would pass. It would not leave this screen anyway: there is no endpoint behind this field."
+              : unreadable
+                ? "No price has been read, so no cap check has run. Nothing leaves this screen either way: there is no endpoint behind this field and no success state is drawn."
+                : "This price is checked against the rule as it is typed. It would not leave this screen: there is no endpoint behind this field and no success state is drawn."}
         </p>
+
+        {/* Seller economics. The two legs that would leave the same transaction
+            are the artist fee and the flip tax, and neither exists on any record
+            this screen reads, so no number is printed beside them. */}
+        <div className="mt-6 max-w-3xl">
+          <p className="t-micro-caps text-muted">What the seller receives</p>
+          <p className="t-meta mt-1 text-muted">
+            No fee field in any record, so this screen cannot say what a sale at a given price pays
+            out: neither this ticket nor its event carries an artist fee or a flip tax, and no rate
+            is invented here to stand in for one. The demo&apos;s organiser controls simulate both
+            in the browser (a 15% flip tax falling to zero over 30 days), and no record stores a
+            lamport of it.
+          </p>
+        </div>
       </div>
     </div>
   );
