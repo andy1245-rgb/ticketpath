@@ -661,6 +661,8 @@ class TestTheRustSourcesAgree(unittest.TestCase):
             documented,
             [("face", "8"), ("cap_bps", "2"), ("band_low", "8"), ("jurisdiction", "2"), ("policy", "1")],
         )
+        ours = [("face", "8"), ("cap_bps", "2"), ("band_low", "8"), ("jurisdiction", "2"), ("policy", "1")]
+        self.assertEqual(documented, ours)
         self.assertEqual(sum(int(width) for _name, width in documented), 21)
         # And the names line up with the field names this module uses, modulo the `_lamports`
         # suffix the record carries and the instruction does not.
