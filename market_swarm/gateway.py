@@ -550,6 +550,22 @@ def _which(binary: str) -> str | None:
     return shutil.which(binary, path=_toolchain_path())
 
 
+def record_face_cap(observed: dict) -> tuple[int | None, int | None]:
+    """The face and the cap out of either program's record decode, under one name each.
+
+    The two decoders name the same first eight bytes differently on purpose: v1's
+    `face_lamports` is this package's own name, and v2's `face_value_lamports` is the name
+    `ticketpath/onchain/v2.py` and every v2 tool already reads, so neither is renamed. What a
+    caller must not have to know is which program answered -- the ceiling is built from these
+    two numbers and a record read as `None` would price a run against nothing -- so they are
+    asked for here, once. An absent record is `(None, None)`, which matches no spec.
+    """
+    face = observed.get("face_lamports")
+    if face is None:
+        face = observed.get("face_value_lamports")
+    return face, observed.get("cap_bps")
+
+
 def _free_port() -> int:
     """A port nobody is on. A probe, not a reservation: the validator binds it microseconds later."""
     for _ in range(64):
@@ -888,6 +904,7 @@ class ChainGateway:
         self._init_record(mint=mint, record=record, face=face, cap_bps=cap_bps, mode=spec.mode)
         observed = self._record_until(record, face=face, cap_bps=cap_bps)
         ceiling = ceiling_lamports(face, cap_bps)
+        observed_face, observed_cap = record_face_cap(observed)
         chain = EventChain(
             gateway=self,
             event_id=spec.event_id,
@@ -895,8 +912,8 @@ class ChainGateway:
             record=record,
             extra_metas=extra_metas,
             mode=spec.mode,
-            cap_bps=observed["cap_bps"],
-            face_lamports=observed["face_lamports"],
+            cap_bps=observed_cap,
+            face_lamports=observed_face,
             ceiling_lamports=ceiling,
             artist_fee=getattr(spec, "artist_fee", None),
             flip_tax=getattr(spec, "flip_tax", None),
@@ -1423,13 +1440,15 @@ class ChainGateway:
                 observed = self._read_record(record)
             except ChainUnavailable:
                 observed = {}  # not visible yet: the same "absent" a replay shows
-            if observed.get("face_lamports") == face and observed.get("cap_bps") == cap_bps:
+            observed_face, observed_cap = record_face_cap(observed)
+            if observed_face == face and observed_cap == cap_bps:
                 return observed
             if look + 1 < _LOOKS * 2:
                 time.sleep(_LOOK_INTERVAL)
+        observed_face, observed_cap = record_face_cap(observed)
         raise ChainUnavailable(
-            f"the record {record} reads face={observed.get('face_lamports')} "
-            f"cap_bps={observed.get('cap_bps')}, the spec asked for face={face} cap_bps={cap_bps}"
+            f"the record {record} reads face={observed_face} "
+            f"cap_bps={observed_cap}, the spec asked for face={face} cap_bps={cap_bps}"
         )
 
     def _read_record(self, record: str) -> dict:

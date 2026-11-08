@@ -40,7 +40,9 @@ from market_swarm import artist_fee as af
 from market_swarm import flip_tax as ft
 from market_swarm import gateway as gw
 from market_swarm.tests.test_gateway import (
+    CAP_BPS,
     CEILING,
+    FACE,
     FakeChain,
     NoSocket,
     address,
@@ -323,6 +325,38 @@ class TheTwoSignaturePathsThisChangeDidNotTouch(SaleCase):
             [sent["message"]["keys"][index] for index in tax["accounts"]],
             [self.seller, ARTIST],
         )
+
+
+class TestReadingARecordBackFromEitherProgram(unittest.TestCase):
+    """A v2 record and a v1 record answer the same two questions under different names.
+
+    This is the fourth thing the refusal hid. `_record_until` compared the decoded record to the
+    spec with v1's key names, and `decode_v2_record` names the same eight bytes
+    `face_value_lamports` because that is what every v2 tool already reads. So a v2 run created
+    its mint and its record and then refused with "reads face=None", on a record whose face was
+    exactly right. Nothing caught it because the decoder was tested and the comparison was tested,
+    and the only caller that puts them together had never seen a v2 record.
+    """
+
+    def test_the_two_decoders_disagree_on_the_name_and_agree_on_the_number(self) -> None:
+        v1 = gw.wire.decode_v1_record(
+            FACE.to_bytes(8, "little") + CAP_BPS.to_bytes(2, "little")
+            + (0).to_bytes(8, "little") + bytes([1])
+        )
+        v2 = gw.wire.decode_v2_record(
+            FACE.to_bytes(8, "little") + CAP_BPS.to_bytes(2, "little")
+            + (0).to_bytes(8, "little") + bytes([1])
+            + (0).to_bytes(8, "little") + b"ZZ" + bytes([0])
+            + (0).to_bytes(8, "little") + bytes(32)
+        )
+        self.assertIn("face_lamports", v1)
+        self.assertIn("face_value_lamports", v2)
+        self.assertEqual(gw.record_face_cap(v1), (FACE, CAP_BPS))
+        self.assertEqual(gw.record_face_cap(v2), (FACE, CAP_BPS))
+
+    def test_an_absent_record_matches_no_spec(self) -> None:
+        self.assertEqual(gw.record_face_cap({}), (None, None))
+        self.assertNotEqual(gw.record_face_cap({}), (FACE, CAP_BPS))
 
 
 class TestTheDeployFollowsTheProgram(unittest.TestCase):
