@@ -27,12 +27,24 @@ def badge(name: str) -> str:
     return f'<span class="badge">{esc(labels.badge(name))}</span>'
 
 
-def num(wrapper: dict | None, kind: str = "count", *, trim: bool = True) -> str:
+# What a number carries when no badge would be true of it. A badge names where a number came
+# from and how much assurance it carries; a field the artefact's quote hash does not cover has
+# no assurance to badge, so the page prints the writer's own status instead (feature 2, the
+# forged-signature finding). The words are the page's, not a ninth badge: the badge vocabulary
+# is the frontend legend's, and a new one there would be a claim the frontend does not gloss.
+STATED = "the file states"
+
+
+def num(wrapper: dict | None, kind: str = "count", *, trim: bool = True, mark: str | None = None) -> str:
     """Render a payload number wrapper as `<span class="n">[BADGE] value unit</span>`.
 
     `trim` is the one place a precision is chosen per call site: two parts of the same
     measure (the median and the mean markup, say) are printed through the same trim so the
     row cannot read "1.2%" beside "3%". The value is never touched, only its digits.
+
+    `mark` replaces the badge with those words. It exists for the one case where the wrapper's
+    badge would be a provenance claim the file cannot back -- a value the quote hash does not
+    cover -- so the number keeps its formatting and loses the claim (`STATED`).
     """
     if wrapper is None:
         return '<span class="n">[REFUSED] not stated</span>'
@@ -45,6 +57,10 @@ def num(wrapper: dict | None, kind: str = "count", *, trim: bool = True) -> str:
     elif kind == "lamports":
         # An exact integer sum of lamports, with separators, for a sentence a reader is
         # meant to check by eye. The same digits as `lamports_text`, carrying its badge.
+        text = f"{int(round(value)):,}"
+    elif kind == "integer":
+        # An exact integer that is not money: a basis-point policy, with its own unit, so the
+        # file's "2500 bps" and the page's "1500 bps" can be read side by side.
         text = f"{int(round(value)):,}"
     elif kind == "percent":
         text = _pct(value)
@@ -66,9 +82,10 @@ def num(wrapper: dict | None, kind: str = "count", *, trim: bool = True) -> str:
         suffix = " lamports"
     elif kind == "rate":
         suffix = " per 1,000 ticket-days"
-    elif unit and kind in ("float", "count"):
+    elif unit and kind in ("float", "count", "integer"):
         suffix = f" {unit}"
-    return f'<span class="n">{esc(labels.badge(name))} {esc(text)}{esc(suffix)}</span>'
+    prefix = esc(mark) if mark is not None else esc(labels.badge(name))
+    return f'<span class="n">{prefix} {esc(text)}{esc(suffix)}</span>'
 
 
 def _sol(lamports: float) -> str:

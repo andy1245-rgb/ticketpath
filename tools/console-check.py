@@ -1,17 +1,36 @@
-"""Re-check every URL the review names, against the live server on 8788."""
+"""Re-check every URL the review names, against the live server on 8788.
+
+One section reaches past a URL. The chain slot has three states and all three are states of
+a *file*, not of a query string: the real `records/devnet-artefacts.json` is read for the
+verified state, and a tampered copy and a missing file are each served from a server of this
+checker's own on an ephemeral port, for the unverified and absent states. The operator's
+record is only ever read; a copy lives in a temp directory that goes away with it. Every
+assertion is made on an HTTP response, and the cluster-dependent sentence is chosen from
+`/health` so the same run is correct on the devnet server and on the testnet one.
+"""
 
 import html as html_module
+import json
 import os
 import re
 import sys
+import tempfile
+import threading
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 BASE = os.environ.get("TP_BASE", "http://127.0.0.1:8788")
+REPO = Path(__file__).resolve().parents[1]
+RECORDED_ARTEFACT = REPO / "records" / "devnet-artefacts.json"
+# The tampered-artefact case binds the app in this process, so the package has to be
+# importable when this file is run as a script from the repository root.
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
 
 
-def get(path, method="GET"):
-    req = urllib.request.Request(BASE + path, method=method)
+def get(path, method="GET", base=None):
+    req = urllib.request.Request((base or BASE) + path, method=method)
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
             return r.status, dict(r.headers), r.read().decode("utf-8", "replace")
@@ -108,7 +127,13 @@ check("default: the cap line is printed where a cap exists",
 c = text(body_of("/?event=evt_syn_03"))
 check("cold: the record is described as empty, not as completed",
       "holds no resale at any instant" in c and "completed record" not in c and "hindsight" not in c)
-check("cold: zero-sale rate carries DECLARED", "[DECLARED] 7.5" in c or "[DECLARED] 7.6" in c)
+# The digit here was pinned (7.5 or 7.6) and is a function of the server's clock: exposure
+# keeps growing until the event ends, so the rate printed on 2026-11-07 reads 7.3 the next
+# day and this check went red for a reason that has nothing to do with the page. What the
+# sentence has to prove is that the zero-sale rate carries its own badge, so that is what is
+# asserted; the digit is the estimator's business and its own tests pin it on a fixed clock.
+check("cold: zero-sale rate carries DECLARED",
+      re.search(r"\[DECLARED\] [0-9.]+ per 1,000 ticket-days", c) is not None)
 check("cold: prior named beside it", "posterior mean of the declared Gamma(1, 1) prior" in c)
 check("cold: A13 states the prior it uses",
       "the band is the declared literature prior" in c and "the spread across" not in c)
@@ -289,6 +314,164 @@ for path in ("/", "/?event=evt_syn_03", "/?event=evt_syn_04", "/?event=evt_syn_0
     body = text(body_of(path))
     for phrase in banned:
         check(f"{path}: no {phrase!r}", phrase not in body)
+
+print("\n== the recorded devnet artefact")
+
+# The slot's states are states of a file, so these read the file (verified), an instant that
+# matches it (the agreeing sentence), and a tampered copy served from its own server.
+
+
+def recorded_artefact():
+    """The operator's proven record, read only. Absent means these cases cannot run."""
+    if not RECORDED_ARTEFACT.exists():
+        print(f"skip the recorded cases: {RECORDED_ARTEFACT.name} is not on disk")
+        return None
+    return json.loads(RECORDED_ARTEFACT.read_text(encoding="utf-8"))
+
+
+def served_page(record=None, *, cluster="devnet", missing=False):
+    """The page from a server of this checker's own, for a state no URL can reach.
+
+    Why a server and not a file the real one reads: the proven record is never edited. A copy
+    is written into a temp directory (or no file is written at all), the same app is bound to
+    an ephemeral port with `artefact_path` pointed at it, one page is fetched over HTTP, and
+    everything is closed before the next assertion.
+    """
+    from ticketpath.adapters.ledger_adapter import LedgerAdapter
+    from ticketpath.adapters.pricing_model_adapter import PricingModelAdapter
+    from ticketpath.adapters.rpc_adapter import RpcAdapter
+    from ticketpath.orchestrator import Orchestrator
+    from ticketpath.server import make_server
+
+    with tempfile.TemporaryDirectory(prefix="tp-state-") as directory:
+        path = Path(directory) / "devnet-artefacts.json"
+        if record is not None:
+            path.write_text(json.dumps(record), encoding="utf-8")
+        engine = Orchestrator(
+            ledger=LedgerAdapter.from_fixture(),
+            rpc=RpcAdapter.from_env(cluster),
+            pricing_model=PricingModelAdapter(),
+            cluster=cluster,
+            artefact_path=path,
+        )
+        server = make_server(0, "127.0.0.1", engine)
+        # One request, part of a check, not a server's log: keep the checker's own output clean.
+        server.RequestHandlerClass.log_message = lambda *args, **kwargs: None
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            base = f"http://127.0.0.1:{server.server_address[1]}"
+            return get("/", base=base)[2]
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+
+def tampered_page(record):
+    """The page from a server pointed at a copy whose quote hash no longer recomputes."""
+    broken = dict(record)
+    broken["quoteHash"] = "0" * 64
+    broken["memoText"] = f"ticketpath:quote:{broken['quoteId']}:{broken['quoteHash']}"
+    return served_page(broken)
+
+
+recorded = recorded_artefact()
+if recorded is not None:
+    verified = text(body_of("/"))
+    accepted = recorded["transfers"]["acceptedAtCap"]
+    refused = recorded["transfers"]["refusedOverCap"]
+    check("recorded: the page prints the recorded signature", recorded["signature"] in verified)
+    check("recorded: the page prints the recorded slot", str(recorded["slot"]) in verified)
+    check("recorded: the page prints the recorded mint", recorded["mint"] in verified)
+    check("recorded: the page prints the price the cap accepted",
+          f"{accepted['priceLamports']:,}" in verified)
+    check("recorded: the page prints the price one lamport over",
+          f"{refused['priceLamports']:,}" in verified)
+    check("recorded: the refusal prints the chain's own 6010", "6010" in verified)
+    check("recorded: a sentence says the chain refused it", "refused by the chain" in verified)
+    check("recorded: the transfer rows are the file's own leg keys",
+          "acceptedAtCap" in verified and "refusedOverCap" in verified
+          and "at the cap" not in verified)
+    check("recorded: the page names which six fields the quote hash covers",
+          "covers six fields" in verified and "the writer's assertion" in verified)
+    check("recorded: a value the hash does not cover says so instead of wearing [DEVNET]",
+          "slot the file states " in verified and "block time the file states " in verified
+          and "[DEVNET] " + str(recorded["slot"]) not in verified)
+    check("recorded: the file's own cap and face are printed",
+          "cap the file states 2,500 bps" in verified
+          and "face the file states 1,000,000,000 lamports" in verified)
+    check("recorded: the ceiling the file's cap and face imply is printed",
+          "resale ceiling at [EXACT] 1,250,000,000 lamports" in verified)
+    check("recorded: the recorded recommendation above that ceiling is named",
+          "The recorded recommendation of [DEVNET] 1,380,000,000 lamports is above that ceiling." in verified)
+    check("recorded: the page's own cap and face are named beside the file's",
+          "[DECLARED] 1,500 bps" in verified and "[FIXTURE] 1,200,000,000 lamports" in verified)
+    check("recorded: the quote sentence is about the quote, not about the number",
+          "is not the quote the file records" in verified
+          and "is not the number the chain recorded" not in verified)
+    check("recorded: one number printed once, with the sentence that says so",
+          "recommends the same number" in verified)
+    check("recorded: the recorded event and tier are printed",
+          recorded["eventId"] in verified and recorded["tierId"] in verified)
+    check("recorded: the checker's clock is not badged as devnet",
+          "[DEVNET] " + recorded["checkedAt"] not in verified
+          and "The checker wrote " + recorded["checkedAt"] in verified)
+    check("recorded: no sentence promises a flag that performs a re-read",
+          "TICKETPATH_RPC_ENABLED" not in verified
+          and "A live re-read is not implemented in this build" in verified)
+    check("recorded: the page no longer says no transaction was recorded",
+          "No devnet transaction has been recorded" not in verified)
+    check("recorded: the page prints the program the file records",
+          recorded["programId"] in verified)
+    check("recorded: the page says this server asked no cluster",
+          "This server asked no cluster" in verified)
+    check("recorded: the page no longer says no program is deployed anywhere",
+          "No program is deployed on any cluster" not in verified)
+
+    at_instant = (
+        "/?event=" + recorded["eventId"] + "&tier=" + recorded["tierId"] + "&asOf=" + recorded["asOf"]
+    )
+    agreeing = text(body_of(at_instant))
+    check("recorded instant: the page says the two quotes are one",
+          "is the quote the file records" in agreeing)
+    check("recorded instant: the disagreement sentence is not printed",
+          "is not the quote the file records" not in agreeing)
+
+    tampered = text(tampered_page(recorded))
+    check("tampered hash: the page says unverified", "Unverified:" in tampered)
+    check("tampered hash: the reason is named", "quote_hash_mismatch" in tampered)
+    check("tampered hash: the recorded signature is not printed",
+          recorded["signature"] not in tampered)
+    check("tampered hash: no transfer price is printed",
+          f"{accepted['priceLamports']:,}" not in tampered)
+    # The evidence count is a count of *verified* signatures, so a file that did not verify
+    # contributes none. The basis sentence behind the count is checked in the payload walker;
+    # this is the surface a reader sees.
+    check("tampered hash: no transaction is counted as evidence",
+          "[DEVNET] 0 on-chain transactions" in tampered)
+
+    # The absent state, from a server with no file at all: the sentence is about the console's
+    # file, because three devnet transactions are recorded and only this file is missing.
+    absent = text(served_page(missing=True))
+    check("absent: the sentence is about the console's artefact file",
+          "No devnet transaction is recorded in the console's artefact file." in absent)
+    check("absent: the project-wide claim is not printed",
+          "No devnet transaction has been recorded" not in absent)
+    check("absent: no transaction is counted as evidence",
+          "[DEVNET] 0 on-chain transactions" in absent)
+
+    # The cluster this server is on, read from /health rather than assumed: the same checker
+    # runs against the devnet server and the testnet one, and the sentence has to follow.
+    health = json.loads(get("/health")[2])
+    cluster = (health.get("chain") or {}).get("cluster")
+    if cluster == "devnet":
+        check("memo program: a measured cluster is not described as unmeasured",
+              "no memo program id has been measured" not in verified)
+    else:
+        check(f"memo program: {cluster} is named as having no measured id",
+              f"This server's cluster is {cluster}, and no memo program id has been measured"
+              in verified)
 
 print("\nFAILURES:", len(fails))
 for item in fails:

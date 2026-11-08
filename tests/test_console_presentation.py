@@ -16,7 +16,9 @@ from __future__ import annotations
 import datetime as dt
 import html as html_module
 import re
+import tempfile
 import unittest
+from pathlib import Path
 
 from ticketpath.adapters.ledger_adapter import LedgerAdapter
 from ticketpath.adapters.pricing_model_adapter import PricingModelAdapter
@@ -28,6 +30,8 @@ from ticketpath.orchestrator import Orchestrator
 UTC = dt.timezone.utc
 CLOCK = dt.datetime(2026, 11, 7, 12, 0, 0, tzinfo=UTC)
 BADGE = r"\[(?:FIXTURE|DECLARED|EXACT|UNVALIDATED|REFUSED|DESIGN|SIMULATED|DEVNET)\]"
+# A path no run creates, so the absent state is reachable without touching the real artefact.
+MISSING_ARTEFACT = Path(tempfile.gettempdir()) / "ticketpath-no-such-artefact.json"
 
 STATES = (
     {},
@@ -42,12 +46,16 @@ STATES = (
 
 
 def render(**kwargs) -> tuple[dict, str]:
+    # `artefact_path` is the chain slot's own seam: naming a missing file reaches the absent
+    # state without moving the operator's proven record.
+    artefact_path = kwargs.pop("artefact_path", None)
     engine = Orchestrator(
         ledger=LedgerAdapter.from_fixture(),
         rpc=RpcAdapter.from_env("devnet"),
         pricing_model=PricingModelAdapter(),
         cluster="devnet",
         now=lambda: CLOCK,
+        artefact_path=artefact_path,
     )
     payload = engine.price_guidance(**kwargs)
     payload["canonicalUrl"] = "http://127.0.0.1:8788/?event=evt&tier=tier"
@@ -79,19 +87,41 @@ class TestOneBadgePerFact(unittest.TestCase):
 class TestTheBannerSaysItOnce(unittest.TestCase):
     """Defect 2: the cluster sentence in the second and third lines of the banner."""
 
-    def test_the_banner_names_the_missing_program_once(self) -> None:
+    def test_the_banner_makes_no_claim_about_any_cluster(self) -> None:
+        """Defect 2 was the cluster sentence printed twice. It is now printed nowhere here.
+
+        The banner said "No program is deployed on any cluster", and the chain slot repeated
+        it. That sentence is false once a devnet artefact exists (feature 2), so the banner
+        names where the two kinds of evidence live instead, and the chain facts are printed
+        in the slot with their own sources. Asserted in the stronger direction: the banner
+        carries no cluster claim at all, so the defect cannot recur in it.
+        """
         _, html = render()
         banner = html[html.index('<div class="banner"') : html.index("</div>", html.index('<div class="banner"'))]
-        sentences = [s for s in html_module.unescape(re.sub(r"<[^>]+>", " ", banner)).split(".") if s.strip()]
-        cluster = [s for s in sentences if "no program is deployed on any cluster" in s.lower()]
-        self.assertEqual(len(cluster), 1, cluster)
+        text = html_module.unescape(re.sub(r"<[^>]+>", " ", banner))
+        self.assertNotIn("no program is deployed", text.lower())
+        self.assertNotIn("program deployed", text.lower())
+        self.assertEqual(text.lower().count("deployed guarantee"), 1, text)
 
-    def test_t5_still_reaches_the_page_on_its_own_panel(self) -> None:
+    def test_every_page_says_what_it_did_not_read(self) -> None:
+        """The slot's own disclaimer, in whichever form is true of the file.
+
+        T5 where no artefact verified, and the recorded-block sentence where one did: a page
+        that renders a real devnet transaction must still say this server asked no cluster.
+        """
         for state in STATES:
             _, html = render(**state)
+            text = visible_text(html)
             with self.subTest(state=state):
-                self.assertIn(labels.render("T5"), visible_text(html))
-                self.assertIn("[DEVNET] " + labels.render("T5"), visible_text(html))
+                self.assertTrue(
+                    labels.render("T5") in text or labels.render("P_CHAIN_NOT_ASKED") in text,
+                    text[-400:],
+                )
+
+    def test_t5_is_on_the_panel_when_nothing_verified(self) -> None:
+        _, html = render(artefact_path=MISSING_ARTEFACT)
+        text = visible_text(html)
+        self.assertEqual(text.count("[DEVNET] " + labels.render("T5")), 1)
 
 
 class TestNoNoneInProse(unittest.TestCase):

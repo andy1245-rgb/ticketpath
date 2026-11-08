@@ -19,27 +19,36 @@ from __future__ import annotations
 import datetime as dt
 import html as html_module
 import re
+import tempfile
 import unittest
+from pathlib import Path
 
 from ticketpath.adapters.ledger_adapter import LedgerAdapter
 from ticketpath.adapters.pricing_model_adapter import PricingModelAdapter
 from ticketpath.adapters.rpc_adapter import RpcAdapter
 from ticketpath.console import page
+from ticketpath.console import units
 from ticketpath.core import labels
 from ticketpath.orchestrator import Orchestrator
 
 UTC = dt.timezone.utc
 CLOCK = dt.datetime(2026, 11, 7, 12, 0, 0, tzinfo=UTC)
 BADGE_RE = re.compile(r"^\[(FIXTURE|DECLARED|EXACT|UNVALIDATED|REFUSED|DESIGN|SIMULATED|DEVNET)\]")
+# A path no run creates, so the absent state is reachable without touching the real artefact.
+MISSING_ARTEFACT = Path(tempfile.gettempdir()) / "ticketpath-no-such-artefact.json"
 
 
 def render(**kwargs) -> tuple[dict, str]:
+    # `artefact_path` is the chain slot's seam: a path with no file reaches the absent state
+    # without moving the operator's proven record out of the way.
+    artefact_path = kwargs.pop("artefact_path", None)
     engine = Orchestrator(
         ledger=LedgerAdapter.from_fixture(),
         rpc=RpcAdapter.from_env("devnet"),
         pricing_model=PricingModelAdapter(),
         cluster="devnet",
         now=lambda: CLOCK,
+        artefact_path=artefact_path,
     )
     payload = engine.price_guidance(**kwargs)
     payload["canonicalUrl"] = "http://127.0.0.1:8788/?event=evt&tier=tier&asOf=2026-11-07T12:00:00Z"
@@ -99,6 +108,13 @@ class TestBanner(unittest.TestCase):
 
 
 class TestEveryNumberCarriesItsBadge(unittest.TestCase):
+    """Every number carries its provenance in the same text run: a badge, or the file's status.
+
+    An artefact value the quote hash does not cover used to carry `[DEVNET]`, which claimed a
+    provenance the hash does not back. It carries `the file states` instead, and this test
+    accepts that marker in place of a badge for exactly those spans.
+    """
+
     def test_every_number_span_begins_with_a_badge(self) -> None:
         states = [
             {},
@@ -115,7 +131,10 @@ class TestEveryNumberCarriesItsBadge(unittest.TestCase):
             self.assertGreater(len(spans), 5)
             for span in spans:
                 with self.subTest(state=state, span=span[:60]):
-                    self.assertIsNotNone(BADGE_RE.match(span.strip()), span)
+                    text = span.strip()
+                    self.assertTrue(
+                        BADGE_RE.match(text) or text.startswith(units.STATED), text
+                    )
 
     def test_the_only_digits_outside_a_badge_are_inside_a_registry_sentence(self) -> None:
         patterns = sentence_patterns()
@@ -125,7 +144,7 @@ class TestEveryNumberCarriesItsBadge(unittest.TestCase):
                 if not re.search(r"\d", node):
                     continue
                 with self.subTest(state=state, node=node[:70]):
-                    if BADGE_RE.match(node):
+                    if BADGE_RE.match(node) or node.startswith(units.STATED):
                         continue
                     self.assertTrue(
                         any(pattern.match(node) for pattern in patterns),
@@ -168,13 +187,31 @@ class TestEveryNumberCarriesItsBadge(unittest.TestCase):
 
 
 class TestMandatorySentences(unittest.TestCase):
-    def test_t1_and_t5_are_on_every_state(self) -> None:
+    def test_t1_is_on_every_state(self) -> None:
         for state in ({}, {"event_id": "evt_syn_04"}, {"event_id": "evt_syn_03"}, {"event_id": "evt_syn_08"}):
             _, html = render(**state)
+            with self.subTest(state=state):
+                self.assertIn(labels.render("T1"), visible_text(html))
+
+    def test_t5_is_on_every_state_where_nothing_verified(self) -> None:
+        """T5 is the page's deployment claim, so it is printed where it is true.
+
+        Every state used to reach it because no artefact ever verified inside a test. Now the
+        proven record verifies, and a page that prints it may not also say no program is
+        deployed on any cluster: the slot carries `P_CHAIN_NOT_ASKED` instead (feature 2,
+        part 3). Both halves are asserted, so neither sentence can go missing.
+        """
+        for state in ({}, {"event_id": "evt_syn_04"}, {"event_id": "evt_syn_03"}, {"event_id": "evt_syn_08"}):
+            payload, html = render(**state)
             text = visible_text(html)
             with self.subTest(state=state):
-                self.assertIn(labels.render("T1"), text)
-                self.assertIn(labels.render("T5"), text)
+                if payload["chain"]["state"] == "verified":
+                    self.assertIn(labels.render("P_CHAIN_NOT_ASKED"), text)
+                else:
+                    self.assertIn(labels.render("T5"), text)
+                self.assertNotIn("No program is deployed on any cluster", text)
+        _, absent = render(artefact_path=MISSING_ARTEFACT)
+        self.assertIn(labels.render("T5"), visible_text(absent))
 
     def test_t2_is_on_the_decision_block(self) -> None:
         _, html = render()
@@ -254,12 +291,23 @@ class TestAccessibleAndPrintable(unittest.TestCase):
         self.assertIn("[UNVALIDATED]", text)
 
     def test_no_external_asset_and_no_script(self) -> None:
-        _, html = render()
+        """The page loads nothing from off the machine. One anchor is allowed, and it is the
+        transaction the artefact itself names: a pointer to the evidence, never an asset.
+
+        The rule used to be asserted as "no https:// anywhere", which held only because a
+        verified artefact was unreachable in a test. The anchor's URL is now read out of the
+        file, so it cannot exist for a transaction the file does not carry (feature 2).
+        """
+        payload, html = render()
         self.assertNotIn("<script", html)
         self.assertNotIn("<link", html)
         self.assertNotIn("url(", html)
         self.assertNotIn("src=", html)
-        self.assertNotIn("https://", html)
+        for url in re.findall(r"https://[^\"' <>]+", html):
+            with self.subTest(url=url):
+                explorer = (payload["chain"].get("recorded") or {}).get("explorer") or {}
+                self.assertEqual(url, explorer.get("transaction"))
+                self.assertTrue(url.startswith("https://explorer.solana.com/tx/"))
 
     def test_every_form_control_has_a_name_and_a_label(self) -> None:
         _, html = render()

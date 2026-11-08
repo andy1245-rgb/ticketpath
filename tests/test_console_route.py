@@ -8,11 +8,13 @@ one of them, because it is not a contract endpoint.
 
 from __future__ import annotations
 
+import json
 import threading
 import unittest
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
+from pathlib import Path
 
 from ticketpath.adapters.ledger_adapter import LedgerAdapter
 from ticketpath.adapters.pricing_model_adapter import PricingModelAdapter
@@ -116,6 +118,44 @@ class ConsoleRouteTest(unittest.TestCase):
         self.assertEqual(status2, 200)
         self.assertIn("0.3", body2)
 
+    @unittest.skipUnless(
+        (Path(__file__).resolve().parents[1] / "records" / "devnet-artefacts.json").exists(),
+        "the operator's proven record is not on disk",
+    )
+    def test_the_served_page_carries_the_recorded_devnet_transaction(self) -> None:
+        """The judge's surface, over a socket: the page, not the payload.
+
+        The defect feature 2 fixes was invisible from inside the orchestrator and visible
+        here: `/` answered with "No devnet transaction has been recorded" while the record
+        on disk verified. Both directions are asserted: the recorded facts are printed, and
+        the absent sentence is not.
+        """
+        artefact = Path(__file__).resolve().parents[1] / "records" / "devnet-artefacts.json"
+        record = json.loads(artefact.read_text(encoding="utf-8"))
+        status, body, _ = self.get("/")
+        self.assertEqual(status, 200)
+        self.assertIn(record["signature"], body)
+        self.assertIn(str(record["slot"]), body)
+        self.assertIn(record["mint"], body)
+        self.assertIn("1,250,000,000", body)
+        self.assertIn("6010", body)
+        # The sentence is about the quote now, not about "the number": the two
+        # recommendations on this page are the same number and the old sentence said they
+        # were different (feature 2 review).
+        self.assertIn("is not the quote the file records", body)
+        # One number, printed once: the recorded recommendation and the page's own are equal
+        # here, so the sentence says so instead of printing 1.38 SOL twice and calling it a
+        # disagreement.
+        self.assertIn("The recorded recommendation is <span", body)
+        self.assertIn("recommends the same number", body)
+        self.assertNotIn("No devnet transaction has been recorded", body)
+
+        instant = f"/?event={record['eventId']}&tier={record['tierId']}&asOf={record['asOf']}"
+        status, body, _ = self.get(instant)
+        self.assertEqual(status, 200)
+        self.assertIn("is the quote the file records", body)
+        self.assertNotIn("is not the quote the file records", body)
+
 
 class CanonicalUrlTest(unittest.TestCase):
     def test_only_supplied_parameters_appear(self) -> None:
@@ -135,6 +175,64 @@ class CanonicalUrlTest(unittest.TestCase):
         self.assertIn("feeLamports=0", url)
         self.assertNotIn("capBps", url)  # an unset cap is not written as a value
         self.assertNotIn("sim", url)
+
+
+class TestAnUnmeasuredClusterStillServes(unittest.TestCase):
+    """`TICKETPATH_CLUSTER=testnet`: the payload carries no memo program and the page answers.
+
+    Before this test, `_chain_payload` passed the cluster straight to `quote_commit`, which
+    raised `UnknownCluster` three lines before the field was filled: every `price_guidance()`
+    on testnet died, the console's `/` route turned it into HTTP 500, and `chain.memoProgram`
+    was never null because it was never reached. Feature-1 review finding 2, measured there.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.orchestrator = Orchestrator(
+            LedgerAdapter.from_fixture(),
+            RpcAdapter.from_env("testnet"),
+            PricingModelAdapter(),
+            "testnet",
+            now=lambda: datetime(2026, 11, 7, 12, 0, tzinfo=timezone.utc),
+        )
+        cls.server = make_server(0, "127.0.0.1", cls.orchestrator)
+        cls.base = f"http://127.0.0.1:{cls.server.server_address[1]}"
+        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(timeout=5)
+
+    def get(self, path: str) -> tuple[int, str, str]:
+        try:
+            with urllib.request.urlopen(self.base + path, timeout=10) as response:
+                return response.status, response.read().decode("utf-8"), response.headers.get("content-type", "")
+        except urllib.error.HTTPError as exc:
+            return exc.code, exc.read().decode("utf-8"), exc.headers.get("content-type", "")
+
+    def test_the_payload_carries_a_null_memo_program_rather_than_raising(self) -> None:
+        payload = self.orchestrator.price_guidance(event_id="evt_syn_01")
+        self.assertIn("memoProgram", payload["chain"])
+        self.assertIsNone(payload["chain"]["memoProgram"])
+        # The field is null because the cluster has no measurement, not because the rest of
+        # the commitment went missing with it.
+        self.assertTrue(payload["chain"]["quoteId"].startswith("q-"))
+        self.assertTrue(payload["chain"]["memoText"].startswith("ticketpath:quote:"))
+        self.assertIn(payload["chain"]["quoteHash"], payload["chain"]["memoText"])
+
+    def test_the_console_answers_two_hundred_on_a_cluster_it_cannot_name(self) -> None:
+        status, body, _ = self.get("/")
+        self.assertEqual(status, 200, body[:300])
+        self.assertIn("ticketpath", body.lower())
+
+    def test_a_measured_cluster_still_names_its_id(self) -> None:
+        # The guard that keeps the test above from passing on a field somebody deleted: the
+        # devnet server names the devnet id through the same code path.
+        payload = _orchestrator().price_guidance(event_id="evt_syn_01")
+        self.assertEqual(payload["chain"]["memoProgram"], "Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH")
 
 
 if __name__ == "__main__":

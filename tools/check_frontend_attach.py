@@ -8,13 +8,28 @@ the synthetic backend:
   * no mock banner, and the backend's own data-source label on every page that prints
     numbers;
   * the false enforcement claims are gone;
-  * /pricing carries the console's [UNVALIDATED] and [FIXTURE] badges and the mode
-    sentence, and states no price of its own;
-  * the proxied console computes, refuses, and keeps every badge;
+  * /pricing carries the console's badges, a gloss for every one of them including the
+    page's own [UNAVAILABLE], and no promise the console refuses; it restates no decision
+    mode, states a floor where the record supports only a floor, names the environment
+    variable the proxy actually reads, and prints no price of its own;
+  * the frame is sandboxed and sized from its content rather than a fixed height;
+  * the proxied console computes, refuses, keeps every badge, rewrites the console's
+    root-relative form action and link, serves a containment policy, and does not reorder
+    a repeated key;
   * the figures on three pages are the API's figures at the precision shown.
 
 The last requirement is the one that matters: a check that cannot fail is not a check.
 `--base http://127.0.0.1:3000` points it at the unattached original, where it must fail.
+
+A page that is not there cannot make a false claim, so every /pricing check below fails
+when the route is not a 200. Without that gate an absence check passes on a 404 and reports
+a defect as a success, which is how one of these checks used to pass on the control.
+
+What this cannot see: nothing here renders. The frame's height against its content, and
+whether a price is visible in the frame at 390px, are layout facts and need a browser. They
+were measured with tools/shot.py at the time of the fix (the numbers are in the commit-free
+report the fix was handed back with): 3383px of frame over 3382px of console at 1280, and
+7143 over 7142 at 390, with no scrollbar inside the frame in either case.
 
 Standard library only, GET only, no browser. Nothing here writes to either tree.
 
@@ -33,8 +48,27 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from decimal import Decimal
+from pathlib import Path
 
 TIMEOUT_SECONDS = 15.0
+
+# The backend's badge list, imported from the authority rather than copied here, so a badge
+# added to `ticketpath/core/labels.py` that the page fails to gloss shows up as a failure.
+# The literal is the same eight and exists only so this file still runs from a copy.
+try:  # pragma: no cover - the import is the normal path when run from the repository
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from ticketpath.core.labels import BADGES as BACKEND_BADGES
+except Exception:  # noqa: BLE001 - a copy without the backend is still worth checking
+    BACKEND_BADGES = (
+        "FIXTURE",
+        "DECLARED",
+        "EXACT",
+        "UNVALIDATED",
+        "REFUSED",
+        "DESIGN",
+        "SIMULATED",
+        "DEVNET",
+    )
 
 # Strings that are only false when the app is reading fixtures. They are quoted from the
 # original tree, and each one is a claim about enforcement or custody that no build of
@@ -102,6 +136,65 @@ def http_get(url: str) -> tuple[int, str]:
         return error.code, error.read().decode(charset or "utf-8", "replace")
     except Exception as error:  # noqa: BLE001 - unreachable is a finding, not a traceback
         return 0, f"<no response: {error}>"
+
+
+def http_get_full(url: str) -> tuple[int, dict[str, str], str]:
+    """GET a URL and keep the response headers, for the assertions about the policy."""
+    request = urllib.request.Request(url, method="GET")
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+            charset = response.headers.get_content_charset() or "utf-8"
+            headers = {key.lower(): value for key, value in response.headers.items()}
+            return response.status, headers, response.read().decode(charset, "replace")
+    except urllib.error.HTTPError as error:
+        charset = error.headers.get_content_charset() if error.headers else "utf-8"
+        headers = {key.lower(): value for key, value in (error.headers or {}).items()}
+        return error.code, headers, error.read().decode(charset or "utf-8", "replace")
+    except Exception as error:  # noqa: BLE001 - an unreachable host is a result
+        return 0, {}, f"<no response: {error}>"
+
+
+SCRIPT_OR_STYLE = re.compile(r"<(script|style)\b.*?</\1>", re.S | re.I)
+ANY_TAG = re.compile(r"<[^>]+>")
+ABSOLUTE_URL = re.compile(r"https?://[^\s\"'<>\\]+")
+IFRAME_TAG = re.compile(r"<iframe\b[^>]*>", re.I)
+
+
+def page_text(html: str) -> str:
+    """The words a reader sees: script and style blocks and tags removed.
+
+    Next inlines its RSC payload, and a dev build inlines the framework's own error payload,
+    inside <script>. Scanning the raw bytes for a claim or a URL finds things no reader can
+    see, which is how a page can be called wrong for something it never said.
+    """
+    return re.sub(r"\s+", " ", ANY_TAG.sub(" ", SCRIPT_OR_STYLE.sub(" ", html))).strip()
+
+
+def origins_in(text: str) -> set[str]:
+    """Every absolute scheme://host:port a reader could click, deduplicated."""
+    found: set[str] = set()
+    for match in ABSOLUTE_URL.finditer(text):
+        parts = urllib.parse.urlsplit(match.group(0))
+        if parts.netloc:
+            found.add(f"{parts.scheme}://{parts.netloc}".lower())
+    return found
+
+
+CANONICAL_EVENT = re.compile(r"event=([A-Za-z0-9_]+)")
+
+
+def proxied_event_id(html: str) -> str | None:
+    """The event the console says it priced, read off its own canonical URL line.
+
+    Two console pages cannot be compared byte for byte: the canonical line carries the
+    decision instant to the millisecond and the [DESIGN] slot carries a quote id derived
+    from it, so every request differs. The event id is the part a repeated key is about.
+    """
+    at = html.find("canonical URL for this decision")
+    if at < 0:
+        return None
+    found = CANONICAL_EVENT.search(html, at)
+    return found.group(1) if found else None
 
 
 def tile(page: str, label: str) -> str | None:
@@ -253,52 +346,205 @@ def run(base: str, api_base: str) -> list[Check]:
         )
     )
 
-    # -- /pricing: badges, the mode sentence, and no price of its own ----------------
+    # -- /pricing: every sentence on it, checked against what the console refuses -------
+    # Each check below is gated on the route being a page. An absence check on a 404 passes
+    # for the wrong reason: the original frontend has no /pricing, so "the page makes no false
+    # promise" was true of a 404 and this checker reported a defect as a success.
     pricing = pages["pricing"]
     negotiated = pages["pricing with event"]
+    pricing_status, _ = http_get(f"{base}/pricing")
+    up = pricing_status == 200
+    words = page_text(pricing)
+    origin = urllib.parse.urlsplit(api_base).netloc
+
+    def on_page(*phrases: str) -> tuple[bool, str]:
+        """True when every phrase is on the page as a reader sees it."""
+        missing = [phrase for phrase in phrases if phrase not in words]
+        return (not missing, f"missing {missing}" if missing else "present")
+
     checks.append(
         Check(
             "pricing frames the console",
-            'src="/api/console' in pricing and f'src="/api/console?event={rich_event["id"]}' in negotiated,
-            f'frame src "/api/console" and the event is forwarded into it',
-            "" if 'src="/api/console' in pricing else "app/pricing/page.tsx is missing or not served",
+            up
+            and 'src="/api/console' in pricing
+            and f'src="/api/console?event={rich_event["id"]}' in negotiated,
+            f'{pricing_status}, frame src "/api/console" and the event is forwarded into it',
+            ""
+            if up
+            else (
+                "/pricing is not served: 404 here means the copy being served predates the "
+                "page, or the server is still reading lib/mock"
+            ),
         )
     )
-    for badge in ("[UNVALIDATED]", "[FIXTURE]"):
-        checks.append(
-            Check(
-                f"pricing states {badge}",
-                badge in pricing,
-                f"{pricing.count(badge)} on the page",
-                "" if badge in pricing else "the preamble must name the badge it is relying on",
-            )
-        )
-    mode_sentence = "Decision mode:"
+
+    # The page's promises, against the console's refusals. The console refuses a
+    # price-specific sale probability (`[REFUSED] not_identified`) and an interior optimum
+    # (`[REFUSED] no_demand_response`) on every state, so the page may not promise either.
+    promises = (
+        "maximises risk-adjusted expected value",
+        "the chance it sells at a given price, and",
+        "how that value moves over the time left",
+    )
+    admitted = (
+        "does not estimate the chance a ticket sells at a given price",
+        "boundary rather than an interior optimum",
+    )
+    claimed = [phrase for phrase in promises if phrase in words]
+    owned = [phrase for phrase in admitted if phrase in words]
     checks.append(
         Check(
-            "pricing carries the mode sentence",
-            mode_sentence in pricing,
-            mode_sentence if mode_sentence in pricing else "missing",
-            "" if mode_sentence in pricing else "the page must say which decision mode the frame is in",
+            "pricing promises no output the console refuses",
+            up and not claimed and len(owned) == len(admitted),
+            "none of the three promises, both refusals named"
+            if up and not claimed and len(owned) == len(admitted)
+            else f"still promised {claimed}; refusals named {len(owned)}/{len(admitted)}",
+            "the opening sentence must state what the page shows, not the research aim: "
+            "the console refuses sale probability and an interior optimum by name",
         )
     )
-    origin = urllib.parse.urlsplit(api_base).netloc
+
+    # The decision-mode sentence is a function of the record, and the backend's copy changes
+    # with it: `completed record ... in hindsight` is true of an event whose run has ended and
+    # false of one that has not. A page cannot restate it, so it must not try.
     checks.append(
         Check(
-            "pricing names the backend origin",
-            origin in pricing,
-            f"expects {origin!r}",
-            "" if origin in pricing else "the page must name where the numbers come from",
+            "pricing restates no decision mode",
+            up and "hindsight" not in words and "completed resale record" not in words
+            and "decision mode" in words,
+            "no hindsight claim; points at the console's own decision panel"
+            if up and "hindsight" not in words and "completed resale record" not in words
+            else "the page is describing a mode the console chooses for itself",
+            "drop the mode sentence and let the frame carry the backend's own, which is "
+            "state-aware; the review's D2 quotes both sentences side by side",
         )
     )
+
+    # A binding-cap event prints a floor and no upper bound, so a page that always promises a
+    # band is wrong for the regime the checker's own parity event is in.
+    band_claim = "the band around it is the part worth arguing with"
+    checks.append(
+        Check(
+            "pricing states a floor where there is no band",
+            up and band_claim not in words and "floor" in words,
+            "the band is conditional and the floor is named"
+            if up and band_claim not in words
+            else "the page promises a band for every event",
+            "say the band holds where the record supports one, and the floor otherwise",
+        )
+    )
+
+    # The legend. Every badge the backend can print gets a gloss here, plus the one badge
+    # this app writes itself, and no gloss may contradict the sentence beside the number.
+    badges = tuple(f"[{name}]" for name in BACKEND_BADGES) + ("[UNAVAILABLE]",)
+    missing_badges = [badge for badge in badges if badge not in words]
+    checks.append(
+        Check(
+            "pricing glosses every badge",
+            up and not missing_badges,
+            f"{len(badges) - len(missing_badges)}/{len(badges)} glossed"
+            + (f"; missing {missing_badges}" if missing_badges else ""),
+            "the legend must cover the backend's badges (labels.py) and the page's own "
+            "[UNAVAILABLE], which the proxy writes when the console does not answer",
+        )
+    )
+    contradicted = "a parameter a person set, not estimated"
+    checks.append(
+        Check(
+            "[DECLARED] gloss matches the console's use",
+            up and contradicted not in words and "declared prior" in words,
+            "says declaration or a declared prior, which is what the badge is on"
+            if up and contradicted not in words and "declared prior" in words
+            else "the gloss denies the estimate the console puts that badge on",
+            "the console prints [DECLARED] over a posterior mean of a declared prior, so a "
+            "gloss that says 'not estimated' contradicts it on the same screen",
+        )
+    )
+
+    # Where the numbers come from. The page must name the variable the proxy reads, and the
+    # only absolute address on it must be the backend's: a page that prints the fallback
+    # variable's value while the proxy fetches CONSOLE_ORIGIN states a false origin.
+    checks.append(
+        Check(
+            "pricing names the variable the proxy reads",
+            up and "CONSOLE_ORIGIN" in words and "NEXT_PUBLIC_API_BASE_URL" in words,
+            "names CONSOLE_ORIGIN and its NEXT_PUBLIC_API_BASE_URL fallback",
+            "the page must name the variable that decides the origin, not only the origin",
+        )
+    )
+    printed = origins_in(words)
+    stale_mechanism = "built from its own host header"
+    checks.append(
+        Check(
+            "pricing states the backend's origin and no other",
+            up and printed == {api_base.rstrip("/").lower()},
+            f"printed {sorted(printed)}, backend {api_base.rstrip('/')!r}",
+            "the only absolute address on the page must be the origin the proxy fetches; "
+            "anything else is a second, false account of where the numbers come from",
+        )
+    )
+    checks.append(
+        Check(
+            "pricing describes the canonical URL correctly",
+            up and stale_mechanism not in words and "bound to" in words,
+            "says bound address" if up and stale_mechanism not in words else "still says host header",
+            "server.py builds the canonical URL from self.server.server_address",
+        )
+    )
+
+    # The one link to the backend. It must point at the origin the proxy fetches, and it may
+    # only be rendered when there is something there to load.
+    link = re.search(r'<a[^>]+href="(https?://[^"]+)"[^>]*>\s*open the same state', pricing)
+    checks.append(
+        Check(
+            "pricing links the backend only where it answers",
+            up and (link is None or urllib.parse.urlsplit(link.group(1)).netloc == origin),
+            (f"links {link.group(1)}" if link else "no backend link offered")
+            + f", backend {origin!r}",
+            "a link to an address that does not answer is a dead link; render the address "
+            "as text instead",
+        )
+    )
+
     checks.append(
         Check(
             "pricing states no price itself",
-            "Recommended primary price" not in pricing,
-            "the page links the console rather than restating its figure"
-            if "Recommended primary price" not in pricing
-            else "the page is restating the console's headline without its badge",
+            up and "Recommended primary price" not in pricing,
+            "the page frames the console rather than restating its figure"
+            if up and "Recommended primary price" not in pricing
+            else (
+                f"{pricing_status}, page restates the console's headline"
+                if "Recommended primary price" in pricing
+                else f"{pricing_status}, the route is not served, so it is not framing anything"
+            ),
             "",
+        )
+    )
+
+    # -- the frame: sandboxed, and sized to the page it holds --------------------------
+    frame_tag = IFRAME_TAG.search(pricing)
+    tag = frame_tag.group(0) if frame_tag else ""
+    checks.append(
+        Check(
+            "frame is sandboxed",
+            up and 'sandbox="allow-forms' in tag,
+            tag[:160] if tag else "no iframe on /pricing",
+            "the console's document must not be able to script this page; the review's D9 "
+            "measured a same-origin frame with no sandbox at all",
+        )
+    )
+    fixed_height = re.search(r"h-\[(\d+)px\]", tag)
+    checks.append(
+        Check(
+            "frame is sized from its content",
+            up and bool(tag) and "data-console-frame" in tag and fixed_height is None,
+            (
+                "no fixed height; the frame measures the document it holds"
+                if fixed_height is None
+                else f"fixed height h-[{fixed_height.group(1)}px] hides the rest of the console"
+            ),
+            "a fixed height hid about half the console at 1280 and two thirds at 390, and "
+            "drew a three-line refusal as a tall empty box",
         )
     )
 
@@ -338,6 +584,62 @@ def run(base: str, api_base: str) -> list[Check]:
             status == 400,
             f"{status}",
             "" if status == 400 else "the proxy must not forward parameters the console ignores",
+        )
+    )
+
+    # The console owns the backend's site root, so its form action and its one link are
+    # written as "/". Inside the proxy those resolve to this app's home page: the form would
+    # throw the frame back to the event list and the error page's link would load the whole
+    # app inside the frame. Both must arrive rewritten.
+    status, error_page = http_get(f"{base}/api/console?event=nonexistent-event")
+    checks.append(
+        Check(
+            "proxy rewrites the console's root-relative link",
+            status in (404, 200)
+            and 'href="/"' not in error_page
+            and 'href="/api/console"' in error_page,
+            f"{status}, the console's error page keeps its link inside the proxy"
+            if 'href="/api/console"' in error_page
+            else f"{status}, the console's error page still links the app root",
+            "unrewritten, `back to the decision` loads this app inside the frame "
+            "(the review's D5 measured exactly that)",
+        )
+    )
+    checks.append(
+        Check(
+            "proxy rewrites the console's form action",
+            'action="/api/console"' in console and 'action="/"' not in console,
+            "the Recompute button posts back through the proxy",
+            "unrewritten, Recompute navigates the frame to the app's home page",
+        )
+    )
+
+    # Containment that does not rest on the console never emitting a script.
+    status, headers, _ = http_get_full(f"{base}/api/console?event={rich_event['id']}")
+    policy = headers.get("content-security-policy", "")
+    checks.append(
+        Check(
+            "proxy serves a containment policy",
+            status == 200 and "default-src 'none'" in policy and "form-action" in policy,
+            policy or "no content-security-policy header",
+            "the frame is same-origin; without a policy its containment rests entirely on "
+            "the console keeping its escaping",
+        )
+    )
+
+    # A repeated key. The console reads the first (`server.py` takes values[0]), so a proxy
+    # that collapsed the pair would answer a different event than the URL names.
+    first, one = http_get(f"{base}/api/console?event={rich_event['id']}")
+    second, two = http_get(f"{base}/api/console?event={rich_event['id']}&event={thin_event['id']}")
+    once, twice = proxied_event_id(one), proxied_event_id(two)
+    checks.append(
+        Check(
+            "proxy forwards a repeated key as given",
+            first == second == 200 and once == twice == rich_event["id"],
+            f"asked {rich_event['id']} then {rich_event['id']},{thin_event['id']}: "
+            f"priced {once!r} and {twice!r}",
+            "the console reads the first of a repeated key, so a proxy that keeps the last "
+            "one answers a different event than the URL names",
         )
     )
 

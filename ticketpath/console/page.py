@@ -9,15 +9,18 @@ Reading order, fixed by the spec and by the tests: the banner, the title, the co
 the canonical URL, the evidence strip, the decision, the market, the refusals, the design
 panel, the simulated state machine, and the chain slot last.
 
-Every number is rendered through `units.num`, which puts its badge in front of it in the
-same text run. Every sentence comes from `labels`, by id.
+Every number carries its provenance in its own text run, and there are two provenances. A
+number the artefact's quote hash covers is rendered through `units.num` with a badge; a
+number the hash does not cover is rendered through `units.num` with `units.STATED` instead,
+because a badge on it would be a claim the file cannot back (feature 2, the forged-signature
+finding). Every sentence comes from `labels`, by id.
 """
 
 from __future__ import annotations
 
 from typing import Mapping
 
-from ticketpath.console import blocks
+from ticketpath.console import blocks, units
 from ticketpath.console.units import esc, num, plural, value_of
 from ticketpath.core import labels
 
@@ -365,62 +368,408 @@ def simulation(payload: Mapping) -> str:
     return "".join(out)
 
 
+# The two transfer legs, in the order a reader meets them. The names are the page's, for the
+# keys the file uses; the values beside them are only ever the file's.
+LEG_NAMES = (("acceptedAtCap", "at the cap"), ("refusedOverCap", "one lamport over the cap"))
+
+# The one explorer host this page will link to. The URL is the file's, but escaping is not the
+# whole answer for a URL: `javascript:` and `data:` escape cleanly and execute when clicked, so
+# the scheme and the host are checked and a URL that fails is printed as text, never as a link
+# (feature 2 review). Parsed by hand rather than through `urllib.parse`, because this module
+# speaks no HTTP and `tests/test_boundaries.py` holds that line.
+EXPLORER_PREFIX = "https://"
+EXPLORER_HOSTS = ("explorer.solana.com",)
+
+
+def _is_explorer_url(url: str) -> bool:
+    """True only for an https URL whose authority is exactly an explorer host.
+
+    An authority carrying userinfo or a port is refused rather than trimmed: the publisher
+    writes neither, and `https://explorer.solana.com@elsewhere.example/` is a link to
+    elsewhere that a `startswith` would wave through. Whitespace and control characters are
+    refused because a browser may strip them and read a different URL from the one checked.
+    """
+    if any(char.isspace() or ord(char) < 0x20 for char in url):
+        return False
+    if "\\" in url or not url.startswith(EXPLORER_PREFIX):
+        return False
+    authority = url[len(EXPLORER_PREFIX):].split("/", 1)[0]
+    if "@" in authority or ":" in authority:
+        return False
+    return authority.lower() in EXPLORER_HOSTS
+
+
 def chain_slot(payload: Mapping) -> str:
+    """The recorded quote, then the three program facts. Never the live quote as a chain one.
+
+    `state` decides which block is true of the file: verified renders the recorded quote with
+    its own instant and its own two transfers, unverified renders why it failed, absent renders
+    the quote this console would commit and nothing else. `matchesCurrentQuote` is a separate
+    sentence, because "the file verified" and "this page's quote is that quote" are two
+    different facts and a page that merges them lies about one of them (decision MD2).
+    """
     chain = payload["chain"]
     out = ['<section class="panel chain" aria-label="[DEVNET] the chain slot">']
     out.append("<h2>[DEVNET] The chain slot</h2>")
     if chain["state"] == "verified":
-        explorer = _explorer_link(chain)
-        program_id = (chain.get("programStatus") or {}).get("programId")
-        out.append(
-            f'<p>[DEVNET] Verified at {esc(chain.get("checkedAt"))} against api.devnet.solana.com</p>'
-            f'<p>[DEVNET] signature <code>{esc(chain["signature"])}</code> · slot '
-            f'<span class="n">[DEVNET] {esc(chain["slot"])}</span> · block time '
-            f'<span class="n">[DEVNET] {esc(chain["blockTime"])}</span> · cluster {esc(chain.get("cluster"))}</p>'
-            f'<p>[DEVNET] quote id <code>{esc(chain["quoteId"])}</code> · quote hash <code>{esc(chain["quoteHash"])}</code></p>'
-        )
-        if explorer:
-            out.append(
-                f'<p>[DEVNET] transaction <a href="{esc(explorer)}">{esc(chain["signature"][:16])}…</a>'
-                + (f' · program <code>{esc(program_id)}</code>' if program_id else '')
-                + "</p>"
-            )
-        out.append(
-            '<p class="label-sentence">[DEVNET] Recorded, not independently re-read: this page '
-            'recomputes the quote hash from the fields above and does not ask the cluster. The '
-            'publisher read the memo back at the slot it reports; a re-read here needs '
-            "TICKETPATH_RPC_ENABLED=1, which is off by default.</p>"
-        )
-        out.append(f'<p class="label-sentence">{esc(labels.render("P_CHAIN_MEMO"))}</p>')
+        out.extend(_recorded_quote(payload, chain))
     else:
-        out.append(f'<p>[DEVNET] {esc(labels.render("devnet_absent"))}</p>')
-        if chain.get("reason") == "cluster_not_devnet":
-            out.append(
-                '<p>[DEVNET] A local rehearsal was recorded and is not devnet evidence. '
-                'Nothing on this page is rendered from it: no signature, no slot, no link.</p>'
-            )
-        out.append(f'<p>[DEVNET] {esc(labels.render("T5"))}</p>')
-        out.append(f'<p class="label-sentence">{esc(labels.render("P_CHAIN_ABSENT"))}</p>')
-        out.append(
-            f'<p class="label-sentence">[DESIGN] the quote this console would commit: '
-            f'quote id <code>{esc(chain["quoteId"])}</code>, memo '
-            f'<code>{esc(chain["memoText"])}</code>. Nothing is signed and nothing is sent.</p>'
-        )
+        out.extend(_not_verified(chain))
+    out.extend(_program_facts(chain))
     out.append("</section>")
     return "".join(out)
 
 
-def _explorer_link(chain: Mapping) -> str | None:
-    """The explorer URL for the verified signature, and never for anything else.
+def _stored_number(value, kind: str = "count") -> str:
+    """A recorded number printed as the file states it, or nothing if it is not a wrapper.
 
-    Built only in the `verified` branch: the spec's rule is that no explorer link exists until
-    an artefact has verified, so a placeholder signature can never produce one.
+    The quote hash covers six fields and a slot, a block time, a cap, a face or a transfer
+    price is not one of them. Those numbers keep `units.num`'s formatting and lose its badge:
+    a badge there would be a provenance claim the file cannot back.
     """
-    signature = chain.get("signature")
-    cluster = chain.get("cluster")
-    if not signature or cluster != "devnet":
+    if not isinstance(value, Mapping):
+        return ""
+    return num(value, kind, mark=units.STATED)
+
+
+def _recorded_quote(payload: Mapping, chain: Mapping) -> list[str]:
+    """The artefact's own fields, printed as recorded. A None field prints nothing."""
+    recorded = chain.get("recorded") or {}
+    out: list[str] = []
+    # The checker's own clock and its own version: neither is a chain fact, so neither carries
+    # a devnet badge. It used to be printed as `[DEVNET] 2026-11-08T00:50:25.281Z`.
+    checked = recorded.get("checkedAt")
+    checker = recorded.get("checkerVersion")
+    if checked or checker:
+        line = "The file verified."
+        if checked:
+            line += f" The checker wrote <code>{esc(checked)}</code>"
+        if checker:
+            line += f" with checker <code>{esc(checker)}</code>"
+        out.append(f'<p class="label-sentence">{line}.</p>')
+
+    # The six fields the quote hash covers, in one line, so the badge on each number below is
+    # a claim the hash backs.
+    covered = []
+    if recorded.get("quoteId"):
+        covered.append(f'quote id <code>{esc(recorded["quoteId"])}</code>')
+    if recorded.get("quoteHash"):
+        covered.append(f'quote hash <code>{esc(recorded["quoteHash"])}</code>')
+    if recorded.get("asOf"):
+        covered.append(f'recorded at <code>{esc(recorded["asOf"])}</code>')
+    if recorded.get("eventId"):
+        covered.append(f'event <code>{esc(recorded["eventId"])}</code>')
+    if recorded.get("tierId"):
+        covered.append(f'tier <code>{esc(recorded["tierId"])}</code>')
+    if recorded.get("modelVersion"):
+        covered.append(f'model <code>{esc(recorded["modelVersion"])}</code>')
+    if covered:
+        out.append("<p>[DEVNET] " + " · ".join(covered) + "</p>")
+
+    # Is the quote on this page the quote the file records, and what do the two numbers say?
+    out.extend(_match_sentence(payload, chain))
+
+    # Everything the hash does not cover. One line, one label, no badges: the file states it.
+    stated = []
+    if recorded.get("signature"):
+        stated.append(f'signature <code>{esc(recorded["signature"])}</code>')
+    slot_cell = _stored_number(recorded.get("slot"))
+    if slot_cell:
+        stated.append(f"slot {slot_cell}")
+    block_time_cell = _stored_number(recorded.get("blockTime"))
+    if block_time_cell:
+        stated.append(f"block time {block_time_cell}")
+    if recorded.get("cluster"):
+        stated.append(f'cluster {esc(recorded["cluster"])}')
+    if recorded.get("mint"):
+        stated.append(f'mint <code>{esc(recorded["mint"])}</code>')
+    if recorded.get("programId"):
+        stated.append(f'program <code>{esc(recorded["programId"])}</code>')
+    if recorded.get("memoProgram"):
+        stated.append(f'memo program <code>{esc(recorded["memoProgram"])}</code>')
+    face_cell = _stored_number(recorded.get("faceLamports"), "lamports")
+    if face_cell:
+        stated.append(f"face {face_cell}")
+    cap_cell = _stored_number(recorded.get("capBps"), "integer")
+    if cap_cell:
+        stated.append(f"cap {cap_cell}")
+    if stated:
+        out.append(
+            '<p class="label-sentence">The file states, and the quote hash does not cover: '
+            + " · ".join(stated)
+            + "</p>"
+        )
+
+    # One sentence for a reader who will not read seven lines of markup: which fields the hash
+    # covers, and that the rest is the writer's assertion.
+    out.append(
+        f'<p class="label-sentence">{esc(labels.render("P_CHAIN_FILE_COVERAGE"))}</p>'
+    )
+
+    transfers = recorded.get("transfers") or {}
+    rows = _transfer_rows(transfers)
+    if rows:
+        out.append(
+            '<table><thead><tr><th>transfer (the file\'s own leg key)</th><th>price</th>'
+            "<th>signature</th><th>slot</th><th>result</th></tr></thead><tbody>"
+        )
+        out.extend(rows)
+        out.append("</tbody></table>")
+
+    out.extend(_recorded_parameters(payload, chain))
+
+    signature = recorded.get("signature")
+    explorer = _explorer_link(chain)
+    if explorer and isinstance(signature, str) and signature:
+        out.append(
+            f'<p>transaction <a href="{esc(explorer)}"><code>{esc(signature[:16])}…</code></a></p>'
+        )
+    elif isinstance(signature, str) and signature:
+        # No link: the file's URL is not an https address on the explorer host, so the
+        # signature is printed and nothing is clickable.
+        out.append(f'<p>transaction <code>{esc(signature)}</code></p>')
+
+    out.append(
+        f'<p class="label-sentence">{esc(labels.render("P_CHAIN_NOT_REREAD"))}</p>'
+    )
+    out.append(f'<p class="label-sentence">{esc(labels.render("P_CHAIN_MEMO"))}</p>')
+    return out
+
+
+def _recorded_parameters(payload: Mapping, chain: Mapping) -> list[str]:
+    """The cap and face the file states, the ceiling they imply, and where its number sits.
+
+    The page printed neither the cap nor the face, so it could not show that the recorded
+    recommendation (1,380,000,000 on the shipped record) is above the recorded ceiling its own
+    cap and face imply (1,250,000,000). The page's own cap and face are named beside them only
+    where they differ from the file's, because that difference is why the agreement above is
+    about the quote and the number and not about the parameters.
+    """
+    recorded = chain.get("recorded") or {}
+    capacity = recorded.get("capacity") or {}
+    face = recorded.get("faceLamports")
+    cap = recorded.get("capBps")
+    ceiling = capacity.get("ceilingLamports")
+    if not (isinstance(face, Mapping) and isinstance(ceiling, Mapping)):
+        return []
+    out = [
+        "<p>"
+        + blocks.sentence(
+            "P_CHAIN_RECORDED_PARAMETERS",
+            {"ceiling": num(ceiling, "lamports")},
+        )
+        + "</p>"
+    ]
+    recommendation = recorded.get("recommendedLamports")
+    above = capacity.get("recommendedAboveCeiling")
+    if isinstance(recommendation, Mapping) and above is not None:
+        label_id = (
+            "P_CHAIN_RECOMMENDED_ABOVE_CEILING"
+            if above
+            else "P_CHAIN_RECOMMENDED_INSIDE_CEILING"
+        )
+        out.append(
+            "<p>" + blocks.sentence(label_id, {"rec": num(recommendation, "lamports")}) + "</p>"
+        )
+
+    # The page's own parameters, named only where they are not the file's: that difference is
+    # why the agreement above is about the quote and the number, not about the parameters.
+    selection = payload.get("selection")
+    live_cap = selection.get("capBpsCandidate") if isinstance(selection, Mapping) else None
+    tier = blocks.selected_tier(payload)
+    live_face = (tier or {}).get("faceValueLamports")
+    if isinstance(live_cap, Mapping) and isinstance(live_face, Mapping):
+        same = value_of(live_cap) == value_of(cap) and value_of(live_face) == value_of(face)
+        if not same:
+            out.append(
+                "<p>"
+                + blocks.sentence(
+                    "P_CHAIN_PAGE_PARAMETERS",
+                    {"cap": num(live_cap, "integer"), "face": num(live_face, "lamports")},
+                )
+                + "</p>"
+            )
+    return out
+
+
+def _transfer_rows(transfers: Mapping) -> list[str]:
+    """One row per leg the file records: its price, its signature, its slot, its outcome.
+
+    The row's label is the file's own leg key, not a name this page made up: the page used to
+    print "at the cap" beside a price 130,000,000 lamports below the ceiling it printed on the
+    same page (feature 2 review). Each value is printed only at the type its grammar names, so
+    a price that is a string, a slot that is text or a signature that is an int renders as
+    nothing instead of taking the page down.
+    """
+    rows = []
+    for leg, row in transfers.items():
+        if not isinstance(row, Mapping):
+            continue
+        price_cell = _stored_number(row.get("priceLamports"), "lamports")
+        signature = row.get("signature")
+        signature_cell = (
+            f"<code>{esc(signature)}</code>" if isinstance(signature, str) and signature else ""
+        )
+        slot_cell = _stored_number(row.get("slot"))
+        if "errorNotAString" in row:
+            result_cell = "the file's error is not a string, so it is not shown"
+        elif "error" in row:
+            error = row["error"]
+            if isinstance(error, str) and error:
+                result_cell = f'refused by the chain, as the file states: <code>{esc(error)}</code>'
+            else:
+                result_cell = "accepted, as the file states"
+        else:
+            result_cell = ""
+        rows.append(
+            f"<tr><td><code>{esc(leg)}</code></td><td>{price_cell}</td><td>{signature_cell}</td>"
+            f"<td>{slot_cell}</td><td>{result_cell}</td></tr>"
+        )
+    return rows
+
+
+def _match_sentence(payload: Mapping, chain: Mapping) -> list[str]:
+    """Whether the quote on the page is the quote the file records, and what the numbers say.
+
+    Two statements, kept apart. The first is about the number: the recorded recommendation and
+    the page's own, printed twice only where they differ. The second is about the quote: its
+    id and its instant. They used to be one sentence saying "the number on this page ... is
+    not the number the chain recorded" on a page printing 1.38 SOL twice (feature 2 review).
+    """
+    recorded = chain.get("recorded") or {}
+    matches = chain.get("matchesCurrentQuote")
+    decision = payload.get("decision")
+    live = decision.get("recommendedLamports") if isinstance(decision, Mapping) else None
+    recommendation = recorded.get("recommendedLamports")
+    out: list[str] = []
+    if isinstance(recommendation, Mapping) and isinstance(live, Mapping):
+        if value_of(recommendation) == value_of(live):
+            out.append(
+                "<p>"
+                + blocks.sentence("P_CHAIN_RECOMMENDED_SAME", {"rec": num(recommendation, "lamports")})
+                + "</p>"
+            )
+        else:
+            out.append(
+                "<p>"
+                + blocks.sentence(
+                    "P_CHAIN_RECOMMENDED_DIFFER",
+                    {"rec": num(recommendation, "lamports"), "cur": num(live, "lamports")},
+                )
+                + "</p>"
+            )
+    recorded_id, recorded_as_of = recorded.get("quoteId"), recorded.get("asOf")
+    live_id, live_as_of = chain.get("quoteId"), payload.get("asOf")
+    if matches is True and recorded_id and recorded_as_of:
+        out.append(
+            f'<p>{esc(labels.render("P_CHAIN_QUOTE_AGREE", quoteId=recorded_id, asOf=recorded_as_of))}</p>'
+        )
+    elif matches is False and all((recorded_id, recorded_as_of, live_id, live_as_of)):
+        out.append(
+            f'<p>{esc(labels.render("P_CHAIN_QUOTE_DISAGREE", liveQuoteId=live_id, liveAsOf=live_as_of, recordedQuoteId=recorded_id, recordedAsOf=recorded_as_of))}</p>'
+        )
+    return out
+
+
+def _not_verified(chain: Mapping) -> list[str]:
+    """Absent, or present and unverified, with the reason named rather than summarised.
+
+    The two are kept apart by their first sentence. A file that exists and fails a check is
+    not the same record as no file at all, so the absent sentence is printed only where the
+    file is absent; printing both in the unverified state made a tampered artefact read like
+    an empty disk (decision MD2: three states stay distinct).
+    """
+    reason = chain.get("reason")
+    out = []
+    if chain["state"] == "unverified":
+        out.append(
+            f'<p>[DEVNET] Unverified: {esc(_reason_sentence(reason, chain))} '
+            f'<code>{esc(reason or "devnet_unverified")}</code></p>'
+        )
+        if reason == "cluster_not_devnet" and chain.get("reasonCluster") == "localnet":
+            # The rehearsal sentence is for a rehearsal. Every non-devnet cluster used to get
+            # it, so a testnet file was described as a local run and the word testnet appeared
+            # nowhere on the page (feature 2 review).
+            out.append(
+                '<p>[DEVNET] A local rehearsal was recorded and is not devnet evidence. '
+                'Nothing on this page is rendered from it: no signature, no slot, no link.</p>'
+            )
+    else:
+        out.append(f'<p>[DEVNET] {esc(labels.render("devnet_absent"))}</p>')
+    out.append(f'<p>[DEVNET] {esc(labels.render("T5"))}</p>')
+    out.append(f'<p class="label-sentence">{esc(labels.render("P_CHAIN_ABSENT"))}</p>')
+    out.append(
+        f'<p class="label-sentence">[DESIGN] the quote this console would commit: '
+        f'quote id <code>{esc(chain["quoteId"])}</code>, memo '
+        f'<code>{esc(chain["memoText"])}</code>. Nothing is signed and nothing is sent.</p>'
+    )
+    return out
+
+
+def _reason_sentence(reason: str | None, chain: Mapping) -> str:
+    """The registry's sentence for a typed reason, and a named fallback for an unknown one."""
+    label_id = reason or "devnet_unverified"
+    cluster = chain.get("reasonCluster")
+    if label_id == "cluster_not_devnet" and not isinstance(cluster, str):
+        label_id = "cluster_not_devnet_unnamed"
+    fields = {"cluster": cluster}
+    try:
+        return labels.render(label_id, **fields)
+    except KeyError:
+        return "The console does not know this reason, and reports it rather than guessing."
+
+
+def _program_facts(chain: Mapping) -> list[str]:
+    """Three claims, three sources: the file's program, this server's silence, the design doc."""
+    status = chain.get("programStatus") or {}
+    recorded = status.get("recorded") or {}
+    out = []
+    if recorded.get("programId"):
+        cluster = recorded.get("cluster")
+        source = recorded.get("source")
+        out.append(
+            f'<p>[DEVNET] {esc(labels.render("P_CHAIN_PROGRAM_RECORDED"))} '
+            f'<code>{esc(recorded["programId"])}</code>'
+            + (f" for cluster {esc(cluster)}" if cluster else "")
+            + (f", recorded in <code>{esc(source)}</code>" if source else "")
+            + "</p>"
+        )
+    if chain.get("memoProgram") is None:
+        # A cluster the table has no measurement for. The payload answers null and the page
+        # used to say nothing at all, so a testnet server looked like a devnet one.
+        out.append(
+            f'<p class="label-sentence">'
+            f'{esc(labels.render("P_CHAIN_NO_MEMO_PROGRAM", cluster=status.get("cluster") or "unknown"))}</p>'
+        )
+    if not status.get("askedCluster"):
+        out.append(f'<p>[DEVNET] {esc(labels.render("P_CHAIN_NOT_ASKED"))}</p>')
+    design_doc = status.get("designDoc")
+    if design_doc:
+        out.append(
+            f'<p>[DESIGN] {esc(labels.render("P_CHAIN_DESIGN_POINTER", doc=design_doc))}</p>'
+        )
+    return out
+
+
+def _explorer_link(chain: Mapping) -> str | None:
+    """The explorer URL the artefact records, and only when it is https on the explorer host.
+
+    A link is a pointer, not evidence. Reading it out of the file means the page cannot point
+    at a transaction the file does not name; a link for a placeholder signature is impossible
+    because the recorded block is only rendered when the file verified. HTML-escaping a URL is
+    not enough on its own: `javascript:` and `data:` escape cleanly and run when clicked, so
+    the scheme and the host are checked and anything else is printed as text.
+    """
+    recorded = chain.get("recorded") or {}
+    explorer = recorded.get("explorer")
+    if not isinstance(explorer, Mapping):
         return None
-    return f"https://explorer.solana.com/tx/{signature}?cluster=devnet"
+    url = explorer.get("transaction")
+    if not isinstance(url, str) or not url:
+        return None
+    if not _is_explorer_url(url):
+        return None
+    return url
 
 
 def render_error(*, status: int, message: str, code: str) -> str:

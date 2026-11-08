@@ -281,6 +281,17 @@ def _sentence(label_id: str, numbers: Mapping[str, str], **fields: object) -> st
     return "".join(out)
 
 
+def sentence(label_id: str, numbers: Mapping[str, str], **fields: object) -> str:
+    """The public form of `_sentence`, for a block that lives in another module.
+
+    The rule is the same one the decision block uses: the wording stays the registry's and each
+    number is substituted as its own rendered span, so a sentence cannot drift from the numbers
+    it describes. `page.py`'s chain slot needs it and importing a private name across modules
+    would make the import the only record of the rule.
+    """
+    return _sentence(label_id, numbers, **fields)
+
+
 def _exact_ceiling_line(tier: Mapping, cap_bps) -> str:
     """The [EXACT] line, exact at its displayed precision.
 
