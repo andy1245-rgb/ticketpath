@@ -180,7 +180,7 @@ export default async function RulesPage(): Promise<React.ReactElement> {
           </p>
         </section>
 
-        <section className="mt-16">
+        <section id="enforcement-today" className="mt-16 scroll-mt-24">
           <h2 className="h-section text-ink">Enforcement today</h2>
 
           {artefact ? (
