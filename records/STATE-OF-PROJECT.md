@@ -133,6 +133,13 @@ Measured on the committed tree: `Ran 1092 tests` / `OK (skipped=26)` for `tests/
 and `tp.py gate --quick` reporting `tests=1092 OK - doc-check=0 violation(s)`. Every earlier reading in
 this file stays where it is, tagged with the tree it was taken on.
 
+**Read again at 2026-11-08T11:27-11:30Z, after the release merge: `Ran 1251 tests` (`OK
+(skipped=27)`) in `tests/` and `Ran 771 tests` (`OK (skipped=2)`) in `market_swarm/tests/`, with
+`doc_check` clean and `public_safety: clean, tracked tree, 367 file(s)`. §A4 carries that table with
+the command behind every number. The 1092/489 pair above was a reading of `dd42348` and is not
+superseded by assertion: it is superseded by measurement, at the later instant, on a tree the merge
+and three parallel agents had moved.**
+
 **Extended 2026-11-08T05:54Z, after the 03:45Z edition above.** This edition adds the ten-feature
 status table (below), corrects §A4 with the test counts measured in this edit, and adds the three
 memo-program rows to §F. It does not re-run the 03:45Z measurements and carries them unchanged.
@@ -154,10 +161,11 @@ implements the feature is claimed in this pass.
 | 4 | Forecast log on chain plus off-chain scoring | **tested** | `programs/cap_hook/src/lib.rs` (tags 5 and 6), `ticketpath/onchain/v2.py`, `ticketpath/core/forecast_score.py` | `tests/test_forecast_score.py` (18 tests) and `tests/test_onchain_v2.py` (45 tests), both `OK`. The live local-validator half is `tests/test_onchain_v2_live.py`, 26 tests, **skipped** by the documentation pass (the gate is `TP_ONCHAIN_V2_LIVE=1` and the run rewrites the run's artefact). The rebuilt artefact (111,504 bytes, sha256 `de89af3c…`) carries proofs `a` to `g` and thirteen tag 4..6 proofs, and proof `g` is the two non-authority refusals `6026` |
 | 5 | Artist fee via `TransferFeeConfig` | **not built** | none | **Blocked** by the measured Token-2022 ceiling: at `decimals 0`, `amount 1`, any rate from 1 to 9999 bps withholds the whole ticket. `records/findings/36-transfer-fee-on-a-one-unit-ticket.md` |
 | 6 | Price floor | **tested** | `programs/cap_hook/src/state.rs` (`band_low_lamports`), `programs/cap_hook/src/lib.rs` (`6021`, `6022`), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`) for the field and the wire format. The predicate's proof is the local-validator run recorded at `records/onchain-v2.local.json`: `899,999,999` refused `6021`, `900,000,000` admitted. Not re-run by this pass. **That artefact is git-ignored (`.gitignore:65`, 32,679 bytes on disk here) and stays local: it is not in the repository and a reader will not find it** |
-| 7 | Flip tax | **not built** | the rebate curve only (`rebate_bps`, `rebate_lamports` in `programs/cap_hook/src/state.rs`) | **Blocked** by the same ceiling. `ClaimRebate` (tag 7) is not implemented, `6027` and `6028` are declared and raised by nothing, and `held_since_unix` is written with no consumer. Same finding |
+| 7 | Flip tax | **tested** | `market_swarm/flip_tax.py` (the schedule, the assessment, the 70-byte record decoder, the leg and the instruction order); `market_swarm/config.py`, `market_swarm/gateway.py`, `market_swarm/runner.py`, `market_swarm/ledger.py` and `market_swarm/datasets.py` (the per-event option, the leg in the sale transaction, the row's three columns and the dataset check); `programs/cap_hook/src/lib.rs` step 7, which writes `held_since_unix`, is the input this build reads | Off chain: `market_swarm/tests/test_flip_tax.py`, `market_swarm/tests/test_flip_tax_mutation.py` and `market_swarm/tests/test_flip_tax_wiring.py`. On chain: `tools/flip_tax_proof.py`, with `tests/test_flip_tax_proof.py` for the tool itself and the run quoted in `records/findings/43-flip-tax-at-checkout.md`. **The charging half only:** the tax is a seller-paid lamport leg in the sale transaction, 15% under an hour falling to 0 at 30 days by default and off unless an event turns it on, and the chain does not enforce it (a sale can move the ticket and pay nothing). **The pool half is not built**: the money goes to the artist wallet, a refund-to-holders pool is documented as a future option in `docs/ON-CHAIN-DESIGN.md` §16.6, `ClaimRebate` (tag 7) is absent from `lib.rs`, `6027` and `6028` are raised by nothing, and `state.rs`'s `HOLD_FULL_SECONDS = 60` is that unbuilt curve's demo number, not this schedule |
 | 8 | Public price feed | **tested** | `programs/cap_hook/src/lib.rs` (tag 4), `programs/cap_hook/src/state.rs` (`band_seeds`), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`). The account was published and read back on the local validator (`low 900000000`, `high 1100000000`, `sample_n 42`); **no third-party consumer**, so composability is unproven. The run is the same local-only one behind feature 6: the artefact `records/onchain-v2.local.json` is git-ignored and stays local, so the numbers are the record and the artefact is not |
 | 9 | Live deepseek agent adapter, tiny budgets | **tested** | `market_swarm/forge_policy.py`, `market_swarm/budget.py`; opt-in on `MARKET_SWARM_LIVE_LLM=1` | `market_swarm/tests/test_feature9_fixes.py` and `test_forge_policy.py` (89 tests, `OK`); the whole package is 489 tests, `OK (skipped=2)` (re-measured 2026-11-08T09:22Z, was 436). The documentation gate's feature check reads both test roots as of 2026-11-08, so this row is `tested` on the suite that exercises it |
 | 10 | Per-event jurisdiction field | **tested** | `programs/cap_hook/src/state.rs` (`jurisdiction`, `policy`), `programs/cap_hook/src/lib.rs` (log line, the `policy == 1` skip), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`). The local run initialised `jurisdiction ZZ`, admitted a transfer with `jurisdiction=ZZ` in the log and refused `policy 2` with `6023`. The wire carries neither field. **This program records the code and does not interpret it**; the jurisdiction-to-policy table is a separate piece of work in this same tree by another session (D11 there, `ticketpath/core/region_caps.py`), the two must be reconciled by the operator, and any such reconciliation is nation-level only because the record is two bytes while 72 of the table's 82 codes are subdivisions (§A6 item 7) |
+| 11 | v2 publish to devnet under a new program id, with a resume file and fault injection | **tested** | `tools/publish_v2_devnet.py` (subclasses `LocalProof` from `tools/publish_v2.py`, overrides eleven lifecycle methods and wraps the twenty proofs without re-implementing an assertion); `records/onchain-v2-devnet.json` is the devnet record | `tests/test_publish_v2_devnet.py` (35 tests, `OK (skipped=1)`, the skip being the local-validator rehearsal behind `TP_V2_DEVNET_REHEARSAL=1`). The rehearsal itself passed 64 assertions including three crash-and-resume scenarios, and the devnet run it then made recorded 35 transaction rows and observed all eleven required refusals. Not reviewed by the operator, and not re-run since the last edit to the tool |
 
 **Corrected 2026-11-08T08:20Z.** The table above replaces the 05:54Z edition, which read "one
 measured row, nine unmeasured" and marked features 2 to 10 `not built`. That was true when it was
@@ -205,7 +213,7 @@ text, which is kept above so the false claim is visible rather than erased.
 | Core (pure functions) | **WORKS** | unchanged since `375126f` (17:25Z): no clock except an injected `now()`, no network |
 | RPC adapter | **ABSENT BY DESIGN, AND NOW A NUANCE** | `ticketpath/adapters/rpc_adapter.py`: `programDeployed: False` is returned *because this adapter never asks the cluster*, not because nothing is deployed. Read live in this pass: `/health` → `programDeployed: false`, `programId: null`, `rpcEnabled: false`, `reason: rpc_disabled`. **That field is a statement about the adapter, not about the world.** Since feature 2 it also returns `askedCluster: false` and a `recorded` block naming the artefact's program id, mint, cluster, source and checkedAt, so a reader can tell a configured id from a read one |
 | Chain client (quote commitment) | **WORKS, read-only** | `chain_client.load_artefact` recomputes the quote hash from the fields the page is displaying; run in this pass against the real file → `state: verified` |
-| Solana program | **DEPLOYED ON DEVNET, CAP CHECK ONLY; A SECOND VERSION ON A LOCAL VALIDATOR** | `programs/cap_hook/`, native Rust with no Anchor, four source files (`lib.rs`, `state.rs`, `error.rs`, `tests.rs`). **v1** is on devnet at `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, executable, owner `BPFLoaderUpgradeab1e…`, 36 bytes of account data, and is frozen: no upgrade, no re-sign, no edit. **v2** is a different program id, `CTEnej2b…`, local validator only (the full value is in `records/F-decision-log.md` D13 and in `docs/ON-CHAIN-DESIGN.md` §0), and adds the floor, jurisdiction, policy, the hold clock, the band, the forecast and the score. `docs/ON-CHAIN-DESIGN.md` §0 is the instruction, error and seed table and `tools/doc_check.py` compares it with the source both ways. What v1 does **not** do is listed in `programs/cap_hook/README.md`: no hop record, no destination check, no verified-wallet gate, no escrow, no nullifier |
+| Solana program | **TWO VERSIONS DEPLOYED ON DEVNET, UNDER DIFFERENT PROGRAM IDS** | `programs/cap_hook/`, native Rust with no Anchor, four source files (`lib.rs`, `state.rs`, `error.rs`, `tests.rs`). **v1** is on devnet at `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`, executable, owner `BPFLoaderUpgradeab1e…`, 36 bytes of account data, and is frozen: no upgrade, no re-sign, no edit, and its program data is still the 85,784-byte v1 build last deployed in slot 519806063. **v2** is deployed on devnet under a program id of its own, `Bebo55oe…` (read it in full in `records/onchain-v2-devnet.json`; a second, local-validator id `CTEnej2b…` is in `records/F-decision-log.md` D13 and `docs/ON-CHAIN-DESIGN.md` §0), and adds the floor, jurisdiction, policy, the hold clock, the band, the forecast and the score. The devnet deploy is `tools/publish_v2_devnet.py`, which imports `tools/publish_v2.py` and overrides only its validator lifecycle; it recorded 35 transaction rows (34 distinct) and observed 14 refusals across both phases, and its record is `records/onchain-v2-devnet.json`. `docs/ON-CHAIN-DESIGN.md` §0 is the instruction, error and seed table and `tools/doc_check.py` compares it with the source both ways. What v1 does **not** do is listed in `programs/cap_hook/README.md`: no hop record, no destination check, no verified-wallet gate, no escrow, no nullifier |
 | Devnet mint | **EXISTS** | `6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV`, owner `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb` (Token-2022), 0 decimals, supply 2, extensions `transferHook`, `metadataPointer`, `tokenMetadata` |
 | On-chain state machine | **DESIGN-ONLY + SIMULATED** | `ticketpath/onchain/sim.py`, Python mirror, same error codes; console renders 5 arms under `[SIMULATED]` |
 | Solana toolchain | **INSTALLED, NOT ON A NON-LOGIN PATH** | `bash -lc 'which solana spl-token cargo-build-sbf rustc cargo'` → all five resolve; versions in §0 row 5. In a plain non-login shell `which solana` still returns nothing |
@@ -215,6 +223,7 @@ text, which is kept above so the false claim is visible rather than erased.
 | Publish script | **WORKS, AND RESUMABLE** | `tools/devnet_publish.py`: nine steps, each reads the cluster before it writes; transport retries 4× with 0.5/1/2 s backoff; resume file `records/devnet-progress.json` (git-ignored, 0600); `--inject` faults armed only by an explicit flag; `--local` runs a validator it kills on every exit path |
 | `market_swarm/` | **IN PROGRESS, SEPARATE PACKAGE** | 11 modules + 7 test modules, standard library only, imports nothing from `ticketpath/` and is imported by nothing in it. 274 tests green. No run config file in the tree, so `python3 -m market_swarm plan --config <path>` is the only entry point and there is nothing to point it at yet (§A9) |
 | Public-safety check | **WORKS AS A TOOL, AND CLEAN ON THE TRACKED TREE SINCE `aea1cbe`** (`64 hits in 9 tracked files` was the reading on 2026-11-08T03:30Z; see the correction below the table) | `python3 tools/public_safety.py check --tracked` re-measured 2026-11-08T09:22Z → `public_safety: clean, tracked tree, 285 file(s)`, exit 0. Detail in §A6 |
+| Frontend (`frontend/`) | **IN THE TREE, STAGED, NOT COMMITTED; ITS OWN CHECKS RE-RUN FROM THE NEW PATH** | the SeatPass app, 81 files and 1,097,001 bytes as staged (1,093,317 as copied) **[corrected 2026-11-08T11:30Z: 82 files and 1,097,690 bytes in the index, the difference being `frontend/.env.example`, 689 bytes, staged by another pass at 11:18Z; see §A10]**. Listed from `git ls-files` in its own checkout. From the new path, in a throwaway copy under the system temp dir with `node_modules` symlinked: `npm run typecheck` exit 0, `npm run lint` exit 0, `npm test` → `tests 15, pass 15, fail 0`, `bash tools/greps.sh` → `8.5 GREPS: ALL ZERO`, `node tools/contrast.mjs` → `28 pairs, 0 below 4.5:1`. `npm run build` was not run and `frontend/tools/verify-landing.cjs` was not re-run. Detail in §A10, provenance and the operator's statement in `records/F-decision-log.md` D19 |
 | Frontend attach | **PARTIAL** | 43 checks against a copy, last green at 18:40Z; **not re-run in this pass** — `tools/check_frontend_attach.py` needs a backend on the documented port and none was running (*unverified this pass*) |
 
 **Corrected 2026-11-08T08:25Z: the `market_swarm/` row in the table above is stale in four
@@ -358,6 +367,36 @@ payload:
   anything else prints the signature as text.
 
 ## A4. Test and check inventory, counted in this pass
+
+**Re-measured 2026-11-08T11:27-11:30Z, on the merged release tree, by the record-integration pass.**
+Every number below is a reading taken then, with the command that produced it. Other agents were
+writing this tree while the readings were taken, so each one is an instant and not a promise; the
+09:48Z pair in §0 (1092 and 489) and every earlier table below stay where they are, tagged with the
+tree they were taken on.
+
+| Command | Count | Measured at 11:27-11:30Z |
+|---|---|---|
+| `python3 -m unittest discover -s tests` | **1251 tests** | `Ran 1251 tests in 29.602s`, `OK (skipped=27)`, exit 0 |
+| `python3 -m unittest discover -s market_swarm/tests` | **771 tests** | `Ran 771 tests in 2.192s`, `OK (skipped=2)`, exit 0 |
+| the two suites together, on disk | **2,022 tests** | 1251 + 771, both measured then |
+| `python3 tools/doc_check.py --root .` | **7 checks, 24 allowed absences, 0 violations** | `doc_check: clean, 7 check(s), <repo root>; 24 allowed absence(s) suppressed by ALLOWED_ABSENCES`, exit 0 |
+| `python3 tools/public_safety.py check --tracked` | **clean** | `public_safety: clean, tracked tree, 367 file(s)`, exit 0 |
+| `git ls-files \| wc -l` | **367 files in the index** | 367 |
+| `git ls-tree -r --name-only HEAD \| wc -l` | **285 tracked at `HEAD`** | 285, which is the commit and not the index |
+| `find records/findings -name '*.md' \| wc -l` | **59 on disk** | 59 |
+| `git ls-files records/findings \| wc -l` | **57 tracked** | 57 |
+| `git ls-files -o --exclude-standard records/findings \| wc -l` | **2 untracked** | 2: `42-artist-fee-at-checkout.md` and `43-flip-tax-at-checkout.md` |
+| `ls tests/test_*.py \| wc -l` | **51 test modules under `tests/`** | 51 |
+| `ls market_swarm/*.py \| wc -l` | **15 Python files in `market_swarm/`** | 15 |
+| `ls market_swarm/tests/test_*.py \| wc -l` | **23 test modules there** | 23 |
+| `find market_swarm -name '*.py' \| xargs wc -l` | **24,147 lines with its tests** | 24,147 |
+| `git ls-files frontend \| wc -l` | **82 files in the index** | 82, and 1,097,690 bytes by `du -cb`; the 81 / 1,097,001 in §A1 and §A10 was the reading before `frontend/.env.example` was staged at 11:18Z, and it is 689 bytes |
+
+**Beyond the counts, the merge changed the finding series.** `records/findings/` now runs to 43 with
+gaps at 04, 05 and 22, and it gained two entries from the other checkout: the artist fee at 42 and the
+flip tax at 43. They were written there as 38 and 39, and both numbers were already taken here by
+`38-region-caps-local-validator.md` and `39-visitor-identity.md`. The directory holds 59 markdown files
+in all, because the five cluster records under `33-b-region-cap-law-sources/` are `.md` too.
 
 **Re-measured 2026-11-08T09:20-09:22Z at `HEAD 948b5d5`, on a clean tree, by the release-record
 correction pass.** These supersede every count below where they overlap. Every number is a reading
@@ -625,6 +664,8 @@ is the commit that put the hook, the publisher and the read-back into the tree �
 deployment succeeded. A judge or an operator cloning the public repository today gets the
 program source and the publisher but **not the artefact**, so the console's slot renders absent
 for them. One commit of explicit paths closes it; this pass did not make it.
+
+**Added 2026-11-08, on the frontend import.** `frontend/` is in the index and not in any commit: 81 files, 1,097,001 bytes as staged, `frontend/.gitignore` included. `git ls-files frontend | wc -l` reads 81 once the index is written. Nothing was pushed, and the push gate reads commits, so no reader of the public repository sees these files until the operator makes the commit.
 
 ## A8. Performance, measured this pass
 
@@ -930,7 +971,97 @@ whether `programs/region_gate/` is retired once v2 carries `policy = 2` and `Tig
 whether to buy the fee data that Ontario, Queensland and NSW caps need to be applied at their real
 base rather than the stricter fallback.
 
+## A10. The frontend, now in this tree
+
+| | Count | Where |
+|---|---|---|
+| routes | 15 `page.tsx` | `frontend/app/` |
+| client components | 5, all for the wallet or a form | `frontend/app/**/*Client.tsx` |
+| components | 12 `.tsx` (eleven named components and `ui.tsx`) plus `useMeasure.ts` | `frontend/components/` |
+| library modules | 13, of them 4 test modules | `frontend/lib/` |
+| bundled fixtures | 4 JSON files | `frontend/lib/mock/` |
+| its own tools | 4: build-copy, greps, contrast, headless render check | `frontend/tools/` |
+| documents | 6: README, NOTES, VERIFY, DECISIONS, COVERAGE, API_CONTRACT | `frontend/` |
+
+**Re-counted 2026-11-08T11:30Z, on the merged tree: every row above still holds, and the file total
+has moved by one.** `git ls-files frontend | wc -l` → **82** and `git ls-files frontend | xargs -d
+'\n' du -cb | tail -1` → **1,097,690 total**, where this section and the §A1 row said 81 files and
+1,097,001 bytes. The difference is `frontend/.env.example`, 689 bytes, which the import deliberately
+left out and which another pass staged at 11:18Z; it carries four `NEXT_PUBLIC_*` variable names with
+empty values and no secret. The per-directory counts above were re-read at the same time and are
+unchanged: 15 `page.tsx`, 5 `*Client.tsx`, 12 `.tsx` plus `useMeasure.ts`, 13 `lib/*.ts` of which 4
+are tests, 4 mock JSON files, 4 tools, 6 documents. This changes no check result in this section.
+
+**What it is.** The product surface: an attendee's landing, browse, event, ticket, holdings, door and
+resale screens, an organizer's dashboard and create form, wallet verification, the backend's own
+health as `/pricing`, and the cap rules as `/rules`. One data seam (`frontend/lib/api.ts`), no
+component that fetches, seven capabilities false in `frontend/lib/capabilities.ts` and each rendering
+a panel that names the missing endpoint rather than a mock success. `README.md`'s *The frontend*
+section says how to run it and which four `NEXT_PUBLIC_*` variables it reads.
+
+**What its checks printed from the new path, measured 2026-11-08.** In a copy under the system temp
+dir with `node_modules` symlinked to the builder's install, so nothing was installed into this tree:
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0, no warnings |
+| `npm test` | `tests 15, pass 15, fail 0, cancelled 0, skipped 0`, `duration_ms 180.747` |
+| `bash tools/greps.sh` | every forbidden-string count 0 → `8.5 GREPS: ALL ZERO` |
+| `node tools/contrast.mjs` | `28 pairs, 0 below 4.5:1` |
+
+**Not run here, and named rather than implied.** `npm run build`, because a build replaces a bundle
+and takes minutes and `frontend/tools/build-copy.sh` exists to put it somewhere that is not this
+checkout; and `frontend/tools/verify-landing.cjs`, which needs a browser and a served copy. Both were
+run by the builder in its own checkout and `frontend/VERIFY.md` holds those numbers. Nothing in this
+section is a re-measurement of them.
+
+**What the import changed besides adding a directory.** Four machine handles in the app's tooling and
+documents were replaced: absolute paths under a home directory and the port another session's dev
+server holds. `.public-denylist` gained one line, `allow frontend/*.md tmp-path`, because two of the
+app's documents quote the `/tmp` paths their own run wrote and a quote of a scratch path is evidence;
+`tests/test_public_safety.py` proves the line is markdown wide and does not reach the app's code.
+`tools/doc_check.py` gained `frontend` in its top-level set and a fallback that resolves a path
+against the naming document's own directory, because eleven true references like
+`tools/build-copy.sh` in a frontend document were being reported missing. The whole list is in
+`records/F-decision-log.md` D19 and, for a reader of the app, in `frontend/NOTES.md`.
+
 ---
 
-*Nothing committed, staged or pushed by this pass. No code touched by the documentation edit. The
+*Nothing committed or pushed by the 03:30Z pass this file measures, and nothing committed or pushed by the 2026-11-08 frontend import: that import is staged in the index. Nothing here was written by a build.* No code touched by the documentation edit. The
 six document files this pass edited each carry a dated note saying what changed.*
+
+## Appended 2026-11-08T09:15Z: feature 5's status moved, and the table above is not rewritten
+
+Row 5 of the feature table says the artist fee is **not built, blocked** by the measured Token-2022
+ceiling. The ceiling holds and the mint's transfer fee still ships switched off — but the *fee* now
+exists by the other mechanism, so the row is stale in the direction that matters to a reader: it reads
+as "there is no artist fee", and there is one at the checkout as of this pass.
+
+- **Built and measured**: a seller-paid lamport fee inside the sale transaction
+  (`records/findings/42-artist-fee-at-checkout.md`, decision `D26`,
+  `docs/ON-CHAIN-DESIGN.md` §15). Nine legs on a throw-away local validator, PASS 9/9:
+  the fee is paid exactly, an underfunded seller fails the sale whole, an over-cap sale is refused
+  `6010` and pays nothing, the rounding boundary pays 0 and 1 where the arithmetic says, a 100% fee
+  equals the price, and a staged 0 is refused `6009`.
+- **Not enforced by the chain**, stated in every one of those documents and measured as leg 8: a
+  staging is consumed by whoever moves the ticket next, so a transfer that skips the fee is admitted
+  and the artist is paid nothing. No screen, README or row may say the chain charges this fee.
+- **Feature 7 (the flip tax)** ships its **charging half** and not its pool half, and this bullet
+  said it was not built at all until this pass. The tax is a second seller-paid lamport leg in the
+  same sale transaction as the artist fee, priced off the hold clock the hook writes into the record
+  (`held_since_unix`), 15% under an hour falling to 0 at 30 days by default, per-event and off
+  unless an event turns it on: `records/findings/43-flip-tax-at-checkout.md`, decision `D27`,
+  `docs/ON-CHAIN-DESIGN.md` §16. **Not built:** the refund-to-holders pool (`ClaimRebate`, tag 7,
+  is not implemented), and the chain does not enforce the tax, exactly as it does not enforce the
+  fee.
+- **The harness options** (`market_swarm`) are off unless an event names them: `artist_fee` turns on
+  the fee, and `flip_tax` with `"enabled": true` turns on the tax and, with it, the v2 record shape
+  every sale of that event uses. `plan` prints the state of both. Their live paths are unit-tested and
+  their transaction bytes are pinned, and neither is **verified through the harness on a cluster** —
+  the validator measured the same instruction set built by the two proof tools. Finding 42 §8 also
+  names the stale v1-shaped no-fee path in `market_swarm/gateway.py` that is another run's to repair.
+
+The counts in this file's later sections were measured before this change and are not updated here;
+the suites that include this work run green at 535 tests in `market_swarm/tests` and 1,166 in `tests/`,
+run by the orchestrator of this pass, and a reader should re-measure rather than quote that sentence.

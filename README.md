@@ -25,6 +25,10 @@ Solana toolchain" (it has one, in a login shell); and the closing "Nothing is de
 measurements in this section that were not re-taken are marked as of their date. Nothing in this
 edit changes code or a number that was not re-measured.]**
 
+**[Added 2026-11-08T11:20Z: the finding count in the index above is corrected again at its own line
+in §"How the research is organised", after the release merge: 54 on disk, 2 of them untracked, with
+the commands that produced both numbers named there.]**
+
 **[Added 2026-11-08T08:15Z: a sixth statement joins the five above. The console banner no longer says
 "no program is deployed"; the page prints "The chain slot at the bottom prints what a verified devnet
 artefact records, and the [DESIGN] block is a design; neither is a deployed guarantee." The sentence is
@@ -106,10 +110,15 @@ Observed with `--check`: `seed 20261107, 8 events, 76 tickets, 147 ledger rows`,
 `fixtures/synthetic_store.json matches a fresh build exactly`. 61 of those rows are priced
 sales. The generator opens no socket and reads no clock; two runs write identical files.
 
-**Not in this repository.** The Next.js frontend is the platform's own app, outside this
-tree; a copy points here with `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788`
-(`docs/BACKEND.md`), and `docs/frontend-honesty.patch` is the text only patch that makes its
-screens state what the data is. No hosted demo, no deploy URL.
+**The frontend.** The platform's own Next.js app was the one piece of the product outside this
+tree; it is now imported, file for file, into `frontend/` (see *The frontend* below). It points
+here with `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788` (`docs/BACKEND.md`), and
+`docs/frontend-honesty.patch` is the text only patch that makes an older copy's screens state
+what the data is. No hosted demo, no deploy URL.
+
+**[Added 2026-11-08: this paragraph said the frontend was outside this tree, which the import
+in `frontend/` makes false. The import is staged and uncommitted; see
+`records/F-decision-log.md` D19. Nothing else in this section changed.]**
 
 ## Why the chain
 
@@ -132,13 +141,25 @@ The limit is the price: the program checks the price a transfer declares, so the
 chain refuses over-cap resales through the platform, not that scalping is impossible. What else the
 design does not stop is listed in `programs/cap_hook/README.md`.
 
-## The ten features: eight tested, two blocked
+## The ten features: eight tested, two built on the lamport route
 
 **Added 2026-11-08.** One entry per feature of the ten-feature build. Each names one command that
-runs it, the surface it is verified on, and the limit it carries. Two features are **not built and
-blocked by a measured mechanism fact**, and they say so in their own entry rather than sitting in a
-table that could read as shipped. The full record is
-`records/findings/36-transfer-fee-on-a-one-unit-ticket.md`.
+runs it, the surface it is verified on, and the limit it carries. Features 5 and 7 were **not built
+and blocked by a measured mechanism fact** when this section was written; each now has a built
+route, described in "5 and 7" below, and each one's token-fee form is still dead. The full record
+is `records/findings/36-transfer-fee-on-a-one-unit-ticket.md`.
+
+**[Corrected 2026-11-08T11:20Z, at the release merge. This heading read "eight tested, two
+blocked", and the sentence above said the two were not built. That was true of the token-fee
+mechanism and is not true of the tree: `market_swarm/artist_fee.py` and `market_swarm/flip_tax.py`
+are the two lamport legs, `tools/artist_fee_proof.py` and `tools/flip_tax_proof.py` are their
+proofs, and `records/findings/42-artist-fee-at-checkout.md` and
+`records/findings/43-flip-tax-at-checkout.md` are the measurements, moving the pair off the 38 and
+39 the other checkout wrote them under. The section below was rewritten on the other checkout to
+say they are built; this heading and that sentence were not, and a reader meets the contradiction
+before the prose. What is still not built is the refund-to-holders pool, and neither leg is
+enforced by the chain, which the section below states. The measurement in finding 36 that blocked
+the token-fee form is unchanged.]**
 
 **These commands run against the working tree, not against a clone.** Nothing here is committed, by
 the operator's instruction. `HEAD` is `33d95b3` and carries none of the ten features: a fresh clone of
@@ -365,11 +386,13 @@ table's 82 codes are subdivisions (`CA-ON`, `AU-NSW`, `US-CA`) that do not fit t
 mapping has nowhere to be written on the v2 record. Which of the two is the platform's answer is the
 operator's to decide; this entry does not settle it, and nothing here deletes D11.
 
-### 5 and 7: the artist fee and the flip tax, not built and blocked
+### 5 and 7: the artist fee and the flip tax, built as seller-paid lamport legs
 
 **Feature 5 was an artist fee of 500 to 1000 bps paid to the artist's wallet from a
 `TransferFeeConfig`; feature 7 was a flip tax at 1500 bps into a pool, rebated on how long the
-holder held. Neither is built. Both are blocked by one measured fact about the token program.**
+holder held. As token fees both are dead, blocked by one measured fact about the token program.
+As lamport legs charged by the checkout, both are built, and both are off unless an event turns
+them on.**
 
 Token-2022 computes a transfer fee on the base-unit amount and rounds it **up**. At `decimals 0`,
 `amount 1`, any rate from 1 to 9999 bps withholds the whole ticket: `withheldAmount = 1`, the
@@ -378,14 +401,30 @@ and the same 1500 bps on `decimals 9` and 10^9 base units withholds exactly 150,
 arithmetic scales with the amount and not with a price. On this mint the only two fees it can express
 are 0 and the entire ticket, and a 5% artist fee is not one of them.
 
-What survives is the operator's choice and this file recommends none of the three: a lamport fee
-charged at the venue on the staged price, a recorded obligation settled off chain, or a divisible
-mint. One measurement narrows the third: on a mint carrying both the fee and the transfer hook,
-`WithdrawWithheldTokensFromAccounts` succeeds without the hook's accounts and does not invoke the
-hook, so a pool and a rebate have working plumbing; only the rate is missing. `held_since_unix` is
-written by the hook on every admitted transfer and nothing consumes it yet, `ClaimRebate` (tag 7) is
-not implemented, and the two error names reserved for it (`6027`, `6028`) are declared in the source
-and raised by nothing. The measurement, the four legs and the quoted RPC objects are
+**What was built instead, and it is the first of the three survivors.** A **seller-paid lamport leg
+inside the sale transaction**: `SetPendingPrice`, the artist fee, the flip tax, the Token-2022 move,
+one blockhash and one signature set, so a failure in any leg reverts all of them. The artist fee is
+`price * fee_bps // 10_000`, per event. The flip tax is a second leg whose rate falls with the hold:
+`held_since_unix` is read at checkout from the 70-byte v2 record, which the hook writes itself on
+every admitted transfer, and the default schedule is 15% of the sale price under an hour, falling
+linearly to 0% at 30 days, configurable per event. Both are **off unless an event names them**, both
+are charged on resales, and neither is enforced by the chain: a transaction can stage a price, move
+the ticket and pay nothing, and the hook admits it. That is measured rather than conceded in
+passing, and no sentence in this file says the chain charges either.
+
+The two buildings are `records/findings/42-artist-fee-at-checkout.md` (nine validator legs, PASS
+9/9) and `records/findings/43-flip-tax-at-checkout.md`, with `tools/artist_fee_proof.py` and
+`tools/flip_tax_proof.py` as the proofs, `market_swarm/artist_fee.py` and `market_swarm/flip_tax.py`
+as the code, and `docs/ON-CHAIN-DESIGN.md` section 15 and section 16 as the design.
+
+**Still not built, and the reason is unchanged.** The refund-to-holders pool: `ClaimRebate` (tag 7)
+is not implemented, the two error names reserved for it (`6027`, `6028`) are declared in the source
+and raised by nothing, and the pool's `["rebate-pool", mint]` seed is derived by `state.rs` and used
+by no instruction. One measurement bears on that gap and it does not close it: on a mint carrying
+both a transfer fee and the transfer hook, `WithdrawWithheldTokensFromAccounts` succeeds without the
+hook's accounts and does not invoke the hook, so a pool fed by a **token** fee has working plumbing;
+what it withholds is a whole ticket rather than a rate, which is why the tax built above is lamports
+and not a token fee. The token-fee measurement, the four legs and the quoted RPC objects are
 `records/findings/36-transfer-fee-on-a-one-unit-ticket.md`.
 
 ## Region-aware resale caps
@@ -616,6 +655,19 @@ One line per record file:
 - `BUILD-SPEC-NIGHT.md` what the overnight build was told to build, module by module.
 - `SUBMISSION-PACK.md` the video script, submission text, field checklist and last hour checks.
 - `findings/` per investigation reports, append only, the primary record the six index (`git ls-files records/findings | wc -l` → 32 tracked, and 42 on disk at 2026-11-08T03:35Z: numbers 20 and 23 to 31 are written and uncommitted. This line said twenty-nine, and twenty-seven before that). **[Corrected 2026-11-08T08:15Z: measured now, `ls records/findings/*.md | wc -l` is 52 on disk and 20 of them are untracked, not 42 and 10. The ten extra entries are the ten-feature and region-cap evidence: `33-a-region-cap-law.md` with its `33-b-region-cap-law-sources/` directory, `34-region-caps-build.md`, `35-live-llm-agents.md`, `36-transfer-fee-on-a-one-unit-ticket.md`, `37-program-v2-review-fixes.md`, `38-region-caps-local-validator.md`, `39-visitor-identity.md`, `40-memo-program-id.md` and `41-deepseek-live-adapter.md`. Eight of the ten features rest on evidence that is not committed.]**
+
+**[Corrected 2026-11-08T11:20Z, after the release merge. Measured on the merged tree:
+`ls records/findings/*.md | wc -l` → 54, `git ls-files records/findings | wc -l` → 57 and
+`git ls-files --others --exclude-standard -- records/findings | wc -l` → 2. The count on disk rose
+by two because this merge brought the artist fee and the flip tax in, as
+`42-artist-fee-at-checkout.md` and `43-flip-tax-at-checkout.md`; they were written as 38 and 39 on the
+other checkout, and those numbers were already taken here by
+`38-region-caps-local-validator.md` and `39-visitor-identity.md`, so the newcomers moved. The
+untracked count fell from 20 to 2 for a reason that is not a loss: the 08:15Z reading was taken
+against `main`, and the eighteen findings it counted as uncommitted are committed on this branch.
+The 57 tracked is 52 tracked finding files plus the five cluster records in
+`33-b-region-cap-law-sources/`, all of them `.md`. Two of the 54 on disk are the untracked pair
+above. Nothing earlier in this line was rewritten.]**
 - `STATE-OF-PROJECT.md` the read-only measurement of the tree, the chain and the console, rewritten at 2026-11-08T03:45Z.
 - `BUILD-REPORT-CONSOLE.md` what the console pass built and where it departed from its spec.
 - `FINAL-PROOF.md` the end-to-end proof run: what was executed, what it showed, what it did not.
@@ -642,7 +694,10 @@ programs/      cap_hook/, the native Rust transfer-hook program that is deployed
 market_swarm/  a separate package: a bounded agent swarm that trades synthetic tickets through that
                program on a local validator and writes synthetic-labelled datasets. Imports nothing
                from ticketpath/ and is imported by nothing in it. See records/findings/31
-tests/         unittest tests over 36 test modules, plus store_arithmetic.py; the run prints the count
+tests/         unittest tests over 51 test modules, plus store_arithmetic.py; the run prints the count
+               (`ls tests/test_*.py | wc -l` → 51 at 2026-11-08T11:20Z; this line said 36, which was
+               already short of the 48 the branch's `HEAD` carried before this merge added three
+               proof tests for the artist fee, the flip tax and the v2 publisher)
 fixtures/      synthetic_store.json and the note saying what it is not
 tools/         build_fixture_store.py the deterministic fixture generator, guidance.py the console
                payload as JSON, devnet_publish.py the idempotent publisher, solana_sign.py the
@@ -650,14 +705,97 @@ tools/         build_fixture_store.py the deterministic fixture generator, guida
 docs/          backend notes, the on-chain design and runbook, the frontend labelling patch
 records/       the six research records, the build and submission packs, findings/, and the devnet
                artefact the console's chain slot reads
+frontend/      the SeatPass web app: fifteen routes, its own package.json and lock, its own lint,
+               typecheck and test scripts, its own build-copy and render-check tools, and its own
+               records (NOTES.md, VERIFY.md, DECISIONS.md, COVERAGE.md, API_CONTRACT.md)
 ```
 
-**[Layout corrected 2026-11-08T03:45Z: `programs/` and `market_swarm/` were missing and the test
-module count was 34. Every other line in this block was re-checked against the tree.]**
+**Layout corrected 2026-11-08T03:45Z: `programs/` and `market_swarm/` were missing and the test
+module count was 34. Every other line in this block was re-checked against the tree.**
+
+**[Added 2026-11-08: `frontend/` was not in the tree when this block was written; it is the
+import described under *The frontend* and in `records/F-decision-log.md` D19, is 81 files and
+1,097,001 bytes (1.05 MB) staged, and brings its own tooling and records with it.]**
+
+**[Corrected 2026-11-08T11:30Z: the file total moved by one. `git ls-files frontend | wc -l`
+→ 82 and the byte total is 1,097,690, because `frontend/.env.example` (689 bytes) was
+staged by another pass at 11:18Z; this note said 81 files and 1,097,001 bytes. Nothing else
+in the addendum changed.]**
 
 The root also holds `AGENTS.md` and `RESEARCH-PROGRAM.md`, the brief and the research
 standard this work was held to, and `NIGHT-BRIEF.md`, `NIGHT-LOG.md`, `NIGHT-QUEUE.md`, the
 overnight build's working log.
+
+## The frontend
+
+`frontend/` is the SeatPass web app, the surface an attendee or an organizer actually sees:
+fifteen routes under the Next.js 15 App Router, React 19, TypeScript in strict mode, Tailwind 4,
+one design system in `frontend/app/theme.css`, and one data seam in `frontend/lib/api.ts`. No
+component fetches anything. Seven capabilities are false in `frontend/lib/capabilities.ts`
+(purchase, listings, door code, event creation, transfers, refunds, auth), and each renders one
+panel naming what is missing rather than a mock success.
+
+It is a copy of the platform's own frontend checkout, taken file for file from `git ls-files` at
+its last commit: 81 files, 1,097,001 bytes as staged and 1,093,317 as copied, the largest being the
+522,393 byte `package-lock.json` **[corrected 2026-11-08T11:30Z: the index now carries 82 files and
+1,097,690 bytes. `frontend/.env.example`, 689 bytes, was the one tracked file the import left out
+and another pass staged it at 11:18Z, so the paragraph below this one is no longer true of the
+index either. It carries four variable names with empty values and no secret]**. Nothing in it was over 1 MB, so nothing was dropped for size.
+`.env.example` was the one tracked file left out, because the import excluded `.env*` by name;
+every variable it listed is below.
+Where those files came from, and the operator's statement about when they were written, is
+`records/F-decision-log.md` D19. The app's own records travel with it: `frontend/NOTES.md` for the
+decisions, the assumptions and the demo copy that still needs a second pass, `frontend/VERIFY.md`
+for every command and the numbers it printed, `frontend/DECISIONS.md`, `frontend/COVERAGE.md` and
+`frontend/API_CONTRACT.md`.
+
+**Run it**, from the repository root:
+
+```bash
+cd frontend && npm install
+npm run dev                                                  # bundled fixtures
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788 npm run dev    # against this backend
+```
+
+`npm run dev` takes the port Next uses by default. Unset `NEXT_PUBLIC_API_BASE_URL` and the app
+serves the fixtures in `frontend/lib/mock/`, which are synthetic payloads built to render the UI:
+not evidence, and nothing here is estimated from them. Next inlines `NEXT_PUBLIC_*` at build
+time, so a changed value needs a restart. The four it reads:
+
+| Variable | Default | What it does |
+|---|---|---|
+| `NEXT_PUBLIC_API_BASE_URL` | empty | empty or unset serves the bundled fixtures; an origin points the same screens at this backend |
+| `NEXT_PUBLIC_SOLANA_CLUSTER` | `devnet` | cluster the wallet adapter and the explorer links target |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | the cluster's public endpoint | overrides that endpoint |
+| `NEXT_PUBLIC_PROGRAM_ID` | empty | empty on purpose: the on-chain strip reads "Program not deployed yet" and the copy and explorer controls stay disabled until an address is configured |
+
+**Its checks**, from `frontend/`, none of which write to the tree:
+
+```bash
+npm run typecheck        # tsc --noEmit
+npm run lint             # eslint .
+npm test                 # node --test over lib/**/*.test.ts
+bash tools/greps.sh      # the brief's forbidden-string and colour sweeps
+node tools/contrast.mjs  # every pair the palette uses
+```
+
+Measured on 2026-11-08 from the new path, in a throwaway copy under the system temp dir with
+`node_modules` symlinked to the builder's install: `npm run typecheck` exit 0; `npm run lint`
+exit 0, no warnings; `npm test` → `tests 15, pass 15, fail 0`; `bash tools/greps.sh` →
+`8.5 GREPS: ALL ZERO`; `node tools/contrast.mjs` → `28 pairs, 0 below 4.5:1`. `npm run build` was
+not run here, and `frontend/tools/verify-landing.cjs` needs a browser and a served copy.
+
+**Do not run `next build` in place while anything is serving that checkout's `.next`.** It
+replaces the bundle under the running server. `frontend/tools/build-copy.sh` mirrors the checkout
+into a throwaway directory instead, symlinks `node_modules` into it, and builds or serves there;
+`SEATPASS_BUILD_DIR` moves the copy, `PORT` moves the serve port (3010 by default):
+
+```bash
+cd frontend
+tools/build-copy.sh build     # sync, then next build
+tools/build-copy.sh start     # serve the built copy, foreground
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788 tools/build-copy.sh dev
+```
 
 ## How this was built
 
