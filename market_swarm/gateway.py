@@ -15,9 +15,11 @@ Token-2022 resolves before it calls the hook.
 
 **One transaction per transfer, two instructions.** `SetPendingPrice` and the Token-2022
 `TransferChecked` are compiled into a single legacy message by `compile_message`, which takes a
-list, and signed once by the seller. That is what makes stage-and-check atomic: the record's
-staged price cannot be moved by another transfer between the two instructions, and a refusal
-rolls the staging back with it. It also halves the fee, from two signatures to one.
+list, and signed once by the seller -- twice on a v2 run, where the stage instruction is
+authorised by the record's authority and the seller is not that key. That is what makes
+stage-and-check atomic: the record's staged price cannot be moved by another transfer between
+the two instructions, and a refusal rolls the staging back with it. It also halves the v1 fee,
+from two signatures to one.
 
 **One event exception: an artist fee.** An event whose spec names a fee policy pays the artist in
 the same transaction, so that sale is three instructions and two signatures -- the v2 stage signed
@@ -46,9 +48,13 @@ buyer, and raises on a refusal instead of returning one.
 and every instruction that reaches a program on a plain sale is built for that program by
 `market_swarm/wire.py`, so the program id this connects to, the keypair it deploys with and the
 bytes a plain sale sends all follow the same name. v1 is what devnet serves; v2 has only ever run
-locally and its `SetPendingPrice` is authorised by the record's authority, which this harness
-cannot sign, so `start()` refuses v2 with that sentence instead of writing a dataset of `6026`
-rows.
+locally, from its own keypair, and its `SetPendingPrice` is authorised by the record's authority
+-- `InitializeRecord` pins that to the mint's authority, which is the house key this gateway
+creates the mint and signs the record with. So the seller cannot stage a v2 price on its own
+signature, and a v2 plain sale is the one sale this file signs with two keys: the seller pays and
+authorises the move, the house stages the price, and `_send_multi` checks the pair against the
+compiled message before either key is used. v1's stage takes the record alone and reads no
+signer, so a v1 plain sale is still one signature.
 
 The fee and flip-tax paths above are the exception, and it is stated rather than glossed: their
 stage and move are always the v2 shapes, on a v1 run too, because the record those paths write is
@@ -134,6 +140,16 @@ PROGRAM_KEYPAIRS = {
     "v2": dp.PROGRAM_KEYPAIR.with_name("v2-keypair.json"),
 }
 
+#: The `.so` each program deploys, for the same reason as the keypair table above: two programs
+#: share one `target/deploy`, and a build overwrites the file it writes, so one shared path would
+#: make "which bytes are deployed" depend on which build ran last. That is exactly the question a
+#: build-provenance record exists to answer, and `programs/cap_hook/BUILD-PROVENANCE.json` names
+#: these two paths. v2 keeps `dp.SO_PATH` because every tool here already deploys that one.
+PROGRAM_BINARIES = {
+    "v1": dp.SO_PATH.with_name("cap_hook-v1.so"),
+    "v2": dp.SO_PATH,
+}
+
 #: The program's own error for a price over the cap, `0x177a`.
 E_CAP_EXCEEDED = 6010
 #: `E_TRANSFER_NOT_STAGED` (6009): the refusal a swarm gets when it forgets to stage a price. It
@@ -179,7 +195,12 @@ _LOOK_INTERVAL = 0.6
 #: writing after this many bytes so a runaway log cannot fill the disk either.
 _LOG_CAP_BYTES = 4_000_000
 
-_RESERVED_PORTS = frozenset({3000, 3001, 8787, 8788})
+#: Ports the validator never takes, even when the kernel offers them. The first four are the
+#: console's and the API's; 3010 and 8795 are kept back for services on this machine that this
+#: repository does not own, and a picked port that landed on one would take that service down
+#: rather than fail. `bind(0)` cannot reserve a port, so the only safe pick is to refuse the ports
+#: whose owner is already known.
+_RESERVED_PORTS = frozenset({3000, 3001, 3010, 8787, 8788, 8795})
 _LABEL = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 _SIGNALS = ("SIGINT", "SIGTERM", "SIGHUP")
 
@@ -714,32 +735,22 @@ class ChainGateway:
         that owns the process, and `stop()` is idempotent so a signal path and an `atexit` path
         cannot fight.
 
-        v2 never reaches the boot: see the refusal at the top of the body.
+        v2 boots on v1's terms and differs in what it sends afterwards: its program id and deploy
+        keypair are the v2 pair in the table at the top of this file, and its `SetPendingPrice`
+        needs the record's authority to sign -- the mint authority this method funds at genesis and
+        `_init_record` signs as -- so a v2 sale carries the house's signature beside the seller's.
         """
-        if self.program == "v2":
-            # Before anything boots and before a directory is made, because the failure is in the
-            # instruction sequence and not in the cluster. v2's `SetPendingPrice` is signed by the
-            # record's authority, which v2's `InitializeRecord` pins to the mint's authority -- the
-            # house key -- while the swarm stages a price inside the seller's own signed
-            # transaction, and one transaction with two unrelated signers is a design change, not a
-            # wire choice. Left to run, every action would come back `6026 NotAuthority`: a dataset
-            # that looks like a result and proves nothing, which is the one outcome this switch
-            # exists to prevent.
-            raise ChainUnavailable(
-                "v2 cannot be driven end to end by this harness yet: its SetPendingPrice (tag 2) "
-                "is authorised by the record's authority, which InitializeRecord pins to the "
-                "mint's authority, and this swarm stages a price inside the seller's signed "
-                "transaction. Every action would land as 6026 NotAuthority. The wire format is "
-                "built and tested (market_swarm/wire.py); the signer is the missing piece. Run v1, "
-                "or run v2 with --dry-run for a labelled simulation."
-            )
         with self._state_lock:
-            if self._started:
-                return self.status()
-            self._stopped = False
-            self.run_dir.mkdir(parents=True, exist_ok=True)
-            self._keys_dir.mkdir(parents=True, exist_ok=True)
-            os.chmod(self._keys_dir, 0o700)
+            # Read under the lock and answer outside it: `status()` takes the same non-reentrant
+            # lock, so returning it from inside would deadlock the second `start()`.
+            started = self._started
+            if not started:
+                self._stopped = False
+                self.run_dir.mkdir(parents=True, exist_ok=True)
+                self._keys_dir.mkdir(parents=True, exist_ok=True)
+                os.chmod(self._keys_dir, 0o700)
+        if started:
+            return self.status()
         # Armed before anything can start a process: a start that fails after the validator is up
         # still has to be killed by somebody, and the caller's finally may never run.
         atexit.register(self.stop)
@@ -762,13 +773,16 @@ class ChainGateway:
                 "solana-test-validator is not on PATH; the toolchain block the shell profile "
                 "installs is what puts it there, so start the CLI from a login shell"
             )
-        if not dp.SO_PATH.exists():
+        binary = PROGRAM_BINARIES[self.program]
+        if not binary.exists():
             raise ChainUnavailable(
-                f"{dp.SO_PATH.name} is not built: this gateway deploys a prebuilt program and "
-                f"never builds one. Build it once with `cargo-build-sbf` in programs/cap_hook."
+                f"{binary.name} is not built: this gateway deploys a prebuilt program for "
+                f"{self.program} and never builds one. Build it once with `cargo-build-sbf` in "
+                f"programs/cap_hook, and see BUILD-PROVENANCE.json for which build is which."
             )
-        if not dp.PROGRAM_KEYPAIR.exists():
-            raise ChainUnavailable(f"no program keypair beside the .so at {dp.PROGRAM_KEYPAIR.name}")
+        keypair = PROGRAM_KEYPAIRS[self.program]
+        if not keypair.exists():
+            raise ChainUnavailable(f"no {self.program} program keypair beside the .so at {keypair.name}")
         if threading.current_thread() is not threading.main_thread():
             raise ChainUnavailable(
                 "a local validator installs process-global signal handlers, so it can only be "
@@ -1515,14 +1529,20 @@ class ChainGateway:
         return bool(((result or {}).get("value") or {}).get("executable"))
 
     def _deploy(self) -> None:
-        """`solana program deploy` of the .so that is already there. No build, ever."""
+        """`solana program deploy` of the .so and keypair this program's name names. No build.
+
+        Both halves follow `self.program` and not whichever pair happens to be at hand: deploying
+        v2's bytecode under v1's keypair puts one program at the other's address, and the run then
+        waits for an account at an id nothing was deployed to. Before this followed the name, a v2
+        run that got past `start()` would have deployed v1's id and failed on that wait.
+        """
         program_id = self._program_id()
         self._run(
             [
                 _which("solana") or "solana",
                 "--url", self.rpc_url,
-                "program", "deploy", str(dp.SO_PATH),
-                "--program-id", str(dp.PROGRAM_KEYPAIR),
+                "program", "deploy", str(PROGRAM_BINARIES[self.program]),
+                "--program-id", str(PROGRAM_KEYPAIRS[self.program]),
                 "--keypair", str(self._wallet_path(HOUSE_LABEL)),
             ],
             timeout=_BOUND_DEPLOY,
@@ -1724,13 +1744,17 @@ class EventChain:
     ) -> TransferResult:
         """Stage a price and move one ticket, in one transaction.
 
-        One signature and two instructions on an event with no fee; two signatures and three on an
-        event that pays an artist. Either way it is one transaction, and the seller pays for it.
+        One signature and two instructions on an event with no fee -- two signatures on a v2 run,
+        where the stage is authorised by the record's authority and the seller is not that key; two
+        signatures and three on an event that pays an artist. Either way it is one transaction, and
+        the seller pays for it.
 
         The two instructions are `SetPendingPrice` and the Token-2022 `TransferChecked`; they share
-        the record and the seller signs both. Nothing between them can move the staged price,
-        because there is nothing between them: the transaction is atomic, and if the hook refuses,
-        the staging is rolled back with it.
+        the record, the seller signs the move and -- on v1, where the stage reads no signer -- the
+        stage as well. On a v2 run the stage carries the house's signature instead, because the
+        record's authority is the mint's authority and `_init_record` signed that as the house.
+        Nothing between them can move the staged price, because there is nothing between them: the
+        transaction is atomic, and if the hook refuses, the staging is rolled back with it.
 
         **With an artist fee** -- an event whose spec named one -- a third instruction sits between
         them, and the stage is the v2 shape so the issuer signs it, because the record's authority
@@ -1776,7 +1800,9 @@ class EventChain:
 
         Without a fee **and** without a tax this method builds the per-program encoders: v1's stage
         and `dp`'s read-only move on a v1 run, v2's stage and its writable move on a v2 run, so the
-        switch reaches the plain sale and not only the fee path. A fee or tax event takes the v2
+        switch reaches the plain sale and not only the fee path. The v2 stage there is signed by
+        the house and the move by the seller, and those are the two keys the transaction is signed
+        with; the v1 pair is one signature, unchanged. A fee or tax event takes the v2
         shapes whatever the program is, because the record those paths write is a v2 record; that
         is why the v1 branch above is exactly the branch with neither. The v2 record that the tax
         is priced from is read raw by `_read_record_v2` because `decode_record` reads the 19-byte
@@ -1862,6 +1888,11 @@ class EventChain:
         seller_path = gateway._wallet_path(from_label)  # a path for the signer child only
         seller_address = gateway._wallet_address(from_label)
         program_id = gateway._program_id()
+        # The house key, resolved only on a v2 run. v2's stage is authorised by the record's
+        # authority, and `InitializeRecord` pinned that to the mint authority `_init_record` signs
+        # as -- the house -- so a v2 sale has to carry that signature beside the seller's. v1's
+        # stage reads no signer at all, and a v1 run must not so much as resolve this key.
+        house_address = gateway._wallet_address(HOUSE_LABEL) if gateway.program == "v2" else None
         admitted = cap_admits(
             price_lamports=price, face_lamports=self.face_lamports, cap_bps=self.cap_bps
         )
@@ -1872,10 +1903,9 @@ class EventChain:
                 program_id=program_id,
                 price=price,
                 # v2 reads a signer here and refuses 6026 for a key that is not the record's
-                # authority. The seller is the only key this transaction has, so this is what a
-                # v2 run would send -- and why `ChainGateway.start()` refuses v2 rather than
-                # send it. v1's encoder takes neither and ignores both.
-                authority=seller_address,
+                # authority, which is the house and not the seller: this argument is why a v2 sale
+                # is signed twice. v1's encoder takes neither and reads no signer.
+                authority=house_address,
                 mint=self.mint,
             )
         else:
@@ -1962,7 +1992,22 @@ class EventChain:
         with mint_lock(self.mint):
             started = time.monotonic()
             try:
-                if self.artist_fee is None and not taxed_event:
+                if self.artist_fee is None and not taxed_event and gateway.program == "v2":
+                    # Two keys on a plain v2 sale, and `_send_multi` reads the required set back
+                    # out of the compiled message before either is used: a message that asks for
+                    # one signer and not the other is refused there rather than sent half-signed.
+                    signature, status, _ = gateway._send_multi(
+                        [stage, move],
+                        payer=seller_address,
+                        signer_paths={
+                            seller_address: seller_path,
+                            house_address: gateway._wallet_path(HOUSE_LABEL),
+                        },
+                        skip_preflight=not admitted,
+                    )
+                elif self.artist_fee is None and not taxed_event:
+                    # v1: one account on the stage, no signer, so one signature -- the path every
+                    # sale in this harness took before v2 could run.
                     signature, status, _ = gateway._send(
                         [stage, move], payer=seller_address, signer_path=seller_path,
                         skip_preflight=not admitted,
