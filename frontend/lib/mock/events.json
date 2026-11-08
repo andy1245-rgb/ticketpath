@@ -1,0 +1,229 @@
+[
+  {
+    "id": "evt_midnight_static_tour",
+    "slug": "midnight-static-tour",
+    "name": "Midnight Static — North American Tour",
+    "description": "Four-piece noise-pop outfit touring the Fathom record. General admission is standing floor; reserved tiers are in the covered bowl.",
+    "venue": "Aurora Amphitheater",
+    "city": "Chicago, IL",
+    "startsAt": "2026-12-10T18:00:00.000Z",
+    "endsAt": "2026-12-10T21:00:00.000Z",
+    "imageUrl": null,
+    "organizer": {
+      "id": "org_aurora",
+      "name": "Aurora Live",
+      "walletAddress": "S2twMwm1UbSPHYTsRe1TiAohTLj9fmLzwAvjY1V8spRV",
+      "verified": true
+    },
+    "status": "on_sale",
+    "tiers": [
+      {
+        "id": "evt_midnight_static_tour__tier1",
+        "name": "Floor GA",
+        "faceValueLamports": 900000000,
+        "totalSupply": 1200,
+        "issuedCount": 543
+      },
+      {
+        "id": "evt_midnight_static_tour__tier2",
+        "name": "Bowl Reserved",
+        "faceValueLamports": 1600000000,
+        "totalSupply": 900,
+        "issuedCount": 641
+      },
+      {
+        "id": "evt_midnight_static_tour__tier3",
+        "name": "Front Rail",
+        "faceValueLamports": 3200000000,
+        "totalSupply": 150,
+        "issuedCount": 121
+      }
+    ],
+    "totalSupply": 2250,
+    "issuedCount": 1305,
+    "resaleEnabled": true,
+    "resalePriceCapBps": 7500,
+    "requiresVerifiedWallet": true
+  },
+  {
+    "id": "evt_winter_chamber_series",
+    "slug": "winter-chamber-series",
+    "name": "Winter Chamber Series: Night III",
+    "description": "Schubert and Ravel performed by the resident quartet. Doors at 7, downbeat at 7:30, no late seating between movements.",
+    "venue": "Metro Hall",
+    "city": "Chicago, IL",
+    "startsAt": "2026-11-18T18:00:00.000Z",
+    "endsAt": "2026-11-18T22:00:00.000Z",
+    "imageUrl": null,
+    "organizer": {
+      "id": "org_metrohall",
+      "name": "Metro Hall Presents",
+      "walletAddress": "kpMnLeF69NysQL3eHin93m2bsxgDhdA2kUWjXDpb7TWa",
+      "verified": true
+    },
+    "status": "on_sale",
+    "tiers": [
+      {
+        "id": "evt_winter_chamber_series__tier1",
+        "name": "Balcony",
+        "faceValueLamports": 450000000,
+        "totalSupply": 320,
+        "issuedCount": 163
+      },
+      {
+        "id": "evt_winter_chamber_series__tier2",
+        "name": "Orchestra",
+        "faceValueLamports": 1100000000,
+        "totalSupply": 420,
+        "issuedCount": 216
+      }
+    ],
+    "totalSupply": 740,
+    "issuedCount": 379,
+    "resaleEnabled": true,
+    "resalePriceCapBps": 5000,
+    "requiresVerifiedWallet": true
+  },
+  {
+    "id": "evt_harbor_lights_festival",
+    "slug": "harbor-lights-festival",
+    "name": "Harbor Lights Festival — Saturday",
+    "description": "Single-day pass covering all five stages plus the late-night warehouse set. Pass is wallet-bound and scanned at the gate.",
+    "venue": "Lakefront Grounds",
+    "city": "Milwaukee, WI",
+    "startsAt": "2027-01-06T18:00:00.000Z",
+    "endsAt": "2027-01-07T00:00:00.000Z",
+    "imageUrl": null,
+    "organizer": {
+      "id": "org_aurora",
+      "name": "Aurora Live",
+      "walletAddress": "S2twMwm1UbSPHYTsRe1TiAohTLj9fmLzwAvjY1V8spRV",
+      "verified": true
+    },
+    "status": "on_sale",
+    "tiers": [
+      {
+        "id": "evt_harbor_lights_festival__tier1",
+        "name": "Day Pass",
+        "faceValueLamports": 1250000000,
+        "totalSupply": 3000,
+        "issuedCount": 1747
+      },
+      {
+        "id": "evt_harbor_lights_festival__tier2",
+        "name": "Pit Upgrade",
+        "faceValueLamports": 2400000000,
+        "totalSupply": 400,
+        "issuedCount": 315
+      }
+    ],
+    "totalSupply": 3400,
+    "issuedCount": 2062,
+    "resaleEnabled": true,
+    "resalePriceCapBps": null,
+    "requiresVerifiedWallet": false
+  },
+  {
+    "id": "evt_sidestage_warehouse_04",
+    "slug": "sidestage-warehouse-04",
+    "name": "Sidestage Warehouse 04",
+    "description": "Capacity-limited warehouse show. Transfer is restricted to verified wallets only; door staff check the on-chain owner against ID.",
+    "venue": "Fulton Works",
+    "city": "Chicago, IL",
+    "startsAt": "2026-11-11T18:00:00.000Z",
+    "endsAt": "2026-11-12T01:00:00.000Z",
+    "imageUrl": null,
+    "organizer": {
+      "id": "org_sidestage",
+      "name": "Sidestage Collective",
+      "walletAddress": "hMPawdor3Sy1KhPDH3QicUxWrad7y3FTBTkMqvgwCYJt",
+      "verified": false
+    },
+    "status": "sold_out",
+    "tiers": [
+      {
+        "id": "evt_sidestage_warehouse_04__tier1",
+        "name": "Entry",
+        "faceValueLamports": 600000000,
+        "totalSupply": 450,
+        "issuedCount": 450
+      }
+    ],
+    "totalSupply": 450,
+    "issuedCount": 450,
+    "resaleEnabled": true,
+    "resalePriceCapBps": 12000,
+    "requiresVerifiedWallet": true
+  },
+  {
+    "id": "evt_riverside_comedy_night",
+    "slug": "riverside-comedy-night",
+    "name": "Riverside Comedy Night",
+    "description": "Touring stand-up showcase, four acts plus a local opener. This event has concluded; the resale record stays queryable.",
+    "venue": "The Riverside",
+    "city": "Indianapolis, IN",
+    "startsAt": "2026-10-28T18:00:00.000Z",
+    "endsAt": "2026-10-28T22:00:00.000Z",
+    "imageUrl": null,
+    "organizer": {
+      "id": "org_metrohall",
+      "name": "Metro Hall Presents",
+      "walletAddress": "kpMnLeF69NysQL3eHin93m2bsxgDhdA2kUWjXDpb7TWa",
+      "verified": true
+    },
+    "status": "completed",
+    "tiers": [
+      {
+        "id": "evt_riverside_comedy_night__tier1",
+        "name": "General",
+        "faceValueLamports": 500000000,
+        "totalSupply": 600,
+        "issuedCount": 600
+      }
+    ],
+    "totalSupply": 600,
+    "issuedCount": 600,
+    "resaleEnabled": false,
+    "resalePriceCapBps": null,
+    "requiresVerifiedWallet": false
+  },
+  {
+    "id": "evt_northline_derby_finals",
+    "slug": "northline-derby-finals",
+    "name": "Northline Derby Finals",
+    "description": "Championship bout plus the junior league curtain-jerker. Family sections are alcohol-free and marked on the seat map.",
+    "venue": "Eastside Arena",
+    "city": "Detroit, MI",
+    "startsAt": "2026-11-26T18:00:00.000Z",
+    "endsAt": "2026-11-26T21:00:00.000Z",
+    "imageUrl": null,
+    "organizer": {
+      "id": "org_aurora",
+      "name": "Aurora Live",
+      "walletAddress": "S2twMwm1UbSPHYTsRe1TiAohTLj9fmLzwAvjY1V8spRV",
+      "verified": true
+    },
+    "status": "on_sale",
+    "tiers": [
+      {
+        "id": "evt_northline_derby_finals__tier1",
+        "name": "Bleacher",
+        "faceValueLamports": 350000000,
+        "totalSupply": 700,
+        "issuedCount": 411
+      },
+      {
+        "id": "evt_northline_derby_finals__tier2",
+        "name": "Trackside",
+        "faceValueLamports": 1400000000,
+        "totalSupply": 200,
+        "issuedCount": 102
+      }
+    ],
+    "totalSupply": 900,
+    "issuedCount": 513,
+    "resaleEnabled": true,
+    "resalePriceCapBps": 3000,
+    "requiresVerifiedWallet": true
+  }
+]

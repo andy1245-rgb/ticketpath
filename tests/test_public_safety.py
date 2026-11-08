@@ -120,6 +120,34 @@ CASES: tuple[Case, ...] = (
         note="the stated exception: records quote /tmp, and a quote is evidence",
     ),
     Case(
+        "tmp-path-quoted-in-the-frontend-record",
+        {
+            "frontend/VERIFY.md": (
+                '$ node "$SHOT" http://127.0.0.1:3010/ /tmp/seatpass-1440.png --full\n'
+            )
+        },
+        frozenset(),
+        note="the frontend's records paste the output of their own /tmp run, as records/ may",
+    ),
+    Case(
+        "tmp-path-in-frontend-code",
+        {"frontend/tools/build-copy.sh": 'DST="/tmp/seatpass-build"\n'},
+        frozenset({"tmp-path"}),
+        note="the frontend exemption is its markdown; its scripts are still code",
+    ),
+    Case(
+        "env-example-is-not-a-secret",
+        {"frontend/.env.example": "NEXT_PUBLIC_API_BASE_URL=\nNEXT_PUBLIC_PROGRAM_ID=\n"},
+        frozenset(),
+        note="the tracked template a reader copies: the class is for files that are a credential by existing",
+    ),
+    Case(
+        "real-env-beside-the-example",
+        {"frontend/.env": "NEXT_PUBLIC_API_BASE_URL=https://api.example.org\n"},
+        frozenset({"secret-file"}),
+        note="one directory over from the example, and still a credential by existing",
+    ),
+    Case(
         "cron-line",
         {"docs/schedule.md": "*/15 * * * * /usr/local/bin/publish.sh\n"},
         frozenset({"cron-line"}),
@@ -487,6 +515,25 @@ class TestPatternClasses(unittest.TestCase):
     def test_tmp_path_is_exempt_in_records(self) -> None:
         self.assert_case(self.case("tmp-path-quoted-in-records"))
 
+    def test_tmp_path_is_exempt_in_the_frontend_records(self) -> None:
+        self.assert_case(self.case("tmp-path-quoted-in-the-frontend-record"))
+
+    def test_tmp_path_in_frontend_code_still_fires(self) -> None:
+        self.assert_case(self.case("tmp-path-in-frontend-code"))
+
+    def test_an_env_example_is_not_a_secret_file(self) -> None:
+        """The one `.env*` a public tree may hold, and the reason it needs an entry.
+
+        The `secret-file` PATH rule matches any `.env` or `.env.<anything>`, deliberately:
+        that is what a build writes and what a value ends up in. The tracked template a
+        reader copies is the exception, and it is one exact path rather than a pattern, so
+        this case and the one below are the two directions of that claim.
+        """
+        self.assert_case(self.case("env-example-is-not-a-secret"))
+
+    def test_a_real_env_beside_the_example_is_still_refused(self) -> None:
+        self.assert_case(self.case("real-env-beside-the-example"))
+
     def test_cron_lines(self) -> None:
         self.assert_case(self.case("cron-line"))
 
@@ -717,7 +764,7 @@ class TestTheGateHolds(unittest.TestCase):
 
 
 class TestTheRecordsAllowlists(unittest.TestCase):
-    """Four records quote what a run measured. The exemption for each is one file wide.
+    """Four records quote what a run measured, and the imported frontend's do too.
 
     These records hold a pid in a state table, an absolute path inside a command's output
     and the licence line a check read. Those quotes are the run's evidence and cannot be
@@ -801,6 +848,24 @@ class TestTheRecordsAllowlists(unittest.TestCase):
             "a records exemption covered a file it does not name",
         )
         self.assertEqual(result.code, 1)
+
+    def test_the_frontend_exemption_is_its_markdown_one_level_deep(self) -> None:
+        """One glob, one class, and it stops before the frontend's code.
+
+        The imported frontend's records quote the /tmp paths their own run wrote, the
+        same reason records/ may. The entry is checked for width because that is how an
+        exemption becomes a rubber stamp: `frontend/*` would cover `frontend/tools/`,
+        and a glob one level too wide exempts the script that writes the path.
+        """
+        entry = self.entries().get("frontend/*.md")
+        self.assertIsNotNone(entry, "no exception for the frontend's records")
+        self.assertEqual(set(entry.classes), {"tmp-path"})  # type: ignore[attr-defined]
+        matched = [p for p in public_tree() if fnmatch.fnmatchcase(p, "frontend/*.md")]
+        self.assertTrue(matched, "the glob matches nothing, so it exempts nothing")
+        for path in matched:
+            self.assertNotIn(
+                "/", path[len("frontend/") :], f"{path} is deeper than one level"
+            )
 
     def test_a_credential_class_is_not_exempt_in_any_record(self) -> None:
         """The deploy key is the class the operator asked to redact rather than allow."""

@@ -1,0 +1,16 @@
+# This checkout is a Next.js app inside another repository's tree, so it carries its
+# own ignore rules: the root's list is about the backend, the records and the
+# machine, and nothing in it says node_modules or .next. Env files are ignored by
+# name as well as by glob, because a build writes .env.production and a run writes
+# .env.local, and neither belongs in a public repository.
+node_modules/
+.next/
+out/
+build/
+.env
+.env.local
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+.vercel

@@ -188,12 +188,29 @@ REGISTRIES = (
     "records/E-data-source-registry.md",
 )
 
-#: The top-level directories a backticked path is allowed to belong to. Anything else is
-#: either not a path at all (`docs/CLI.md#gate` after the anchor is stripped is a path;
-#: `lib/types.ts` is the sibling frontend and is not ours to check) or is handled by
-#: another check. A closed set is what keeps check 1 from flagging the frontend.
+#: The top-level directories and files a backticked path is allowed to belong to. Anything
+#: else is either not a path at all (`docs/CLI.md#gate` after the anchor is stripped is a
+#: path) or is handled by another check. A closed set is what keeps check 1 from judging
+#: `lib/api.ts` as a claim about this tree: the frontend's own documents name their files
+#: the way their readers do, from the frontend root, and its internal paths are its own
+#: business. `frontend` is in the set because a root document naming `frontend/README.md`
+#: is making a claim about this tree, and that one is checked.
 TOP_LEVEL = frozenset(
-    {"tools", "ticketpath", "tests", "records", "docs", "programs", "market_swarm", "fixtures", ".githooks"}
+    {
+        "tools",
+        "ticketpath",
+        "tests",
+        "records",
+        "docs",
+        "programs",
+        "market_swarm",
+        "fixtures",
+        ".githooks",
+        "frontend",
+        "AGENTS.md",
+        "README.md",
+        "RESEARCH-PROGRAM.md",
+    }
 )
 
 #: A candidate path: segments of path characters and nothing else. This single regex is
@@ -456,8 +473,8 @@ def looks_like_repo_path(text: str) -> bool:
     that keep the check narrow enough to trust: it must have more than one segment (so a
     bare filename is not judged across forty directories), the last segment must carry an
     extension (so `records/findings/22` is left to check 2), and the first segment must be
-    one of this repository's, which is how the sibling frontend is not this repo's
-    problem.
+    one of this repository's, which is how a path into some directory outside the tree is
+    not this repo's problem.
     """
     if not PATH_SHAPE.match(text):
         return False
@@ -642,6 +659,13 @@ def check_paths(root: Path, files: list[str], notes: dict | None = None) -> list
                     continue
                 seen.add(text)
                 if (root / text).exists():
+                    continue
+                if (root / relative).parent.joinpath(text).exists():
+                    # A document inside a subproject names that subproject's files the way
+                    # its own readers do: `tools/build-copy.sh` in `frontend/README.md` is
+                    # the frontend's script and not the root's. Try the document's own
+                    # directory before calling a file that is there missing. For a
+                    # document at the root this resolves to the root and changes nothing.
                     continue
                 entry = allowed.get(text)
                 if entry is not None and entry.checkable:

@@ -280,6 +280,41 @@ class PathsTest(CheckerTestCase):
         readme = "# Fixture\n\nThe plan named `tools/never_written.py`; checked today: does not exist.\n"
         self.assertEqual(self.run_check("paths", **{"README.md": readme}), [])
 
+    def test_a_subproject_document_names_its_own_paths_from_its_own_root(self) -> None:
+        """The imported frontend's README means the frontend's `tools/build-copy.sh`.
+
+        Resolving every path at the repository root reported eleven true references in the
+        frontend's six documents as missing, and a reader acts on that report by editing a
+        correct document. The naming document's own directory is tried second.
+        """
+        frontend = "# Frontend\n\nBuild in the copy: `tools/build-copy.sh`.\n"
+        violations = self.run_check(
+            "paths",
+            **{
+                "frontend__README.md": frontend,
+                "frontend__tools__build-copy.sh": "#!/bin/sh\n",
+            },
+        )
+        self.assertEqual(violations, [], [item.render() for item in violations])
+
+    def test_the_subproject_rule_does_not_reach_out_from_a_root_document(self) -> None:
+        """The fallback is the document's own directory, not any directory that has the file."""
+        readme = "# Fixture\n\nRun `tools/build-copy.sh`.\n"
+        violations = self.run_check(
+            "paths",
+            **{"README.md": readme, "frontend__tools__build-copy.sh": "#!/bin/sh\n"},
+        )
+        self.assertOnly(violations, "paths", "tools/build-copy.sh")
+
+    def test_a_root_document_checks_a_path_into_the_subproject(self) -> None:
+        """`frontend` is in the top-level set, so a root document's claim about it is judged."""
+        readme = "# Fixture\n\nSee `frontend/README.md` and `frontend/notes/GONE.md`.\n"
+        violations = self.run_check(
+            "paths",
+            **{"README.md": readme, "frontend__README.md": "# Frontend\n"},
+        )
+        self.assertOnly(violations, "paths", "frontend/notes/GONE.md")
+
 
 class GitIgnoredPathTest(CheckerTestCase):
     """Check 1 against a repository: `.gitignore` owns which absences are deliberate.

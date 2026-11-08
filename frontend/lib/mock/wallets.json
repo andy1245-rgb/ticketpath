@@ -1,0 +1,293 @@
+{
+  "demoWallet": "efLBNUYVnmsvvyGA2s1LVaJJFuSzaquY4kTD58KARLg5",
+  "verified": [
+    {
+      "wallet": "efLBNUYVnmsvvyGA2s1LVaJJFuSzaquY4kTD58KARLg5",
+      "region": "Indianapolis, IN",
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "LZzXmPoMpEhbz6ewH2M2YGan98nsbwZeFTnQQJjQGswk",
+      "region": null,
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "dxwLmuSqcs5h1zHv14zgqJANLYSXPt1ctf3NUryaG6VQ",
+      "region": "Milwaukee, WI",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "jj6ar5SCNhPLosCx9a2gUz3GoDCkz3o8rq5XKCu7tzXd",
+      "region": "St. Louis, MO",
+      "verified": false,
+      "method": null
+    },
+    {
+      "wallet": "EoDYUpAHCBVwi6m1rtcjaEDJNT8JxqzFknjJBd9mAetx",
+      "region": "Milwaukee, WI",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "wRuLxrZzv29nCBxGBHsH5nTSQPGzyh6b9sSrcWu6hGcZ",
+      "region": "St. Louis, MO",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "zCDvFMoRgf9KxhP4XeB2Riap4ozNXLTdFX8dztupBBEq",
+      "region": "Detroit, MI",
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "Dprdu9DjAkuxh2dQ42caQhnpZKX2kZH8dirf3QqKRo4t",
+      "region": null,
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "okp7iKQPhrgxtz6WP2pVpPewymREWPZcQZn3XusESgJi",
+      "region": "Milwaukee, WI",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "CQVpz5kQeR2UJYCK4WavAZSAzsMhP28GVsuwtmZ4wDu9",
+      "region": "Chicago, IL",
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "kEesFRB7G7c43hsVbRtHcTj4eWriLkiVXtoapGEAJv5J",
+      "region": "Detroit, MI",
+      "verified": false,
+      "method": null
+    },
+    {
+      "wallet": "TWAU1AqDPyshgfjuQBy1hHKmh5X71c9ssQMCTZhxghqx",
+      "region": "Chicago, IL",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "SenY4Azjq85Qm6cLQhvQ3erEoSJAmhEybHskN3ogDcUo",
+      "region": "St. Louis, MO",
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "eYBb2Q1bqkoGV3JwefRPD4i36YCX5EaBLVmNVYjCa2c1",
+      "region": "Chicago, IL",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "yRmiDzs1KFtb8LhEhjkPYegJCatpQkphC8XMH5fRxbJr",
+      "region": null,
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "WiomhbzCMDyg4jMJ36bu6kK9KdrYgpqh513qkaBf7qwm",
+      "region": "Indianapolis, IN",
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "9Fqn6SaHhP94GYereHi4DbSfNUFtuREx2Tsc7pNPzR26",
+      "region": "Indianapolis, IN",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "rys57tvkQbawmu6xosVwikxVAHkvyTDqLkPmdr8n9kRR",
+      "region": "Chicago, IL",
+      "verified": false,
+      "method": null
+    },
+    {
+      "wallet": "v3kSJ4egavJu8mN9hNRYzVuaLptv6w6VLKhsWMuXVkds",
+      "region": "Chicago, IL",
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "AL9XF3ej4v5W39S3tRX1mwQfsXz68F74VHktbPnNWb7p",
+      "region": "Indianapolis, IN",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "H218baYH8k7dTV3edMbJX87xb17BorLk34W2qq2zx5h7",
+      "region": "Chicago, IL",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "YVetPiJihdW24EG35izoVqwfdZnxGFGBvB3pLWid8gBP",
+      "region": null,
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "uPFKGo8Tw1SjJBXBZy4Au2iE5gLkbgceZ7Tv7n7Db6kz",
+      "region": "Indianapolis, IN",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "tJuDyvwnRjq5tx8X7FXzsZDV1nJ9LxpuTnTrYH1zAvZ6",
+      "region": "St. Louis, MO",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "hfxKDfbfojS1egAgiCWUFrmPV3AhTjgE21KPSgkSVwwD",
+      "region": "Detroit, MI",
+      "verified": false,
+      "method": null
+    },
+    {
+      "wallet": "DWttebpk89TjMfPuNhfyGTMqTVPB4C3XKiwScNE1bFtP",
+      "region": "Milwaukee, WI",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "A4kxaQZvvmnLFRwkQ6SPe491GYfYNnmw4cRmSPMfGH37",
+      "region": null,
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "wgkFucTdEq7BFVoxiyLTNjXJqYgUtDTMrh6Wu2QgyeDs",
+      "region": "St. Louis, MO",
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "vsgWECU5xTvNHeSXBwizS8JirJxZd62Gmw8XXkqGteB4",
+      "region": "Detroit, MI",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "iNnwAL9MTvaeypqTMxzfCxFV3uarXtFoaPXvhXMQDt1W",
+      "region": "Chicago, IL",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "pRLPHK2h5bUNMjRT423e8YivpACeYTPD8xoTFbY9z3gW",
+      "region": "St. Louis, MO",
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "B2gsZ2HHJFbQXY5UxmXTT4eP4EYSU6nZGejinRsXAa5H",
+      "region": "Chicago, IL",
+      "verified": false,
+      "method": null
+    },
+    {
+      "wallet": "78qN7kHtkk6WcRf51owcUiRcvVBtWcM3LW93rMfiWLnL",
+      "region": "St. Louis, MO",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "Ppr2yV9D4Ei7tCBwdVaQ1T6Cteefwm6Lmpu2ZhgikE3N",
+      "region": null,
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "S6dFp1uQUC9rjEvmHnMTd7gm1eBcKL5eP2tqexro8SCE",
+      "region": null,
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "3HCzC91fLnL74hkh5r7FXtErZ6g8Geqn6XQ2a8qCUfV2",
+      "region": "St. Louis, MO",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "izGTd8Sy736t37uwDpAYjD6xM65ceMBJspmQCuoNTX9U",
+      "region": "St. Louis, MO",
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "RGdUZ4vNdmjH2rdDeyBfP8hqjvMcUGHwrw7JCyZRXjh1",
+      "region": "St. Louis, MO",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "J8JgqCZaEJsZ1vRo3jzXmea3Ujgn9LL8RqEUSEctJ3wA",
+      "region": "Milwaukee, WI",
+      "verified": false,
+      "method": null
+    },
+    {
+      "wallet": "hbi8oZjjk6pHthZCqkRQbzBjF69ArmhkFMiSioeBseay",
+      "region": null,
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "eKFSz6pnnhPfivTFQvxKq94duAna3LXqWycwuUJQGgGt",
+      "region": "Detroit, MI",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "oJbV5YMJAQBN3gZMXZX1axMUM7LmcKaZXBmeyrUj8mHP",
+      "region": "Milwaukee, WI",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "MfjYUvgs3RA7zLQ5BV2rQjif83iXmZu9xPBdhQG2aJNn",
+      "region": "Detroit, MI",
+      "verified": true,
+      "method": "identity"
+    },
+    {
+      "wallet": "vNoLP8S2Yx2GDNnxG612p1FcTimevkBm1Rz3y8e7UNPQ",
+      "region": "Milwaukee, WI",
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "Jy9xUssJebNjwa8jJWSqjMUD2y4mf7j97vpzaLTimVgg",
+      "region": null,
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "JcUHah6uKhVPS41XMsSysK7Q6M2zzx1t9CQeyfDAqiTR",
+      "region": null,
+      "verified": false,
+      "method": null
+    },
+    {
+      "wallet": "zoQLBMqrmCv4eUEMUxZXFt1X3L7APExCDnASkj2Q2GHb",
+      "region": null,
+      "verified": true,
+      "method": "wallet_signature"
+    },
+    {
+      "wallet": "kW4sUmfdRkoc1TKVvUABWCDJGteZmVgutqpBAKU7Loyo",
+      "region": "Milwaukee, WI",
+      "verified": true,
+      "method": "wallet_signature"
+    }
+  ]
+}

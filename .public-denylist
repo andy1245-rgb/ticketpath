@@ -127,6 +127,23 @@ allow records/findings/14-frontend-attach-explore.md home-path|live-service quot
 allow records/findings/15-visionhelper.md            home-path|live-service quoted measurement evidence; not operational
 allow tests/test_public_safety.py fleet-repo|home-path|tmp-path|cron-line|deploy-key|live-service|contact-email|personal-name A test for a pattern has to spell the pattern it plants. The credential classes are deliberately not exempt here, and that file builds those by concatenation instead.
 
+# The frontend's own records (added by FRONTEND-IMPORT). `frontend/VERIFY.md` and
+# `frontend/DECISIONS.md` paste the commands a build was checked with, and those runs wrote
+# their throwaway copies and screenshots under /tmp. The class is exempt for the frontend's
+# markdown and nowhere else: a /tmp path in its code is still a hit, which is why
+# `tools/build-copy.sh` now takes its copy directory from the environment instead of a
+# literal. Same reason records/ may quote /tmp: a quote of a scratch path is evidence of
+# what a run did, not an instruction to a reader.
+allow frontend/*.md                  tmp-path                      The frontend's records paste the commands its build ran, and its builds and screenshots were written under /tmp; a quote is evidence, the same reason records/ may quote it.
+
+# One file, added by the same import and refused by the `secret-file` PATH rule above,
+# which matches any `.env` or `.env.<anything>` because that is what a build writes and
+# because such a file may hold a value. `frontend/.env.example` cannot: it is the tracked
+# template a reader copies, every value in it is empty, and the app's own README says so.
+# The exemption is one exact path and one class, so a real `frontend/.env` beside it is
+# still a hit, and `tests/test_public_safety.py` proves both directions.
+allow frontend/.env.example          secret-file                   The tracked template the app documents; every value in it is empty, so it is not a credential by existing. A real frontend/.env beside it is still refused.
+
 # --- solana key material (added by SOLANA-INSTALL-AND-TEST) ---
 # A Solana keypair file is the secret itself: a JSON array of 64 integers written by
 # solana-keygen. It is not a PEM and carries no extension convention, so neither the

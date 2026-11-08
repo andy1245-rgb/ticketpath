@@ -1,0 +1,123 @@
+/*
+ * SeatPass design tokens. The single source of every colour, radius, shadow
+ * and font stack in the product: nothing outside this file may spell a hex
+ * value, an rgb() or a font family. Components use the semantic names below
+ * through the @theme mapping at the bottom.
+ *
+ * Light values are the brief's (section 3.1) and are never inverted. Dark is a
+ * second assignment of the same roles, opt-in by [data-theme="dark"] or by the
+ * media query for anyone who has not chosen light explicitly.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Ground and raised surfaces. */
+  --canvas: #f8f6f2;
+  --surface: #ffffff;
+  --surface-inset: #f1ede6;
+
+  /* Text roles. */
+  --ink: #14161a;
+  --muted: #5f636b;
+
+  /* Boundaries. --line is decorative; --control-border is a control's edge. */
+  --line: #e2ded6;
+  --control-border: rgb(134 129 122 / 40%);
+
+  /* The one accent, its pressed state, and what sits on it. */
+  --accent: #4f2bea;
+  --accent-press: #3f1fcc;
+  --on-accent: #ffffff;
+
+  /* Status roles. Warning is the cap, and nothing but the cap. */
+  --warning: #8a4b00;
+  --positive: #1a6b45;
+  --danger: #a81e14;
+
+  /* One elevation in the product, on the ticket card and the header only. */
+  --shadow-card: 0 1px 2px rgb(20 22 26 / 5%);
+}
+
+/* Explicit choice wins over the media query in both directions. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #0e0f12;
+  --surface: #16181d;
+  --surface-inset: #1e2126;
+
+  --ink: #f3f1ec;
+  --muted: #a8a49b;
+
+  --line: #2b2e34;
+  --control-border: rgb(119 114 107 / 40%);
+
+  --accent: #9f86ff;
+  --accent-press: #b49bff;
+  --on-accent: #14161a;
+
+  --warning: #e0a05a;
+  --positive: #5fd3a0;
+  --danger: #ff8a80;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --canvas: #0e0f12;
+    --surface: #16181d;
+    --surface-inset: #1e2126;
+
+    --ink: #f3f1ec;
+    --muted: #a8a49b;
+
+    --line: #2b2e34;
+    --control-border: rgb(119 114 107 / 40%);
+
+    --accent: #9f86ff;
+    --accent-press: #b49bff;
+    --on-accent: #14161a;
+
+    --warning: #e0a05a;
+    --positive: #5fd3a0;
+    --danger: #ff8a80;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
+  }
+}
+
+/*
+ * @theme inline emits the literal var() reference into each utility rather than
+ * copying the resolved value, so a theme switch repaints without a reload.
+ * The literal family names lead each stack so the computed style names the face
+ * the page actually renders, which is the one next/font self-hosts below.
+ */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-inset: var(--surface-inset);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-control: var(--control-border);
+  --color-accent: var(--accent);
+  --color-accent-press: var(--accent-press);
+  --color-on-accent: var(--on-accent);
+  --color-warning: var(--warning);
+  --color-positive: var(--positive);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-pill: 9999px;
+  --radius-card: 12px;
+  --radius-input: 8px;
+  --radius-panel: 16px;
+
+  --shadow-card: var(--shadow-card);
+}

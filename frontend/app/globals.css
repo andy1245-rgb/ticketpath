@@ -1,0 +1,223 @@
+@import "tailwindcss";
+@import "./theme.css";
+
+/* ---------------------------------------------------------------------------
+ * Base
+ * ------------------------------------------------------------------------ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+ * The 1200 content box: 16 gutter under 640, 24 from 640 to 1199, none above,
+ * so at 1440 the box runs x=120 to x=1320.
+ */
+.box {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+@media (min-width: 640px) {
+  .box {
+    padding-inline: 24px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .box {
+    padding-inline: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Type scale. Every step is a class here rather than an arbitrary utility so
+ * the rendered size is one lookup and one measurement.
+ * ------------------------------------------------------------------------ */
+
+.h-display {
+  font-size: 64px;
+  line-height: 64px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+@media (max-width: 1023px) {
+  .h-display {
+    font-size: 32px;
+    line-height: 38px;
+    letter-spacing: -0.02em;
+  }
+}
+
+.h-section {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.h-event {
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 500;
+}
+
+.t-deck {
+  font-size: 16px;
+  line-height: 26px;
+}
+
+.t-body {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.t-meta {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.t-micro {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.t-micro-caps {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Every figure, price, address, hash, date, serial and axis label. */
+.figure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.u-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+ * Motion: colour only, and only when the visitor has not asked for less.
+ * ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: no-preference) {
+  .u-transition {
+    transition-property: color, background-color, border-color, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+  }
+
+  .u-transition-press {
+    transition-property: color, background-color, border-color;
+    transition-duration: 70ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Focus: 2px accent at 2px offset, on canvas and on surface, never animated.
+ * ------------------------------------------------------------------------ */
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Pointer targets: 24 minimum, 44 on a coarse pointer.
+ * ------------------------------------------------------------------------ */
+
+@media (pointer: coarse) {
+  :where(button, [role="button"], input, select, textarea) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Ticket card cut-outs. A 12px notch is a hole: the card's own surface and
+ * border are absent inside it and the paper shows through. The mask does the
+ * cut; the two drawn circles sit underneath as the fallback for a browser
+ * without mask support, where they cover the same 12px on the same rows.
+ * ------------------------------------------------------------------------ */
+
+.notched {
+  --notch-y: 68px;
+  --notch-r: 6px;
+  -webkit-mask-image:
+    radial-gradient(circle var(--notch-r) at 0 var(--notch-y), transparent 99%, black 100%),
+    radial-gradient(circle var(--notch-r) at 100% var(--notch-y), transparent 99%, black 100%);
+  mask-image:
+    radial-gradient(circle var(--notch-r) at 0 var(--notch-y), transparent 99%, black 100%),
+    radial-gradient(circle var(--notch-r) at 100% var(--notch-y), transparent 99%, black 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+/* ---------------------------------------------------------------------------
+ * Screen-reader-only text that must stay in the accessibility tree.
+ * ------------------------------------------------------------------------ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* A skip link that only exists once focused. */
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: 8px;
+  z-index: 50;
+  transform: translateY(-200%);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
