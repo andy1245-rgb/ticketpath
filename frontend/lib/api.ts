@@ -23,9 +23,11 @@ import type {
   ChallengeResponse,
   DataSource,
   DestinationRow,
+  DevnetRecord,
   Event,
   EventAnalytics,
   EventQuery,
+  Guidance,
   Health,
   LedgerEntry,
   MarkupBucket,
@@ -445,4 +447,47 @@ export async function getEventAnalytics(eventId: string): Promise<EventAnalytics
 export async function getHealth(): Promise<Health> {
   if (!isMockMode) return request<Health>("/health");
   return settle(mockHealth());
+}
+
+/**
+ * GET /devnet-record.json: the artefact file the server itself loaded.
+ *
+ * Not a contract endpoint, so it is not in API_CONTRACT.md and no component
+ * treats it as one. It carries `loaded: false` when there is no file to read,
+ * which is a state a page prints rather than an error to throw: a screen that
+ * says "no record" is a better answer than a screen that dies.
+ */
+export async function getDevnetRecord(): Promise<DevnetRecord> {
+  if (!isMockMode) return request<DevnetRecord>("/devnet-record.json");
+  return settle({
+    source: "",
+    loaded: false,
+    record: null,
+    reason:
+      "This build reads its bundled fixtures. No backend origin is configured, so there is no artefact file to read.",
+    note: MOCK_DATA_SOURCE.label,
+  });
+}
+
+/**
+ * GET /guidance.json: the engine's refusals for one event, as sentences, with
+ * the count beside them.
+ *
+ * Bundled fixtures carry no guidance payload, and inventing one would be a
+ * screenshot of a refusal nobody computed. Mock mode therefore raises the same
+ * typed error a missing backend raises, and the caller prints that instead of a
+ * number.
+ */
+export async function getGuidance(
+  query: { event?: string; tier?: string; mode?: string } = {},
+): Promise<Guidance> {
+  if (isMockMode) {
+    throw new ApiError(
+      "This build reads its bundled fixtures, so there is no refusal list to read.",
+      503,
+      "no_backend",
+      "/guidance.json",
+    );
+  }
+  return request<Guidance>(`/guidance.json${buildQuery(query)}`);
 }

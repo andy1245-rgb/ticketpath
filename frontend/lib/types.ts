@@ -378,3 +378,96 @@ export interface ContractStatus {
   routesImplemented: number;
   map: string;
 }
+
+// ---------------------------------------------------------------------------
+// Two surfaces that are not contract endpoints
+// ---------------------------------------------------------------------------
+//
+// `/devnet-record.json` and `/guidance.json` are served by the backend beside
+// its HTML console, outside the route table the contract counts. They exist so
+// a page can print the recorded devnet evidence and the engine's refusals
+// without framing the console, which is a second product with a different type
+// system and a URL in the address bar. Neither is in API_CONTRACT.md, and
+// neither is a substitute for one of its endpoints.
+
+/**
+ * One transfer leg a verified run recorded: what was signed, at what price, in
+ * which slot, and what the program answered.
+ *
+ * `error` is the program's own text for the leg that was refused, carried
+ * verbatim so a page cannot paraphrase a refusal into something softer.
+ */
+export interface ArtefactTransfer {
+  priceLamports: number;
+  signature: string;
+  slot: number;
+  blockTime: number | null;
+  error: string | null;
+}
+
+/**
+ * `records/devnet-artefacts.json`, as the server loaded it.
+ *
+ * The file also carries a `recommendedLamports` figure which this type does not
+ * declare on purpose: it is above the ceiling the same record fixes, so no
+ * screen in this app prints it. Leaving it out of the type is what stops a
+ * later edit from rendering it by accident.
+ */
+export interface DevnetArtefact {
+  asOf?: string;
+  checkedAt?: string;
+  checkerVersion?: string;
+  cluster?: string;
+  eventId?: string;
+  tierId?: string;
+  modelVersion?: string;
+  faceLamports?: number;
+  capBps?: number;
+  mint?: string;
+  programId?: string;
+  quoteId?: string;
+  quoteHash?: string;
+  memoText?: string;
+  rpcUrl?: string;
+  signature?: string;
+  slot?: number;
+  blockTime?: number;
+  explorer?: { program?: string; mint?: string; transaction?: string };
+  transfers?: { acceptedAtCap?: ArtefactTransfer; refusedOverCap?: ArtefactTransfer };
+}
+
+/** The artefact envelope. `loaded: false` is a state a page prints, not an error. */
+export interface DevnetRecord {
+  /** The path the server actually read. */
+  source: string;
+  loaded: boolean;
+  record: DevnetArtefact | null;
+  /** Present when nothing was loaded: what is missing. */
+  reason?: string;
+  note: string;
+}
+
+/** One refusal: the engine's typed code, and the sentence it renders as. */
+export interface RefusalRow {
+  code: string;
+  labelId: string;
+  sentence: string;
+}
+
+/**
+ * The console payload's refusals for one event and one tier selection.
+ *
+ * `count` is the number of rows and is printed as a number, because the film's
+ * voice says how many things the engine refuses: it is a property of the
+ * selection, not a constant. Null means this build asked no backend, which is
+ * not the same statement as zero refusals.
+ */
+export interface Guidance {
+  source: string;
+  asOf: string;
+  event: { id: string; name: string; slug: string; capBps: number | null };
+  tier: { id: string; name: string } | null;
+  refusals: RefusalRow[];
+  count: number | null;
+  canonicalUrl: string;
+}
