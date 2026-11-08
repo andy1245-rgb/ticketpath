@@ -15,14 +15,15 @@ Environment facts established before any test:
 
 - the live platform frontend's port serves `next-server`, started
   `Fri Nov 6 23:57:34 2026`. Untouched.
-- `:3001` is a copy of that frontend at `../ticketpath-demo`, started
-  with `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8788` (read from
+- a copy of that frontend was served for the run from `../ticketpath-demo`,
+  started with `NEXT_PUBLIC_API_BASE_URL` pointing at the backend (read from
   the process's own `/proc/<pid>/environ`, not assumed).
-- `:8788` is the ticketpath backend. At window open it was an instance of
-  `python3 -m ticketpath.server`, cwd `<repository root>`, listening
-  on `127.0.0.1:8788`. It was stopped and replaced with a fresh instance running the
+- the ticketpath backend was up: at window open it was an instance of
+  `python3 -m ticketpath.server`, cwd `<repository root>`, listening on
+  loopback. It was stopped and replaced with a fresh instance running the
   identical command, so the proof is against the code on disk now.
-- `:8787` is another process. Never bound, never touched.
+- one further loopback port on this machine belonged to another process. Never
+  bound, never touched.
 
 ---
 
@@ -505,8 +506,23 @@ repository-relative paths beside them.
 | Step 4 | `/proc/<n>/environ` | the copy's `/proc/<pid>/environ` |
 | Step 5, listener capture | the port as a tied handle on the listener line, `pid=<n>` on the next, `pid <n>` on the one after | the port named by what it serves, the pid gone, the start time and ELAPSED kept |
 | Step 5, file tree | `find` over an absolute path | `find ../ticketing-frontend -xdev` |
+| Environment bullets, 2026-11-08T09:22Z | `:3001` named as the copy, `:8788` named as the ticketpath backend and the command that runs it, `:8787` named as another process | the copy, the backend and the third port named by what they were, with no port tied to a process |
 
 **Residue, stated rather than hidden.** Port numbers on lines this rule does not classify are
 unchanged, including this project's own documented backend port. `.public-denylist` states why it
 does not deny those, and `/tmp` paths are exempt for `records/` on purpose.
 `python3 tools/public_safety.py check --tracked` reports zero hits for this file as of this note.
+
+**Extended 2026-11-08T09:22Z, on the release-record correction pass.** The environment bullets
+still tied three ports to the processes behind them, which `AGENTS.md` forbids in its own words:
+the rule says it "may not record which process holds the port". Those three bullets now name what
+was running and not where it listened, and the table above records the change. This is a rule-level
+residual that both public-safety checks are clean on, because neither classifies a port plus a
+process as a hit; the checker did not catch it and this note is where that is said.
+
+**What was kept, and why the rest of the ports stay.** The command blocks below still call
+`http://127.0.0.1:8788/` and `http://127.0.0.1:3001/`. Those are the addresses the proof actually
+called, they are the output the run produced, and deleting them would delete the reproduction
+rather than the handle. They name a URL, not which process holds a port. If the operator wants
+them gone too, that is a decision about the proof and not a redaction this note can make on its
+own.

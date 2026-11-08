@@ -45,6 +45,17 @@ produced it, and `records/STATE-OF-PROJECT.md` is the full measurement.
    `Ran 436 tests`, `OK (skipped=2)`. Neither number should be pasted: paste the command's output at
    the moment you run it, or say "the suite the command prints". 610 and 274 were true at 03:35Z and
    are kept as history beside 546; the count had moved again to 1076 by 08:13Z.
+
+   **Corrected 2026-11-08T09:22Z: the 08:13Z pair moved again, and this time the numbers are of
+   committed code.** At `HEAD 948b5d5`, on a clean tree: `python3 -m unittest discover -s tests` →
+   `Ran 1079 tests in 30.321s`, `OK (skipped=26)`; `python3 -m unittest discover -s market_swarm/tests`
+   → `Ran 489 tests in 1.990s`, `OK (skipped=2)`. `git diff --name-only 4c1b23b..HEAD -- tests
+   market_swarm/tests` prints nothing, so 1076 and 436 were read on a working tree that was never
+   committed. The advice is unchanged and it is the reason this note is short: paste the command's
+   output at the moment you run it, or say "the suite the command prints". No count belongs in a form.
+   The tree moved once more while this note was being written, to `Ran 1091 tests` at 09:27Z, because
+   another pass added tests to the working tree without committing; that is a third reason to paste
+   nothing.
 4. **§2.5 item one and §2.6's Token-2022 bullet are corrected in place**; §2.4's dated 12:19Z snapshot is
    left as written and marked false of the tree; §3 item 13 (the four-item materials test) and item 16
    (the devnet field on the form) are re-measured, and item 16 now has three identifiers to paste.
@@ -178,7 +189,7 @@ Every line below was produced by a command in this session, not carried from ano
 | Root README | **missing** | `ls README*` |
 | LICENSE | **missing** | `ls LICENSE` |
 | Repo | public, `andy1245-rgb/ticketpath`, created 2026-11-07T10:25Z; `LICENSE` is MIT with the holder filled in **[AMENDED 17:36Z: the `license: None` reading was true at 10:25Z and is not any more]** | GitHub API |
-| Remote vs local | remote `main` = `375126f` = local HEAD, so the public repo is the verified tree **[AMENDED 17:36Z]**. It carries the backend (41 files under `ticketpath/`), `README.md`, `LICENSE`, `fixtures/synthetic_store.json`, `docs/` and the research records. No push is outstanding; the working tree has an uncommitted `NIGHT-LOG.md` that stays out of a submission commit | `git ls-remote origin`, `git ls-tree -r --name-only HEAD \| wc -l` → 148 |
+| Remote vs local | remote `main` = `375126f` = local HEAD, so the public repo is the verified tree **[AMENDED 17:36Z]**. It carries the backend (41 files under `ticketpath/`), `README.md`, `LICENSE`, `fixtures/synthetic_store.json`, `docs/` and the research records. No push is outstanding; the working tree has an uncommitted `NIGHT-LOG.md` that stays out of a submission commit | `git ls-remote origin`, `git ls-tree -r --name-only HEAD \| wc -l` → 148 **[AMENDED 2026-11-08T09:22Z: 285 at `HEAD 948b5d5`; the 148 was true of `375126f`]** |
 | Browser on this machine | none (no chromium, firefox, playwright, puppeteer, selenium) | probed in this session, and `DEMO-PROOF.md` §5 |
 | Devnet from this machine | reachable: `getVersion` → `solana-core 4.4.0`; Token-2022 program account exists, `executable: true`, slot 519647005 | `curl api.devnet.solana.com` |
 

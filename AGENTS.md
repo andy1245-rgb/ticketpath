@@ -117,7 +117,11 @@ the difference between them is the whole story: read the coverage, not the inten
   the range.
 - **The whole tree.** `python3 tools/public_safety.py check --tracked` reads every tracked
   file from disk and is the only one of the three that looks at what is already there. It
-  fails. Measured 2026-11-07T18:50Z: **64 hits in 9 tracked files, every one of them under
+  passes. Measured 2026-11-08T09:22Z at `HEAD 948b5d5`: **clean over 285 tracked files**,
+  `public_safety: clean, tracked tree, 285 file(s)`, exit 0. That reading reversed by commit
+  `aea1cbe`, "Redact the machine handles from the published proof files". The paragraph
+  below is kept because it records how the tree got there and what the redaction cost.
+  It was true as written at 2026-11-07T18:50Z: **64 hits in 9 tracked files, every one of them under
   `records/`** — 48 `live-service`, 14 `home-path`, 2 `fleet-repo`: `FINAL-PROOF-2.md` 26,
   `FINAL-PROOF.md` 14, `DEMO-PROOF.md` 11, `findings/07-engine-review.md` 4,
   `findings/10-final-review.md` 3, `FRONTEND-HONESTY-PATCH.md` 2, `REPO-CONSISTENCY.md` 2,
@@ -126,10 +130,11 @@ the difference between them is the whole story: read the coverage, not the inten
   that list only because the stale-claims pass had to redact a home path or a process id to
   commit a correction to them, and both correction notes say what went. Those hits are quoted
   measurements in the research record — a pid in a state table, an absolute path inside a
-  command's output — and they are published. None of the 9 carries an `allow` line, so a run
-  that stages one of them is refused until the file is redacted or a per-file exception with a
-  reason is added to `.public-denylist`, and both are the operator's call: the record is the
-  run's evidence, and history is never rewritten without his explicit yes.
+  command's output — and they are published. None of the 9 carried an `allow` line, so a run that
+  staged one of them was refused until the file was redacted or a per-file exception with a
+  reason was added to `.public-denylist`, and both were the operator's call: the record is the
+  run's evidence, and history is never rewritten without his explicit yes. The first option is
+  what was taken, in `aea1cbe`, and `.public-denylist` is unchanged.
 
 So a commit is gated, a push is gated, and the tree is not. The sentence this file used to
 carry, "It must pass before any commit and before any push", was true of the two gates and

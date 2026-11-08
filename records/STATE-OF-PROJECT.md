@@ -6,10 +6,20 @@ came from. Committed by this pass: **nothing.** The files this pass edited are t
 `README.md`, `records/DELIVERABLE.md`, `records/SUBMISSION-PACK.md` and
 `docs/ON-CHAIN-DESIGN.md`, each of which says in its own text what changed and when.
 
+**[Corrected 2026-11-08T09:22Z: the sentence above, "Committed by this pass: **nothing**", was
+true of the 03:30Z pass that wrote it and is false of the repository today. This file is committed
+in `4c1b23b`, and `docs/charts/`, `docs/CHARTS.md`, `market_swarm/` and `records/devnet-artefacts.json`
+are committed in this branch. Read it as a record of what the 03:30Z pass did, not as a claim about
+the tree. `git ls-files records/STATE-OF-PROJECT.md` returns the path.]**
+
 **This edition replaces the 2026-11-07T18:25Z edition of this file.** That edition is not in
 git (this file is untracked), so nothing published is contradicted by the replacement; the table in
 §0 lists what changed and why, and every claim the older edition made that this pass could not
 re-measure is marked *unverified* rather than carried silently.
+
+**[Corrected 2026-11-08T09:22Z: "this file is untracked" was true at 03:30Z and is false now.
+The file is tracked as of `4c1b23b`. The reasoning it supports still holds, because the 18:25Z
+edition was never committed; only the word "untracked" describes a state the repository has left.]**
 
 **[Extended 2026-11-08T05:54Z by the feature-1 documentation pass: this file, `README.md`,
 `records/F-decision-log.md`, `docs/ON-CHAIN-DESIGN.md`, `records/E-data-source-registry.md`, and an
@@ -24,6 +34,14 @@ package are **untracked**, and `.gitignore`, `tests/test_devnet_publish.py`,
 (`git status --porcelain`). The devnet proof is real on the chain and is **not in the
 repository yet**. That gap is the first thing to fix, and it is one commit of explicit paths.
 
+**[Corrected 2026-11-08T09:22Z: that paragraph describes the tree at 03:30Z and is now the
+opposite of it. `HEAD` is `948b5d5` on `release/prep`, the working tree is clean, and everything
+it calls untracked is committed in this branch: `records/devnet-artefacts.json`, findings `20` and
+`23`-`31`, `market_swarm/`, `docs/charts/` and `docs/CHARTS.md`. Measured: `git status --porcelain`
+prints nothing, `git ls-files market_swarm | wc -l` is 35, `git ls-files docs/charts | wc -l` is 6.
+The gap it calls "the first thing to fix" is fixed. A reader arriving after the merge should
+take the paragraph as the 03:30Z record and this note as the state.]**
+
 **Extended 2026-11-08T08:20Z, after the 05:54Z edition above.** This is the documentation pass for the
 ten-feature build, and it is the first edition of this file written after all ten features landed. It
 **replaces the ten-feature table in §0A** with the measured statuses and the test file behind each,
@@ -34,6 +52,17 @@ edited: this one, `README.md`, `records/F-decision-log.md`, `docs/ON-CHAIN-DESIG
 `records/C-variable-registry.md`, `records/D-model-registry.md`, `records/E-data-source-registry.md`,
 with appended corrections in `records/A-research-ledger.md`, `records/CONTRACT-MAP.md` and
 `records/CONTRACT-CONFORMANCE.md`. No code, test or tool was touched. No commit, no push.
+
+**Extended 2026-11-08T09:22Z, the release-record correction pass.** This pass answers an independent
+review of `release/prep` and edits documents only. It corrects the chart-verifier quotation in
+feature 3 (§0A) and in §A4, which named an output and an exit code the shipped tool cannot produce;
+re-measures every count in §A4 and in §0's findings row; records that the public-safety gate is
+clean on the tracked tree since `aea1cbe`; says that the local-validator artefact behind features 6
+and 8 stays local; and marks the time-stamped sentences at the top of this file that the branch's
+own commits made false. Files this pass edited: this one, `AGENTS.md`, `docs/PUBLIC-SAFETY.md`,
+`records/SUBMISSION-PACK.md`, `records/FINAL-PROOF.md`, `records/video/inputs/build-state-matrix.md`.
+No code, test or tool was touched. No commit, no push. The commands and outputs behind every new
+number are in `tmp/release-prep/fix-record.md`, which is git-ignored.
 
 ---
 
@@ -56,6 +85,11 @@ the fixture's contents and its determinism, the engine's arithmetic and its refu
 public-safety gate failing on the published tree, the console's mobile and above-the-fold
 defects, and the absence of a hosted demo.
 
+**[Corrected 2026-11-08T09:22Z: the fourth item in that list is no longer true. The public-safety
+gate is clean on the tracked tree, measured `python3 tools/public_safety.py check --tracked` →
+`public_safety: clean, tracked tree, 285 file(s)`, exit 0. Commit `aea1cbe` ("Redact the machine
+handles from the published proof files") is what changed it. The other four items in the list stand.]**
+
 **Corrected 2026-11-08T08:25Z: four counts in the table above moved, and three of them are mine to
 re-measure.** Measured on this tree at 08:13Z: (a) row 3, the suite is **1076** in `tests/` and
 **436** in `market_swarm/tests/`, not 610 and 274; (b) row 4, findings are **32 tracked and 52 on
@@ -67,6 +101,37 @@ of the ten features: `33-a-region-cap-law.md` and `33-b-region-cap-law-sources/`
 `34-region-caps-build.md`, `35-live-llm-agents.md`, `36-transfer-fee-on-a-one-unit-ticket.md`,
 `37-program-v2-review-fixes.md`, `38-region-caps-local-validator.md`, `39-visitor-identity.md`,
 `40-memo-program-id.md` and `41-deepseek-live-adapter.md`.
+
+**Corrected 2026-11-08T09:22Z, at `HEAD 948b5d5`: the 08:25Z counts above moved again, and rows 3,
+4 and 7 of the table are stale for a second time.** Every number below is this pass's own reading
+at 09:20-09:22Z on a clean tree, quoted with the command that produced it:
+
+| Row | 08:25Z said | Measured at `948b5d5` 09:22Z | Command |
+|---|---|---|---|
+| 3, `tests/` | 1076 | **1079 tests** (`Ran 1079 tests in 30.321s`, `OK (skipped=26)`) | `python3 -m unittest discover -s tests` |
+| 3, `market_swarm/tests/` | 436 | **489 tests** (`Ran 489 tests in 1.990s`, `OK (skipped=2)`) | `python3 -m unittest discover -s market_swarm/tests` |
+| 4, findings tracked | 32 | **57** | `git ls-files records/findings \| wc -l` |
+| 4, findings on disk | 52 | **57**, with **0** untracked | `find records/findings -name '*.md' \| wc -l`; `git ls-files -o --exclude-standard records/findings \| wc -l` |
+| 7, Python files in `market_swarm/` | twelve | **thirteen** | `ls market_swarm/*.py \| wc -l` |
+| 7, test modules in `market_swarm/tests/` | fifteen | **sixteen** | `ls market_swarm/tests/test_*.py \| wc -l` |
+| 7, lines with its tests | 15,037 | **16,425** | `find market_swarm -name '*.py' \| xargs wc -l` |
+| 7, tests green | 436 | **489**, `OK (skipped=2)` | `python3 -m unittest discover -s market_swarm/tests` |
+
+**Why the 08:25Z pair was never true of the commit that carried it, and this pair is.**
+`git diff --name-only 4c1b23b..HEAD -- tests market_swarm/tests` prints nothing, so the test tree
+committed in `4c1b23b` is the tree measured here; the 1076/436 reading was taken on a working tree
+that was never committed, which is the one thing this file exists not to do. `tests/test_event_jurisdiction.py`
+has had 12 test methods since `0266570`, two commits before the records commit. The 57/57 findings
+count is the first reading in this file where tracked and on disk agree, because every finding is
+committed in this branch. §A4 carries the same numbers with the same commands.
+
+**Final reading at the release head, 2026-11-08T09:48Z.** The two commits after `948b5d5` add tests
+(`tests/test_doc_check.py`, `tests/test_region_caps.py`, `tests/test_onchain_v2.py`,
+`tests/test_swarm_charts.py`), so the count moved once more and the pair above is short of it.
+Measured on the committed tree: `Ran 1092 tests` / `OK (skipped=26)` for `tests/`, `Ran 489 tests` /
+`OK (skipped=2)` for `market_swarm/tests/`, `doc_check: clean, 7 check(s)` with 24 allowed absences,
+and `tp.py gate --quick` reporting `tests=1092 OK - doc-check=0 violation(s)`. Every earlier reading in
+this file stays where it is, tagged with the tree it was taken on.
 
 **Extended 2026-11-08T05:54Z, after the 03:45Z edition above.** This edition adds the ten-feature
 status table (below), corrects §A4 with the test counts measured in this edit, and adds the three
@@ -85,13 +150,13 @@ implements the feature is claimed in this pass.
 |---|---|---|---|---|
 | 1 | Memo program id, per cluster | **tested** | `ticketpath/adapters/chain_client.py` (`MEMO_PROGRAMS`, `MEMO_PROGRAM_DEVNET`, `MEMO_PROGRAM_CLI`, `memo_program_id`, `quote_commit`); `ticketpath/orchestrator.py` (`_memo_program_or_none`); `tools/devnet_publish.py` (`assert_memo_program`) | `tests/test_onchain_sim.py` (24 tests, `OK`) and `tests/test_devnet_publish.py` (81 tests, `OK`), both run by this pass. `mainnet-beta` and `testnet` are absent from the table and refused; devnet and localnet both resolve to `Memo4c2p…` |
 | 2 | Console renders the real devnet artefact as recorded | **tested** | `ticketpath/orchestrator.py` (`_chain_payload`, `recorded`, `matchesCurrentQuote`); `ticketpath/console/page.py` (`chain_slot`, `_recorded_quote`, `_match_sentence`); `ticketpath/adapters/rpc_adapter.py` (`program_status.recorded`) | `tests/test_console_recorded_artefact.py` (20 tests, `OK`). Measured through `tools/guidance.py`: pinned state → `verified True`; any other instant → `verified False`, with both quote ids and both instants named on the page and the two recommendations printed only where they differ (re-measured 2026-11-08T07:45Z) |
-| 3 | Chart and animation assets from `market_swarm` data, every asset labelled SYNTHETIC | **tested** | `tools/swarm_charts.py`; `docs/charts/` (five SVGs and an index); `docs/CHARTS.md` | `tests/test_swarm_charts.py` (41 tests, `OK`). `python3 tools/swarm_charts.py verify --out docs/charts` → `PASS`, 5 assets, series rebuilt and matched, exit 0 |
+| 3 | Chart and animation assets from `market_swarm` data, every asset labelled SYNTHETIC | **tested** | `tools/swarm_charts.py`; `docs/charts/` (five SVGs and an index); `docs/CHARTS.md` | `tests/test_swarm_charts.py` (41 tests, `OK`), which is what the status rests on. `python3 tools/swarm_charts.py verify --out docs/charts` prints `PASS LABELS ONLY`, `series rebuilt from the dataset on 0 of 5 asset(s)`, and `note: exit 3, labels and internal consistency only; nothing about the data was checked`, and exits **3**. The label and the internal consistency are verified; the data series are not, because `.swarm-runs/` is not in the repository and `docs/CHARTS.md:48` says the datasets are not in it. Re-measured 2026-11-08T09:22Z |
 | 4 | Forecast log on chain plus off-chain scoring | **tested** | `programs/cap_hook/src/lib.rs` (tags 5 and 6), `ticketpath/onchain/v2.py`, `ticketpath/core/forecast_score.py` | `tests/test_forecast_score.py` (18 tests) and `tests/test_onchain_v2.py` (45 tests), both `OK`. The live local-validator half is `tests/test_onchain_v2_live.py`, 26 tests, **skipped** by the documentation pass (the gate is `TP_ONCHAIN_V2_LIVE=1` and the run rewrites the run's artefact). The rebuilt artefact (111,504 bytes, sha256 `de89af3c…`) carries proofs `a` to `g` and thirteen tag 4..6 proofs, and proof `g` is the two non-authority refusals `6026` |
 | 5 | Artist fee via `TransferFeeConfig` | **not built** | none | **Blocked** by the measured Token-2022 ceiling: at `decimals 0`, `amount 1`, any rate from 1 to 9999 bps withholds the whole ticket. `records/findings/36-transfer-fee-on-a-one-unit-ticket.md` |
-| 6 | Price floor | **tested** | `programs/cap_hook/src/state.rs` (`band_low_lamports`), `programs/cap_hook/src/lib.rs` (`6021`, `6022`), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`) for the field and the wire format. The predicate's proof is the local-validator run recorded at `records/onchain-v2.local.json`: `899,999,999` refused `6021`, `900,000,000` admitted. Not re-run by this pass |
+| 6 | Price floor | **tested** | `programs/cap_hook/src/state.rs` (`band_low_lamports`), `programs/cap_hook/src/lib.rs` (`6021`, `6022`), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`) for the field and the wire format. The predicate's proof is the local-validator run recorded at `records/onchain-v2.local.json`: `899,999,999` refused `6021`, `900,000,000` admitted. Not re-run by this pass. **That artefact is git-ignored (`.gitignore:65`, 32,679 bytes on disk here) and stays local: it is not in the repository and a reader will not find it** |
 | 7 | Flip tax | **not built** | the rebate curve only (`rebate_bps`, `rebate_lamports` in `programs/cap_hook/src/state.rs`) | **Blocked** by the same ceiling. `ClaimRebate` (tag 7) is not implemented, `6027` and `6028` are declared and raised by nothing, and `held_since_unix` is written with no consumer. Same finding |
-| 8 | Public price feed | **tested** | `programs/cap_hook/src/lib.rs` (tag 4), `programs/cap_hook/src/state.rs` (`band_seeds`), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`). The account was published and read back on the local validator (`low 900000000`, `high 1100000000`, `sample_n 42`); **no third-party consumer**, so composability is unproven |
-| 9 | Live deepseek agent adapter, tiny budgets | **tested** | `market_swarm/forge_policy.py`, `market_swarm/budget.py`; opt-in on `MARKET_SWARM_LIVE_LLM=1` | `market_swarm/tests/test_feature9_fixes.py` and `test_forge_policy.py` (89 tests, `OK`); the whole package is 436 tests, `OK (skipped=2)`. The documentation gate's feature check reads both test roots as of 2026-11-08, so this row is `tested` on the suite that exercises it |
+| 8 | Public price feed | **tested** | `programs/cap_hook/src/lib.rs` (tag 4), `programs/cap_hook/src/state.rs` (`band_seeds`), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`). The account was published and read back on the local validator (`low 900000000`, `high 1100000000`, `sample_n 42`); **no third-party consumer**, so composability is unproven. The run is the same local-only one behind feature 6: the artefact `records/onchain-v2.local.json` is git-ignored and stays local, so the numbers are the record and the artefact is not |
+| 9 | Live deepseek agent adapter, tiny budgets | **tested** | `market_swarm/forge_policy.py`, `market_swarm/budget.py`; opt-in on `MARKET_SWARM_LIVE_LLM=1` | `market_swarm/tests/test_feature9_fixes.py` and `test_forge_policy.py` (89 tests, `OK`); the whole package is 489 tests, `OK (skipped=2)` (re-measured 2026-11-08T09:22Z, was 436). The documentation gate's feature check reads both test roots as of 2026-11-08, so this row is `tested` on the suite that exercises it |
 | 10 | Per-event jurisdiction field | **tested** | `programs/cap_hook/src/state.rs` (`jurisdiction`, `policy`), `programs/cap_hook/src/lib.rs` (log line, the `policy == 1` skip), `ticketpath/onchain/v2.py` | `tests/test_onchain_v2.py` (45 tests, `OK`). The local run initialised `jurisdiction ZZ`, admitted a transfer with `jurisdiction=ZZ` in the log and refused `policy 2` with `6023`. The wire carries neither field. **This program records the code and does not interpret it**; the jurisdiction-to-policy table is a separate piece of work in this same tree by another session (D11 there, `ticketpath/core/region_caps.py`), the two must be reconciled by the operator, and any such reconciliation is nation-level only because the record is two bytes while 72 of the table's 82 codes are subdivisions (§A6 item 7) |
 
 **Corrected 2026-11-08T08:20Z.** The table above replaces the 05:54Z edition, which read "one
@@ -102,6 +167,28 @@ below rather than deleted, and this note is what a reader should believe.
 
 One measured row, nine unmeasured. The build order this table follows is a local working note, not
 a record, and nothing here is copied from it.
+
+**Corrected 2026-11-08T09:22Z, on the release-record correction pass.** Two substantive changes to
+the table above, and both are corrections of a claim rather than of a number:
+
+1. **Feature 3 quoted a verification the shipped tool cannot produce.** The row read
+   `python3 tools/swarm_charts.py verify --out docs/charts` → `PASS`, 5 assets, series rebuilt and
+   matched, exit 0. The tool prints `PASS LABELS ONLY`, reports `series rebuilt from the dataset on
+   0 of 5 asset(s)` and `note: exit 3, labels and internal consistency only; nothing about the data
+   was checked`, and exits **3**. `tools/swarm_charts.py` sets `status = "PASS" if all_rebuilt else
+   "PASS LABELS ONLY"` and returns 3 otherwise, and its own docstring says it prints exactly that
+   when the datasets are absent. They are absent: `.swarm-runs/` is not in the repository and
+   `docs/CHARTS.md:48` says the datasets are not in it. The status stays `tested` on
+   `tests/test_swarm_charts.py` (41 tests, `OK`, measured on a clean tree at `948b5d5`; a parallel
+   pass has since made it 44 in the uncommitted working tree), which is what justifies it; what that
+   verifies is the label and the internal consistency, not the data series.
+2. **Features 6 and 8 rest on an artefact that stays local.** `records/onchain-v2.local.json` is
+   git-ignored at `.gitignore:65` and is not in the repository. The numbers in both rows are the
+   record of that run and are kept; the rows now say the artefact is local, so a reader is not sent
+   looking for a file that does not ship.
+
+This note is what a reader should believe about feature 3 where it disagrees with the row's older
+text, which is kept above so the false claim is visible rather than erased.
 
 ---
 
@@ -127,7 +214,7 @@ a record, and nothing here is copied from it.
 | CLI (`tools/tp.py`) | **WORKS** | 8 verbs, exit codes 0/1/2/3 |
 | Publish script | **WORKS, AND RESUMABLE** | `tools/devnet_publish.py`: nine steps, each reads the cluster before it writes; transport retries 4× with 0.5/1/2 s backoff; resume file `records/devnet-progress.json` (git-ignored, 0600); `--inject` faults armed only by an explicit flag; `--local` runs a validator it kills on every exit path |
 | `market_swarm/` | **IN PROGRESS, SEPARATE PACKAGE** | 11 modules + 7 test modules, standard library only, imports nothing from `ticketpath/` and is imported by nothing in it. 274 tests green. No run config file in the tree, so `python3 -m market_swarm plan --config <path>` is the only entry point and there is nothing to point it at yet (§A9) |
-| Public-safety check | **WORKS AS A TOOL, STILL FAILING AS A GATE** | `python3 tools/public_safety.py check --tracked` in this pass → **64 hits in 9 tracked files**, unchanged from the 18:50Z reading in `AGENTS.md`. Detail in §A6 |
+| Public-safety check | **WORKS AS A TOOL, AND CLEAN ON THE TRACKED TREE SINCE `aea1cbe`** (`64 hits in 9 tracked files` was the reading on 2026-11-08T03:30Z; see the correction below the table) | `python3 tools/public_safety.py check --tracked` re-measured 2026-11-08T09:22Z → `public_safety: clean, tracked tree, 285 file(s)`, exit 0. Detail in §A6 |
 | Frontend attach | **PARTIAL** | 43 checks against a copy, last green at 18:40Z; **not re-run in this pass** — `tools/check_frontend_attach.py` needs a backend on the documented port and none was running (*unverified this pass*) |
 
 **Corrected 2026-11-08T08:25Z: the `market_swarm/` row in the table above is stale in four
@@ -139,6 +226,24 @@ of its events resolve with `no_jurisdiction_declared`) and which `docs/CHARTS.md
 for the committed assets. The row's status, "in progress", is also out of date in one respect: the
 package's own suite is green and the live LLM path is opt-in, but a live validator run of the whole
 harness is still not in the record.
+
+**Corrected 2026-11-08T09:22Z, at `HEAD 948b5d5`, on the release-record correction pass. Two rows
+above are stale, and one of them was stale in the other direction.**
+
+1. **The public-safety row.** It read **WORKS AS A TOOL, STILL FAILING AS A GATE**, with
+   `64 hits in 9 tracked files`, carried forward from 03:30Z. That is no longer true of the tree:
+   `python3 tools/public_safety.py check --tracked` → `public_safety: clean, tracked tree, 285 file(s)`,
+   exit 0. Commit `aea1cbe` ("Redact the machine handles from the published proof files",
+   2026-11-08T09:03Z) is what changed it: it redacted the eight records that carried the hits and
+   left `.public-denylist` unchanged, so no exception was bought to make the number go away. The
+   64-in-9 reading is kept here because a reader comparing this file to an older one needs to know
+   which commit made the difference. The row's status is now the measured one.
+2. **The `market_swarm/` row's counts.** The 08:25Z correction above put it at twelve Python files,
+   fifteen test modules, 436 tests and 15,037 lines. Measured at 09:22Z: **thirteen** (`ls
+   market_swarm/*.py | wc -l`), **sixteen** (`ls market_swarm/tests/test_*.py | wc -l`), **489 tests**
+   (`Ran 489 tests in 1.990s`, `OK (skipped=2)`) and **16,425 lines** (`find market_swarm -name
+   '*.py' | xargs wc -l`). The row's own text still says "11 modules + 7 test modules ... 274 tests",
+   which was the 03:45Z reading; the 08:25Z note and this one are what to believe.
 
 ## A2. Devnet, re-read from the cluster by this pass
 
@@ -254,9 +359,49 @@ payload:
 
 ## A4. Test and check inventory, counted in this pass
 
+**Re-measured 2026-11-08T09:20-09:22Z at `HEAD 948b5d5`, on a clean tree, by the release-record
+correction pass.** These supersede every count below where they overlap. Every number is a reading
+taken in this pass, with the command that produced it; nothing here is copied from a review or from
+the table below.
+
+| Command | Count | Measured at 09:20-09:22Z |
+|---|---|---|
+| `python3 -m unittest discover -s tests` | **1079 tests** | `Ran 1079 tests in 30.321s`, `OK (skipped=26)`, exit 0 |
+| `python3 -m unittest discover -s tests -t .` | **1079 tests** | `Ran 1079 tests in 30.107s`, `OK (skipped=26)`, exit 0 |
+| `python3 -m unittest discover -s market_swarm/tests` | **489 tests** | `Ran 489 tests in 1.990s`, `OK (skipped=2)`, exit 0 |
+| `python3 -m unittest discover -s market_swarm/tests -t .` | **489 tests** | `Ran 489 tests in 1.996s`, `OK (skipped=2)`, exit 0 |
+| the two suites together, on disk | **1,568 tests** | 1079 + 489, both measured in this pass; `python3 -m unittest discover -s . -p 'test_*.py' -t .` reads `Ran 1568 tests in 32.200s`, `OK (skipped=28)` |
+| `python3 -m unittest tests.test_event_jurisdiction` | **12 tests** | `Ran 12 tests in 0.204s`, `OK` |
+| `python3 -m unittest tests.test_swarm_charts` | **41 tests** | `Ran 41 tests in 0.626s`, `OK` |
+| `python3 tools/swarm_charts.py verify --out docs/charts` | **5 assets + index, labels only** | `PASS LABELS ONLY`, `series rebuilt from the dataset on 0 of 5 asset(s)`, `note: exit 3, labels and internal consistency only; nothing about the data was checked`, exit **3** |
+| `python3 tools/doc_check.py --root .` | **7 checks, 24 allowed absences, 0 violations** | `doc_check: clean, 7 check(s), <repo root>; 24 allowed absence(s) suppressed by ALLOWED_ABSENCES`, exit 0, with 5 warnings (2 of them unlettered number collisions the tool reports as warnings by design) |
+| `python3 tools/public_safety.py check --tracked` | **clean** | `public_safety: clean, tracked tree, 285 file(s)`, exit 0 |
+| `git ls-tree -r --name-only HEAD \| wc -l` | **285 tracked files** | 285 |
+| `git ls-files records/findings \| wc -l` | **57 tracked findings** | 57, equal to the 57 on disk (`find records/findings -name '*.md' \| wc -l`) |
+| `ls tests/test_*.py \| wc -l` | **48 test modules under `tests/`** | 48 |
+| `ls market_swarm/*.py \| wc -l` | **13 Python files in `market_swarm/`** | 13 |
+| `ls market_swarm/tests/test_*.py \| wc -l` | **16 test modules there** | 16 |
+| `find market_swarm -name '*.py' \| xargs wc -l` | **16,425 lines with its tests** | 16,425 |
+
+**Two counts were never true of the commit that carried them, and this is the distinction the file
+exists to keep.** `git diff --name-only 4c1b23b..HEAD -- tests market_swarm/tests` prints nothing, so
+the test tree committed in `4c1b23b` is the tree measured above; the 1076 and 436 readings in the
+table below were taken at 08:13Z on a working tree that was never committed. `tests/test_event_jurisdiction.py`
+has had 12 test methods since `0266570`, two commits before that records commit, so the `11 tests`
+row below was already wrong when it was written. The counts here are of committed code.
+
+**The tree moved under these readings, again, and this is the second half of the same point.**
+`git status --porcelain` printed nothing when the table above was taken at 09:20-09:22Z, so every
+number in it is a reading of the committed tree at `948b5d5`. A parallel pass editing `tools/doc_check.py`,
+`tools/swarm_charts.py`, `ticketpath/core/region_caps.py` and five test modules then added tests to
+the working tree without committing. The same commands at 09:27Z read `Ran 1091 tests` for `-s tests`
+and `Ran 44 tests` for `tests.test_swarm_charts`. Neither of those is a HEAD number and neither should
+be pasted; the `market_swarm` counts, the 285 tracked files, the 57 findings and the two check counts
+did not move. Take a reading when you need one, and say which tree it was taken on.
+
 **Measured 2026-11-08T07:29-07:31Z by the ten-feature documentation pass, while a concurrent build was
-landing.** These are this pass's own readings, and they supersede the 05:51Z table below where they
-overlap. The suite is green; every count is quoted with the command that produced it.
+landing.** These are that pass's own readings, and they are kept below as the earlier reading rather
+than overwritten. The suite is green; every count is quoted with the command that produced it.
 
 | Suite | Count | Measured (2026-11-08, this pass) |
 |---|---|---|
@@ -270,14 +415,15 @@ overlap. The suite is green; every count is quoted with the command that produce
 | `python3 -m unittest tests.test_onchain_v2` | **45 tests** | `OK` |
 | `python3 -m unittest tests.test_onchain_v2 -k TicketRecord` and `-k band` and `-k jurisdiction` | **6, 2, 2** | `OK` each |
 | `python3 -m unittest tests.test_onchain_v2_live` | **26 tests** | `OK (skipped=26)`: gated on `TP_ONCHAIN_V2_LIVE=1`, and the run writes the run's own artefact |
-| `python3 -m unittest tests.test_event_jurisdiction` | **11 tests** | `OK` |
-| `python3 -m unittest discover -s market_swarm/tests -t .` | **436 tests** | `Ran 436 tests in 1.864s`, `OK (skipped=2)` |
+| `python3 -m unittest tests.test_event_jurisdiction` | **11 tests** | `OK`. **[CORRECTED 2026-11-08T09:22Z: 12 tests today (`Ran 12 tests in 0.204s`, `OK`); the file has had 12 methods since `0266570`, so 11 was wrong when written]** |
+| `python3 -m unittest discover -s market_swarm/tests -t .` | **436 tests** | `Ran 436 tests in 1.864s`, `OK (skipped=2)`. **[CORRECTED 2026-11-08T09:22Z: 489 tests, `Ran 489 tests in 1.996s`, `OK (skipped=2)`]** |
 | `python3 -m unittest market_swarm.tests.test_forge_policy market_swarm.tests.test_feature9_fixes` | **89 tests** | `OK` |
-| `python3 tools/swarm_charts.py verify --out docs/charts` | **5 assets + index** | `PASS`, series rebuilt from the dataset and matched on all 5, exit 0 |
-| `python3 tools/tp.py doc-check` | **0 violations on this pass's documents, 6 checks** | green at 07:24Z, red at 07:27Z only on `programs/cap_hook/README.md:18` (a finding not yet written), and green again at 07:30Z: `doc_check: clean, 6 check(s), <repo root>; 21 allowed absence(s) suppressed by ALLOWED_ABSENCES`, exit 0 (§F item 20) |
+| `python3 tools/swarm_charts.py verify --out docs/charts` | **5 assets + index** | **[CORRECTED 2026-11-08T09:22Z: this row read `PASS`, series rebuilt from the dataset and matched on all 5, exit 0, which the tool cannot print. Re-measured: `PASS LABELS ONLY`, `series rebuilt from the dataset on 0 of 5 asset(s)`, `note: exit 3, labels and internal consistency only; nothing about the data was checked`, exit 3. The datasets are absent (`.swarm-runs/` is not in the repository; `docs/CHARTS.md:48`)]** |
+| `python3 tools/tp.py doc-check` | **0 violations on this pass's documents, 6 checks** | green at 07:24Z, red at 07:27Z only on `programs/cap_hook/README.md:18` (a finding not yet written), and green again at 07:30Z: `doc_check: clean, 6 check(s), <repo root>; 21 allowed absence(s) suppressed by ALLOWED_ABSENCES`, exit 0 (§F item 20). **[CORRECTED 2026-11-08T09:22Z: the check count is now 7 and the allowed absences 24, `doc_check: clean, 7 check(s), <repo root>; 24 allowed absence(s) suppressed by ALLOWED_ABSENCES`, exit 0]** |
 
 The two suites together are **1,494 tests** on disk, the `tests/` half and the `market_swarm` half both
-measured by this pass. The 26 skips are the live v2 half; the 2 in `market_swarm` are its two live
+measured by this pass. **[CORRECTED 2026-11-08T09:22Z: 1,568 tests on disk at `HEAD 948b5d5`, 1079 +
+489, both halves re-measured then. The 1,494 was 1058 + 436.]** The 26 skips are the live v2 half; the 2 in `market_swarm` are its two live
 gates. **Never quote the count without the command**: it has moved 293 → 306 → 309 → 352 → 453 → 546 →
 610 → 626 → 671 → 834 → 971 → 1007 → 1053 → 1058 in one day, and this table's own first reading was 971 at
 07:05Z.
@@ -307,7 +453,7 @@ this edition adds; the 03:45Z rows below are kept as the earlier reading rather 
 | `python3 -m unittest discover -s tests` | **610 tests, 36 modules** | `Ran 610 tests in 23.958s`, `OK` |
 | `python3 -m unittest tests.test_devnet_publish` | **56 tests** | `Ran 56 tests in 0.974s`, `OK`, before feature 1's tests were added |
 | `python3 -m unittest discover -s market_swarm/tests` | **274 tests** | `Ran 274 tests in 1.028s`, `OK`, not re-run in this pass |
-| `tools/public_safety.py check --tracked` | 64 hits in 9 files | see §A6, not re-run in this pass |
+| `tools/public_safety.py check --tracked` | 64 hits in 9 files | see §A6, not re-run in this pass. **[CORRECTED 2026-11-08T09:22Z: clean at `HEAD 948b5d5`, `public_safety: clean, tracked tree, 285 file(s)`, exit 0, since `aea1cbe`]** |
 | `tools/build_fixture_store.py --check` | store invariants and determinism | `matches a fresh build exactly`, not re-run |
 | `tools/console-check.py` | **not run** | needs a running backend; last reading 113 assertions, 0 failed, at 18:40Z |
 | `tools/check_frontend_attach.py` | **not run** | same reason; last reading 43 passed, 0 failed, at 18:40Z |
@@ -396,6 +542,14 @@ touch those files never sees them. `AGENTS.md` now states this accurately (it wa
 `docs/PUBLIC-SAFETY.md` is the full account. Removing them forward does not unpublish history —
 that is the operator's call, not a tool's.
 
+**[CORRECTED 2026-11-08T09:22Z: this defect is closed, and the paragraph above is kept as the
+record of it. The removal it calls the operator's call was made in commit `aea1cbe`, forward and
+not by rewriting history: the eight records were redacted and `.public-denylist` was not touched,
+so no exception was bought. Re-measured at `HEAD 948b5d5`: `python3 tools/public_safety.py check
+--tracked` → `public_safety: clean, tracked tree, 285 file(s)`, exit 0. The nine files named above
+are still published; what they no longer carry is the process handles. The sentence that the hook
+only checks `--staged` remains true of the hook.]**
+
 **3. The chain client's own docstring is stale.** `ticketpath/adapters/chain_client.py:1-11`
 says "there is no toolchain, no keypair and no program on this machine". There is a toolchain, a
 program and a devnet deployment. The code's behaviour is correct; the sentence is not. Left in
@@ -404,7 +558,8 @@ place because this pass does not touch code.
 **4. `market_swarm`'s own design record has no verification section.**
 `records/findings/31` ends with "Filled in from the runs, with the surface named. See the
 section at the end." and there is no such section. The package's 436 tests pass (corrected
-2026-11-08T08:25Z from 274); what has *not*
+2026-11-08T08:25Z from 274; **[corrected again 2026-11-08T09:22Z: 489 tests, `Ran 489 tests in
+1.990s`, `OK (skipped=2)`]**); what has *not*
 been run is a live validator run and any dataset, which is what that heading is reserved for.
 
 **5. Carried, not re-measured this pass** (from the 18:25Z edition, code unchanged since except
@@ -462,7 +617,8 @@ number.** Re-measured with `git diff --numstat`: `.gitignore` **+25 / -0**,
 `tools/check_frontend_attach.py` **+331 / -29**. The table's "`-?`" was never a measurement, and the
 deletions are now stated for every file. The line above that reads "`market_swarm/` (11 modules, 7
 test modules) | 9,228 lines with tests" is superseded by the A1 correction: twelve Python files,
-fifteen test modules, 15,037 lines.
+fifteen test modules, 15,037 lines. **[CORRECTED 2026-11-08T09:22Z: thirteen Python files, sixteen
+test modules, 16,425 lines, measured at `HEAD 948b5d5`.]**
 
 `git rev-list --count origin/main..HEAD` → `0`. Nothing has been pushed, and `HEAD` `33d95b3`
 is the commit that put the hook, the publisher and the read-back into the tree — before the
@@ -500,6 +656,11 @@ and in action count, a kill switch in three forms, and a writer that refuses any
 
 **Status: in progress.** 436 tests pass in 1.9 s (corrected 2026-11-08T08:25Z from "274 tests pass in
 1.03 s"); the package is twelve Python files, fifteen test modules and 15,037 lines with its tests.
+**[CORRECTED 2026-11-08T09:22Z: 489 tests pass in 1.99 s (`Ran 489 tests in 1.990s`, `OK
+(skipped=2)`); the package is thirteen Python files, sixteen test modules and 16,425 lines. The
+sentence three lines below this one, that there is no run config in the tree, is also superseded:
+`market_swarm/example-run.json` and `market_swarm/example-llm-run.json` are both committed, as the
+A1 correction says.]**
 What is missing, measured: there is no run
 config file in the tree, so the CLI's `plan` or `run` verb cannot be exercised without one; no
 dataset has been produced; no validator run has been made in this package. And the part that
@@ -722,7 +883,7 @@ Declared status, in the closed set this file uses elsewhere:
 |---|---|---|---|
 | the rules table | **built** | `ticketpath/data/region-caps.json` (version `2026-11-08.1`, 82 codes, 84 instruments) | `tests/test_region_caps_table.py` (29 tests, corrected 08:25Z from 25) |
 | the resolver | **built, tested** | `ticketpath/core/region_caps.py` | `tests/test_region_caps.py` (54 tests) |
-| the event field and the additive wire keys | **built, tested** | `ticketpath/core/event_records.py`; declared in `tests/test_contract_conformance.py` | `tests/test_event_jurisdiction.py` (11 tests, corrected 08:25Z from 10) |
+| the event field and the additive wire keys | **built, tested** | `ticketpath/core/event_records.py`; declared in `tests/test_contract_conformance.py` | `tests/test_event_jurisdiction.py` (11 tests, corrected 08:25Z from 10; **corrected again 2026-11-08T09:22Z: 12 tests, `Ran 12 tests in 0.204s`, `OK`**) |
 | the harness adapter | **built, tested** | `tools/region_harness.py` | `tests/test_region_harness.py` (14 tests), including the swarm's own loader accepting the resolved file |
 | the on-chain policy layer | **built, tested on a local validator** | `programs/region_gate/` (separate crate; the devnet program is untouched) | `tools/region_local_proof.py`, **PASS 11/11**, 11 real transactions, `records/findings/34-region-caps-build.md` |
 | the legal basis | **written, primary sources** | `records/findings/33-a-region-cap-law.md` + five cluster records | per-row instrument, quote, dates and grade |

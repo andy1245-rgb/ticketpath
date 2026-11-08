@@ -42,7 +42,7 @@ no record screen content is reproduced here, because this file lands in a public
 
 | Fact | Value | How |
 |---|---|---|
-| `HEAD` | `33d95b3`, on `main`, equal to `origin/main`, nothing unpushed | [M] `git log --oneline -12`, `git status` |
+| `HEAD` | `33d95b3`, on `main`, equal to `origin/main`, nothing unpushed | [M] `git log --oneline -12`, `git status`. **[At 2026-11-08T09:22Z `HEAD` is `948b5d5` on `release/prep`, nine commits ahead of `main`]** |
 | Working tree | **42 modified files, +7,873 / −660, and 55 untracked entries** | [M] `git diff --stat`, `git status --porcelain` |
 | The devnet proof | `records/devnet-artefacts.json` is **untracked** | [M] `git status --porcelain` |
 | The charts | `docs/charts/` and `docs/CHARTS.md` are **untracked** | [M] same |
@@ -51,6 +51,16 @@ no record screen content is reproduced here, because this file lands in a public
 | State of the project | `records/STATE-OF-PROJECT.md` is **untracked** and was last extended 2026-11-08T08:20Z | [M] `git status`, file header |
 | Test count | **a moving number, and the record's own readings moved five times in one hour**: `971` at 07:05Z, `1007`, then `1053` (`Ran 1053 tests in 29.044s`, `OK (skipped=26)`) at 07:31Z, with `Ran 981 tests … FAILED (errors=10)` and a three-failure reading interleaved from concurrent edits | [M] `records/STATE-OF-PROJECT.md:201` and `:219-226`, `records/findings/37-program-v2-review-fixes.md:246-260` |
 | Consequence for a video | **A judge who clones the public repo today cannot see the artefact, the charts or the swarm.** `records/STATE-OF-PROJECT.md` §A7 says so and the file's own opening calls the gap "the first thing to fix" | [M] `records/STATE-OF-PROJECT.md:25` and `:347-357` |
+
+**[Corrected 2026-11-08T09:22Z: this table describes the tree at 08:00Z on 2026-11-08, and the
+branch has committed everything it calls invisible. Re-measured at `HEAD 948b5d5`: the working tree
+is clean (`git status --porcelain` prints nothing); `records/devnet-artefacts.json`, `docs/charts/`
+(6 files), `docs/CHARTS.md`, `market_swarm/` (35 files) and `records/STATE-OF-PROJECT.md` are all
+tracked; findings are **57 tracked and 57 on disk** (`git ls-files records/findings | wc -l`,
+`find records/findings -name '*.md' | wc -l`), not 53 and 32. The last row is therefore false once
+this branch merges: a judge cloning then sees the artefact, the charts and the swarm. What a clone
+still cannot see is the local-validator artefact `records/onchain-v2.local.json` (git-ignored), the
+`.swarm-runs/` datasets, and any devnet run of the swarm.]**
 
 ---
 
@@ -580,9 +590,18 @@ DRY RUN, none of them committed.
 - A dry run is allowed and **labelled**: the asset says `DRY RUN` in the header and the footer,
   because "a simulated gateway returned what the hook would have done" (`docs/CHARTS.md:53-58`,
   and the SVG text I read). [M]
-- `python3 tools/swarm_charts.py verify --out docs/charts` → PASS, 5 assets
-  (`records/STATE-OF-PROJECT.md` §A4). [M] as recorded.
-- **`docs/charts/` is untracked.** A judge cloning today sees no chart. [M]
+- `python3 tools/swarm_charts.py verify --out docs/charts` → `PASS LABELS ONLY`, `series rebuilt
+  from the dataset on 0 of 5 asset(s)`, `note: exit 3, labels and internal consistency only;
+  nothing about the data was checked`, exit **3**. Re-run by the release-record correction pass at
+  2026-11-08T09:22Z. This line previously read "PASS, 5 assets" and cited `records/STATE-OF-PROJECT.md`
+  §A4; that output is one the tool cannot print, and §A4 now carries the same correction. What the
+  verifier proves is the label and the internal consistency, not the data. [M]
+- **[Corrected 2026-11-08T09:22Z: this sentence was true at 08:00Z and is false now. `docs/charts/`
+  and `docs/CHARTS.md` are committed in this branch (`git ls-files docs/charts | wc -l` → 6), so a
+  judge cloning after the merge sees the charts. The line previously read "`docs/charts/` is
+  untracked. A judge cloning today sees no chart."]** [M]
+  What a clone still does not get is the datasets the charts were drawn from: `.swarm-runs/` is not
+  in the repository and `docs/CHARTS.md:48` says so, which is why the verifier stops at the label.
 
 **A judge can check:** the verifier once committed, which re-checks the four label facts rather
 than trusting the writer (`tools/swarm_charts.py:24-34`). [M]
