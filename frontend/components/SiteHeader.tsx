@@ -7,6 +7,9 @@ const NAV = [
   { href: "/events", label: "Events" },
   { href: "/organizer", label: "For organizers" },
   { href: "/rules", label: "How the cap works" },
+  // The pricing page has a route now. Before this it existed and nothing in the
+  // app linked to it, so a person could only reach it by typing the path.
+  { href: "/pricing", label: "Pricing and data" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
