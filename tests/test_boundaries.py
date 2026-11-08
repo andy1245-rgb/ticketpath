@@ -23,6 +23,7 @@ PACKAGE = Path(__file__).resolve().parents[1] / "ticketpath"
 ALLOWED_ROOTS = {
     "__future__",
     "argparse",
+    "dataclasses",  # frozen value objects in core/; standard library, not a dependency
     "datetime",
     "hashlib",
     "html",   # the console escapes its own output; no template engine

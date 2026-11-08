@@ -52,7 +52,7 @@ and must not cross wallets.
 ## 2. Where it ran, and one thing that moved under it
 
 - **8788 was already bound** when this session started, by a sibling smoke run of the same
-  build (`python3 -m ticketpath.server`, pid 233049, started 11:08, version 0.1.0). It was not
+  build (`python3 -m ticketpath.server`, started 11:08, version 0.1.0). It was not
   touched. Its GET routes were probed read only and answered 200 with the pre-regeneration
   store.
 - **This run bound 8789** (`TICKETPATH_TEST_PORT=8789`), log `/tmp/ticketpath-contract-8789.log`,
@@ -180,6 +180,19 @@ Each is a `null` or a `false` the type already permits, and each is the honest v
 | `GET /api/events/{eventId}/analytics` | `topDestinations[].region` | No wallet has volunteered a region, so every row is `null`. |
 | `GET /api/wallets/{wallet}/verification` | `method` | No identity provider is connected, so it is only ever `"wallet_signature"` or `null`. `"identity"` is never returned, although the contract's union allows it. |
 
+**Correction, 2026-11-08T08:20Z.** Two rows above reason from a fact that has changed. `mintAddress`
+says no SPL mint exists on any cluster: one does, on devnet
+(`6RPS73X519CRCdyR7diqvcjBACEVdB2cADKewCXYnimV`), and the fixture tickets are still not minted under
+it, so the field stays a placeholder. `transferRestricted` says no program is deployed: one is, and
+it has no destination or verified-wallet gate, so `false` remains the only true answer for a
+different reason. Neither field's value changes and the payload is not rewritten by this note.
+
+**Same correction, third row, 2026-11-08T08:05Z.** The `signature` and `slot` row above says "No
+transaction exists". Three devnet transactions exist in `records/devnet-artefacts.json`, and the
+fixture's 147 ledger rows still carry `signature: null` and `slot: null` because this server reads no
+chain and those rows are not on one. The nulls are still right; the reason is the server's silence,
+not an empty cluster.
+
 **Pages that a judge can click and see empty, and why.** These are data facts, not bugs, but
 they are the ones that will look thin on the morning:
 
@@ -259,3 +272,19 @@ is checked on every event and every ticket, and it passes.
   route), 0 MISSING. Route 3, `GET /api/events/{eventId}/analytics`, moved from
   **DRIFT (32)** to **CONFORMANT** (structure PASS, semantics PASS); routes 1, 2, 4–9 
   unchanged and CONFORMANT.
+
+---
+
+## CORRECTION (2026-11-08T08:30Z): one process id redacted, no claim changed
+
+**Scope:** this file only, and only one sentence in §2. **Why:** this repository is public and
+`tools/public_safety.py` refuses a tracked file that carries a process id. The rule and its reason
+are in `.public-denylist`.
+
+**What the redaction costs: nothing that was measured.** §2's point is that the server already
+holding this project's backend port belonged to a sibling smoke run and was not touched. The
+sentence identifies it by its command, its start time and its version, all of which are unchanged.
+The pid was a handle on a process that stopped on 2026-11-07 and identified nothing a reader could
+check.
+
+`python3 tools/public_safety.py check --tracked` reports zero hits for this file as of this note.

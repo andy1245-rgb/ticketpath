@@ -3,8 +3,8 @@
 This adapter never opens a socket, on any flag. What it *can* do is tell the console whether
 someone asked for a live read, and it says so rather than pretending a check happened.
 
-**The flag that enables a re-read, and why the default is off.** Three environment variables
-are read through `from_env`:
+**The flag meant to enable a re-read, and why it enables nothing on its own.** Three
+environment variables are read through `from_env`:
 
     TICKETPATH_RPC_ENABLED=1                 # off unless this is exactly "1"
     TICKETPATH_RPC_URL=https://api.devnet.solana.com
@@ -15,8 +15,19 @@ With all three set, `transfer_enforcement` says `not_queried` instead of `rpc_di
 `[DEVNET]` slot is rendered from `records/devnet-artefacts.json`, which
 `tools/devnet_publish.py` wrote after reading the memo back at the slot it reports: that is
 *recorded, not independently re-read*, and it is the safe default on a demo laptop. Turning
-these three on is what a live re-read would need; building it is not part of this build, and
-no page claims it happened.
+these three on is what a live re-read would need and is not that re-read; building it is not
+part of this build. The page says so itself: it reads "a live re-read is not implemented in
+this build" where it used to tell a reader to set `TICKETPATH_RPC_ENABLED=1`, which promised
+a mechanism no code here has (feature 2 review, critical finding).
+
+`program_status` keeps three claims apart, because they have three different sources and
+only one of them is a read:
+
+  * `programId` is the id this adapter was **configured** with, or None;
+  * `recorded` is the program a **verified artefact file** names, labelled as recorded;
+  * `askedCluster` is false and `programDeployed` is false because this build **asked
+    nothing**, not because there is no program. A `false` here means "not read", and a
+    caller that renders it as "absent from the cluster" is misquoting it.
 
 `Ticket.transferRestricted` in the contract is defined as whether the restriction
 is *actually enforced on-chain right now*, not whether the event config asks for
@@ -27,6 +38,7 @@ adapter says what it has read, which is nothing.
 from __future__ import annotations
 
 import os
+from typing import Mapping
 
 DISABLED = "rpc_disabled"
 NO_PROGRAM_ID = "no_program_id_configured"
@@ -79,18 +91,29 @@ class RpcAdapter:
             "cluster": self.cluster,
         }
 
-    def program_status(self) -> dict:
-        """Small status block for /health. Reports the id it was given, and never a deployment.
+    def program_status(self, recorded: Mapping | None = None) -> dict:
+        """What this adapter was told, what a file records, and what it asked. Three answers.
 
-        `programDeployed` stays false because this adapter does not ask the cluster. That is
-        not pessimism, it is the boundary: the console renders a `[DEVNET]` slot only from
-        `records/devnet-artefacts.json`, which is *recorded, not independently re-read* here.
+        `programDeployed` stays false because this adapter does not ask the cluster and did
+        not read a deployment. That is not pessimism and it is not a statement about devnet:
+        it is the boundary. `askedCluster` says the same thing in the positive, so a reader
+        cannot read the `false` as "no program is deployed".
+
+        `recorded`, when a caller has one, is the block a *verified* artefact file carries,
+        passed in by the caller that loaded it: this adapter never opens a file. It is
+        labelled with its source, so a recorded id can never be mistaken for a read one.
         """
         return {
             "programDeployed": False,
+            "askedCluster": False,
             "rpcEnabled": self.enabled,
             "programId": self.program_id,
             "cluster": self.cluster,
             "reason": DISABLED if not self.enabled else NOT_QUERIED,
+            "detail": (
+                "this server asked no cluster, so it reports no deployment; a program id here "
+                "was configured or recorded, and neither is a read"
+            ),
             "designDoc": "docs/ON-CHAIN-DESIGN.md",
+            "recorded": dict(recorded) if recorded else None,
         }

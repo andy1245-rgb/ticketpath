@@ -21,15 +21,32 @@ CONSOLE_VERSION = "console-2026-11-07"
 STRUCTURAL_KEYS = frozenset({"code", "status", "consoleVersion", "simulated", "selected", "selectedTier"})
 
 
-def num(value, badge: str, basis: str, label_id: str | None, unit: str | None = None) -> dict:
-    """A measured number with its badge, its basis and the label sentence that must print."""
-    return {
+def num(
+    value,
+    badge: str,
+    basis: str,
+    label_id: str | None,
+    unit: str | None = None,
+    covered_by_quote_hash: bool | None = None,
+) -> dict:
+    """A measured number with its badge, its basis and the label sentence that must print.
+
+    `covered_by_quote_hash` is set only for numbers read out of a recorded artefact, and only
+    the six fields the quote hash covers are `True`. It travels beside the badge because the
+    badge names the source and this names the assurance: the page prints the second one, and
+    a payload consumer that renders the first as chain evidence is quoting half the record
+    (feature 2 review, the forged-signature finding).
+    """
+    wrapper = {
         "value": value,
         "badge": badge,
         "basis": basis,
         "labelId": label_id,
         "unit": unit,
     }
+    if covered_by_quote_hash is not None:
+        wrapper["coveredByQuoteHash"] = covered_by_quote_hash
+    return wrapper
 
 
 def county(value, sales: int, at_ceiling: int, events: int, label_id: str | None = None) -> dict:
@@ -227,15 +244,18 @@ def build(
                 for event_id, reason in sorted(held_back.items())
             ],
             "eventsWithResale": county(events_with_resale, sales, at_ceiling, events_with_resale, "A13"),
-            "onchainTransactions": num(
-                1 if chain.get("state") == "verified" else 0,
-                "DEVNET",
-                (
-                    "one devnet transaction verified against api.devnet.solana.com"
-                    if chain.get("state") == "verified"
-                    else "no devnet transaction has been recorded for this project"
-                ),
-                None if chain.get("state") == "verified" else "devnet_absent",
+            "onchainTransactions": dict(
+                # Measured from the file's own grammar by `chain_client` and built once in the
+                # orchestrator, so the strip and the chain slot count the same transactions.
+                # It used to be `1 if verified else 0` while the page printed three signatures
+                # (feature 2 review).
+                chain.get("signaturesRecorded")
+                or num(
+                    0,
+                    "DEVNET",
+                    "the artefact file did not verify, so no signature in it is counted",
+                    "devnet_unverified",
+                )
             ),
         },
         "tiers": tier_payloads,

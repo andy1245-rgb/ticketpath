@@ -151,6 +151,39 @@ TIER = obj({
     "issuedCount": INT,
 })
 
+# Additions this repository serves on top of `lib/types.ts`. The contract itself is not
+# changed (the frontend checkout is read-only for this work); these keys are additive, are
+# declared here so the exact-shape check stays exact, and each one is derived rather than
+# stored. Reason: `records/REGION-CAPS-DESIGN.md` §11 and `records/CONTRACT-MAP.md` §7.9.
+LAW_BASIS = obj({
+    "jurisdiction": STR,
+    "citation": STR,
+    "url": STR,
+    "confidence": one_of("A", "B", "C", "D", "E"),
+    "status": one_of("in_force", "announced", "not_in_force", "repealed", "unknown"),
+})
+
+ENFORCED_CAP_FIELDS = {
+    "enforcedBaseLamports": LAMPORTS,
+    "enforcedCapBps": BPS,
+    "enforcedCeilingLamports": LAMPORTS,
+    "bindingRule": one_of("law", "platform"),
+    "platformCapBps": nullable(BPS),
+}
+ENFORCED_CAP = obj(ENFORCED_CAP_FIELDS)
+ENFORCED_CAP_TIER = obj({"tierId": STR, **ENFORCED_CAP_FIELDS})
+
+EVENT_ADDITIONS = {
+    "jurisdiction": nullable(STR),
+    "resalePolicy": nullable(one_of("capped", "monitored", "unresolved")),
+    "resalePolicyReason": nullable(STR),
+    "lawTableVersion": nullable(STR),
+    "lawAsOf": nullable(DAY),
+    "lawBasis": array(LAW_BASIS),
+    "enforcedCap": nullable(ENFORCED_CAP),
+    "enforcedCapByTier": array(ENFORCED_CAP_TIER),
+}
+
 EVENT = obj({
     "id": STR,
     "slug": STR,
@@ -169,6 +202,7 @@ EVENT = obj({
     "resaleEnabled": BOOL,
     "resalePriceCapBps": nullable(INT),
     "requiresVerifiedWallet": BOOL,
+    **EVENT_ADDITIONS,
 })
 
 TICKET = obj({

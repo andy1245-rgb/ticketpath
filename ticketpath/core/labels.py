@@ -6,18 +6,27 @@ reviewer has one place to read.
 
 Two lists, both enforced by tests:
 
-* ALLOWED -- T1-T5 (the mandatory sentences) and A1-A20 (the object sentences),
-  from records/BUILD-SPEC-NIGHT.md section 2.3 and 2.6.
+* ALLOWED -- T1-T5 (the mandatory sentences), A1-A20 (the object sentences) and
+  A_CHAIN_RECORDED (a number read out of the devnet artefact), from
+  records/BUILD-SPEC-NIGHT.md section 2.3 and 2.6.
 * BANNED -- X1-X20, the phrases from the same tables and from
   records/findings/00-adversarial-review-phase1.md section 6. A literal match of any
   of them on the page or in a payload is a test failure. X1 is the sentence this
   build exists to remove: a price-specific sale probability.
 
-Why the negatives are listed by name. X18 bans `deployed` as a claim and requires the
-negative forms ("no program is deployed"). A grep for the bare word would fail on the
-sentence that makes the page honest, so `contains_banned` strips the negative phrases
-by name before it scans. That is the spec's own instruction (section 2.6) and it is
-tested in both directions.
+Why the negatives are listed by name. X18 bans `deployed` as a claim and asks for the
+negative forms. A grep for the bare word would fail on a sentence that makes the page
+honest, so `contains_banned` strips the allowed negatives by name before it scans. That is
+the spec's own instruction (section 2.6) and it is tested in both directions.
+
+The two deployment negatives used to be on that list and are not any more. "No program is
+deployed" and "no devnet transaction has been recorded" were true while nothing was on a
+chain. Both are false now: a program and three transactions are on devnet, so the guard was
+allowlisting exactly the claims this sweep exists to catch and could never fire on them
+(feature 2 review, minor finding). The negatives that remain are the ones that stay true of
+this page whatever is on chain -- a bound it does not state, a prediction it does not make --
+and the project-wide transaction claim is a banned pattern now, so an old sentence cannot
+come back through a new label.
 
 No number lives in this file, for the same reason: a sentence registry that also
 holds values is a second source of truth.
@@ -66,7 +75,12 @@ MANDATORY: Mapping[str, str] = {
         "That is a transaction rate for the ticket population, marginalised over whether the "
         "ticket was ever offered. It is not the probability that a listed ticket sells."
     ),
-    "T5": "No program is deployed on any cluster. Nothing on this page is a deployed guarantee.",
+    # T5 is the page's deployment claim, and it is about what *this page* did. The sentence
+    # used to read "No program is deployed on any cluster", which stopped being true on
+    # 2026-11-07 when the publish landed a program on devnet; a page that says it while
+    # printing that program's id is contradicting itself (feature 2, part 3). The guarantee
+    # the sentence exists for -- never read as a deployed promise -- is the half that stays.
+    "T5": "No deployment is claimed by this page. Nothing on this page is a deployed guarantee.",
 }
 
 # -- the object sentences -------------------------------------------------
@@ -238,6 +252,13 @@ ALLOWED: Mapping[str, str] = {
         "record whether the cap binds: the absence of a sale at the ceiling is not evidence "
         "that the ceiling does not bind."
     ),
+    # A number read out of the recorded devnet artefact: its slot, its block time, the price
+    # it recommended, a transfer's price. Badged DEVNET because that is where the publisher
+    # read it, and bounded because this page did not read it again (feature 2).
+    "A_CHAIN_RECORDED": (
+        "Recorded in the devnet artefact and verified against the quote hash in it; this page "
+        "did not ask the cluster, so the number is the file's and not a fresh read."
+    ),
 }
 
 # -- the page's fixed prose, by id (the page may print an id, never a literal) -----
@@ -267,8 +288,8 @@ PAGE: Mapping[str, str] = {
         "anything but the escrow or the settled buyer fails inside the token program."
     ),
     "P_CHAIN_DESIGN": (
-        "No program is deployed on any cluster. What follows is the invariant, the "
-        "instruction set and a simulation; none of it is a deployed guarantee."
+        "What follows is the invariant, the instruction set and a simulation; none of it is "
+        "a deployed guarantee."
     ),
     "P_CHAIN_CAPTION": (
         "A Python mirror of the state machine, standard library only, no cluster "
@@ -280,16 +301,89 @@ PAGE: Mapping[str, str] = {
         "api.devnet.solana.com. No signature is ever typed into this page by hand."
     ),
     "P_CHAIN_MEMO": (
-        "This is the pricing decision committed on devnet before the sale opens, so it "
-        "cannot be re-cut afterwards — and the transfer hook that makes the cap binding "
-        "is designed, not deployed."
+        "This is the pricing decision the artefact records, taken before the sale opened and "
+        "therefore not re-cuttable: one quote memo, the transfer the cap allowed, and the one "
+        "it refused."
+    ),
+    # The slot says whether the quote on screen is the recorded quote, as its own sentence, so
+    # a reader never has to work it out from two hashes (decision MD2). It is about the QUOTE
+    # -- its id and its instant -- and never about "the number": the recorded recommendation
+    # and the page's own are printed side by side, and on the shipped artefact they are the
+    # same number, so a sentence that called them different was false on the page it was on
+    # (feature 2 review, three findings).
+    "P_CHAIN_QUOTE_AGREE": (
+        "The quote this page commits is the quote the file records: quote id {quoteId}, "
+        "taken at {asOf}."
+    ),
+    "P_CHAIN_QUOTE_DISAGREE": (
+        "The quote this page commits is not the quote the file records. This page commits "
+        "{liveQuoteId} for {liveAsOf}; the file records {recordedQuoteId} for {recordedAsOf}."
+    ),
+    # The two numbers, and when a reader is told both. One number is printed once.
+    "P_CHAIN_RECOMMENDED_SAME": (
+        "The recorded recommendation is {rec}, and this page recommends the same number."
+    ),
+    "P_CHAIN_RECOMMENDED_DIFFER": (
+        "The recorded recommendation is {rec}, and this page recommends {cur}."
+    ),
+    # What the recorded recommendation was computed under. The file carries a cap and a face
+    # beside the recommendation, and on the shipped record those two put the resale ceiling
+    # 130,000,000 lamports below the recommendation in the same file: a fact about the recorded
+    # quote, and one a page that hides it is the reason this block exists. The face and cap
+    # themselves are printed on the stated line above, where the file's own values belong.
+    "P_CHAIN_RECORDED_PARAMETERS": (
+        "The face and cap the file states put the resale ceiling at {ceiling}."
+    ),
+    "P_CHAIN_RECOMMENDED_ABOVE_CEILING": (
+        "The recorded recommendation of {rec} is above that ceiling."
+    ),
+    "P_CHAIN_RECOMMENDED_INSIDE_CEILING": (
+        "The recorded recommendation of {rec} is inside that ceiling."
+    ),
+    "P_CHAIN_PAGE_PARAMETERS": (
+        "This page computed its own number under the event's cap of {cap} and face of "
+        "{face}, which are the store's, not the file's."
+    ),
+    # Which fields the hash covers. Six fields travel in the hash the memo commits to; a
+    # signature, slot, mint, program id or transfer price is the writer's assertion, and the
+    # page says so where a reader meets them (feature 2 review, the forged-signature finding).
+    "P_CHAIN_FILE_COVERAGE": (
+        "The quote hash the file carries covers six fields -- quote id, event, tier, "
+        "recommended price, instant and model version -- and those are the values this page "
+        "marks [DEVNET]. Every value marked \"the file states\" is the writer's assertion: "
+        "the hash does not cover it, so nothing on this page checked it against the chain."
+    ),
+    # CRITICAL finding: the page promised a flag that performs a re-read no build implements.
+    "P_CHAIN_NOT_REREAD": (
+        "Recorded, not independently re-read: this page recomputes the quote hash from the "
+        "fields above and does not ask the cluster. The publisher read the memo back at the "
+        "slot it reports. A live re-read is not implemented in this build, so no flag on "
+        "this server makes the page read the chain."
+    ),
+    # A cluster the memo table has no measurement for. The payload answers null rather than
+    # borrowing a neighbouring cluster's id, and the page says why the quote names no program.
+    "P_CHAIN_NO_MEMO_PROGRAM": (
+        "This server's cluster is {cluster}, and no memo program id has been measured for "
+        "it, so the quote this console would commit names no program."
+    ),
+    # Three facts, kept apart because they have three sources: a file, a setting, a document.
+    "P_CHAIN_PROGRAM_RECORDED": "The artefact records a program:",
+    "P_CHAIN_NOT_ASKED": (
+        "This server asked no cluster: it reads the artefact file and never the chain, so it "
+        "reports no deployment of its own."
+    ),
+    "P_CHAIN_DESIGN_POINTER": (
+        "The program's design is {doc}; a document is not a deployment this page read."
     ),
     "P_SIM_BUTTON": "Show the refusal",
     "P_FEE_WITHHELD": "The net value line is withheld until a fee is supplied; the recommendation does not depend on an ad-valorem fee.",
     "P_NO_LEDGER": "No ledger exists. Nothing was invented to fill it.",
+    # The banner stated a cluster fact it had not read. It now names the two things a reader
+    # should expect at the bottom of the page, and claims nothing about what is deployed
+    # anywhere: the chain slot carries the chain facts, each with its own source (feature 2).
     "P_BANNER_2": (
-        "No program is deployed on any cluster. The [DESIGN] block at the bottom says what "
-        "that means."
+        "The chain slot at the bottom prints what a verified devnet artefact records, and the "
+        "[DESIGN] block is a design; neither is a deployed guarantee."
     ),
     "P_TAU_INERT": "There is no upper tail in this record for τ to widen, so the control is inert here.",
     "P_BAND_ON_PRIOR": "That is a band around the declared prior, not a price for this ticket.",
@@ -691,14 +785,79 @@ REFUSAL_TEXT: Mapping[str, str] = {
         "The {n} resales stop {k} days before the event, so the requested horizons fall "
         "outside the window the record covers. No path value is quoted."
     ),
-    # A counterfactual, written as one. The banner says no program is deployed, so this
-    # sentence may not call it "the deployed program".
+    # A counterfactual, written as one. This page claims no deployment, so this sentence
+    # may not call it "the deployed program".
     "cap_would_refuse": (
         "{k} of {n} recorded sales in this tier are above this cap; had this cap been "
         "enforced, those transfers would have failed, so this record could not exist."
     ),
-    "devnet_absent": "No devnet transaction has been recorded.",
-    "rpc_disabled": "Chain status not read: the RPC adapter is disabled. No program is deployed either way.",
+    # The state is a state of the console's file, not a claim about the project: three devnet
+    # transactions are recorded and only the file is missing. The project-wide sentence is a
+    # banned pattern now, so this label cannot drift back into it (feature 2 review).
+    "devnet_absent": "No devnet transaction is recorded in the console's artefact file.",
+    # The three ways a file that exists can fail to verify. Named one by one, because "the
+    # artefact is unverified" tells a reader nothing about what to look at (feature 2).
+    "devnet_unverified": (
+        "The artefact is present and could not be verified: it is unreadable, or a field the "
+        "console needs is missing."
+    ),
+    "cluster_not_devnet": (
+        "The file was recorded on cluster {cluster}, which is not devnet, so none of it is "
+        "rendered as devnet evidence."
+    ),
+    # The same refusal for a caller that did not carry the cluster: the console always does,
+    # and a payload from elsewhere may not. Two sentences rather than "recorded on cluster
+    # another cluster", which is what a single template produced.
+    "cluster_not_devnet_unnamed": (
+        "The file was recorded on another cluster, so none of it is rendered as devnet evidence."
+    ),
+    # The four checks the loader can make without a network, each with its own reason. A file
+    # that fails one is refused by name rather than rendered as chain evidence: the quote hash
+    # covers six fields, so everything else in the file has to be read for the type it claims
+    # to be before the page prints it (feature 2 review, the forged-signature finding).
+    "signature_malformed": (
+        "The signature the file carries is not base58 decoding to a 64-byte signature, so "
+        "its chain identity is not readable."
+    ),
+    "slot_malformed": (
+        "The slot the file carries is not a whole number, so where the file says it landed "
+        "is not readable."
+    ),
+    "block_time_malformed": (
+        "The block time the file carries is not a whole number, so when the file says it "
+        "landed is not readable."
+    ),
+    "mint_malformed": (
+        "The mint the file carries is not base58 decoding to 32 bytes, so it is not an "
+        "address."
+    ),
+    "program_id_malformed": (
+        "The program id the file carries is not base58 decoding to 32 bytes, so it is not "
+        "an address."
+    ),
+    "mint_is_program": (
+        "The file's mint and its program id are the same string, and a ticket mint is not "
+        "the program that guards it."
+    ),
+    "memo_program_mismatch": (
+        "The memo program the file names is not the one this repository measured for that "
+        "cluster."
+    ),
+    "memo_missing": (
+        "The file carries no quote memo, so nothing ties its signature to the quote it states."
+    ),
+    "memo_grammar_mismatch": (
+        "The artefact's memo is not this project's grammar, so it is not read as a quote "
+        "commitment."
+    ),
+    "quote_hash_mismatch": (
+        "The artefact's quote hash does not recompute from the fields it carries, so nothing "
+        "in it is rendered as chain evidence."
+    ),
+    "rpc_disabled": (
+        "Chain status not read: the RPC adapter is disabled, so this server asked no cluster "
+        "and reports no deployment."
+    ),
 }
 
 ALLOWED_IDS: frozenset[str] = (
@@ -746,6 +905,12 @@ BANNED_SOURCES: tuple[str, ...] = (
     r"\bchance it sells\b",
     r"\bliquidity score\b",
     r"\bsell-through forecast\b",
+    # The project-wide transaction claim. It was false from the moment three devnet
+    # transactions landed, and it is the sentence this feature exists to stop printing; it is
+    # a pattern now so no future label can reintroduce it. The file-scoped sentence ("no devnet
+    # transaction is recorded in the console's artefact file") does not match it.
+    r"\bno devnet transaction has been recorded\b",
+    r"\bno on-chain transaction has been recorded\b",
 )
 
 BANNED_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
@@ -754,11 +919,12 @@ BANNED_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
 
 # The negatives the page needs, allowed by name (spec section 2.6). Stripped from the
 # text before the patterns are scanned, case-insensitively.
+#
+# What is deliberately not here any more: "no program is deployed" and "no devnet transaction
+# has been recorded". Each was true of a tree with nothing on chain and is false of this one,
+# so allowlisting them made `contains_banned` unable to catch the two sentences the sweep was
+# looking for. The tests assert they are caught now.
 ALLOWED_NEGATIVES: tuple[str, ...] = (
-    "no program is deployed",
-    "not deployed",
-    "no devnet transaction has been recorded",
-    "no on-chain transaction has been recorded",
     "we do not state an upper bound",
     "not a prediction",
     "no prediction",

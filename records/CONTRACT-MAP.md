@@ -136,6 +136,13 @@ ascending; the contract does not specify ticket order.
 | `issuedAt` | `string` | the `issue` row's `occurredAt` | YES |
 | `redeemedAt` | `string \| null` | fixture store | YES |
 
+**Correction, 2026-11-08T08:20Z.** The `transferRestricted` row above reasons from "No program is
+deployed", which is no longer true and was not true when this was re-read: a program is deployed on
+devnet (`5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva`) and the console renders the transaction that
+proves its cap boundary. The answer is still `false` for a different reason: the deployed program has
+no destination or verified-wallet gate, and `rpc_adapter.program_status` asks no cluster, so the
+adapter has nothing it could truthfully report as enforced. The reason changes; the field does not.
+
 ### 4.3 `LedgerEntry` (endpoint 5)
 
 | Field | TS type | Source today | Can serve |
@@ -363,6 +370,29 @@ implementer does not "optimise" by trusting the ledger field.
 Nonces and verified wallets are process memory. A restart forgets them and the
 `dataSource` note says so. A multi-worker deployment would need shared state before
 this endpoint could be trusted.
+
+### 7.9 The region-aware cap keys on `Event`, and what each one means
+
+Eight additive keys, not contract fields: `lib/types.ts` is unchanged (`records/REGION-CAPS-DESIGN.md`
+§11, `docs/ON-CHAIN-DESIGN.md` §14.3). They are declared in `tests/test_contract_conformance.py` so
+the exact-shape check stays exact rather than being loosened.
+
+| key | type | meaning |
+|---|---|---|
+| `jurisdiction` | `string \| null` | the event's jurisdiction code (ISO-3166-1 alpha-2, or a subdivision such as `AU-NSW`). Null when the event declares none, which is "not stated", not "unrestricted" |
+| `resalePolicy` | `"capped" \| "monitored" \| "unresolved" \| null` | what the law says. Null only when there is no jurisdiction or no usable start date |
+| `resalePolicyReason` | `string \| null` | a machine code (`law_caps_bps`, `no_cap_in_force`, `announced_only`, `not_a_designated_event`, `unresolved`'s reasons, ...), so a screen can say why without prose |
+| `lawTableVersion` | `string \| null` | the table generation that produced the policy |
+| `lawAsOf` | `string \| null` | the date the law was checked against: the event's start date, never the machine's clock |
+| `lawBasis` | `array` | one object per instrument consulted, with `jurisdiction`, `citation`, `url`, `confidence`, `status` |
+| `enforcedCap` | `object \| null` | what the chain would hold: `enforcedBaseLamports`, `enforcedCapBps`, `enforcedCeilingLamports`, `bindingRule` (`law` or `platform`), `platformCapBps`. Null when the event's tiers do not agree on a ceiling, which is the normal multi-tier case |
+| `enforcedCapByTier` | `array` | the same object plus `tierId`, one per tier. A cap is a multiple of the ticket's own face, so an event-wide number is wrong by the tier ratio; this list is the honest shape and `enforcedCap` exists only for the single-ceiling case |
+
+**The one thing a reader must not miss.** `Event.resalePriceCapBps` keeps its contract meaning — the
+organiser's configured cap. The number the chain enforces is `enforcedCap.enforcedCapBps`, and the two
+differ exactly when a law is stricter. `bindingRule` says which rule produced the ceiling, so a screen
+never attributes a product decision to a law. The comparison is made in lamports, not in basis points:
+500 bps over face + fees is looser than 1000 bps over face.
 
 ## 8. Acceptance test map
 

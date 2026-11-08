@@ -677,6 +677,13 @@ def build_store() -> dict:
                 "status": spec["status"],
                 "resaleEnabled": spec["resale"],
                 "resalePriceCapBps": spec["cap"],
+                # Region-aware resale caps (`records/REGION-CAPS-DESIGN.md`): the jurisdiction
+                # the event is sold into. Every venue in this fixture is an invented Ontario
+                # city, so every event is CA-ON, and Ontario's cap (in force 2026-04-24, over
+                # the total price paid) is what `region_caps.resolve` returns for the events
+                # whose start is after that date. The field is the INPUT to the policy; the
+                # policy itself is derived per request and never stored here.
+                "jurisdiction": spec.get("jurisdiction", "CA-ON"),
                 "requiresVerifiedWallet": spec["verified"],
                 "totalSupply": sum(tier["supply"] for tier in spec["tiers"]),
                 "issuedCount": len(event_tickets),

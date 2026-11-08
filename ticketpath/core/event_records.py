@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Mapping, Sequence
 
+from ticketpath.core import region_caps
+
 
 def tier_row_to_contract(tier_row: Mapping) -> dict:
     return {
@@ -21,8 +23,59 @@ def tier_row_to_contract(tier_row: Mapping) -> dict:
     }
 
 
+def _law(event_row: Mapping) -> tuple[dict | None, dict | None, dict | None, list | None]:
+    """The event's jurisdiction, its resolved policy, and the ceiling the chain would hold.
+
+    Three additive keys, not contract fields (`lib/types.ts` is unchanged and this repository
+    does not edit it). They are derived, never stored: the jurisdiction is the input, the
+    policy is `region_caps.resolve` against the event's own start date, and the ceiling
+    combines that with the organiser's configured cap.
+
+    `Event.resalePriceCapBps` keeps its existing meaning — the platform's configured cap. The
+    enforced number is `enforcedCap.enforcedCapBps`, and the two differ exactly when a law is
+    stricter. Saying so is the point: a screen must not display a cap the chain will not hold.
+    """
+    code = event_row.get("jurisdiction")
+    if not code:
+        return None, None, None, None
+    starts = str(event_row.get("startsAt") or "")
+    if len(starts) < 10 or not region_caps.DATE_RE.match(starts[:10]):
+        # No date, no resolution. `resalePolicy: null` is "not computed", which is a different
+        # statement from `unresolved` and must not be dressed up as one.
+        return code, None, None, None
+    policy = region_caps.resolve(
+        [code],
+        on_date=starts[:10],
+        declared_event=event_row.get("declaredEvent"),
+    )
+    # One ceiling per tier, because a cap is a multiple of the ticket's own face and an
+    # event-wide number is wrong by the tier ratio. `enforcedCap` is emitted only when every
+    # tier resolves to the same ceiling; otherwise the per-tier list is the only honest shape.
+    per_tier = []
+    for tier in event_row["tiers"]:
+        ceiling = region_caps.effective_ceiling(
+            face_lamports=tier["faceValueLamports"],
+            fee_lamports=event_row.get("feeLamports"),
+            law=policy,
+            platform_cap_bps=event_row.get("resalePriceCapBps"),
+        )
+        per_tier.append(
+            {"tierId": tier["id"], **(ceiling.as_dict() if ceiling else {"enforcedCap": None})}
+        )
+    uniform = (
+        len({tuple(sorted({k: v for k, v in row.items() if k != "tierId"}.items())) for row in per_tier}) == 1
+        if per_tier
+        else False
+    )
+    single = None
+    if uniform and per_tier and "enforcedCapBps" in per_tier[0]:
+        single = {k: v for k, v in per_tier[0].items() if k != "tierId"}
+    return code, policy.as_dict(), single, per_tier
+
+
 def build(event_row: Mapping, organizer_row: Mapping) -> dict:
     tiers = [tier_row_to_contract(tier) for tier in event_row["tiers"]]
+    jurisdiction, policy, ceiling, per_tier = _law(event_row)
     return {
         "id": event_row["id"],
         "slug": event_row["slug"],
@@ -46,6 +99,26 @@ def build(event_row: Mapping, organizer_row: Mapping) -> dict:
         "resaleEnabled": event_row["resaleEnabled"],
         "resalePriceCapBps": event_row.get("resalePriceCapBps"),
         "requiresVerifiedWallet": event_row["requiresVerifiedWallet"],
+        # Additive keys for the region-aware cap (`records/REGION-CAPS-DESIGN.md` §11). Null
+        # when the event declares no jurisdiction, which is every event in the synthetic
+        # fixture today: a synthetic venue is not in any jurisdiction and must not be given one.
+        "jurisdiction": jurisdiction,
+        "resalePolicy": (policy or {}).get("resalePolicy"),
+        "resalePolicyReason": (policy or {}).get("lawReason"),
+        "lawTableVersion": (policy or {}).get("lawTableVersion"),
+        "lawAsOf": (policy or {}).get("lawAsOf"),
+        "lawBasis": [
+            {
+                "jurisdiction": row["jurisdiction"],
+                "citation": row["citation"],
+                "url": row["url"],
+                "confidence": row["confidence"],
+                "status": row["status"],
+            }
+            for row in (policy or {}).get("lawBasis", [])
+        ],
+        "enforcedCap": ceiling,
+        "enforcedCapByTier": per_tier or [],
     }
 
 

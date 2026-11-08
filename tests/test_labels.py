@@ -60,6 +60,19 @@ FIELDS = {
     # what a held-back store withheld, said in words rather than as a typed code (N6)
     "reason": "a sale recorded without money",
     "reasons": "a sale recorded without money",
+    # the design document the chain slot points at instead of claiming a deployment
+    "doc": "docs/ON-CHAIN-DESIGN.md",
+    # the chain slot's clause about the quote: its id, its instant and, where a file was
+    # recorded on another cluster, which cluster
+    "cluster": "testnet",
+    "quoteId": "q-18f4ec73dd8d8fd1",
+    "liveQuoteId": "q-15ef2d6b36b4f54f",
+    "liveAsOf": "2026-11-08T12:00:00.000Z",
+    "recordedQuoteId": "q-18f4ec73dd8d8fd1",
+    "recordedAsOf": "2026-11-07T18:34:29.183Z",
+    # the two recommendations, printed only where they differ
+    "rec": "1,380,000,000 lamports",
+    "cur": "1,200,000,000 lamports",
 }
 
 
@@ -86,9 +99,15 @@ class TestAllowedSentences(unittest.TestCase):
         self.assertEqual(labels.render("T2"), "This is a bound, not an optimum.")
         self.assertIn("declared width around the record, not a confidence interval", labels.render("T3"))
         self.assertIn("It is not the probability that a listed ticket sells.", labels.render("T4"))
+        # T5 is the page's deployment claim. It used to read "No program is deployed on any
+        # cluster", which became false on 2026-11-07 when the devnet publish landed a program:
+        # the console would have printed that sentence and that program's id on one page
+        # (feature 2, part 3). The guarantee it exists for is the half that stays.
         self.assertEqual(
-            labels.render("T5"), "No program is deployed on any cluster. Nothing on this page is a deployed guarantee."
+            labels.render("T5"),
+            "No deployment is claimed by this page. Nothing on this page is a deployed guarantee.",
         )
+        self.assertNotIn("no program is deployed", labels.render("T5").lower())
 
 
 class TestProhibitedSentences(unittest.TestCase):
@@ -130,19 +149,37 @@ class TestProhibitedSentences(unittest.TestCase):
 
     def test_the_negatives_the_page_needs_are_not_banned(self) -> None:
         cases = [
-            "No program is deployed on any cluster.",
             "The transfer hook that makes the cap binding is designed, not deployed.",
-            "No devnet transaction has been recorded.",
             "We do not state an upper bound from this record.",
             "Not a prediction: this event has no resales yet.",
             "No prediction: nothing has resold on this platform yet.",
             "The flat line below is the benchmark, not a forecast.",
             # the spec's own required sentence for a candidate cap below a recorded price
             "under the deployed program those transfers would have failed",
+            # the file-scoped absent sentence, which is not the project-wide claim
+            "No devnet transaction is recorded in the console's artefact file.",
         ]
         for text in cases:
             with self.subTest(text=text):
                 self.assertIsNone(labels.contains_banned(text), text)
+
+    def test_the_two_project_wide_negatives_are_caught_now(self) -> None:
+        """The guard could never fire on the two claims the feature-2 sweep went looking for.
+
+        `ALLOWED_NEGATIVES` stripped "no program is deployed" and "no devnet transaction has
+        been recorded" before any pattern was scanned, so the sentence the page was supposed to
+        stop printing could not be caught by the guard that exists to catch it. Both are false
+        of a tree with a program and three transactions on devnet, and both are refused now.
+        """
+        for text in (
+            "No program is deployed on any cluster.",
+            "No devnet transaction has been recorded.",
+            "No on-chain transaction has been recorded for this platform.",
+        ):
+            with self.subTest(text=text):
+                self.assertIsNotNone(labels.contains_banned(text), text)
+        self.assertNotIn("no program is deployed", labels.ALLOWED_NEGATIVES)
+        self.assertNotIn("no devnet transaction has been recorded", labels.ALLOWED_NEGATIVES)
 
 
 class TestBadges(unittest.TestCase):
