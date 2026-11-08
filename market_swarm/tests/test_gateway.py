@@ -1126,6 +1126,9 @@ class SourceTest(unittest.TestCase):
             # instruction builders
             "instruction_init_extra_metas", "instruction_init_record",
             "instruction_set_pending_price", "instruction_transfer_checked",
+            # the two tags the builders encode, so the v2 stage instruction and the writable
+            # move name their own discriminators instead of restating 2 and 12 in this module
+            "TAG_SET_PENDING_PRICE", "TOKEN_INSTRUCTION_TRANSFER_CHECKED",
             # bounded readers
             "rpc", "account_exists", "wait_for_account", "confirm", "transaction_details",
             "describe_error", "blockhash_is_dead", "derive_address",
@@ -1152,7 +1155,18 @@ class TransferResultTest(unittest.TestCase):
             result.status = "refused"  # type: ignore[misc]
         self.assertEqual(
             set(result.__dataclass_fields__),
-            {"status", "signature", "slot", "block_time", "error_code", "latency_ms", "logs"},
+            {
+                "status", "signature", "slot", "block_time", "error_code", "latency_ms", "logs",
+                # What the seller paid the artist in the same transaction. It has to be a field
+                # and it has to default, because a transfer that moved nothing reports 0 and a
+                # caller that predates the fee still constructs a result with six arguments.
+                "fee_lamports",
+                # The flip tax, added the same way and for the same reason: the money that moved,
+                # the rate it was assessed at, and the hold the rate came from. All three default,
+                # so a caller that predates the tax is unaffected; the two rate fields default to
+                # None because an event without a policy has no rate and no hold to report.
+                "flip_tax_lamports", "flip_tax_bps", "held_seconds",
+            },
         )
 
     def test_the_simulated_marker_is_how_a_runner_tells_them_apart(self):

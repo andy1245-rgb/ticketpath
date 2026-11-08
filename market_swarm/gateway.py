@@ -19,17 +19,41 @@ list, and signed once by the seller. That is what makes stage-and-check atomic: 
 staged price cannot be moved by another transfer between the two instructions, and a refusal
 rolls the staging back with it. It also halves the fee, from two signatures to one.
 
+**One event exception: an artist fee.** An event whose spec names a fee policy pays the artist in
+the same transaction, so that sale is three instructions and two signatures -- the v2 stage signed
+by the issuer (the record's authority), a System `Transfer` of `fee_bps` of the price from the
+seller, and the move. The fee arithmetic, the omission of a zero fee and the refusal to build a
+sale that cannot succeed live in `market_swarm/artist_fee.py`; this module decides only which
+signatures go on the wire, and it reads that set back out of the compiled message instead of
+assuming it. An event with no policy takes every branch this file took before the fee existed.
+
+**A second exception, layered on the first: the flip tax.** An event whose spec names an enabled
+flip tax pays a second seller-side `System` transfer, whose rate falls with the hold. The hold is
+the `held_since_unix` the hook writes into the v2 record, so a taxed sale reads the record before
+it builds anything, prices the tax with `market_swarm/flip_tax.py`'s arithmetic, and then builds
+`(stage, artist_fee?, flip_tax?, move)` in one transaction. A record that cannot be read is a
+`ChainUnavailable` and nothing is signed: pricing a tax off a record nobody read is worse than not
+selling. The one clock read on that path is `_now()`, an instance method so a test can replace it
+rather than wait an hour. An event with no tax block, or a sale that says `charge_flip_tax=False`,
+takes exactly the branch it took before the tax existed.
+
 The reused units are `tools/devnet_publish.py`'s pure encoders and bounded readers (see
 `.research/wave2-gateway.md` for the function-by-function list). No `step_*` function is called:
 each of those writes the publish run's resume file under `records/`, assumes one mint and one
 buyer, and raises on a refusal instead of returning one.
 
 **Which program this drives is a parameter, not an assumption.** `program` is `"v1"` or `"v2"`,
-and every instruction that reaches a program is built by `market_swarm/wire.py` from it, so the
-program id this connects to, the keypair it deploys with and the bytes it sends all follow the
-same name. v1 is what devnet serves; v2 has only ever run locally and its `SetPendingPrice` is
-authorised by the record's authority, which this harness cannot sign, so `start()` refuses v2
-with that sentence instead of writing a dataset of `6026` rows.
+and every instruction that reaches a program on a plain sale is built for that program by
+`market_swarm/wire.py`, so the program id this connects to, the keypair it deploys with and the
+bytes a plain sale sends all follow the same name. v1 is what devnet serves; v2 has only ever run
+locally and its `SetPendingPrice` is authorised by the record's authority, which this harness
+cannot sign, so `start()` refuses v2 with that sentence instead of writing a dataset of `6026`
+rows.
+
+The fee and flip-tax paths above are the exception, and it is stated rather than glossed: their
+stage and move are always the v2 shapes, on a v1 run too, because the record those paths write is
+the one that carries the hold clock and the v2 authority. So a fee or tax event is a v2-record
+event whatever `program` says, and a plain sale on a v1 run keeps the v1 encoders.
 
 Standard library only.
 """
@@ -60,6 +84,17 @@ from market_swarm.config import (
     PROGRAMS,
     ceiling_lamports,
     effective_cap_bps,
+)
+from market_swarm.artist_fee import ArtistFeePolicy, fee_lamports, sale_instructions
+from market_swarm.flip_tax import (
+    FlipTaxError,
+    FlipTaxPolicy,
+    MAX_BPS,
+    UNKNOWN_HOLD,
+    assess as assess_flip_tax,
+    combined_take_bps,
+    held_since_unix_from_record,
+    sale_instructions as tax_sale_instructions,
 )
 
 # `tools/` has no `__init__.py`; it becomes importable only once it is on `sys.path`, and it is
@@ -198,6 +233,32 @@ class TransferResult:
     latency_ms: int | None = None
     logs: tuple[str, ...] = ()
 
+    #: What the seller paid the artist, in lamports, in the same transaction as the move.
+    #: It is 0 on an event with no fee policy, 0 on anything that did not land, and the fee
+    #: itself only on a transfer the chain executed: a refused or unconfirmed send reports 0
+    #: because nothing was observed to move, and a row that claimed a fee it did not see
+    #: would be the one number in the dataset pointing at a payment nobody can look up.
+    fee_lamports: int = 0
+
+    #: What the seller paid in flip tax, in lamports, in the same transaction as the move. 0 on
+    #: an event with no tax policy, 0 on a sale that did not carry the tax (a primary sale), and
+    #: 0 on anything that did not land -- the same sentence as the fee above, because a refused
+    #: transaction rolls its tax leg back with the staging and a row that reported the tax anyway
+    #: would name money nobody moved.
+    flip_tax_lamports: int = 0
+
+    #: The rate the tax was assessed at on this sale, in basis points, or `None` when the event
+    #: has no tax policy or this sale did not carry it. It is kept even when no money moved: a
+    #: refused sale reports 0 lamports and the rate that would have applied, so a dataset reader
+    #: can see both the rule and the outcome instead of only the outcome.
+    flip_tax_bps: int | None = None
+
+    #: How long the record's clock says the ticket was held, in seconds, or `None` when the
+    #: record never had its clock written (`held_since_unix == 0`, charged the full rate) or when
+    #: no tax was assessed at all. `None` is not "held zero seconds": it is "nobody knows", and
+    #: it is the number that explains the rate beside it.
+    held_seconds: int | None = None
+
 
 def is_simulated(result: TransferResult) -> bool:
     """True when this result came from a `DryRunGateway` and nothing reached a chain."""
@@ -239,18 +300,152 @@ def system_transfer_instruction(*, source: str, destination: str, lamports: int)
     )
 
 
-def decode_record(data: bytes) -> dict:
-    """The v1 `["record", mint]` account, 19 bytes of Borsh and no discriminator.
+def instruction_set_pending_price_v2(
+    *, authority: str, record: str, mint: str, program_id: str, price: int
+) -> Any:
+    """`SetPendingPrice` (tag 2) as the deployed v2 program takes it: nine bytes, three accounts.
 
-    `face_value_lamports u64 | cap_bps u16 | pending_price_lamports u64 | status u8`. The Rust
-    `TicketRecord::LEN` says 20 and is dead code: `initialize_record` allocates the length of the
-    actual serialisation, which is 19. No decoder for this existed anywhere in the repository
-    before this function, so it is written here and unit-tested against a hand-built buffer.
+    The accounts are `[authority (signer), record (writable), mint]`, and they are not the ones
+    `dp.instruction_set_pending_price` builds. That encoder is v1: one account, no authority, and
+    against a v2 record it cannot succeed, because `checked_record_for_write` requires
+    `record.authority` to have signed. It is left alone here rather than corrected -- it belongs
+    to the publish tool's run -- and this builder sits beside it so the sale path can name the v2
+    shape without changing what anything else compiles.
 
-    The layout lives in `wire` now, beside v2's 70-byte one, so this entry point and the
-    per-program reader the gateway uses cannot disagree about which shape the bytes are.
+    `mint` is read-only on purpose: the program derives the record's own address from the mint
+    and writes it nowhere.
     """
-    return wire.decode_v1_record(data)
+    amount = _require_price(price)
+    data = bytes([dp.TAG_SET_PENDING_PRICE]) + amount.to_bytes(8, "little")
+    return dp.Instruction(
+        program_id=program_id,
+        accounts=(
+            dp.AccountMeta(authority, True, False),
+            dp.AccountMeta(record, False, True),
+            dp.AccountMeta(mint, False, False),
+        ),
+        data=data,
+    )
+
+
+def instruction_transfer_checked_writable(
+    *,
+    source: str,
+    mint: str,
+    destination: str,
+    authority: str,
+    record: str,
+    hook_program: str,
+    extra_metas: str,
+    amount: int = 1,
+    decimals: int = 0,
+) -> Any:
+    """The Token-2022 `TransferChecked`, byte for byte, with the record passed **writable**.
+
+    One difference from `dp.instruction_transfer_checked`, which declares the record read-only.
+    The rule the runtime enforces is that an account is writable for a transaction if **any**
+    instruction in it says so, and that an inner CPI may not ask for more than the outer
+    instruction granted. v2's extra-account-metas list declares the record writable
+    (`RECORD_META_WRITABLE = true`, `programs/cap_hook/src/lib.rs`), so Token-2022 builds its CPI
+    to the hook asking for a writable record; a message whose only mention of the record is
+    read-only is therefore refused `PrivilegeEscalation` at the Token-2022 instruction and the hook
+    never runs. It does not land with the write skipped — measured by the non-builder review of
+    finding 42, section "the writability experiment".
+
+    On the fee path the stage instruction already marks the record writable, so this flag changes
+    nothing there and is belt-and-braces; on any path where the move is the only instruction that
+    names the record it is the difference between a sale and a failed transaction.
+
+    Same seven accounts in the same order, same ten data bytes. The test pins the two builders
+    against each other and asserts that the record's write flag is the only difference.
+    """
+    return dp.Instruction(
+        program_id=dp.TOKEN_2022_PROGRAM,
+        accounts=(
+            dp.AccountMeta(source, False, True),
+            dp.AccountMeta(mint, False, False),
+            dp.AccountMeta(destination, False, True),
+            dp.AccountMeta(authority, True, False),
+            dp.AccountMeta(record, False, True),  # the one difference: the hook writes here
+            dp.AccountMeta(hook_program, False, False),
+            dp.AccountMeta(extra_metas, False, False),
+        ),
+        data=bytes([dp.TOKEN_INSTRUCTION_TRANSFER_CHECKED])
+        + amount.to_bytes(8, "little")
+        + bytes([decimals]),
+    )
+
+
+def _read_shortvec(data: bytes, at: int) -> tuple[int, int]:
+    """A compact-u16 as `dp.shortvec` writes it. Returns `(value, next offset)`."""
+    value = 0
+    shift = 0
+    while True:
+        if at >= len(data):
+            raise ValueError("message: a compact-u16 ran past the end of the bytes")
+        byte = data[at]
+        at += 1
+        value |= (byte & 0x7F) << shift
+        if not byte & 0x80:
+            return value, at
+        shift += 7
+        if shift > 21:
+            raise ValueError("message: a compact-u16 longer than three bytes")
+
+
+def signer_keys_from_message(message: bytes) -> tuple[str, ...]:
+    """The account keys that must sign a compiled message, in signature order.
+
+    The legacy message layout is three header bytes, a compact-u16 key count, then that many
+    32-byte keys; the header's first byte says how many of them are signers, and the canonical
+    order `dp.compile_message` writes puts exactly those signers first. Signatures are positional,
+    so the report has to be in that order and not merely the right set.
+
+    Pure, and bounded: a message that could not have been compiled raises `ValueError` rather
+    than walking off the end of the bytes. `dp.shortvec` writes the compact-u16 and has no reader,
+    so the reader is here; the test pins the two against each other through `compile_message`.
+    """
+    if not isinstance(message, (bytes, bytearray)):
+        raise ValueError(f"message: expected bytes, got {type(message).__name__}")
+    if len(message) < 4:
+        raise ValueError(f"message: expected at least 4 bytes, got {len(message)}")
+    needed = message[0]
+    count, at = _read_shortvec(bytes(message), 3)
+    if needed > count:
+        raise ValueError(
+            f"message: the header claims {needed} signers and there are {count} account keys"
+        )
+    end = at + 32 * count
+    if end > len(message):
+        raise ValueError(
+            f"message: {count} keys need {end} bytes and the message is {len(message)}"
+        )
+    return tuple(
+        dp.base58.encode(message[at + 32 * index: at + 32 * (index + 1)])
+        for index in range(needed)
+    )
+
+
+def decode_record(data: bytes) -> dict:
+    """The `["record", mint]` account, 19 bytes of Borsh and no discriminator.
+
+    `face_value_lamports u64 | cap_bps u16 | pending_price_lamports u64 | status u8`. This is the
+    **v1** layout, 19 bytes, which is what `initialize_record` wrote when this function was
+    written. It is stale against the deployed v2 program, whose `TicketRecord::LEN` is 70 and whose
+    `checked_record_for_write` refuses any other length, so every caller of this decoder dies
+    against a v2 record. Correcting it is a change to the harness's whole record read path and is
+    disclosed rather than silently half-done: `records/findings/42-artist-fee-at-checkout.md` §6.
+    """
+    if not isinstance(data, (bytes, bytearray)):
+        raise ValueError(f"data: expected bytes, got {type(data).__name__}")
+    if len(data) != 19:
+        raise ValueError(f"record: expected 19 bytes of Borsh, got {len(data)}")
+    return {
+        "face_lamports": int.from_bytes(data[0:8], "little"),
+        "cap_bps": int.from_bytes(data[8:10], "little"),
+        "pending_price_lamports": int.from_bytes(data[10:18], "little"),
+        "status": data[18],
+    }
 
 
 def custom_error_code(err: Any) -> int | None:
@@ -373,6 +568,31 @@ def _require_price(price: int) -> int:
     return price
 
 
+def _refuse_combined_take(
+    fee: "ArtistFeePolicy | None", tax: "FlipTaxPolicy | None", *, where: str
+) -> None:
+    """Refuse an event whose fee plus full tax rate is more than the whole price.
+
+    The seller pays both out of one price, so their sum is what a quick resale costs, and a sum above
+    `10_000` bps means the seller pays to sell. The rule has one definition
+    (`flip_tax.combined_take_bps`) and three callers: the config loader, `_check_spec` (every
+    `create_event`, real or dry), and `EventChain.__init__` -- because `EventChain` is public and a
+    caller can construct one without going through either of the first two, which is exactly how
+    review built a sale at 11 500 bps that the chain accepted.
+
+    A disabled policy is not counted: a rule that charges nothing cannot overcharge.
+    """
+    if fee is None or tax is None or not tax.enabled:
+        return
+    combined = combined_take_bps(artist_fee_bps=fee.fee_bps, schedule=tax.schedule)
+    if combined > MAX_BPS:
+        raise ValueError(
+            f"{where}.artist_fee.fee_bps {fee.fee_bps} plus {where}.flip_tax.schedule.full_bps "
+            f"{tax.schedule.full_bps} is {combined} bps of the sale price, and the seller pays "
+            f"both. A take above {MAX_BPS} bps means the seller pays to sell."
+        )
+
+
 def _check_spec(spec: EventSpec) -> tuple[int, int]:
     """`(cap_bps, face_lamports)` for a spec, refusing anything the record cannot hold."""
     if not isinstance(spec, EventSpec):
@@ -384,6 +604,24 @@ def _check_spec(spec: EventSpec) -> tuple[int, int]:
     if not 0 < spec.face_lamports < 2**64:
         raise ValueError(f"spec.face_lamports: expected 1..2**64-1, got {spec.face_lamports}")
     cap_bps = effective_cap_bps(spec.mode, spec.cap_bps)
+    # The fee is opt-in and is a policy object, not a mapping by the time it gets here: the
+    # loader parsed it into `ArtistFeePolicy` and this refuses anything else, so a hand-built
+    # spec that forgot to parse its block fails here rather than at the first sale, after the
+    # validator has booted and the ticket has been stocked.
+    fee = getattr(spec, "artist_fee", None)
+    if fee is not None and not isinstance(fee, ArtistFeePolicy):
+        raise ValueError(
+            f"spec.artist_fee: expected an ArtistFeePolicy or None, got {type(fee).__name__}"
+        )
+    # The tax is opt-in in the same way and is refused in the same place, for the same reason: a
+    # hand-built spec that kept its block as a mapping fails here, before the validator boots and
+    # the ticket is stocked, rather than at the first sale.
+    tax = getattr(spec, "flip_tax", None)
+    if tax is not None and not isinstance(tax, FlipTaxPolicy):
+        raise ValueError(
+            f"spec.flip_tax: expected a FlipTaxPolicy or None, got {type(tax).__name__}"
+        )
+    _refuse_combined_take(fee, tax, where="spec")
     # "monitored" is not "no cap". It fills the record's u16 field with its maximum, 65535, so the
     # hook still refuses any price above `face * 7.5535` -- and nothing above that ratio can be
     # expressed through this field at all. Prices below it are admitted, which is the point of the
@@ -646,6 +884,8 @@ class ChainGateway:
             cap_bps=observed["cap_bps"],
             face_lamports=observed["face_lamports"],
             ceiling_lamports=ceiling,
+            artist_fee=getattr(spec, "artist_fee", None),
+            flip_tax=getattr(spec, "flip_tax", None),
         )
         with self._state_lock:
             self._events[mint] = chain
@@ -671,6 +911,18 @@ class ChainGateway:
         }
 
     # -- the seams a fake cluster replaces ----------------------------------
+
+    def _now(self) -> int:
+        """The one clock read on the flip-tax path, and the seam a test replaces.
+
+        `held_since_unix` is the validator's wall clock, written by the hook, so the hold is
+        `now - held_since` and `now` has to come from somewhere. It is an instance method rather
+        than `time.time()` inline so a test can price a one-hour hold without waiting an hour and
+        can price a clock that went backwards without changing this machine's clock. Nothing else
+        in this module reads it, and no other path calls it: a sale with no tax never asks what
+        time it is.
+        """
+        return int(time.time())
 
     def _rpc(
         self,
@@ -877,6 +1129,67 @@ class ChainGateway:
         latency = int(round((time.monotonic() - started) * 1000))
         return sent, status, latency
 
+    def _send_multi(
+        self,
+        instructions: list,
+        *,
+        payer: str,
+        signer_paths: dict[str, Path],
+        skip_preflight: bool = False,
+    ) -> tuple[str, dict, int]:
+        """Compile, sign with every required signer, send. `(signature, status, latency_ms)`.
+
+        A second method rather than a widening of `_send`, because `_send` is on the path of every
+        transaction this harness built before the artist fee existed and its shape is part of that
+        path's correctness. This one exists for the one sale that has two signatures: the seller
+        pays and authorises the move, and the issuer signs the stage instruction, because the
+        record's authority is the issuer and `checked_record_for_write` requires its signature.
+
+        The signer set is **read back out of the compiled message**, never assumed. `signer_paths`
+        maps an address to the keypair path this process holds for it, `dp.compile_message` decides
+        which of the accounts in these instructions must sign and in what order, and the two sets
+        have to agree exactly: a missing entry would leave a required signature empty and an extra
+        one would write a signature the message has no room for, and either is a bug worth a hard
+        error that names both sides. Signatures are positional, so they are produced in the
+        message's own order and not in the dict's.
+
+        The submit half is deliberately the same sequence as `_send`'s: a fresh blockhash every
+        call, `skipPreflight` only when a refusal has to be observable, a preflight rejection
+        raised as `_Rejected` (nothing was sent, so no signature is reported), and a send that did
+        not confirm returned with the doubt attached rather than dropped.
+        """
+        started = time.monotonic()
+        blockhash = self._rpc("getLatestBlockhash", [{"commitment": "confirmed"}])["value"]["blockhash"]
+        message = dp.compile_message(payer, list(instructions), blockhash)
+        required = signer_keys_from_message(message)
+        missing = [key for key in required if key not in signer_paths]
+        extra = [key for key in signer_paths if key not in required]
+        if missing or extra:
+            raise ChainUnavailable(
+                "signers: this transaction needs exactly "
+                f"[{', '.join(required)}] and the call holds [{', '.join(sorted(signer_paths))}]; "
+                f"no keypair path for {missing or 'nothing'} and a path for {extra or 'nothing'} "
+                "the message does not ask to sign"
+            )
+        signatures = [self._sign(signer_paths[key], message) for key in required]
+        wire = base64.b64encode(dp.build_transaction(message, signatures)).decode("ascii")
+        try:
+            sent = self._rpc(
+                "sendTransaction",
+                [
+                    wire,
+                    {"encoding": "base64", "skipPreflight": skip_preflight, "preflightCommitment": "confirmed"},
+                ],
+            )
+        except dp.PublishError as exc:
+            raise _Rejected(str(exc)) from exc
+        try:
+            status = self._confirmation(sent)
+        except dp.PublishError as exc:
+            status = {"ok": False, "err": None, "slot": None, "unconfirmed": True, "detail": str(exc)}
+        latency = int(round((time.monotonic() - started) * 1000))
+        return sent, status, latency
+
     def _send_or_raise(self, instructions: list, *, payer: str, signer_path: Path) -> str:
         """A setup transaction, where anything short of a confirmed success is a failure."""
         try:
@@ -942,17 +1255,36 @@ class ChainGateway:
         self._addresses[label] = address
         return address
 
-    def _ensure_wallet(self, label: str) -> str:
-        """The label's address, funded and usable as a fee payer. Idempotent per run."""
+    def _ensure_wallet(self, label: str, *, fee_lamports: int = 0) -> str:
+        """The label's address, funded and usable as a fee payer. Idempotent per run.
+
+        `fee_lamports` is a payment this wallet also has to make out of its own balance in the
+        action that follows -- the artist fee on a resale. When one is named the floor becomes
+        `max(WALLET_FLOOR_LAMPORTS, fee + WALLET_FLOOR_LAMPORTS)`, and the top-up reaches at least
+        that floor rather than the plain per-wallet amount.
+
+        The reason is that the floor is not a spending target, it is the float a wallet needs to
+        pay its own signatures. Topping a wallet up to the floor alone and then taking a fee out of
+        it leaves the seller holding the fee's worth of nothing, so the sale after next fails with
+        an `InsufficientFunds` from the System Program -- an error that reads like a chain fault
+        and is really a funding decision made one step earlier. Funding `fee + floor` means the fee
+        is paid out of money that was added for it, and the float survives the sale.
+
+        It stays a floor and not a target: a wallet already holding the fee is left alone, and a
+        wallet with no fee to pay is treated exactly as it was before the fee existed.
+        """
         _require_label(label)
+        if isinstance(fee_lamports, bool) or not isinstance(fee_lamports, int) or fee_lamports < 0:
+            raise ValueError(f"fee_lamports: expected a non-negative integer, got {fee_lamports!r}")
+        floor = max(WALLET_FLOOR_LAMPORTS, fee_lamports + WALLET_FLOOR_LAMPORTS)
         with wallet_lock(label):
             address = self._wallet_address(label)
             if label == HOUSE_LABEL:
                 return address  # funded at genesis; a transfer to itself would waste a fee
             funded = self._balance(address)
-            if funded >= WALLET_FLOOR_LAMPORTS:
+            if funded >= floor:
                 return address
-            self._fund_wallet(address, FUND_LAMPORTS_PER_WALLET - funded)
+            self._fund_wallet(address, max(FUND_LAMPORTS_PER_WALLET, floor) - funded)
             return address
 
     def _balance(self, address: str) -> int:
@@ -1104,6 +1436,35 @@ class ChainGateway:
             raise ChainUnavailable(f"the record {record} did not arrive as base64") from exc
         return wire.decode_record(self.program, data)
 
+    def _read_record_v2(self, record: str) -> bytes:
+        """The raw bytes of a v2 `["record", mint]` account, read at `confirmed`.
+
+        The same `getAccountInfo` call and the same commitment as `_read_record`, differing only
+        in what comes back: the bytes, not a decoded dict. `decode_record` reads the 19-byte v1
+        layout, so it cannot serve this path -- a v2 record is 70 bytes and the hook's clock sits
+        at byte 30 -- and neither function is changed here: the v1 read and decoder are another
+        run's repair (finding 42 §6). This is the reader the flip-tax path needs, and it is
+        deliberately the only place that unpacks the account, so the byte offset has one owner
+        (`flip_tax.held_since_unix_from_record`) and one reader.
+
+        Raises `ChainUnavailable` when the account is absent or does not arrive as base64, which
+        is the fail-closed rule for the tax: a sale whose hold cannot be read is not built, and no
+        transaction is signed.
+        """
+        result = self._rpc(
+            "getAccountInfo", [record, {"encoding": "base64", "commitment": "confirmed"}]
+        )
+        value = (result or {}).get("value")
+        if not value:
+            raise ChainUnavailable(f"the record {record} is not on chain")
+        encoded = value.get("data")
+        if not isinstance(encoded, list) or len(encoded) < 2 or encoded[1] != "base64":
+            raise ChainUnavailable(f"the record {record} did not arrive as base64")
+        try:
+            return base64.b64decode(encoded[0])
+        except (ValueError, TypeError) as exc:
+            raise ChainUnavailable(f"the record {record} did not arrive as base64") from exc
+
     # -- small readers -----------------------------------------------------
 
     def _program_id(self) -> str:
@@ -1161,7 +1522,7 @@ class ChainGateway:
                 _which("solana") or "solana",
                 "--url", self.rpc_url,
                 "program", "deploy", str(dp.SO_PATH),
-                "--program-id", str(PROGRAM_KEYPAIRS[self.program]),
+                "--program-id", str(dp.PROGRAM_KEYPAIR),
                 "--keypair", str(self._wallet_path(HOUSE_LABEL)),
             ],
             timeout=_BOUND_DEPLOY,
@@ -1246,6 +1607,8 @@ class EventChain:
         cap_bps: int,
         face_lamports: int,
         ceiling_lamports: int,
+        artist_fee: ArtistFeePolicy | None = None,
+        flip_tax: FlipTaxPolicy | None = None,
     ) -> None:
         self._gateway = gateway
         self.event_id = event_id
@@ -1256,6 +1619,19 @@ class EventChain:
         self.cap_bps = cap_bps
         self.face_lamports = face_lamports
         self.ceiling_lamports = ceiling_lamports
+        #: The event's fee policy, carried from the spec. `None` is the whole of "no fee":
+        #: every branch below that mentions the fee asks this first, and a chain built
+        #: without one executes the sale it always did, instruction for instruction.
+        self.artist_fee = artist_fee
+        #: The event's flip tax policy, carried from the spec the same way. `None` and a policy
+        #: whose `enabled` is false are the same thing to every branch below: no tax is read, no
+        #: record is fetched for it, and the sale is the one this file built before the tax
+        #: existed. A policy that is present and on is the only case that reads the clock.
+        self.flip_tax = flip_tax
+        # The third door onto the combined-take rule. `create_event` goes through `_check_spec`, and
+        # the loader goes through its own parse, but this class is public and review constructed one
+        # directly, so the refusal is repeated here rather than assumed upstream.
+        _refuse_combined_take(artist_fee, flip_tax, where="EventChain")
 
     simulated = False
 
@@ -1263,7 +1639,8 @@ class EventChain:
         return (
             f"EventChain(event_id={self.event_id!r}, mint={self.mint!r}, record={self.record!r}, "
             f"mode={self.mode!r}, cap_bps={self.cap_bps}, face_lamports={self.face_lamports}, "
-            f"ceiling_lamports={self.ceiling_lamports})"
+            f"ceiling_lamports={self.ceiling_lamports}, artist_fee={self.artist_fee!r}, "
+            f"flip_tax={self.flip_tax!r})"
         )
 
     # -- wallets -----------------------------------------------------------
@@ -1336,13 +1713,83 @@ class EventChain:
 
     # -- trade -------------------------------------------------------------
 
-    def transfer(self, *, from_label: str, to_label: str, price_lamports: int) -> TransferResult:
-        """Stage a price and move one ticket, in one transaction, signed once by the seller.
+    def transfer(
+        self,
+        *,
+        from_label: str,
+        to_label: str,
+        price_lamports: int,
+        charge_artist_fee: bool = True,
+        charge_flip_tax: bool = True,
+    ) -> TransferResult:
+        """Stage a price and move one ticket, in one transaction.
+
+        One signature and two instructions on an event with no fee; two signatures and three on an
+        event that pays an artist. Either way it is one transaction, and the seller pays for it.
 
         The two instructions are `SetPendingPrice` and the Token-2022 `TransferChecked`; they share
         the record and the seller signs both. Nothing between them can move the staged price,
         because there is nothing between them: the transaction is atomic, and if the hook refuses,
         the staging is rolled back with it.
+
+        **With an artist fee** -- an event whose spec named one -- a third instruction sits between
+        them, and the stage is the v2 shape so the issuer signs it, because the record's authority
+        is the issuer. The middle leg is a System `Transfer` of `price * fee_bps // 10_000` lamports
+        from the seller to the artist, and the move takes the seller's signature on the token
+        account. The order is stage, fee, move, on one blockhash: a leg that fails fails the sale
+        and rolls the staging back with it. The fee leg is built by
+        `artist_fee.sale_instructions`, which omits it when the fee rounds to zero, and it refuses
+        a sale it cannot build (a price of 0, the artist being the seller) before a blockhash is
+        asked for. The move on this path also passes the record writable: v2's hook writes it and
+        Token-2022 asks for it writable, so a message that only ever names it read-only is refused
+        `PrivilegeEscalation` before the hook runs. The stage in this transaction already says so,
+        which makes the move's flag redundant here and correct if the shape changes.
+
+        `charge_artist_fee=False` builds that sale without the middle leg and pays the artist
+        nothing: the primary price is the artist's own money, and the fee is specified on a resale.
+        The event's rate still reaches the row, so a reader can see the rate and that this sale paid
+        none of it.
+
+        **With a flip tax** -- an event whose spec named an *enabled* one -- a fourth instruction
+        joins them and the order is stage, artist fee, flip tax, move. The tax leg is a System
+        `Transfer` from the seller to the artist wallet, built by
+        `flip_tax.sale_instructions`, which omits it when the tax rounds to zero exactly as the
+        fee leg is omitted. The rate falls with the hold, and the hold is read from the v2 record
+        before anything is funded or signed: the gateway fetches the record's bytes,
+        `flip_tax.held_since_unix_from_record` decodes the hook's clock at its offset, and the tax
+        is `price * bps // 10_000` for the hold that the record and `_now()` agree on.
+        `held_since_unix == 0` means the record's clock was never written and is charged the full
+        rate, with `held_seconds` reported as `None` so the row says why.
+
+        **A record that cannot be read is `ChainUnavailable` and nothing is signed.** That is the
+        fail-closed rule: a hold nobody read cannot price a tax, and refusing the sale is the
+        honest answer. The read happens before the funding top-up, before a blockhash is fetched
+        and before a signature exists, so a tax path that fails leaves no transaction behind.
+
+        `charge_flip_tax=False` builds the sale without the tax leg: the tax, like the fee, is on
+        resales, and a primary sale is the house selling the artist's own stock at face. The event's
+        policy still decides the record shape, so such a sale is the v2 stage and the writable move
+        with nothing between them -- the same instructions an artist-fee event's primary sale
+        builds with `charge_artist_fee=False`, and the reason a taxed event can stage its own
+        record from its first sale. An event with no block, or a block that is off, executes every
+        instruction it executed before the tax existed.
+
+        Without a fee **and** without a tax this method builds the per-program encoders: v1's stage
+        and `dp`'s read-only move on a v1 run, v2's stage and its writable move on a v2 run, so the
+        switch reaches the plain sale and not only the fee path. A fee or tax event takes the v2
+        shapes whatever the program is, because the record those paths write is a v2 record; that
+        is why the v1 branch above is exactly the branch with neither. The v2 record that the tax
+        is priced from is read raw by `_read_record_v2` because `decode_record` reads the 19-byte
+        v1 layout -- disclosed in `records/findings/42-artist-fee-at-checkout.md` §6 and another
+        run's repair.
+
+        `fee_lamports` on the result is what was paid, so it is `0` for anything that did not land:
+        a refused or unconfirmed send reports nothing paid, and a row that reported a fee it did not
+        observe would name a payment nobody can look up. `flip_tax_lamports` follows the same rule
+        and `flip_tax_bps`/`held_seconds` are reported anyway on a taxed sale, so a row shows the
+        rate that was applied beside the 0 that says the sale did not move it. The artist is still
+        owed the fee on a sale that lands later; the log line says the transaction may still land,
+        which is the part of it this result cannot know.
 
         Never raises for a refusal -- a refusal is a `TransferResult` with `status="refused"` and
         the program's own error code. It raises `TicketNotHeld` when the seller has no ticket,
@@ -1358,53 +1805,195 @@ class EventChain:
                 f"1, and a ticket has to be stocked before it can be sold"
             )
         destination = self.ticket_account(to_label, create=True)
-        gateway._ensure_wallet(from_label)  # funded, or it cannot pay its own fee
+        # The flip tax, when this event has one that is on and this sale carries it. Everything
+        # about it happens before the seller is funded, before a blockhash is fetched and before
+        # anything can be signed: the hold is a fact the chain already holds, and a hold nobody
+        # could read is a `ChainUnavailable` rather than a sale priced off a guess. `taxing` is
+        # false on every event without a block, on a block that is off and on a primary sale, and
+        # every branch below that asks about the tax asks this first.
+        #
+        # Two conditions, separated on purpose. `taxed_event` decides the *record shape*: an event
+        # that turns the tax on is a v2-record event, so its stage and its move are v2 even on a
+        # sale that pays no tax (a primary sale, `charge_flip_tax=False`), exactly as an
+        # artist-fee event's primary sale still stages v2 with `charge_artist_fee=False`. `taxing`
+        # decides the *payment*: the record read, the tax leg, the log line and the result fields
+        # exist only on a sale that carries the tax. Deciding the shape by the flag as well would
+        # leave a taxed event whose primary sale cannot stage its own record, which is the one
+        # thing the v2 branch exists to prevent.
+        taxed_event = self.flip_tax is not None and self.flip_tax.enabled
+        taxing = taxed_event and charge_flip_tax
+        tax = None
+        held_since = UNKNOWN_HOLD
+        now_unix = 0
+        if taxing:
+            tax_record = gateway._read_record_v2(self.record)  # ChainUnavailable: fail closed
+            try:
+                held_since = held_since_unix_from_record(tax_record)
+            except FlipTaxError as exc:
+                # A record that is on chain and too short to hold the hook's clock is a record
+                # this checkout cannot price a tax from. It is the same refusal as an absent
+                # record, and it is raised before the funding top-up below, so no transaction
+                # and no signature exists when it fires.
+                raise ChainUnavailable(
+                    f"the record {self.record} cannot be read for the flip tax: {exc}"
+                ) from exc
+            now_unix = gateway._now()
+            tax = assess_flip_tax(
+                price_lamports=price,
+                held_since_unix=held_since,
+                now_unix=now_unix,
+                schedule=self.flip_tax.schedule,
+            )
+        tax_lamports = 0 if tax is None else tax.lamports
+        # 0 when the event has no fee policy or this sale does not carry one, and then the funding
+        # decision below is the one it always was: `max(floor, 0 + floor)` is the floor. A primary
+        # sale is the second case, because the fee is charged on resales: the house is selling the
+        # artist's own ticket at the artist's own price, so a fee there would be the artist paying
+        # themselves.
+        charging = self.artist_fee is not None and charge_artist_fee
+        fee = (
+            0
+            if not charging
+            else fee_lamports(price_lamports=price, fee_bps=self.artist_fee.fee_bps)
+        )
+        # Funded for both payments it has to make out of this sale, or it cannot pay its own fee:
+        # `fee + 0` is the number this call was given before the tax existed.
+        gateway._ensure_wallet(from_label, fee_lamports=fee + tax_lamports)
         seller_path = gateway._wallet_path(from_label)  # a path for the signer child only
         seller_address = gateway._wallet_address(from_label)
         program_id = gateway._program_id()
         admitted = cap_admits(
             price_lamports=price, face_lamports=self.face_lamports, cap_bps=self.cap_bps
         )
-        stage = wire.instruction_set_pending_price(
-            gateway.program,
-            record=self.record,
-            program_id=program_id,
-            price=price,
-            # v2 reads a signer here and refuses 6026 for a key that is not the record's
-            # authority. The seller is the only key this transaction has, so this is what a v2
-            # run would send -- and why `ChainGateway.start()` refuses v2 rather than send it.
-            authority=seller_address,
-            mint=self.mint,
-        )
-        move = wire.instruction_transfer_checked(
-            gateway.program,
-            source=source,
-            mint=self.mint,
-            destination=destination,
-            authority=seller_address,
-            record=self.record,
-            hook_program=program_id,
-            extra_metas=self.extra_metas,
-            amount=1,
-            decimals=0,
-        )
+        if self.artist_fee is None and not taxed_event:
+            stage = wire.instruction_set_pending_price(
+                gateway.program,
+                record=self.record,
+                program_id=program_id,
+                price=price,
+                # v2 reads a signer here and refuses 6026 for a key that is not the record's
+                # authority. The seller is the only key this transaction has, so this is what a
+                # v2 run would send -- and why `ChainGateway.start()` refuses v2 rather than
+                # send it. v1's encoder takes neither and ignores both.
+                authority=seller_address,
+                mint=self.mint,
+            )
+        else:
+            # The v2 stage on the taxed path for the same reason as on the fee path: the deployed
+            # program's `checked_record_for_write` requires `record.authority` to have signed, and
+            # the v1 encoder sends one account with no authority and cannot stage a v2 record at
+            # all. A taxed event must be able to stage and move one even when it charges no fee,
+            # so the branch that fell back to the v1 builders is the branch with neither.
+            stage = instruction_set_pending_price_v2(
+                authority=gateway._wallet_address(HOUSE_LABEL),
+                record=self.record,
+                mint=self.mint,
+                program_id=program_id,
+                price=price,
+            )
+        # The move. The taxed and fee paths build it with `instruction_transfer_checked_writable`,
+        # which is `dp.instruction_transfer_checked` with the record passed writable so the hook
+        # can write it; the path with neither keeps the per-program builder, which is v1's
+        # published one on a v1 run and v2's writable one on a v2 run.
+        if self.artist_fee is None and not taxed_event:
+            move = wire.instruction_transfer_checked(
+                gateway.program,
+                source=source,
+                mint=self.mint,
+                destination=destination,
+                authority=seller_address,
+                record=self.record,
+                hook_program=program_id,
+                extra_metas=self.extra_metas,
+                amount=1,
+                decimals=0,
+            )
+        else:
+            move = instruction_transfer_checked_writable(
+                source=source,
+                mint=self.mint,
+                destination=destination,
+                authority=seller_address,
+                record=self.record,
+                hook_program=program_id,
+                extra_metas=self.extra_metas,
+                amount=1,
+                decimals=0,
+            )
+        # Built before the lock and before any blockhash: a sale the checkout refuses is refused
+        # here, not after a signature exists.
+        legs: tuple = ()
+        if taxing:
+            legs = tax_sale_instructions(
+                stage=stage,
+                move=move,
+                seller=seller_address,
+                policy=self.flip_tax,
+                price_lamports=price,
+                held_since_unix=held_since,
+                now_unix=now_unix,
+                # The fee half is the fee module's to build, and a sale that says
+                # `charge_artist_fee=False` must not carry one: passing `None` is how this path
+                # asks for the tax leg and nothing else.
+                artist_fee=self.artist_fee if charging else None,
+            )
+        elif self.artist_fee is not None and charge_artist_fee:
+            legs = sale_instructions(
+                stage=stage,
+                move=move,
+                seller=seller_address,
+                artist_wallet=self.artist_fee.artist_wallet,
+                price_lamports=price,
+                fee_bps=self.artist_fee.fee_bps,
+            )
+        # Anything else is the stage and the move with nothing between them -- a taxed event's
+        # primary sale, a fee event's, or both -- and `sale_instructions` is not asked about it.
+        # One line a log reader can act on: the amount, the rate it was taken at and the hold that
+        # chose the rate, in the same voice as the lines below. It says the leg was built into the
+        # transaction and not that it was paid -- the money is `flip_tax_lamports` on the result,
+        # and the tax leg rolls back with everything else when the sale does not land.
+        tax_log: tuple[str, ...] = ()
+        if taxing:
+            held_text = "unknown" if tax.held_seconds is None else f"{tax.held_seconds}s"
+            tax_log = (
+                f"ticketpath: flip tax {tax.lamports} lamports at {tax.bps} bps of {price}, held "
+                f"{held_text}, built into the same transaction as the move",
+            )
         with mint_lock(self.mint):
             started = time.monotonic()
             try:
-                signature, status, _ = gateway._send(
-                    [stage, move], payer=seller_address, signer_path=seller_path,
-                    skip_preflight=not admitted,
-                )
+                if self.artist_fee is None and not taxed_event:
+                    signature, status, _ = gateway._send(
+                        [stage, move], payer=seller_address, signer_path=seller_path,
+                        skip_preflight=not admitted,
+                    )
+                else:
+                    signature, status, _ = gateway._send_multi(
+                        list(legs) if legs else [stage, move],
+                        payer=seller_address,
+                        signer_paths={
+                            seller_address: seller_path,
+                            # The issuer's keypair is the record's authority, which is what the
+                            # v2 stage instruction requires to be a signer.
+                            gateway._wallet_address(HOUSE_LABEL): gateway._wallet_path(HOUSE_LABEL),
+                        },
+                        skip_preflight=not admitted,
+                    )
             except _Rejected as exc:
                 return TransferResult(
                     status="error",
                     latency_ms=int(round((time.monotonic() - started) * 1000)),
                     error_code=_code_from_text(str(exc)),
-                    logs=(f"preflight refused the transaction: {exc}",),
+                    logs=(f"preflight refused the transaction: {exc}", *tax_log),
+                    fee_lamports=0,
+                    flip_tax_lamports=0,
+                    flip_tax_bps=None if tax is None else tax.bps,
+                    held_seconds=None if tax is None else tax.held_seconds,
                 )
         detail = gateway._transaction(signature)
         code = custom_error_code(status.get("err"))
         logs = list(detail["logs"])
+        logs.extend(tax_log)
         if status.get("unconfirmed"):
             logs.append(
                 f"ticketpath: {signature} was sent and did not confirm inside "
@@ -1430,6 +2019,14 @@ class EventChain:
             error_code=code,
             latency_ms=int(round((time.monotonic() - started) * 1000)),
             logs=tuple(logs),
+            # Only a landed transfer paid a fee. A refusal rolls the whole transaction back, so
+            # the artist was paid nothing and this says so. `flip_tax_lamports` follows the same
+            # rule; the rate and the hold are reported either way, because they are what was
+            # applied to this row and the 0 is what happened to the money.
+            fee_lamports=fee if outcome == "ok" else 0,
+            flip_tax_lamports=tax_lamports if outcome == "ok" else 0,
+            flip_tax_bps=None if tax is None else tax.bps,
+            held_seconds=None if tax is None else tax.held_seconds,
         )
 
     def read_record(self) -> dict:
@@ -1454,15 +2051,42 @@ class DryRunEventChain:
         self.cap_bps = cap_bps
         self.face_lamports = face_lamports
         self.ceiling_lamports = ceiling
+        #: The event's fee policy, carried from the spec exactly as the real chain carries it.
+        #: The arithmetic below is the same arithmetic, so a dry run prices the fee it would
+        #: have paid and a live run prices the fee it did; the one word that differs is in the
+        #: logs, where every dry-run result says it was simulated.
+        self.artist_fee = getattr(spec, "artist_fee", None)
+        #: The event's flip tax policy, carried the same way. It prices the tax with the real
+        #: arithmetic (`flip_tax.assess`) against this chain's own simulated hold clock, so a dry
+        #: run reports the tax a live run would charge and the one word that differs is in the
+        #: logs.
+        self.flip_tax = getattr(spec, "flip_tax", None)
         self._stocked = 0
         self._held: dict[str, int] = {}
+        #: When each wallet label last received a unit, on this chain's simulated clock. It starts
+        #: empty, which means "unknown" for every label and is charged the full rate -- the same
+        #: rule the record's zero clock follows -- and a transfer stamps the recipient, so a wallet
+        #: that buys and later resells is priced on the hold between the two. There is no record
+        #: account here to write a mint-wide clock into and no balance to spend, so a per-label
+        #: number is the whole of the simulation.
+        self._held_since: dict[str, int] = {}
 
     def __repr__(self) -> str:
         return (
             f"DryRunEventChain(event_id={self.event_id!r}, mode={self.mode!r}, "
             f"cap_bps={self.cap_bps}, face_lamports={self.face_lamports}, "
-            f"ceiling_lamports={self.ceiling_lamports})"
+            f"ceiling_lamports={self.ceiling_lamports}, artist_fee={self.artist_fee!r}, "
+            f"flip_tax={self.flip_tax!r})"
         )
+
+    def _now(self) -> int:
+        """The simulated chain's clock: the one read on the tax path, and the seam a test replaces.
+
+        It exists for exactly the reason `ChainGateway._now` does -- a test that wants to price an
+        hour's hold must not wait an hour -- and it is per chain rather than per module so two
+        simulated runs cannot share a clock by accident.
+        """
+        return int(time.time())
 
     def open_account(self, wallet_label: str) -> str:
         _require_label(wallet_label)
@@ -1479,7 +2103,15 @@ class DryRunEventChain:
         self._held[HOUSE_LABEL] = self._held.get(HOUSE_LABEL, 0) + count
         self._stocked += count
 
-    def transfer(self, *, from_label: str, to_label: str, price_lamports: int) -> TransferResult:
+    def transfer(
+        self,
+        *,
+        from_label: str,
+        to_label: str,
+        price_lamports: int,
+        charge_artist_fee: bool = True,
+        charge_flip_tax: bool = True,
+    ) -> TransferResult:
         """The status the hook *would* have produced, with no signature, and no hop either way.
 
         A simulated above-ceiling transfer comes back `refused` with 6010 and moves nothing,
@@ -1490,6 +2122,21 @@ class DryRunEventChain:
         `simulated` on every row -- but the *status vocabulary* now means the same thing in
         both, so a dry run can price a thousand configurations and the refusal rate is
         comparable.
+
+        The fee follows the same rule and the same arithmetic as the real chain: an admitted sale
+        reports `fee_lamports = price * fee_bps // 10_000`, and a refused one reports 0, because a
+        refused sale on the chain rolls the fee back with the staging. The fee is reported, never
+        deducted from anything: the dry run has no balances to spend, and inventing a running
+        ledger here would make two things in the harness that claim to know a wallet's balance.
+        `charge_artist_fee=False` reports 0 and says nothing about a payment, because a primary sale
+        pays no fee: the primary price is the artist's own money and the fee is charged on resales.
+
+        The tax is the same arithmetic again, priced by `flip_tax.assess` against this chain's own
+        `_held_since` clock: the seller's label starts unknown (a full-rate hold) and every
+        simulated transfer stamps the recipient, so a later resale is priced on the hold it
+        simulated. A refused sale reports `flip_tax_lamports=0` with the rate and the hold it would
+        have been charged at, mirroring the live path, and the simulated tax line names both. No
+        branch here ever carries a signature: a simulated sale did not happen.
         """
         price = _require_price(price_lamports)
         _require_label(from_label)
@@ -1499,6 +2146,33 @@ class DryRunEventChain:
             raise TicketNotHeld(
                 f"{from_label} holds {held} tickets on {self.event_id} (simulated); a transfer needs 1"
             )
+        taxing = self.flip_tax is not None and self.flip_tax.enabled and charge_flip_tax
+        tax = None
+        # Read once, whether or not this sale carries the tax: the simulated hold clock starts on
+        # every admitted transfer, tax or no tax, because the chain's clock is written by the hook
+        # on every admitted move. A sale that is refused stamps nothing, because nothing moved.
+        now_unix = self._now()
+        if taxing:
+            tax = assess_flip_tax(
+                price_lamports=price,
+                held_since_unix=self._held_since.get(from_label, UNKNOWN_HOLD),
+                now_unix=now_unix,
+                schedule=self.flip_tax.schedule,
+            )
+        tax_log: list[str] = []
+        if taxing:
+            held_text = "unknown" if tax.held_seconds is None else f"{tax.held_seconds}s"
+            tax_log.append(
+                f"simulated: the seller would have paid {tax.lamports} lamports to "
+                f"{self.flip_tax.artist_wallet} as flip tax at {tax.bps} bps of {price}, held "
+                f"{held_text}, in the same transaction as the move"
+            )
+        charging = self.artist_fee is not None and charge_artist_fee
+        fee = (
+            0
+            if not charging
+            else fee_lamports(price_lamports=price, fee_bps=self.artist_fee.fee_bps)
+        )
         if not cap_admits(price_lamports=price, face_lamports=self.face_lamports, cap_bps=self.cap_bps):
             return TransferResult(
                 status="refused",
@@ -1512,11 +2186,36 @@ class DryRunEventChain:
                     f"simulated: {price} lamports is above the ceiling {self.ceiling_lamports} "
                     f"the hook enforces on {self.event_id}; a real transfer is refused with "
                     f"{E_CAP_EXCEEDED} and the unit does not move",
+                    *tax_log,
                 ),
+                fee_lamports=0,
+                # Nothing moved, so nothing was paid; the rate and the hold are still what this
+                # sale would have been charged at, which is what makes the row explain itself.
+                flip_tax_lamports=0,
+                flip_tax_bps=None if tax is None else tax.bps,
+                held_seconds=None if tax is None else tax.held_seconds,
             )
         self._held[from_label] = held - 1
         self._held[to_label] = self._held.get(to_label, 0) + 1
-        return TransferResult(status="ok", signature=None, latency_ms=None, logs=(SIMULATED_LOG,))
+        self._held_since[to_label] = now_unix
+        logs = [SIMULATED_LOG]
+        if charging:
+            logs.append(
+                f"simulated: the seller would have paid {fee} lamports to "
+                f"{self.artist_fee.artist_wallet} at {self.artist_fee.fee_bps} bps of {price}, "
+                "in the same transaction as the move"
+            )
+        logs.extend(tax_log)
+        return TransferResult(
+            status="ok",
+            signature=None,
+            latency_ms=None,
+            logs=tuple(logs),
+            fee_lamports=fee,
+            flip_tax_lamports=0 if tax is None else tax.lamports,
+            flip_tax_bps=None if tax is None else tax.bps,
+            held_seconds=None if tax is None else tax.held_seconds,
+        )
 
     def read_record(self) -> dict:
         return {

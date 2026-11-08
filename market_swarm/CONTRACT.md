@@ -58,12 +58,17 @@ omits the field still loads as the run it always was. What each pairing proves, 
 
 The switch is not a label on the dataset. It selects the program id the gateway connects to and
 the keypair it deploys with (`gateway.PROGRAM_IDS`, checked against the keypairs beside the `.so`),
-and the bytes every instruction is built from (`market_swarm/wire.py`, where the program is an
+and the bytes a plain sale is built from (`market_swarm/wire.py`, where the program is an
 argument with no default and the two shapes differ in four places: the record argument on
 `InitializeExtraAccountMetaList`, the size and signer on `InitializeRecord`, the signer on
 `SetPendingPrice`, and the record's writability on the transfer, which v2 needs to write the hold
 clock). Every row carries the program it came from, as does the header and the sidecar, and
 `verify_dataset` refuses a file whose rows disagree with its header.
+
+The artist fee and the flip tax below are the one exception, stated rather than glossed. Their
+stage and move are always the v2 shapes, on a v1 run too, because the record those paths write is
+the one that carries the hold clock and the v2 authority; a fee or tax event is therefore a
+v2-record event whatever `program` says, and a plain sale on a v1 run keeps the v1 encoders.
 
 ## Modules and fixed signatures
 
@@ -164,8 +169,8 @@ class LedgerWriter:
 
 Status vocabulary, closed set: `ok`, `refused`, `error`, `skipped`. `chain` vocabulary:
 `local-validator`, `devnet`, `simulated`. `program` vocabulary: `v1`, `v2`, the same closed set the
-config names. A row with `chain == "simulated"` and `status == "ok"` means "would have happened",
-never "happened".
+config names, required on every row because it is provenance and not a default. A row with
+`chain == "simulated"` and `status == "ok"` means "would have happened", never "happened".
 
 Action vocabulary, closed set: `buy`, `list`, `resell`, `refuse`, `unknown`. The first three
 are the intents a policy can return. `refuse` is a decision that was **not** taken — a live
@@ -268,7 +273,7 @@ class ChainGateway:
     def start(self) -> dict            # boots + funds a local validator, or connects to devnet
     def stop(self) -> None             # idempotent; kills every child it started
     def create_event(self, spec: EventSpec) -> EventChain
-    def status(self) -> dict           # cluster, program id, mint(s), healthy bool
+    def status(self) -> dict           # cluster, program, program id, mint(s), healthy bool
 ```
 
 `dry_run=True` returns a `DryRunGateway` with the same surface, no socket, and **the status
@@ -428,3 +433,100 @@ every action.
 
 Every verb exits non-zero on a failed invariant and prints nothing that needs a chart to
 read.
+
+## The artist fee, added 2026-11-08
+
+An event may carry `artist_fee: {"artist_wallet": <base58 pubkey>, "fee_bps": 0..10_000}`. Absent, the
+package behaves exactly as it did before this existed: a sale is two instructions and one signature,
+every fee column is null, and every dataset written before it still verifies.
+
+With it, a **resale** through `EventChain.transfer` is one transaction of three instructions and two
+signatures — `cap_hook` `SetPendingPrice` (the issuer signs it, because the record's authority is the
+issuer), a System `Transfer` of `price * fee_bps // 10_000` lamports from the seller to the artist, and
+the Token-2022 move (the seller signs) — and `TransferResult.fee_lamports` is what was paid: the fee
+only when the outcome is `ok`, `0` for anything that did not land. Atomicity is the transaction's, not
+this package's: a leg that fails fails the sale and rolls the rest back.
+
+Fixed signatures this adds:
+
+- `config.EventSpec.artist_fee: ArtistFeePolicy | None = None` (last field; parsed by
+  `artist_fee.ArtistFeePolicy.from_mapping`, whose `ArtistFeeError` the loader re-raises as
+  `ConfigError` with the field path intact).
+- `gateway.TransferResult.fee_lamports: int = 0` (last field).
+- `gateway.EventChain.transfer(..., charge_artist_fee: bool = True)` and the same keyword on
+  `DryRunEventChain.transfer`. The runner passes `False` for the primary buy and `True` for the resale,
+  both explicitly: the house is selling the artist's own stock at face, so a fee there is the artist
+  paying themselves, and the operator's sentence is "on each resale". Every call site names the flag,
+  and `market_swarm/tests/test_artist_fee_call_sites.py` fails if one does not.
+- `gateway.instruction_set_pending_price_v2(...)` and `gateway.instruction_transfer_checked_writable(...)`:
+  the two v2 shapes the fee path needs, beside the v1 encoders they must not replace.
+- `ledger.TradeRow.fee_lamports` and `.artist_fee_bps` (both `int | None = None`). A fee event's rows
+  carry the event's rate on every row and the amount only where money moved; a no-fee event's rows
+  carry neither.
+
+The dataset invariant `datasets.verify_dataset` enforces: an executed **resale** with a price carries
+exactly `price * bps // 10_000`; an executed **buy** with a rate carries 0 or null; a fee below 0 or
+above the price is a violation; a fee with no rate is a violation; an executed trade that names a rate
+with no price is a violation.
+
+Two things this contract does not claim, and a reader of a dataset must not read into it: the chain
+does not enforce the fee (a staged price can be consumed by a transfer that pays nothing), and the
+dataset header carries no event-level policy, so a row with both fee columns deleted cannot be told
+from a row from a no-fee event. Both are stated in `records/findings/42-artist-fee-at-checkout.md` §5
+and §8, and the proof is `tools/artist_fee_proof.py`.
+
+## The flip tax, added 2026-11-08
+
+An event may carry `flip_tax: {"enabled": bool, "artist_wallet": <base58 pubkey>, "schedule":
+{"full_bps", "full_hold_seconds", "zero_hold_seconds"}}`. **The default is off**: absent, the package
+behaves exactly as it did before this existed, a policy that is off builds no leg, and every dataset
+written before it still verifies. It is a second seller-paid lamport `System` `Transfer` in the same
+atomic transaction as the artist fee and the move, charged on **resales**, paid to the **artist's
+wallet**, and it sits last before the move.
+
+The rate is a function of the hold, and the hold is the chain's: `held_since_unix` is read at checkout
+from byte 30 of the 70-byte v2 `["record", mint]` account, which the hook writes on every admitted
+transfer. `full_bps` while the hold is at or under `full_hold_seconds`, then a straight line floored in
+integers to 0 at `zero_hold_seconds`; defaults 1 500 bps, 3 600 s and 2 592 000 s. `0` in the record
+means the clock was never written and is charged the full rate; a clock that went backwards clamps to
+zero seconds and is charged the full rate too.
+
+Fixed signatures this adds:
+
+- `config.EventSpec.flip_tax: FlipTaxPolicy | None = None` (last field; parsed by
+  `flip_tax.FlipTaxPolicy.from_mapping`, whose `FlipTaxError` the loader re-raises as `ConfigError`
+  with the field path intact). An omitted `artist_wallet` inherits the event's `artist_fee` wallet; a
+  different one, or an explicit null, is refused. A config whose `artist_fee.fee_bps +
+  flip_tax.schedule.full_bps` exceeds `10 000` on an enabled block is refused at load.
+- `flip_tax.combined_take_bps(...)`: the one definition of that bound, called by the loader **and** by
+  `gateway._check_spec`, so a hand-built `EventSpec` that never saw a config file is refused at
+  `create_event`, before the validator boots.
+- `gateway.TransferResult.flip_tax_lamports: int = 0`, `.flip_tax_bps: int | None = None` and
+  `.held_seconds: int | None = None`, after `fee_lamports`. Money is what moved: the tax only when
+  the outcome is `ok`, `0` otherwise, with the rate and the hold reported anyway so a row shows what
+  was applied.
+- `gateway.EventChain.transfer(..., charge_flip_tax: bool = True)` and the same keyword on
+  `DryRunEventChain.transfer`. The runner passes `False` for the primary buy and `True` for the
+  resale, both explicitly, and every call site names the flag.
+- `gateway.ChainGateway._read_record_v2(record) -> bytes` and `ChainGateway._now() -> int`: the raw
+  record read and the clock seam. A record that is absent, not base64 or shorter than 70 bytes raises
+  `ChainUnavailable` **before** any signature exists, so a sale is never priced on a record nobody
+  read.
+- `ledger.TradeRow.flip_tax_lamports`, `.flip_tax_bps` and `.held_seconds` (all `int | None = None`),
+  after `artist_fee_bps`. A taxed event's rows carry the rate and the hold on a sale that was assessed
+  and the amount only where money moved; an event with no tax policy carries none of the three.
+
+The dataset invariants `datasets.verify_dataset` enforces are the ten listed in
+`records/findings/43-flip-tax-at-checkout.md` §5.1: the amount agrees with `price * bps // 10 000` on
+an executed resale, is 0 or null on an executed buy, is 0 or null on a row that never executed, and is
+never negative, never above the price and never present without a rate; `held_seconds` is a
+non-negative integer or null.
+
+Three things this contract does not claim, and a reader of a dataset must not read into it. The chain
+does not enforce the tax, exactly as it does not enforce the fee. The dataset header carries no
+event-level policy, so no `held_seconds`/`flip_tax_bps` pair is checked against any curve, and a rate
+that is arithmetically consistent with its own amount can still be the wrong rate for the event. And
+the record is not a history: the sale that paid the tax is an admitted transfer, so it overwrites the
+clock it was priced from, and the age has to be reconstructed from the transfer history rather than
+read back from the account. All three are stated in `records/findings/43-flip-tax-at-checkout.md` §5,
+and the proof is `tools/flip_tax_proof.py`.

@@ -918,6 +918,13 @@ class SwarmRunner:
             from_label=ctx.house_label,
             to_label=self._wallet(agent_id),
             price_lamports=price,
+            # A primary sale pays no artist fee: the house is selling the artist's own ticket at
+            # face, so a fee here would be the artist paying themselves. The fee is on resales.
+            charge_artist_fee=False,
+            # And no flip tax, for the same reason plus one of its own: the tax is on a resale,
+            # and the primary price is the artist's own stock at face, so a tax here would be the
+            # artist charging the artist for a ticket that never left the house.
+            charge_flip_tax=False,
         )
         if result.status != "ok":
             before, after = self._charge(agent_id, 0)
@@ -934,6 +941,8 @@ class SwarmRunner:
                 block_time=result.block_time, latency_ms=result.latency_ms, hop_index=1,
                 budget_before=before, budget_after=after,
                 policy_note=intent.rationale,
+                fee_lamports=self._fee_paid(result),
+                result=result,
             )
             return
         before, after = self._charge(agent_id, price)
@@ -956,6 +965,14 @@ class SwarmRunner:
             block_time=result.block_time, latency_ms=result.latency_ms, hop_index=1,
             budget_before=before, budget_after=after,
             policy_note=intent.rationale,
+            # A primary purchase runs through the same `transfer` the resale does, so on an
+            # event with a fee policy it pays the fee as well and the row says so. Whether the
+            # primary sale should be exempt is a pricing decision, not a wiring one: it would
+            # take a second sale path with its own meaning, and the harness has one.
+            fee_lamports=self._fee_paid(result),
+            # The same transfer carries the tax columns, and its result is the one place they
+            # come from: `_write` reads all three off it rather than taking them one at a time.
+            result=result,
         )
 
     def _resell(
@@ -997,6 +1014,12 @@ class SwarmRunner:
             from_label=self._wallet(agent_id),
             to_label=self._wallet(buyer.agent_id),
             price_lamports=price,
+            # The fee is on resales, so this sale pays it and says so rather than leaning on the
+            # default: the flag is named at every call site so a new one cannot inherit it unseen.
+            charge_artist_fee=True,
+            # The flip tax is on the same resale and is named the same way: this is the sale it
+            # exists for, and a call site that wants it off says so at its own site.
+            charge_flip_tax=True,
         )
         hop = ctx.hops.get(holding.ticket_id, 1) + 1
         if result.status != "ok":
@@ -1021,6 +1044,8 @@ class SwarmRunner:
                 hop_index=None,
                 budget_before=before, budget_after=after,
                 policy_note=ask.rationale,
+                fee_lamports=self._fee_paid(result),
+                result=result,
             )
             return buyer
         buyer_before, buyer_after = self._charge(buyer.agent_id, price)
@@ -1049,6 +1074,8 @@ class SwarmRunner:
             block_time=result.block_time, latency_ms=result.latency_ms, hop_index=hop,
             budget_before=seller_spent, budget_after=seller_spent,
             policy_note=ask.rationale,
+            fee_lamports=self._fee_paid(result),
+            result=result,
         )
         return buyer
 
@@ -1342,6 +1369,37 @@ class SwarmRunner:
         return DEFAULT_HOUSE_LABEL
 
     @staticmethod
+    def _fee_paid(result) -> int | None:
+        """What a transfer reported paying the artist, or `None` if it cannot say.
+
+        Read with `getattr`, not off the class: the gateway is a seam and a test's stand-in
+        result is allowed to be smaller than `TransferResult`, exactly as `_house_label`
+        assumes of the chain it is handed. A result that predates the fee field reports
+        `None`, which the dataset contract reads as "no fee recorded" rather than as "no fee
+        paid", and the write below drops both columns for an event that has no policy anyway.
+        """
+        return getattr(result, "fee_lamports", None)
+
+    @staticmethod
+    def _flip_tax_from(result) -> tuple[int | None, int | None, int | None]:
+        """What a transfer reported for the flip tax: `(lamports, bps, held_seconds)`.
+
+        One helper rather than three keyword arguments at each sale call site: the three columns
+        are one fact about one result, and the two call sites that move a unit hand the whole
+        result to `_write`, which reads them here. The same `getattr` rule as `_fee_paid` applies
+        -- a stand-in result that predates the tax reports `(None, None, None)` -- and a result
+        that has the fields reports the gateway's own numbers, including the 0 for money that a
+        refused sale did not move.
+        """
+        if result is None:
+            return (None, None, None)
+        return (
+            getattr(result, "flip_tax_lamports", None),
+            getattr(result, "flip_tax_bps", None),
+            getattr(result, "held_seconds", None),
+        )
+
+    @staticmethod
     def _new_ticket(ctx: _EventContext) -> str:
         ctx.tickets_issued += 1
         return f"{ctx.event.event_id}#{ctx.tickets_issued:04d}"
@@ -1374,9 +1432,34 @@ class SwarmRunner:
         budget_after: int = 0,
         round_no: int | None = None,
         policy_note: str | None = None,
+        fee_lamports: int | None = None,
+        result: object | None = None,
     ) -> None:
         if round_no is None:
             round_no = ctx.round_no
+        # The fee columns come from the event, not from each call site: the rate is the same on
+        # every row of a fee event, and an event with no policy gets `None` in both, so a
+        # dataset from a run that names no fee is byte-identical to one written before the fee
+        # existed. `fee_lamports` is passed in by the two actions that move a unit, because it
+        # is the only part of a fee that is a fact about one action rather than about an event.
+        # Read directly and not with `getattr`: a context whose event lost the field must fail
+        # here, where the row is being built, rather than quietly stop charging the fee.
+        fee_policy = ctx.event.artist_fee
+        if fee_policy is None:
+            fee_lamports = None
+            artist_fee_bps = None
+        else:
+            artist_fee_bps = fee_policy.fee_bps
+        # The flip tax columns, from the event in the same way and from the result in a different
+        # one: the rate and the hold are facts about the sale, and they come off the transfer's
+        # own result in one place here rather than being plumbed through every call site. An
+        # event with no tax block writes `None` in all three and the row is byte-identical to one
+        # written before the tax existed.
+        tax_policy = ctx.event.flip_tax
+        if tax_policy is None:
+            flip_tax_lamports = flip_tax_bps = held_seconds = None
+        else:
+            flip_tax_lamports, flip_tax_bps, held_seconds = self._flip_tax_from(result)
         # The policy's own words, for an agent whose policy accounts for live decisions. The
         # runner writes the row's prose, and before this the child's sentence existed only in
         # the sidecar's log: a fallback row said what happened on chain and nothing about the
@@ -1419,6 +1502,11 @@ class SwarmRunner:
             rationale=rationale,
             bid_lamports=bid,
             lot_price_lamports=lot,
+            fee_lamports=fee_lamports,
+            artist_fee_bps=artist_fee_bps,
+            flip_tax_lamports=flip_tax_lamports,
+            flip_tax_bps=flip_tax_bps,
+            held_seconds=held_seconds,
         )
         ctx.writer.write(row)
         self._rows += 1

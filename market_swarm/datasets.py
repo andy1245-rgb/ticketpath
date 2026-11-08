@@ -112,6 +112,102 @@ def _check_header(name: str, line: int, header: dict, violations: list[str]) -> 
         )
 
 
+def _check_flip_tax(name: str, line: int, row: dict, violations: list[str]) -> None:
+    """The flip tax's invariants, as their own function so the two payments can disagree.
+
+    The artist fee's rules live in `_check_row` beside the price they are computed from; these
+    are kept apart, and separate from those, because the two are different rules that happen to
+    be paid out of the same price: an event can have a fee and no tax, a tax and no fee, or both,
+    and a change to one bound must not silently widen the other. The columns are checked together
+    or not at all, and every check names the field it is about.
+
+    The rules, in the order they are applied:
+
+    - `flip_tax_bps` is the rate the row was assessed at, so an amount with no rate names a tax
+      whose rule was never recorded. Zero and null say nothing happened and are fine.
+    - a rate outside 0..10 000 is refused; so is a negative tax, and a tax above the price it was
+      taken from -- a tax outside 0..price is not a tax.
+    - an executed trade always carries a price, so an executed trade that names a rate and no
+      price has had its price removed and its tax cannot be checked against anything.
+    - the tax is charged on **resales**: an executed `buy` must carry 0 or nothing, and an executed
+      `resell` must carry exactly `price * bps // 10_000`, because the rate is on the row and the
+      amount can therefore be recomputed rather than trusted.
+    - a row that is not an executed trade must carry 0 or nothing, because a sale that did not run
+      charged no tax.
+    - `held_seconds` is the hold the rate came from, so it must be an integer of at least zero or
+      null. `null` is the record's clock never having been written, which is charged the full rate;
+      it is not the same number as zero seconds and is not a violation.
+    """
+    where = f"{name} line {line}"
+    status = row.get("status")
+    action = row.get("action")
+    price = row.get("price_lamports")
+    tax_bps = row.get("flip_tax_bps")
+    tax = row.get("flip_tax_lamports")
+    held = row.get("held_seconds")
+
+    if tax_bps is None:
+        # A tax with no rate names a payment to nobody, exactly as a fee with no rate does. The
+        # rate is the only place the schedule behind the amount is recorded, so an amount without
+        # it cannot be checked or explained. Zero and null say nothing happened.
+        if tax is not None and not (_is_int(tax) and tax == 0):
+            violations.append(
+                f"{where}: flip_tax_lamports {tax!r} on a row with no flip_tax_bps names a tax "
+                "whose rate was never recorded; report both or neither"
+            )
+    else:
+        if not _is_int(tax_bps) or not 0 <= tax_bps <= 10_000:
+            violations.append(
+                f"{where}: flip_tax_bps must be an integer in 0..10000, got {tax_bps!r}"
+            )
+        elif tax is not None and not _is_int(tax):
+            violations.append(
+                f"{where}: flip_tax_lamports must be an integer or null, got {tax!r}"
+            )
+        elif _is_int(tax) and tax < 0:
+            # A negative tax is money out of the artist's pocket, and the arithmetic below would
+            # agree with one on a negative price rather than refuse it.
+            violations.append(
+                f"{where}: flip_tax_lamports {tax} is negative, and a tax outside 0..price is "
+                "not a tax"
+            )
+        elif _is_int(tax) and _is_int(price) and tax > price:
+            violations.append(
+                f"{where}: flip_tax_lamports {tax} exceeds price_lamports {price}, and a tax "
+                "outside 0..price is not a tax"
+            )
+        elif status == "ok" and action in TRADE_ACTIONS and not _is_int(price):
+            violations.append(
+                f"{where}: an executed trade with flip_tax_bps {tax_bps} carries no "
+                "price_lamports, so its tax cannot be checked against anything"
+            )
+        elif status == "ok" and action == "buy":
+            # The tax is on resales, so a primary sale that claims one is a tax the product does
+            # not charge: the house is selling the artist's own stock at face.
+            if not (tax == 0 or tax is None):
+                violations.append(
+                    f"{where}: flip_tax_lamports {tax!r} on a primary sale, and the flip tax is "
+                    "charged on resales only"
+                )
+        elif status == "ok" and action == "resell" and _is_int(price):
+            expected_tax = price * tax_bps // 10_000
+            if tax != expected_tax:
+                violations.append(
+                    f"{where}: flip_tax_lamports {tax!r} does not agree with the {tax_bps} bps "
+                    f"flip tax on price {price} (expected {expected_tax})"
+                )
+        elif not (tax == 0 or tax is None):
+            violations.append(
+                f"{where}: flip_tax_lamports {tax!r} on a row that is not an executed trade "
+                "must be 0 or null, because a sale that did not run charged no tax"
+            )
+
+    if held is not None and (not _is_int(held) or held < 0):
+        violations.append(
+            f"{where}: held_seconds must be an integer of at least 0 or null, got {held!r}"
+        )
+
+
 def _check_row(name: str, line: int, row: dict, violations: list[str]) -> None:
     where = f"{name} line {line}"
     if row.get("synthetic") is not True:
@@ -198,6 +294,79 @@ def _check_row(name: str, line: int, row: dict, violations: list[str]) -> None:
                     f"{where}: markup_bps {markup} does not agree with price {price} over "
                     f"face {face} (expected {expected})"
                 )
+
+    # The artist fee, on a dataset whose event named one. `artist_fee_bps` is the rule that
+    # applied, so the fee can be checked against the price it was taken from instead of trusted:
+    # an executed **resale** must carry exactly `price * bps // 10_000`, an executed **buy** must
+    # carry 0 or nothing because the fee is charged on resales and a primary price is the artist's
+    # own money, and any other row must carry 0 or nothing because a sale that did not land moved
+    # no lamports. The rate and the amount are reported together or not at all, so an amount with
+    # no rate is a violation in its own right. A dataset from an event with no fee policy carries
+    # neither column and is checked by neither rule.
+    fee_bps = row.get("artist_fee_bps")
+    fee = row.get("fee_lamports")
+    if fee_bps is None:
+        # A fee with no rate names a payment to nobody. The rate column is the only place the rule
+        # behind the amount is recorded, so an amount without it cannot be checked or explained.
+        # Zero and null say nothing happened and are fine; a row that moves money pays a rate.
+        if fee is not None and not (_is_int(fee) and fee == 0):
+            violations.append(
+                f"{where}: fee_lamports {fee!r} on a row with no artist_fee_bps names a payment "
+                "whose rate was never recorded; report both or neither"
+            )
+    else:
+        if not _is_int(fee_bps) or not 0 <= fee_bps <= 10_000:
+            violations.append(
+                f"{where}: artist_fee_bps must be an integer in 0..10000, got {fee_bps!r}"
+            )
+        elif fee is not None and not _is_int(fee):
+            violations.append(
+                f"{where}: fee_lamports must be an integer or null, got {fee!r}"
+            )
+        elif _is_int(fee) and fee < 0:
+            # A negative fee is a payment out of the artist's pocket, and the arithmetic below would
+            # agree with one on a negative price rather than refuse it.
+            violations.append(
+                f"{where}: fee_lamports {fee} is negative, and a fee outside 0..price is not a fee"
+            )
+        elif _is_int(fee) and _is_int(price) and fee > price:
+            violations.append(
+                f"{where}: fee_lamports {fee} exceeds price_lamports {price}, and a fee outside "
+                "0..price is not a fee"
+            )
+        elif status == "ok" and row.get("action") in TRADE_ACTIONS and not _is_int(price):
+            # An executed trade always has a price, so a row that names a rate and no price has had
+            # its price removed, and a fee that cannot be checked against a price is not checkable.
+            violations.append(
+                f"{where}: an executed trade with artist_fee_bps {fee_bps} carries no "
+                "price_lamports, so its fee cannot be checked against anything"
+            )
+        elif status == "ok" and row.get("action") == "buy":
+            # The fee is on resales, so a primary sale that claims one is a fee the product does
+            # not charge, and on this event it would be the artist paying themselves.
+            if not (fee == 0 or fee is None):
+                violations.append(
+                    f"{where}: fee_lamports {fee!r} on a primary sale, and the artist fee is "
+                    "charged on resales only"
+                )
+        elif status == "ok" and row.get("action") == "resell" and _is_int(price):
+            expected_fee = price * fee_bps // 10_000
+            if fee != expected_fee:
+                violations.append(
+                    f"{where}: fee_lamports {fee!r} does not agree with the {fee_bps} bps fee "
+                    f"on price {price} (expected {expected_fee})"
+                )
+        elif not (fee == 0 or fee is None):
+            violations.append(
+                f"{where}: fee_lamports {fee!r} on a row that is not an executed trade must "
+                "be 0 or null, because a sale that did not run paid the artist nothing"
+            )
+
+    # The flip tax, in its own function: a dataset with a tax and a fee has two independent
+    # payments in it, and a rule that binds one must not be read as binding the other. A dataset
+    # from an event with no tax policy carries none of the three columns and is checked by neither
+    # rule here, which is what keeps an old file valid and byte-identical.
+    _check_flip_tax(name, line, row, violations)
 
     if status == "refused" and row.get("error_code") is None:
         violations.append(f"{where}: a refused row must carry an error_code, got None")

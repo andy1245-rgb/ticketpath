@@ -76,9 +76,22 @@ class FakeEventChain:
         label = getattr(self, "house_label", "house")
         self.balances[f"addr-{label}"] = self.balances.get(f"addr-{label}", 0) + count
 
-    def transfer(self, *, from_label: str, to_label: str, price_lamports: int) -> FakeTransferResult:
+    def transfer(
+        self,
+        *,
+        from_label: str,
+        to_label: str,
+        price_lamports: int,
+        charge_artist_fee: bool = True,
+        charge_flip_tax: bool = True,
+    ) -> FakeTransferResult:
+        # The flags are recorded, not acted on: this fake has no fee or tax policy, and what the
+        # runner passes for a primary sale and for a resale is the thing under test.
         self.gateway.calls.append(
-            ("transfer", self.event_id, from_label, to_label, price_lamports)
+            (
+                "transfer", self.event_id, from_label, to_label, price_lamports,
+                charge_artist_fee, charge_flip_tax,
+            )
         )
         self._sends += 1
         if self.gateway.refuse_above_ceiling and price_lamports > self.ceiling_lamports:

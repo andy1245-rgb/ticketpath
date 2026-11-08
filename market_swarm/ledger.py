@@ -111,6 +111,32 @@ class TradeRow:
     round: int | None = None
     rounds_left: int | None = None
 
+    # The artist fee, which is an event-level rule and a per-row fact. `artist_fee_bps` is the
+    # event's rate, so the fee can be recomputed from `price_lamports` alone and a reader never
+    # has to join rows to learn what rate applied. `fee_lamports` is what the seller actually
+    # paid on the sale this row records: the fee on an executed trade, 0 on a row that records
+    # a sale the chain refused or never ran, and `None` on an event with no fee policy at all.
+    # Both default, and both sit with the other optional columns rather than after `synthetic`,
+    # which stays the last field: it is the label the writer checks, not a fact about a trade.
+    # A row from a config that names no fee therefore carries `None` in both and is otherwise
+    # the row it always was.
+    fee_lamports: int | None = None
+    artist_fee_bps: int | None = None
+
+    # The flip tax, which is an event-level rule and a per-row fact in the same way the fee is,
+    # and deliberately a separate set of columns: the two can disagree, and a reader checking one
+    # must not have to trust the other. `flip_tax_bps` is the rate this row was assessed at (the
+    # schedule prices it from the hold, so it is a fact about the row and not only about the
+    # event), `held_seconds` is the hold that produced it (`None` when the record's clock was
+    # never written, which is charged the full rate), and `flip_tax_lamports` is what actually
+    # moved: the tax on an executed resale, 0 on a sale that did not land or that did not carry
+    # the tax at all, and `None` on an event with no tax policy. All three default, and a row from
+    # a config that names no tax carries `None` in all three and is otherwise the row it always
+    # was.
+    flip_tax_lamports: int | None = None
+    flip_tax_bps: int | None = None
+    held_seconds: int | None = None
+
     synthetic: bool = True
 
     def as_dict(self) -> dict:

@@ -41,7 +41,15 @@ class StubChain:
     def stock(self, count: int) -> None:
         self.house += count
 
-    def transfer(self, *, from_label: str, to_label: str, price_lamports: int):
+    def transfer(
+        self,
+        *,
+        from_label: str,
+        to_label: str,
+        price_lamports: int,
+        charge_artist_fee: bool = True,
+        charge_flip_tax: bool = True,
+    ):
         self.sends += 1
         status = "ok" if price_lamports <= self.ceiling_lamports else "refused"
         return types.SimpleNamespace(

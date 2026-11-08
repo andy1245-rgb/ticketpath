@@ -189,6 +189,27 @@ def _cmd_plan(args: argparse.Namespace) -> int:
             f"cap_bps={cap_bps}  ceiling={ceiling}  tickets={event.tickets}  "
             f"rounds={event.rounds}  round_seconds={event.round_seconds}"
         )
+        # Only for an event that names one. A run with no fee prints exactly the lines it printed
+        # before the fee existed, which is what makes `plan` diffable across this change.
+        if event.artist_fee is not None:
+            print(
+                f"           fee  {event.artist_fee.fee_bps} bps of the sale price, paid by the "
+                f"seller to {event.artist_fee.artist_wallet}"
+            )
+        # The same shape for the flip tax, and the same rule: an event with no block prints
+        # nothing. A block that is not enabled is shown as off rather than hidden, because the
+        # event maker did write it down and a reader comparing two configs should see the toggle.
+        if event.flip_tax is not None:
+            if not event.flip_tax.enabled:
+                print("           tax  off")
+            else:
+                schedule = event.flip_tax.schedule
+                print(
+                    f"           tax  {schedule.full_bps} bps of the sale price while held "
+                    f"under {schedule.full_hold_seconds}s, falling to 0 at "
+                    f"{schedule.zero_hold_seconds}s, paid by the seller to "
+                    f"{event.flip_tax.artist_wallet}"
+                )
     for spec in config.agents:
         print(
             f"agent      {spec.agent_id}  policy={spec.policy}  "
@@ -250,7 +271,10 @@ def _build_gateway(config: RunConfig):
     factory = getattr(gateway_module, "make_gateway", None)
     if factory is None:
         return gateway_module.ChainGateway(
-            config.cluster, run_dir=Path(config.out_dir), dry_run=config.dry_run
+            config.cluster,
+            run_dir=Path(config.out_dir),
+            dry_run=config.dry_run,
+            program=config.program,
         )
     try:
         return factory(

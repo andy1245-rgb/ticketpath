@@ -35,7 +35,11 @@ import secrets
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping
+
+if TYPE_CHECKING:  # an annotation only: the module that defines it is imported where it is used
+    from .artist_fee import ArtistFeePolicy
+    from .flip_tax import FlipTaxPolicy
 
 # The u16 field maximum. `cap_bps` is a `u16` in the record account, so 65535 is the
 # largest markup the field can express; that is how "uncapped / monitored" is realised
@@ -182,6 +186,22 @@ class EventSpec:
     rounds: int
     round_seconds: int     # simulated time-to-event step, never a real sleep by default
 
+    #: The artist fee the seller pays on every resale of this event, or `None` for no fee.
+    #: It trails the required fields and it defaults, so every existing config, test and
+    #: constructor call keeps its meaning: a run that does not name a fee is charged nothing and
+    #: is otherwise identical to the run before this field existed. The policy is parsed by the
+    #: module that owns the arithmetic (`market_swarm/artist_fee.py`) rather than restated here,
+    #: so the two bounds -- the rate and the wallet -- have exactly one definition.
+    artist_fee: ArtistFeePolicy | None = None
+
+    #: The flip tax the seller pays on a quick resale, or `None` for no tax. Like the fee it is
+    #: last and it defaults, so every existing config, test and constructor call keeps its
+    #: meaning: an event that does not name a block is charged no tax and is otherwise identical
+    #: to the event before this field existed. The block is opt-in on top of that -- a block
+    #: without `"enabled": true` carries a policy that is off -- and the policy is parsed by the
+    #: module that owns the arithmetic (`market_swarm/flip_tax.py`) rather than restated here.
+    flip_tax: FlipTaxPolicy | None = None
+
 
 @dataclass(frozen=True)
 class RunConfig:
@@ -327,8 +347,13 @@ _AGENT_FIELDS = frozenset(
 #: Fields an agent may omit. Only the holdings limit, because 1 is the right default for a
 #: participant and the market maker is the exception that states it explicitly.
 _AGENT_OPTIONAL_FIELDS = frozenset({"max_holdings"})
+#: Fields an event may omit. `cap_bps` because monitored mode has no cap to state, `artist_fee`
+#: because a fee is opt-in, and `flip_tax` for the same reason plus one: a tax block that is
+#: present but not enabled is a policy that is off, and an absent block is the same policy.
+_EVENT_OPTIONAL_FIELDS = frozenset({"cap_bps", "artist_fee", "flip_tax"})
 _EVENT_FIELDS = frozenset(
-    {"event_id", "face_lamports", "mode", "cap_bps", "tickets", "rounds", "round_seconds"}
+    {"event_id", "face_lamports", "mode", "cap_bps", "tickets", "rounds", "round_seconds",
+     "artist_fee", "flip_tax"}
 )
 _RUN_FIELDS = frozenset(
     {
@@ -474,7 +499,7 @@ def _parse_event(raw: Any, index: int) -> EventSpec:
     field = f"events[{index}]"
     spec = _require_mapping(raw, field)
     _no_unknown_keys(spec, _EVENT_FIELDS, field)
-    for required in sorted(_EVENT_FIELDS - {"cap_bps"}):
+    for required in sorted(_EVENT_FIELDS - _EVENT_OPTIONAL_FIELDS):
         if required not in spec:
             raise ConfigError(f"{field}.{required}: required field is missing")
 
@@ -492,6 +517,58 @@ def _parse_event(raw: Any, index: int) -> EventSpec:
         # a value the record account cannot hold is a config bug, not a no-op.
         _require_int(cap_bps, f"{field}.cap_bps", maximum=U16_MAX)
 
+    # The fee block is parsed by the module that owns the arithmetic, and its refusal is
+    # re-raised as this module's error: a caller catches one type from a config load, and it
+    # is `ConfigError`, not something it would have to import a second module to name. The
+    # message is passed through unchanged, so the field path it carries -- for instance
+    # "events[2].artist_fee.fee_bps" -- still says which event and which key.
+    artist_fee = None
+    fee_raw = spec.get("artist_fee")
+    if fee_raw is not None:
+        from .artist_fee import ArtistFeeError, ArtistFeePolicy
+
+        try:
+            artist_fee = ArtistFeePolicy.from_mapping(fee_raw, field=f"{field}.artist_fee")
+        except ArtistFeeError as exc:
+            raise ConfigError(str(exc)) from exc
+
+    # The flip tax block, parsed the same way and re-raised the same way. Its one extra input is
+    # the artist fee's wallet: an omitted `artist_wallet` inherits it, because the tax is paid to
+    # the artist, and a block that names a different wallet is refused by the policy module rather
+    # than quietly redirecting the money. The field path it reports is the event's, so a bad rate
+    # in a several-event config says which event.
+    flip_tax = None
+    tax_raw = spec.get("flip_tax")
+    if tax_raw is not None:
+        from .flip_tax import FlipTaxError, FlipTaxPolicy
+
+        default_wallet = None if artist_fee is None else artist_fee.artist_wallet
+        try:
+            flip_tax = FlipTaxPolicy.from_mapping(
+                tax_raw, field=f"{field}.flip_tax", default_wallet=default_wallet
+            )
+        except FlipTaxError as exc:
+            raise ConfigError(str(exc)) from exc
+
+    # The combined take, on an event that turns the tax on: the seller pays the fee and the tax
+    # out of one price, so their sum is what a quick resale costs. Above 10 000 bps the seller
+    # pays to sell, which is not a price the checkout may build, so it is refused at load rather
+    # than at the first sale. A tax with no fee cannot reach this: its own rate is bounded by
+    # `flip_tax.MAX_BPS`, which is 10 000, and the bound is checked when the schedule is built.
+    if flip_tax is not None and flip_tax.enabled and artist_fee is not None:
+        from .flip_tax import combined_take_bps
+
+        combined = combined_take_bps(
+            artist_fee_bps=artist_fee.fee_bps, schedule=flip_tax.schedule
+        )
+        if combined > BPS_DENOMINATOR:
+            raise ConfigError(
+                f"{field}.artist_fee.fee_bps: {artist_fee.fee_bps} bps plus "
+                f"{field}.flip_tax.schedule.full_bps: {flip_tax.schedule.full_bps} bps is "
+                f"{combined} bps of the sale price, and the seller pays both. A take above "
+                f"{BPS_DENOMINATOR} bps means the seller pays to sell, so this event is refused."
+            )
+
     return EventSpec(
         event_id=_require_identifier(spec["event_id"], f"{field}.event_id"),
         face_lamports=_require_int(spec["face_lamports"], f"{field}.face_lamports", minimum=1),
@@ -500,6 +577,8 @@ def _parse_event(raw: Any, index: int) -> EventSpec:
         tickets=_require_int(spec["tickets"], f"{field}.tickets"),
         rounds=_require_int(spec["rounds"], f"{field}.rounds", minimum=1),
         round_seconds=_require_int(spec["round_seconds"], f"{field}.round_seconds"),
+        artist_fee=artist_fee,
+        flip_tax=flip_tax,
     )
 
 

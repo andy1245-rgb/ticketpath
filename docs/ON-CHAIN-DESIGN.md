@@ -74,11 +74,21 @@ table is the truth about the tree and the design sentence is a statement about i
 
 **Two programs, two clusters, and they are not interchangeable.** v1 is deployed on devnet at
 `5EJ1GU3M4vn1vGCataH3sfMjQEMnom5Q3sDHJDhs4eva` and is frozen evidence: no upgrade, no re-sign, no
-edit (D13). v2 is a different program id, `CTEnej2b5cgJ7uQ185k7yWZChe8GasAgPYCc4BHFB67w`, and has
-only ever run on a local `solana-test-validator`; its record is `records/onchain-v2.local.json`,
-which is git-ignored, and it is not evidence about any public cluster. The source implements the v2
+edit (D13). v2 is a different program id, `CTEnej2b5cgJ7uQ185k7yWZChe8GasAgPYCc4BHFB67w`.
+**Corrected 2026-11-08T09:30Z:** that id is the one a local `solana-test-validator` proved, and
+`records/onchain-v2.local.json` is still its record and still git-ignored. v2 has now also been
+deployed **on devnet**, under a third program id of its own, `Bebo55oe4VRmzYKoaHMH72bg4zLFKvLpnLRc5Nh9jPmF`
+(abbreviated `Bebo55oe…` elsewhere in this tree; the full value is in `records/onchain-v2-devnet.json`).
+That deploy recorded 35 transaction rows across its two phases (34 distinct: the deploy is shared) and observed 14 refusals, and its record is the tracked file
+`records/onchain-v2-devnet.json`, written by `tools/publish_v2_devnet.py` — which imports this
+project's local publisher and overrides only its validator lifecycle, so the assertions are the
+reviewed ones. The earlier sentence here, that v2 "has only ever run on a local
+`solana-test-validator`", was true when it was written and is false now; it is kept in the record
+rather than deleted. v1 remains untouched: same program id, same 85,784-byte program data, last
+deployed in slot 519806063, which is not a slot any v2 run has used. The source implements the v2
 instruction set: seven tags where v1 had four, the floor and the jurisdiction and policy bytes, and
-the hold clock. A devnet reader is reading v1's deployed bytes, which do not have tags 4 to 6.
+the hold clock. A devnet reader of v1's program id is reading v1's deployed bytes, which do not
+have tags 4 to 6.
 
 | kind | name | value | where |
 |---|---|---|---|
@@ -2311,7 +2321,10 @@ to an issued ticket, and the event record carries the off-chain `relaxed_at`/`re
 `policy = 2` (`unresolved`) exists so that "we could not establish the law" is a distinct state on
 the chain from "the law does not cap". Both admit any staged price, and only one of them permits the
 platform to say resale is lawful there. The v2 program in `programs/cap_hook/` implements
-`jurisdiction` and `policy` in its source and has run only on a local validator: it accepts `0` and
+`jurisdiction` and `policy` in its source and has run on a local validator **[corrected
+2026-11-08T11:20Z: this sentence read "has run only on a local validator", and v2 is also deployed
+on devnet under the id `records/onchain-v2-devnet.json` records, so "only" is no longer true. The
+refusal itself is unchanged]**: it accepts `0` and
 `1` and refuses `2` with `6023`, and its `ZZ` means "unspecified". Adding `2` is additive and is
 what a merge would carry over; until then the parked `programs/region_gate/` is the only program
 that assigns it.
@@ -2363,5 +2376,309 @@ Eleven legs on a real `solana-test-validator`, as real transactions with their o
 `python3 tools/region_local_proof.py`. Those legs are `programs/region_gate/`'s, and the crate is
 parked: they are the record of what the policy layer would enforce, not of anything in the
 transaction path. Not verified on devnet, and not intended to be: this is a local proof of the
-policy layer. The devnet artefact in `records/devnet-artefacts.json` describes the v1 cap-only
-program, and v2 has run only on a local validator.
+policy layer, and the devnet artefact in `records/devnet-artefacts.json` describes the v1
+cap-only program.
+
+**[Corrected 2026-11-08T11:20Z. This paragraph ended "and v2 has run only on a local
+validator". That was true when written and is false now: v2 is deployed on devnet under its
+own id, `Bebo55oe…`, and `records/onchain-v2-devnet.json` is that deploy's record. The crate
+this paragraph is about, `programs/region_gate/`, is still parked and deployed nowhere, so the
+claim the paragraph exists to make is unchanged.]**
+
+## 15. The artist fee at checkout (2026-11-08)
+
+The product sentence is "the artist gets a share of every resale". Feature 5 was specified as a
+Token-2022 `TransferFeeConfig`, and that is dead: at `decimals = 0` with `amount = 1` the token program
+**ceils** the fee, so every rate from 1 to 9999 bps withholds the whole ticket and pays the buyer
+nothing. That is measured on four throw-away validators in
+`records/findings/36-transfer-fee-on-a-one-unit-ticket.md`, with the RPC objects quoted, and the
+decision to ship no token fee is `D15` in `records/F-decision-log.md`. What follows is the other
+mechanism, built and measured: **a lamport fee, paid by the seller, in the same transaction as the
+move.** A token fee is a fraction of a token, and this mint's tokens are indivisible; a lamport fee is a
+fraction of a price, which is what a share of a resale actually is.
+
+### 15.1 The sale: three instructions, one transaction, two signers
+
+```
+[0] cap_hook  SetPendingPrice   accounts [issuer (signer), record (writable), mint]      data [2, price u64]
+[1] System    Transfer          accounts [seller (signer, writable), artist (writable)]  data [2, fee u64]
+[2] Token-2022 TransferChecked  accounts [source, mint, destination, seller (signer),
+                                          record, hook program, extra-account-metas]     data [12, 1, 0]
+```
+
+One blockhash, one signature set, so a failure in any leg reverts all three: an unpaid fee cannot leave
+a moved ticket, and a refused sale cannot leave a paid fee. The fee leg is omitted entirely when the
+computed fee is zero — a payment of nothing is not a payment, and a 0-lamport instruction is
+indistinguishable in a signature from a fee that was meant and failed to move.
+
+**Two signers, and why that is a fact rather than a choice.** `SetPendingPrice` is authorised by
+`record.authority` — `checked_record_for_write` requires `record.authorises(authority)`, which is strict
+equality with the field — and that key is the mint authority, the issuer. The seller signs the System
+transfer (its own lamports) and the token transfer (it is the source account's owner). So the checkout's
+sale transaction is co-signed: the venue stages the price, the seller pays and moves. A sale signed only
+by the seller does not exist under the v2 program: the compiled message would carry a signature slot
+for the issuer that the seller cannot fill, so it is rejected before any instruction executes — and a
+stage that named the seller as its authority would instead be refused `6026`, because
+`checked_record_for_write` compares the signer with the record's own `authority` field.
+
+**The seller needs lamports, not just a ticket.** The fee leaves the seller's balance at sale time, so a
+seller who holds a ticket and no SOL cannot resell: the sale fails whole. That is the sharpest product
+consequence of this design and it is measured, not inferred — the underfunded leg of
+`tools/artist_fee_proof.py`.
+
+### 15.2 The arithmetic, and why it rounds down
+
+```
+fee = price_lamports * fee_bps // 10_000          integers only, no float anywhere
+```
+
+Floor, not ceiling. A ceiling would take a whole lamport on a 1-lamport sale — 100% of it — which is the
+same defect that makes the token fee unusable, one unit lower down. Floor never charges more than the
+stated percentage; the price of that is rounding to zero (19 lamports at 500 bps pays 0). `fee_bps` is a
+property of the event, bounded at 10 000, and `fee <= price` holds for every accepted input by
+construction rather than by luck.
+
+### 15.3 What the fee binds, and what it does not
+
+**It binds only sales this app builds.** The chain does not force the fee. The reasons, in order of how
+much they matter:
+
+1. The hook never looks at the fee. A transaction can stage a price, move the ticket and pay the artist
+   nothing, and the hook admits it. Nothing in `programs/cap_hook` mentions lamports moving between
+   wallets.
+2. A staged price is not tied to the transaction that will consume it. The staging is a value in the
+   record; the next admitted transfer consumes it, whoever builds that transfer. So the issuer stages
+   once, and any holder can then move the ticket fee-free. The staging is consumed, so the ride costs the
+   issuer one staging, not a permanent door — but it is a door.
+3. The fee is charged on the **staged number**, which is the number the cap is enforced against. Whether
+   the buyer actually paid the seller that price is settled off chain, in our own checkout, and the chain
+   has no view of it. A seller could agree a private price and stage a lower one; the fee follows the
+   staged number. **And the amount is the seller's choice because the staged price is:** there is no
+   floor in this build, so at 500 bps any price under 20 lamports pays nothing, the fee leg is omitted,
+   and the sale still lands. The same arithmetic that makes 19 lamports a rounding credit makes it the
+   cheapest evasion, and it never leaves the app. A `band_low` on the record, or a checkout refusal
+   below some fraction of face, is the obvious next step and is not built.
+
+What the chain *does* force, on a record whose authority is the issuer, is that no ticket moves at all
+without the issuer's signature on a stage instruction. So a sale cannot leave the venue without a venue
+signature — that is the cap behaviour described in
+`records/findings/36-transfer-fee-on-a-one-unit-ticket.md` §5.1, and it is what makes "the fee is charged
+by the checkout" a real statement rather than a policy promise. It is not the same statement as "charged
+by the chain", and no screen or README may make the second one.
+
+### 15.4 The stronger variant, written down and not built
+
+A hook that reads the instructions sysvar (`solana_program::sysvar::instructions::load_instruction_at`)
+can find the System `Transfer` in the same transaction and refuse unless it pays the artist `fee_bps` of
+the staged price. That would make the fee a condition of the move rather than a feature of our client,
+and it is the only way the chain can compel it. It is **not built**, and these are the reasons:
+
+- The hook needs the artist's wallet and the rate at hook time. Neither is in the record today
+  (`face u64, cap_bps u16, pending_price u64, status u8, band_low u64, jurisdiction [u8;2], policy u8,
+  held_since_unix i64, authority [32]`), so a fee account would have to exist per mint, adding a writer,
+  an authorisation rule and a migration.
+- Every sale's transaction shape becomes part of the program's interface. A marketplace or a wallet that
+  routes transfers would have to build the exact instruction a hook it cannot inspect expects, and a
+  transaction that batched the fee differently (two artists, a split, a fee already withheld elsewhere)
+  would be refused.
+- The instructions sysvar is a runtime-provided account whose index must be verified, and getting that
+  wrong is a bypass rather than a bug: a hook that reads the wrong instruction attests to something it
+  did not check.
+- It does not solve (3) above. The hook can check that *some* transfer paid the artist the fee on the
+  staged price, not that the staged price was what the buyer paid.
+
+The decision to leave it out is recorded in `records/F-decision-log.md` (`D26`), and the reason it is
+written down here rather than left out is that the alternative is a reader concluding the chain enforces
+this fee, which it does not.
+
+### 15.5 What is at the checkout today
+
+- `market_swarm/artist_fee.py` — the policy, the arithmetic, the fee leg and the order of the three
+  instructions. Pure: no key, no socket, no float.
+- `market_swarm` the option — an event may carry `artist_fee: {artist_wallet, fee_bps}`; absent, the
+  harness behaves exactly as it did, and a sale is two instructions with one signer. With it on, the
+  fee is charged on **resales**: a primary sale through the harness is the house selling the artist's
+  own stock at face, so it pays no fee and its row records the event's rate with `fee_lamports` 0.
+  `plan` prints the rate and the artist wallet for an event that has them.
+- `tools/artist_fee_proof.py` — the local-validator proof, and
+  `records/findings/42-artist-fee-at-checkout.md` the finding that quotes it.
+- Not built: the `ticketpath` checkout program in §3.4 (`transfer_ticket`) is still a design, so "the
+  app" that builds this transaction today is the harness's gateway, not a deployed product.
+- Not built: the instructions-sysvar hook of §15.4.
+
+### 15.6 What this document does not claim
+
+No fee is charged on devnet or anywhere public, because nothing was published. The fee arithmetic is
+tested off chain against the validator's own behaviour, and the transaction shape is measured on a local
+validator only. The artist wallet in a local run is a throw-away key, so no number here is a statement
+about any real artist's revenue.
+
+## 16. The flip tax at checkout (2026-11-08)
+
+Feature 7 was specified as a transfer fee into a pool, rebated on how long the holder held. The fee
+half is dead for §15's reason, and the rebate half is still not built: `ClaimRebate` (tag 7) is absent
+from `lib.rs` and appears there and in `state.rs` only as prose, its two error codes `6027` and `6028`
+are declared in `programs/cap_hook/src/error.rs` and raised by nothing, and `["rebate-pool", mint]` is
+a seed that `state.rs::rebate_pool_seeds` derives and no instruction uses. What follows is the other
+mechanism, built and measured: **a lamport tax, paid by the seller, in the same transaction as the
+artist fee and the move**, priced off the hold clock the hook itself writes. `D27` in
+`records/F-decision-log.md` is the decision; `records/findings/43-flip-tax-at-checkout.md` is the
+measurement.
+
+### 16.1 The sale: four instructions, one transaction, two signers
+
+```
+[0] cap_hook  SetPendingPrice   accounts [issuer (signer), record (writable), mint]      data [2, price u64]
+[1] System    Transfer          accounts [seller (signer, writable), artist (writable)]  data [2, fee u64]
+[2] System    Transfer          accounts [seller (signer, writable), artist (writable)]  data [2, tax u64]
+[3] Token-2022 TransferChecked  accounts [source, mint, destination, seller (signer),
+                                          record, hook program, extra-account-metas]     data [12, 1, 0]
+```
+
+Leg [1] is the artist fee and exists only when the event names one; leg [2] is the flip tax and exists
+only when the event's tax is on **and** the computed tax is above zero. Either leg can be absent, so the
+same sale is two, three or four instructions, and the transaction is still one blockhash and one
+signature set: a failure in any leg reverts all of them. The tax sits last before the move because both
+payments belong between the instruction that authorises the price and the instruction the hook checks.
+
+Two separate transfers to the same wallet rather than one summed transfer: the fee and the tax are
+different rules with different rates and different rows, and a single leg would make the dataset's
+`fee_lamports` and `flip_tax_lamports` a split of one number nobody could check against either rate.
+
+### 16.2 Where the age comes from: the record's clock, and three facts about it
+
+The rate is a function of the hold, and the hold is the chain's answer, not the seller's. The hook
+writes `held_since_unix = Clock::get()?.unix_timestamp` into the record in the same step that consumes
+the staged price (`lib.rs`, step 7 of `execute`), so the first instruction of the sale can be preceded
+by a read of the value the last admitted transfer wrote. `market_swarm/flip_tax.py` decodes that field
+at byte 30 of the 70-byte `["record", mint]` account; `market_swarm/tests/test_flip_tax.py` reads
+`ticketpath/onchain/v2.py`'s layout and fails if the offset or the record length moves on either side.
+
+Three facts a screen or a README would otherwise get wrong:
+
+1. **It is the mint's clock, not the holder's.** The record is per mint, so the value is the time of
+   the last admitted transfer of *any* seat of that event: one holder's sale resets every other
+   holder's clock. It is a seller's own hold only where one wallet holds the mint at a time, which is
+   the design's mint (`supply = 1`, §3.4). The harness runs **one mint per event carrying the event's
+   whole supply** -- measured, the sale mint of the proof run holds eight seats for one seller -- so
+   there the number is the event's clock and not the seller's. `max_holdings` limits units per agent
+   and does not give a holder a clock of its own. A per-holder clock is a different account layout,
+   and this document does not pretend to have it.
+2. **`0` means unknown, not "held forever".** `InitializeRecord` writes 0 and a v1 metas list (record
+   read-only) leaves it at 0 for good. A record's 0 is charged the **full** rate, because reading it as
+   1970 would make an unset field the cheapest way out of the tax; this is the mirror image of the
+   rebate, which refuses to *pay* on an unknown hold rather than guessing (`6027`).
+3. **A clock that went backwards clamps to zero seconds**, and zero seconds is the full rate. A
+   disagreement about the time cannot buy a discount. The Rust clamps the same way, in
+   `state.rs::held_seconds`.
+
+### 16.3 The schedule, and why it rounds down
+
+The default schedule is the operator's sentence: 15% of the sale price while the hold is under an hour,
+falling linearly to 0% at 30 days. In integers, with `full = 1500 bps`, `t1 = 3 600 s`, `t0 = 2 592 000 s`:
+
+```
+held <= t1            rate = full
+t1 < held < t0        rate = full * (t0 - held) // (t0 - t1)
+held >= t0            rate = 0
+tax  = price * rate // 10 000
+```
+
+At exactly `t1` the flat branch and the linear branch give the same number, so "under an hour" and
+"falling from an hour" are not two readings that disagree: the line starts at the full rate. The
+division floors, for §15.2's reason: a ceiling charges above the stated rate, and its worst case is 100%
+of a 1-lamport sale. The cost of flooring is that the rate reaches 0 shortly before the stated zero
+point (`full * (t0 - held) < t0 - t1` floors to 0, which happens at `held >= 2 590 275`, 1 725 seconds
+or 28 minutes 45 seconds short of 30 days), and the zero-point boundary itself is asserted at exactly
+0. `zero_hold_seconds` must be greater than `full_hold_seconds`, because a curve that ends before it
+starts has no falling segment and the division would be by zero or by a negative span. The schedule is per event:
+`flip_tax.schedule.{full_bps, full_hold_seconds, zero_hold_seconds}`, each optional.
+
+### 16.4 The toggle, the recipient, and the config
+
+`flip_tax` is an optional per-event block, **off by default**: absent means no tax and the event behaves
+as it did before the field existed. A block without `"enabled": true` carries a policy that is off. Two
+things enforce it and neither is a caller remembering to check: the checkout asks `enabled` before it
+reads the record or builds a leg, so a disabled policy never reaches the builder on the shipped path,
+and `market_swarm.flip_tax.sale_instructions` refuses a disabled policy outright, so a second caller
+cannot charge one by calling the builder directly.
+
+The money goes to the artist wallet. A block may omit `artist_wallet` and inherit the event's
+`artist_fee` wallet; a block that names a *different* wallet is a `ConfigError`, because one event has
+one recipient and two would be a decision, not a default. `"artist_wallet": null` is refused rather
+than read as an omission, because a field somebody wrote is not a field they left out. A config
+whose `artist_fee.fee_bps + flip_tax.schedule.full_bps` exceeds `10 000` is refused too, **on an
+enabled block**: the sum is what the seller pays, and a take above 100% of the price means the seller
+pays to sell. A disabled block with a large rate is accepted, because a policy that charges nothing
+cannot overcharge.
+
+Charged on **resales only**, like the artist fee: a primary sale through the harness is the house
+selling the artist's own stock at face, which is not a flip.
+
+### 16.5 What the tax binds, and what it does not
+
+**Binds only sales this app builds.** The hook has no instruction and no check that mentions lamports
+between wallets. A transaction can stage a price, move the ticket and pay no tax, and the hook admits
+it; finding 42's free-ride leg (§4, leg 8) is the measured form of that for the artist fee, the
+mechanism is the same one, and **no bypass is measured for the tax itself** (finding 43 §8) because the
+tax rides in the same transaction as the fee and would be skipped by the same transaction. What the chain does force, on a v2 record whose authority is the issuer, is that no ticket
+moves without the issuer's signature on a stage, and the checkout is what prices the stage. That is the
+same sentence as §15.3, and it is the whole of the claim.
+
+**The rate is on the staged price, not on lamports that moved.** The chain enforces the cap against
+`pending_price_lamports` and has no view of what the buyer paid. A private price below the staged one
+moves the tax down with it, and there is no floor in this build, so a staged price low enough makes the
+tax round to zero and the leg is omitted. Choosing whether a sale below some fraction of face should be
+refused is a product decision this build does not make.
+
+**A clock the seller can move is not a clock.** The seller signs the move, not the record write: the
+hook writes `held_since_unix` from the program's own `Clock`, so nothing in the transaction shape lets a
+seller claim an age. What the seller *can* choose is the staged price, which is §16.5's second point.
+
+**A hook that required the transfer is not built**, for §15.4's four reasons, unchanged: the hook would
+need the recipient and the schedule at hook time (neither is in the v2 record), every sale's transaction
+shape would become part of the program's interface, the instructions sysvar's index has to be verified
+or the check attests to nothing, and it still cannot prove the buyer paid the staged price.
+
+### 16.6 The refund-to-holders pool: documented, not built
+
+The alternative use of the tax is to accrue it to holders who did not flip instead of only to the
+artist. It is named here and deliberately absent from the code, because the two halves ship separately
+or not at all, and a half-built one is a number in a row that no instruction can pay:
+
+- a pool lamport account per mint, owned by `["rebate-pool", mint]` -- a lamport account and not a
+  token account, because the tax is lamports and the token-account framing belongs to the dead
+  `TransferFeeConfig` route; `state.rs::rebate_pool_seeds` derives the address and no instruction
+  creates or funds it;
+- `ClaimRebate` (tag 7), absent from `lib.rs`, with `6027` (`E_REBATE_NOT_DUE`) and `6028`
+  (`E_REBATE_UNAVAILABLE`) declared in `error.rs` and raised by nothing;
+- the claim rule, which is already written as pure functions in `state.rs`: `rebate_bps(held)` and
+  `rebate_lamports(pool, held)`, with `HOLD_FULL_SECONDS = 60` and `REBATE_FEE_BPS = 1500` and a
+  docstring saying the 60 is the demo's number so a rebate is observable inside one bounded validator
+  run. **That constant is not this chapter's schedule** and the two must not be read as one: this
+  chapter's full-hold point is 3 600 seconds and its zero point 2 592 000 seconds, both configurable,
+  and the hook's 60 is a curve the chain does not yet use.
+
+### 16.7 What is at the checkout today
+
+- `market_swarm/flip_tax.py` — the schedule, the assessment, the record-field decoder and the leg, and
+  the order of the instructions. Pure: no key, no socket, no float.
+- `market_swarm` the option — an event may carry `flip_tax: {enabled, artist_wallet?, schedule?}`;
+  absent, the harness behaves exactly as it did. `plan` prints the state, the rate and the two instants.
+- The ledger carries `flip_tax_lamports`, `flip_tax_bps` and `held_seconds` per row, and
+  `market_swarm/datasets.py` runs the ten tax checks listed in finding 43 §5.1, which is also where
+  the builder's refusals are collected. What it cannot check is the *schedule*: the
+  header carries no event-level policy, so a row whose tax agrees with its own rate verifies even if
+  that rate is not the event's. Same gap as the artist fee's, stated at finding 42 §8, and the same
+  fix (the policy in the header).
+- `tools/flip_tax_proof.py` — the local-validator proof, and
+  `records/findings/43-flip-tax-at-checkout.md` the finding that quotes it.
+
+### 16.8 What this document does not claim
+
+No tax has been charged on devnet or anywhere public, because nothing was published. The hold clock is
+the validator's wall clock, so a bounded local run cannot manufacture a 59-minute, one-hour or 30-day
+hold: the boundary legs pass the age in as an input and measure the instruction set and the money on
+chain, while the rate-for-age curve is measured as a pure function. The artist wallet in a local run is
+a throw-away key, so no number here is a statement about any real artist's revenue or any real
+platform's fee policy.
