@@ -411,6 +411,7 @@ export default async function HomePage() {
 
           {/* The card's right edge sits on the content box's right edge at 1440. */}
           <div className="md:justify-self-end">
+            <div className="hero-art">
             {featured && hero ? (
               <TicketCard
                 eventName={featured.name}
@@ -451,6 +452,14 @@ export default async function HomePage() {
                 </div>
               </Panel>
             )}
+            <div className="refusal-stamp mt-4" role="note">
+              <span className="refusal-stamp__code">6010</span>
+              <span className="t-meta text-ink">
+                Recorded on devnet (v1 program): a resale at 1,250,000,000 lamports was admitted,
+                one lamport more (1,250,000,001) was refused.
+              </span>
+            </div>
+            </div>
           </div>
         </div>
       </section>

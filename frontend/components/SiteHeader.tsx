@@ -85,7 +85,7 @@ export function SiteHeader() {
             <span className="text-[14px] font-semibold tracking-[0.08em]">SEATPASS</span>
           </Link>
 
-          <nav aria-label="Primary" className="hidden justify-center gap-6 lg:flex">
+          <nav aria-label="Primary" className="hidden justify-center min-w-0 gap-4 lg:flex">
             <NavLinks pathname={pathname} />
           </nav>
 
@@ -93,7 +93,7 @@ export function SiteHeader() {
             {pathname !== "/demo" && pathname !== "/demo/" ? <RoleToggle navigate /> : null}
             <Link
               href="/account"
-              className="u-transition hidden items-center t-body text-ink hover:text-accent sm:inline-flex"
+              className="u-transition hidden items-center t-body text-ink hover:text-accent 2xl:inline-flex"
             >
               Account
             </Link>
